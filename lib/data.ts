@@ -1,7 +1,7 @@
 export type Animal = {
   id: string;
   name: string;
-  species: "고양이" | "강아지";
+  species: string;
   age: string;
   ageGroup: "어린 친구" | "어른 친구";
   sex: string;

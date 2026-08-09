@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { animals } from "../../lib/data";
+import type { Animal } from "../../lib/data";
 import { AnimalCard } from "./AnimalCard";
 import { ActionButton } from "seed-design/ui/action-button";
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
@@ -14,7 +14,7 @@ import {
   IconMagnifyingglassSparkleLine,
 } from "@karrotmarket/react-monochrome-icon";
 
-export function Finder() {
+export function Finder({ animals }: { animals: Animal[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const [filter, setFilter] = useState("전체");
@@ -84,12 +84,12 @@ export function Finder() {
       </div>
       {uploaded && <p className="ff-description" style={{ marginTop: 8 }}>선택한 사진: {uploaded}</p>}
       <div style={{ marginTop: 8 }}><ActionButton size="large" className="ff-action-link" onClick={() => setMatched(true)}><PrefixIcon svg={<IconMagnifyingglassSparkleLine />} />닮은 친구 찾기</ActionButton></div>
-      {matched && <div className="ff-match-result" role="status"><strong>보미가 가장 닮았어요</strong><p className="ff-description" style={{ margin: "5px 0 8px" }}>{animals[0].matchReason}</p><Link href="/friends/bomi" className="ff-more">보미 자세히 보기</Link></div>}
+      {matched && animals[0] && <div className="ff-match-result" role="status"><strong>{animals[0].name} 친구가 가장 닮았어요</strong><p className="ff-description" style={{ margin: "5px 0 8px" }}>{animals[0].matchReason}</p><Link href={`/friends/${animals[0].id}`} className="ff-more">자세히 보기</Link></div>}
     </section>
     <section className="ff-section">
       <h2 className="ff-section-title">조건으로 찾기</h2>
       <div style={{ marginTop: 14 }}><TextField prefixIcon={<IconMagnifyingglassLine />} aria-label="보호동물 검색"><TextFieldInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름, 지역, 성격으로 검색" /></TextField></div>
-      <div className="ff-filter-bar">{["전체", "고양이", "강아지", "어른 친구", "어린 친구"].map((item) => <button key={item} className="ff-filter-button" data-active={filter === item} onClick={() => setFilter(item)}>{item}</button>)}</div>
+      <div className="ff-filter-bar">{["전체", "고양이", "강아지", "기타", "어른 친구", "어린 친구"].map((item) => <button key={item} className="ff-filter-button" data-active={filter === item} onClick={() => setFilter(item)}>{item}</button>)}</div>
       <div className="ff-animal-grid">{visible.map((animal) => <AnimalCard animal={animal} key={animal.id} />)}</div>
       {!visible.length && <div className="ff-empty">조건에 맞는 친구가 아직 없어요.</div>}
     </section>

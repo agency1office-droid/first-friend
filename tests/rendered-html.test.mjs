@@ -16,11 +16,24 @@ test("server-renders the First Friend home experience", async () => {
   assert.match(html, /퍼스트 프렌드/);
   assert.match(html, /마음속 친구를/);
   assert.match(html, /그려서 찾기/);
-  assert.match(html, /가족을 기다리는 친구/);
+  assert.match(html, /오늘 등록된 보호동물/);
+  assert.match(html, /국가동물보호정보시스템/);
   assert.match(html, /data-seed/);
   assert.match(html, /seed-action-button/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
   assert.match(html, /og\.png/);
+});
+
+test("renders public lost-animal and shelter surfaces", async () => {
+  const [lost, shelters] = await Promise.all([render("/lost-found"), render("/shelters")]);
+  assert.equal(lost.status, 200);
+  assert.equal(shelters.status, 200);
+  const lostHtml = await lost.text();
+  const shelterHtml = await shelters.text();
+  assert.match(lostHtml, /공공 분실동물 정보 연동/);
+  assert.match(lostHtml, /최근 분실동물/);
+  assert.match(shelterHtml, /동물보호센터 공공데이터/);
+  assert.match(shelterHtml, /전국 보호센터/);
 });
 
 test("renders public discovery and safety principles", async () => {

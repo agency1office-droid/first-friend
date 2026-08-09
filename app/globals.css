@@ -98,6 +98,12 @@ img { display: block; max-width: 100%; }
 .ff-progress > div { height: 100%; border-radius: inherit; background: var(--seed-color-bg-brand-solid); }
 .ff-empty { padding: 40px 16px; text-align: center; color: var(--seed-color-fg-neutral-muted); background: var(--seed-color-bg-neutral-weak); border-radius: 12px; }
 .ff-divider { height: 8px; margin: 32px -16px 0; background: var(--seed-color-bg-neutral-weak); }
+.ff-lost-list { display: grid; gap: 0; }
+.ff-lost-card { display: grid; grid-template-columns: 112px 1fr; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
+.ff-lost-card > img { width: 112px; height: 132px; border-radius: 10px; object-fit: cover; background: var(--seed-color-bg-neutral-weak); }
+.ff-lost-card h3 { margin: 3px 0 5px; font-size: 16px; line-height: 23px; }
+.ff-lost-mark { margin: 8px 0 0; font-size: 13px; line-height: 19px; }
+.ff-shelter-phone { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
 
 @media (max-width: 360px) { .ff-hero-actions, .ff-actions { grid-template-columns: 1fr; } .ff-animal-grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }

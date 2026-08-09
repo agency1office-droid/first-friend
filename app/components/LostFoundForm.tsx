@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import QRCode from "qrcode";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Callout } from "seed-design/ui/callout";
@@ -10,6 +11,7 @@ import { TextField, TextFieldInput, TextFieldTextarea } from "seed-design/ui/tex
 import { IconArrowDownHorizlineLine } from "@karrotmarket/react-monochrome-icon";
 import { PrefixIcon } from "@seed-design/react";
 import { sanitizeImageFile } from "../../lib/client-image";
+import { analyzeVisual } from "../../lib/visual-analysis";
 
 export function LostFoundForm() {
   const [kind, setKind] = useState<"lost" | "found">("lost");
@@ -17,11 +19,14 @@ export function LostFoundForm() {
   const [alerts, setAlerts] = useState(true);
   const [error, setError] = useState("");
   const [imageName, setImageName] = useState("");
+  const [preview,setPreview]=useState("");
+  const imageRef=useRef<HTMLImageElement>(null);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); const form = new FormData(event.currentTarget); let imageKey = ""; const file = form.get("image");
-    if (file instanceof File && file.size) { const upload = new FormData(); upload.set("file", await sanitizeImageFile(file)); const uploadResponse = await fetch("/api/uploads", { method: "POST", body: upload }); if (uploadResponse.status === 401) { window.location.href = "/signin-with-chatgpt?return_to=%2Flost-found"; return; } if (!uploadResponse.ok) { setError((await uploadResponse.json()).error); return; } imageKey = (await uploadResponse.json()).key; }
-    const payload = { kind, species: String(form.get("species")), region: String(form.get("region")), occurredAt: String(form.get("occurredAt")), description: String(form.get("description")), ownershipQuestion: String(form.get("ownershipQuestion") || "발견 당시 착용하고 있던 물건은 무엇인가요?"), alertRegion: alerts ? String(form.get("region")) : "", imageKey };
+    let visualTags:string[]=[];
+    if (file instanceof File && file.size) { if(imageRef.current){try{visualTags=(await analyzeVisual(imageRef.current,false)).tags}catch{/* 텍스트 특징으로 계속 접수 */}} const upload = new FormData(); upload.set("file", await sanitizeImageFile(file)); const uploadResponse = await fetch("/api/uploads", { method: "POST", body: upload }); if (uploadResponse.status === 401) { window.location.href = "/signin-with-chatgpt?return_to=%2Flost-found"; return; } if (!uploadResponse.ok) { setError((await uploadResponse.json()).error); return; } imageKey = (await uploadResponse.json()).key; }
+    const payload = { kind, species: String(form.get("species")), region: String(form.get("region")), occurredAt: String(form.get("occurredAt")), description: String(form.get("description")), ownershipQuestion: String(form.get("ownershipQuestion") || "발견 당시 착용하고 있던 물건은 무엇인가요?"), alertRegion: alerts ? String(form.get("region")) : "", imageKey,visualTags };
     const response = await fetch("/api/lost-found", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
     if (response.status === 401) { window.location.href = "/signin-with-chatgpt?return_to=%2Flost-found"; return; }
     if (response.ok) { const body=await response.json(); setDone({ id: body.report.id, ...payload, matches:body.matches }); } else setError((await response.json()).error || "접수하지 못했어요.");
@@ -41,7 +46,7 @@ export function LostFoundForm() {
   return <form className="ff-form" onSubmit={submit}>
     <SegmentedControl value={kind} onValueChange={(value) => setKind(value as "lost" | "found")} aria-label="신고 종류"><SegmentedControlItem value="lost">반려동물을 찾고 있어요</SegmentedControlItem><SegmentedControlItem value="found">동물을 발견했어요</SegmentedControlItem></SegmentedControl>
     <div className="ff-field"><label htmlFor="species">동물 종류</label><select className="ff-native-select" id="species" name="species"><option>고양이</option><option>강아지</option><option>새</option><option>기타</option></select></div>
-    <label className="ff-photo-drop ff-upload-compact" htmlFor="lost-image"><span>사진 선택 · 외형 매칭 정확도를 높여요</span><input id="lost-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImageName(event.target.files?.[0]?.name || "")}/></label>{imageName && <div className="ff-meta">{imageName}</div>}
+    <label className="ff-photo-drop ff-upload-compact" htmlFor="lost-image">{preview?<img ref={imageRef} src={preview} alt="실종·발견 매칭용 미리보기"/>:<span>사진 선택 · 색·체형·눈·털 특징을 기기에서 분석해요</span>}<input id="lost-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => {const file=event.target.files?.[0];setImageName(file?.name||"");if(preview)URL.revokeObjectURL(preview);setPreview(file?URL.createObjectURL(file):"")}}/></label>{imageName && <div className="ff-meta">{imageName} · 원본 연락처와 위치는 공개하지 않아요.</div>}
     <TextField label="대략적인 지역" description="시·구·동 수준까지만 공개해요." required><TextFieldInput name="region" placeholder="예: 서울 마포구" required/></TextField>
     <TextField label="마지막 목격 또는 발견 시각" required><TextFieldInput name="occurredAt" type="datetime-local" required/></TextField>
     <TextField label="외형과 상황" description="털색, 무늬, 크기, 착용품, 이동 방향을 적어주세요." required><TextFieldTextarea name="description" minLength={20} required/></TextField>

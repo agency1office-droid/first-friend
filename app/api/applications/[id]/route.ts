@@ -33,6 +33,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const body = clean(data.body, 1000);
     if (body.length < 2) return Response.json({ error: "메시지를 입력해 주세요." }, { status: 400 });
     const [message] = await owned.db.insert(applicationMessages).values({ applicationId: owned.application.id, senderId: owned.user.userId, body }).returning();
+    if(owned.application.guardianId)await owned.db.insert(notifications).values({memberId:owned.application.guardianId,type:"application_message",title:"입양 신청자에게 메시지가 왔어요",body:body.slice(0,100),href:"/operations"});
     return Response.json({ message }, { status: 201 });
   }
   if (action === "agreement") {

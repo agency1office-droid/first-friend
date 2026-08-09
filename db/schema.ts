@@ -23,6 +23,7 @@ export const favorites = sqliteTable("favorites", {
 export const applications = sqliteTable("applications", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   memberId: text("member_id").notNull().references(() => members.id),
+  guardianId: text("guardian_id").references(() => members.id),
   animalId: text("animal_id").notNull(),
   status: text("status", { enum: ["submitted", "review", "consulting", "approved", "rejected", "handover", "completed", "return_support", "withdrawn"] }).notNull().default("submitted"),
   household: text("household").notNull(),
@@ -169,6 +170,9 @@ export const verificationRequests = sqliteTable("verification_requests", {
   memberId: text("member_id").notNull().references(() => members.id),
   requestedRole: text("requested_role", { enum: ["foster", "shelter"] }).notNull(),
   organization: text("organization").notNull().default(""),
+  representativeName: text("representative_name").notNull().default(""),
+  businessNumber: text("business_number").notNull().default(""),
+  shelterType: text("shelter_type").notNull().default(""),
   evidenceKey: text("evidence_key"),
   status: text("status", { enum: ["submitted", "verified", "rejected", "expired"] }).notNull().default("submitted"),
   reviewedBy: text("reviewed_by"),

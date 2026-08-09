@@ -173,3 +173,36 @@ test("excludes closed public notices from adoption discovery", async () => {
   const source = await readFile(new URL("../lib/public-data.ts", import.meta.url), "utf8");
   assert.match(source, /processState[\s\S]*startsWith\("종료"\)/);
 });
+
+test("enforces guardian ownership and correct moderation targets", async () => {
+  const [operations, application, schema] = await Promise.all([
+    readFile(new URL("../app/api/operations/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/applications/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+  ]);
+  assert.doesNotMatch(operations, /demoApplications|demoVerifications|demoReports/);
+  assert.match(operations, /eq\(applications\.guardianId,auth\.user\.userId\)/);
+  assert.match(operations, /action==="guardian-message"/);
+  assert.match(operations, /current\.guardianId!==auth\.user\.userId/);
+  assert.match(operations, /account-sanction-target/);
+  assert.match(operations, /memberId=target\?\.memberId/);
+  assert.match(application, /shelterProfile\?\.ownerId/);
+  assert.match(schema, /guardianId:\s*text\("guardian_id"\)/);
+});
+
+test("connects saved-search alerts, real shelter updates, and visual lost matching", async () => {
+  const [notifications, shelter, lostForm, lostApi] = await Promise.all([
+    readFile(new URL("../app/api/notifications/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/shelters/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/LostFoundForm.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/lost-found/route.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(notifications, /saved_search_match/);
+  assert.match(notifications, /searches\.filter\(row=>row\.alertsEnabled\)/);
+  assert.match(shelter, /shelterUpdates/);
+  assert.match(shelter, /volunteerPosts/);
+  assert.doesNotMatch(shelter, /첫 번째 보호 일기|기본 봉사 공고/);
+  assert.match(lostForm, /analyzeVisual/);
+  assert.match(lostForm, /visualTags/);
+  assert.match(lostApi, /data\.visualTags/);
+});

@@ -1,0 +1,1 @@
+ALTER TABLE `applications` ADD `guardian_id` text REFERENCES members(id);

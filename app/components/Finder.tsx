@@ -2,7 +2,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import type { Animal } from "../../lib/data";
 import { AnimalCard } from "./AnimalCard";
 import { ActionButton } from "seed-design/ui/action-button";
@@ -115,7 +114,7 @@ export function Finder({ animals }: { animals: Animal[] }) {
       {matched && visible[0] && <Callout tone="positive" title={`${visible[0].name} 친구가 가장 가까워요`} description={`${visible[0].matchReason} 공공데이터에 없는 건강·성격 정보는 추측하지 않았어요.`}/>}
       <div className="ff-animal-grid" style={{ marginTop: 14 }}>{visible.map((animal) => <AnimalCard animal={animal} key={animal.id}/>)}</div>
       {!visible.length && <div className="ff-empty">조건에 맞는 친구가 아직 없어요. 조건을 조금 넓혀보세요.</div>}
-      {matched && visible[0] && <div className="ff-result-shortcut"><Link href={`/friends/${visible[0].id}`}>첫 번째 친구 자세히 보기</Link></div>}
+      {matched && visible[0] && <div className="ff-result-shortcut"><a href={`/friends/${visible[0].id}`}>첫 번째 친구 자세히 보기</a></div>}
     </section>
   </>;
 }

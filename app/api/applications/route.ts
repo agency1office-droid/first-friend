@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { applications, readinessAssessments } from "../../../db/schema";
-import { getAnimalContactById } from "../../../lib/public-data";
+import { getAnimalById, getAnimalContactById } from "../../../lib/public-data";
 import { authenticatedDb, clean } from "../_helpers";
 
 export async function GET() {
@@ -18,7 +18,10 @@ export async function POST(request: Request) {
   const data = await request.json() as Record<string, unknown>;
   const animalId = clean(data.animalId, 40), household = clean(data.household), carePlan = clean(data.carePlan), absencePlan = clean(data.absencePlan), emergencyPlan = clean(data.emergencyPlan);
   if (!animalId || household.length < 30 || carePlan.length < 30 || absencePlan.length < 20 || emergencyPlan.length < 20 || data.agreementAccepted !== true) return Response.json({ error: "신청 내용과 필수 동의를 확인해 주세요." }, { status: 400 });
-  const [application] = await auth.db.insert(applications).values({ memberId: auth.user.userId, animalId, household, carePlan, absencePlan, emergencyPlan, readinessScore: assessment.readinessScore, readinessAssessmentId: assessment.id, agreementAccepted: true }).returning();
+  const animal=await getAnimalById(animalId),profile=JSON.parse(assessment.profileJson||"{}") as Record<string,unknown>,reasons:string[]=[],concerns:string[]=[];let suitability=assessment.readinessScore;
+  if(animal){const desired=assessment.species==="cat"?"고양이":"강아지";if(animal.species.includes(desired)){suitability+=5;reasons.push("종별 필수 교육 완료")}if(Number(profile.absence)<=6){suitability+=3;reasons.push("부재 시간이 돌봄 계획과 잘 맞아요")}else if(animal.traits.some(v=>v.includes("활발"))){suitability-=8;concerns.push("활동량 대비 긴 부재 시간을 상담해 주세요")}if(profile.household==="yes")reasons.push("동거인 동의 확인");else{concerns.push("가족 동의가 더 필요해요");suitability-=8}if(Number(profile.emergencyFund)>=1000000)reasons.push("응급 진료 대비금 준비")}
+  suitability=Math.max(0,Math.min(100,suitability));const suitabilityJson=JSON.stringify({reasons,concerns,animalTraits:animal?.traits||[]});
+  const [application] = await auth.db.insert(applications).values({ memberId: auth.user.userId, animalId, household, carePlan, absencePlan, emergencyPlan, readinessScore: assessment.readinessScore, suitabilityScore:suitability,suitabilityJson, readinessAssessmentId: assessment.id, agreementAccepted: true }).returning();
   const contact = await getAnimalContactById(animalId);
   return Response.json({ application, contact }, { status: 201 });
 }

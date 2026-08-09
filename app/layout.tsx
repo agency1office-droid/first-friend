@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-/* eslint-disable @next/next/no-html-link-for-pages */
 import "./globals.css";
-import { BottomNav } from "./components/BottomNav";
-import { IconBellLine } from "@karrotmarket/react-monochrome-icon";
+import { AppChrome } from "./components/AppChrome";
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
@@ -14,5 +12,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="ko" data-seed data-seed-color-mode="light-only"><head><meta name="color-scheme" content="light" /></head><body><div className="ff-shell"><header className="ff-topbar"><a className="ff-brand" href="/">퍼스트 프렌드</a><div className="ff-top-actions"><a className="ff-icon-link" href="/about">약속</a><a className="ff-icon-link" href="/notifications" aria-label="알림"><IconBellLine /></a></div></header><main className="ff-main">{children}</main><BottomNav /></div></body></html>;
+  return <html lang="ko" data-seed data-seed-color-mode="light-only"><head><meta name="color-scheme" content="light" /></head><body><AppChrome>{children}</AppChrome></body></html>;
 }

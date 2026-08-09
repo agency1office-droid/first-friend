@@ -55,7 +55,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     return Response.json({ handover, transportRequest }, { status: 201 });
   }
   if (action === "confirm-handover") {
-    await owned.db.update(handoverReservations).set({ adopterConfirmed: true }).where(eq(handoverReservations.applicationId, owned.application.id));
+    const reservation=await owned.db.query.handoverReservations.findFirst({where:eq(handoverReservations.applicationId,owned.application.id)});
+    await owned.db.update(handoverReservations).set({ adopterConfirmed: true,status:reservation?.guardianConfirmed?"completed":"confirmed" }).where(eq(handoverReservations.applicationId, owned.application.id));
+    if(reservation?.guardianConfirmed)await owned.db.update(applications).set({status:"completed"}).where(eq(applications.id,owned.application.id));
     return Response.json({ ok: true });
   }
   if (action === "withdraw") {

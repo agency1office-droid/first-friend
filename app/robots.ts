@@ -1,0 +1,1 @@
+import type{MetadataRoute}from"next";export default function robots():MetadataRoute.Robots{return{rules:{userAgent:"*",allow:["/","/find","/friends","/stories","/shelters","/guide","/encyclopedia","/prepare","/tnr"],disallow:["/api/","/mypage","/operations","/applications","/family"]},sitemap:"https://first-friend-home.saebyeok-e.chatgpt.site/sitemap.xml"}}

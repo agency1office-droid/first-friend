@@ -20,12 +20,12 @@ const palette = [
 
 type Mode = "draw" | "photo" | "conditions";
 
-export function Finder({ animals }: { animals: Animal[] }) {
+export function Finder({ animals, modeOnly }: { animals: Animal[]; modeOnly?: Mode }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const drawing = useRef(false);
   const undoStack = useRef<ImageData[]>([]);
-  const [mode, setMode] = useState<Mode>("draw");
+  const [mode, setMode] = useState<Mode>(modeOnly || "draw");
   const [brushColor, setBrushColor] = useState(palette[0]);
   const [brushSize, setBrushSize] = useState(6);
   const [uploaded, setUploaded] = useState("");
@@ -107,7 +107,7 @@ export function Finder({ animals }: { animals: Animal[] }) {
 
   return <>
     <TabsRoot value={mode} onValueChange={(value) => { setMode(value as Mode); setMatched(false); setAnalysis(null); }}>
-      <TabsList><TabsTrigger value="draw">직접 그리기</TabsTrigger><TabsTrigger value="photo">사진 올리기</TabsTrigger><TabsTrigger value="conditions">조건으로 찾기</TabsTrigger></TabsList>
+      {!modeOnly && <TabsList><TabsTrigger value="draw">직접 그리기</TabsTrigger><TabsTrigger value="photo">사진 올리기</TabsTrigger><TabsTrigger value="conditions">조건으로 찾기</TabsTrigger></TabsList>}
       <TabsContent value="draw">
         <section className="ff-canvas-panel">
           <h2 className="ff-section-title">마음속 친구를 그려보세요</h2><p className="ff-description" style={{ margin: "5px 0 14px" }}>털색과 무늬, 귀와 얼굴 모양을 자유롭게 표현해 주세요.</p>

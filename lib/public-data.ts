@@ -74,6 +74,8 @@ async function distinctImages(id: string, candidates: string[]) {
   return result;
 }
 
+async function mergeDirectAnimals(base:Animal[],limit:number){if(typeof process!=="undefined"&&process.release?.name==="node")return base.slice(0,limit);try{const[{getDb},schema,{eq,asc}]=await Promise.all([import("../db"),import("../db/schema"),import("drizzle-orm")]);const db=getDb(),rows=await db.select().from(schema.directAnimals).where(eq(schema.directAnimals.status,"published")),media=rows.length?await db.select().from(schema.animalMedia).orderBy(asc(schema.animalMedia.sortOrder)):[];const direct=rows.map(row=>{const health=JSON.parse(row.healthJson||"{}")as Record<string,string>,life=JSON.parse(row.lifeJson||"{}")as Record<string,string>,images=media.filter(m=>m.animalId===row.id&&m.mediaType==="image").map(m=>`/media/${m.objectKey}`),traits=[life.personality,health.weight,health.neutered].filter(Boolean).slice(0,3);return{id:`direct-${row.id}`,name:row.name,species:row.species,breed:"직접 등록 · 상담 확인",age:"상담 확인",ageGroup:"어른 친구"as const,sex:"상담 확인",region:row.region,shelter:"개인 임시보호",source:"개인 임시보호 등록",updated:compactDate(row.updatedAt),image:images[0]||(row.imageKey?`/media/${row.imageKey}`:""),images,photoCount:images.length,colors:[],traits,summary:row.rescueStory.slice(0,160),health:[health.vaccination,health.neutered&&`중성화 ${health.neutered}`,health.treatment].filter(Boolean),life:[life.personality,life.aloneTime,life.toilet,life.compatibility].filter(Boolean),matchReason:"임시보호자가 등록한 외형·생활 정보를 조건과 비교했어요."}satisfies Animal});return[...direct,...base].slice(0,limit)}catch{return base.slice(0,limit)}}
+
 export async function countDistinctAnimalImages(id: string, candidates: string[]) {
   return (await distinctImages(id, candidates)).length;
 }
@@ -98,10 +100,11 @@ function mapAnimal(item: AbandonedItem): Animal | null {
 }
 
 export async function getAnimals(limit = 24): Promise<Animal[]> {
-  if (!key()) return fallbackAnimals.slice(0, limit);
-  if (animalCache && Date.now() - animalCache.at < CACHE_MS) return animalCache.data.slice(0, limit);
-  try { const data = (await request<AbandonedItem>(ABANDONED_API, Math.max(limit, 100))).map(mapAnimal).filter((item): item is Animal => Boolean(item)); if (data.length) animalCache = { at: Date.now(), data }; return (data.length ? data : fallbackAnimals).slice(0, limit); }
-  catch { return fallbackAnimals.slice(0, limit); }
+  const supported = (animal: Animal) => /고양이|개|강아지/.test(animal.species) && !/기타/.test(animal.species);
+  if (!key()) return mergeDirectAnimals(fallbackAnimals.filter(supported),limit);
+  if (animalCache && Date.now() - animalCache.at < CACHE_MS) return mergeDirectAnimals(animalCache.data.filter(supported),limit);
+  try { const data = (await request<AbandonedItem>(ABANDONED_API, Math.max(limit * 3, 100))).map(mapAnimal).filter((item): item is Animal => Boolean(item)).filter(supported); if (data.length) animalCache = { at: Date.now(), data }; return mergeDirectAnimals(data.length ? data : fallbackAnimals.filter(supported),limit); }
+  catch { return mergeDirectAnimals(fallbackAnimals.filter(supported),limit); }
 }
 
 export async function getAnimalsWithPhotoCounts(limit = 24): Promise<Animal[]> {
@@ -131,7 +134,7 @@ export async function getLostAnimals(limit = 12): Promise<LostAnimal[]> {
   if (lossCache && Date.now() - lossCache.at < CACHE_MS) return lossCache.data.slice(0, limit);
   try {
     const data = (await request<LossItem>(LOSS_API, Math.max(limit, 30))).map((item, index) => ({
-      id: `${item.happenDt || "loss"}-${index}`, species: item.kindCd?.includes("고양이") ? "고양이" : item.kindCd?.includes("견") ? "강아지" : "기타", breed: item.kindCd || "품종 미상", sex: sex(item.sexCd), age: item.age || "나이 미상", color: item.colorCd || "털색 미상", happenedAt: item.happenDt?.replace(/\.0$/, "") || "발생일 미상", region: item.orgNm || "지역 미상", place: item.happenPlace || item.happenAddr || "상세 장소 없음", description: item.specialMark || "등록된 특징이 없습니다.", image: secureImage(item.popfile),
+      id: `${item.happenDt || "loss"}-${index}`, species: item.kindCd?.includes("고양이") ? "고양이" : item.kindCd?.includes("견") ? "강아지" : "기타", breed: item.kindCd || "품종 미상", sex: sex(item.sexCd), age: item.age || "나이 미상", color: item.colorCd || "털색 미상", happenedAt: item.happenDt?.replace(/\.0$/, "") || "발생일 미상", region: item.orgNm || "지역 미상", place: `${item.orgNm || item.happenAddr?.split(" ").slice(0, 2).join(" ") || "관할 지역"} 인근 · 상세 위치 비공개`, description: item.specialMark || "등록된 특징이 없습니다.", image: secureImage(item.popfile),
     })).filter((item) => item.image);
     lossCache = { at: Date.now(), data }; return data.slice(0, limit);
   } catch { return []; }
@@ -146,4 +149,8 @@ export async function getShelters(limit = 20): Promise<Shelter[]> {
     }));
     shelterCache = { at: Date.now(), data }; return data.slice(0, limit);
   } catch { return []; }
+}
+
+export async function getShelterById(id: string) {
+  return (await getShelters(100)).find((shelter) => shelter.id === id);
 }

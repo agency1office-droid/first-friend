@@ -13,7 +13,7 @@ import { sanitizeImageFile } from "../../lib/client-image";
 
 export function LostFoundForm() {
   const [kind, setKind] = useState<"lost" | "found">("lost");
-  const [done, setDone] = useState<{ id: number; species: string; region: string; occurredAt: string; description: string } | null>(null);
+  const [done, setDone] = useState<{ id: number; species: string; region: string; occurredAt: string; description: string; matches?:{score:number;reasons:string[]}[] } | null>(null);
   const [alerts, setAlerts] = useState(true);
   const [error, setError] = useState("");
   const [imageName, setImageName] = useState("");
@@ -24,7 +24,7 @@ export function LostFoundForm() {
     const payload = { kind, species: String(form.get("species")), region: String(form.get("region")), occurredAt: String(form.get("occurredAt")), description: String(form.get("description")), ownershipQuestion: String(form.get("ownershipQuestion") || "발견 당시 착용하고 있던 물건은 무엇인가요?"), alertRegion: alerts ? String(form.get("region")) : "", imageKey };
     const response = await fetch("/api/lost-found", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
     if (response.status === 401) { window.location.href = "/signin-with-chatgpt?return_to=%2Flost-found"; return; }
-    if (response.ok) setDone({ id: (await response.json()).report.id, ...payload }); else setError((await response.json()).error || "접수하지 못했어요.");
+    if (response.ok) { const body=await response.json(); setDone({ id: body.report.id, ...payload, matches:body.matches }); } else setError((await response.json()).error || "접수하지 못했어요.");
   }
 
   async function downloadPoster() {
@@ -36,7 +36,7 @@ export function LostFoundForm() {
     const qr = await QRCode.toDataURL(`${location.origin}/lost-found?report=${done.id}`, { width: 320, margin: 1, color: { dark: "#222222", light: "#ffffff" } }); const image = new Image(); image.onload = () => { context.drawImage(image, 380, 1040, 320, 320); context.font = "26px sans-serif"; context.textAlign = "center"; context.fillText("QR을 열어 안전하게 제보해 주세요", 540, 1410); const link = document.createElement("a"); link.download = `퍼스트프렌드-${kind}-${done.id}.png`; link.href = canvas.toDataURL("image/png"); link.click(); }; image.src = qr;
   }
 
-  if (done) return <div className="ff-result"><h2 className="ff-section-title">{kind === "lost" ? "실종 신고" : "발견 제보"}를 접수했어요</h2><p className="ff-description" style={{ margin: "8px 0 16px" }}>정확한 위치와 연락처는 공개되지 않습니다. 소유 확인 질문을 통과한 연결만 안내해요.</p>{alerts && <Callout tone="positive" description={`${done.region} 지역 알림 대상으로 등록했어요.`}/>}<div style={{ marginTop: 14 }}><ActionButton onClick={downloadPoster}><PrefixIcon svg={<IconArrowDownHorizlineLine/>}/>QR 전단지 저장</ActionButton></div></div>;
+  if (done) return <div className="ff-result"><h2 className="ff-section-title">{kind === "lost" ? "실종 신고" : "발견 제보"}를 접수했어요</h2><p className="ff-description" style={{ margin: "8px 0 16px" }}>정확한 위치와 연락처는 공개되지 않습니다. 소유 확인 질문을 통과한 연결만 안내해요.</p>{alerts && <Callout tone="positive" description={`${done.region} 지역 알림 대상으로 등록했어요.`}/>} {done.matches?.length?<Callout tone="informative" title={`가능성 있는 연결 ${done.matches.length}건`} description={`${done.matches[0].score}% · ${done.matches[0].reasons.join(" · ")}. 상대에게는 비공개 알림을 보냈어요.`}/>:<Callout tone="informative" description="현재 높은 가능성의 연결은 없어요. 이후 비슷한 제보가 등록되면 알림함에 알려드려요."/>}<div className="ff-inline-actions" style={{ marginTop: 14 }}><ActionButton onClick={downloadPoster}><PrefixIcon svg={<IconArrowDownHorizlineLine/>}/>QR 전단지 저장</ActionButton><ActionButton asChild variant="neutralWeak"><a href={`/lost-found/${done.id}`}>연결·시간선 관리</a></ActionButton></div></div>;
 
   return <form className="ff-form" onSubmit={submit}>
     <SegmentedControl value={kind} onValueChange={(value) => setKind(value as "lost" | "found")} aria-label="신고 종류"><SegmentedControlItem value="lost">반려동물을 찾고 있어요</SegmentedControlItem><SegmentedControlItem value="found">동물을 발견했어요</SegmentedControlItem></SegmentedControl>

@@ -58,6 +58,32 @@ test("renders the complete adoption education and community journeys", async () 
   assert.match(await foster.text(), /본인 확인과 기본 교육/);
 });
 
+test("renders independent matching, care cost, encyclopedia, TNR, and support journeys", async () => {
+  const [draw, photo, conditions, prepare, encyclopedia, tnr, support] = await Promise.all([
+    render("/find/draw"), render("/find/photo"), render("/find/conditions"), render("/prepare"), render("/encyclopedia"), render("/tnr"), render("/support"),
+  ]);
+  for (const response of [draw, photo, conditions, prepare, encyclopedia, tnr, support]) assert.equal(response.status, 200);
+  assert.match(await draw.text(), /마음속 친구를 그려보세요/);
+  assert.match(await photo.text(), /업로드한 사진은 기기에서 특징만 분석/);
+  assert.match(await conditions.text(), /품종·털색·나이·성별·지역/);
+  assert.match(await prepare.text(), /월 생활비/);
+  assert.match(await encyclopedia.text(), /반드시 감수하고 준비할 점/);
+  assert.match(await tnr.text(), /개인 구조자 정보, 정확한 급식·포획 위치/);
+  assert.match(await support.text(), /퍼스트 프렌드는 보험을 직접 판매하지 않습니다/);
+});
+
+test("persists family, support, moderation, lost matching, and multi-media workflows", async () => {
+  const [schema, family, support, lost, direct, reports, operations] = await Promise.all([
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"), readFile(new URL("../app/api/family/route.ts", import.meta.url), "utf8"), readFile(new URL("../app/api/support/route.ts", import.meta.url), "utf8"), readFile(new URL("../app/api/lost-found/route.ts", import.meta.url), "utf8"), readFile(new URL("../app/api/direct-animals/route.ts", import.meta.url), "utf8"), readFile(new URL("../app/api/reports/route.ts", import.meta.url), "utf8"), readFile(new URL("../app/api/operations/route.ts", import.meta.url), "utf8"),
+  ]);
+  for (const name of ["familyRooms", "familyOpinions", "supportRecords", "lostMatches", "animalMedia", "adminAuditLogs", "accountSanctions"]) assert.match(schema, new RegExp(`export const ${name}`));
+  for (const source of [family, support, lost, direct, operations]) assert.match(source, /authenticatedDb\(\)/);
+  assert.match(reports, /value>=50/);
+  assert.match(direct, /animalMedia/);
+  assert.match(lost, /reasonsJson/);
+  assert.match(operations, /guardian-confirm-handover/);
+});
+
 test("protects private mutation APIs at the source boundary", async () => {
   const files = await Promise.all(["applications", "favorites", "uploads", "direct-animals"].map(name => readFile(new URL(`../app/api/${name}/route.ts`, import.meta.url), "utf8")));
   for (const source of files) {

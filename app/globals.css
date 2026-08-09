@@ -38,6 +38,8 @@ img { display: block; max-width: 100%; }
 .ff-animal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; }
 .ff-animal-card { position: relative; min-width: 0; }
 .ff-animal-image-wrap { position: relative; border-radius: 12px; overflow: hidden; background: var(--seed-color-bg-neutral-weak); }
+.ff-card-photo-count { position: absolute; left: 8px; bottom: 8px; display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 999px; color: #fff; background: rgba(0,0,0,.68); backdrop-filter: blur(8px); font-size: 11px; font-weight: 700; }
+.ff-card-photo-count svg { width: 14px; height: 14px; }
 .ff-animal-image { width: 100%; aspect-ratio: 1 / .9; object-fit: cover; }
 .ff-card-heart { position: absolute; right: 8px; top: 8px; width: 36px; height: 36px; border: 0; border-radius: 50%; display: grid; place-items: center; color: var(--seed-color-palette-static-white); background: var(--seed-color-palette-static-black-alpha-500); }
 .ff-animal-info { padding-top: 10px; }

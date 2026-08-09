@@ -45,7 +45,7 @@ function ageGroup(value = ""): Animal["ageGroup"] { if (value.includes("60일미
 function displayName(item: AbandonedItem) { return [item.kindNm || species(item), item.noticeNo?.split("-").at(-1)].filter(Boolean).join(" · "); }
 
 async function imageDigest(url: string) {
-  const response = await fetch(url, { cache: "force-cache", signal: AbortSignal.timeout(5000) });
+  const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(5000) });
   if (!response.ok) throw new Error(`Animal image returned ${response.status}`);
   const size = Number(response.headers.get("content-length") || 0);
   if (size > 8 * 1024 * 1024) throw new Error("Animal image is too large to compare");
@@ -54,7 +54,8 @@ async function imageDigest(url: string) {
 }
 
 async function distinctImages(id: string, candidates: string[]) {
-  const cached = distinctImageCache.get(id);
+  const cacheKey = `${id}:${candidates.join("|")}`;
+  const cached = distinctImageCache.get(cacheKey);
   if (cached) return cached;
   const urls = Array.from(new Set(candidates.filter(Boolean)));
   if (urls.length < 2) return urls;
@@ -69,8 +70,12 @@ async function distinctImages(id: string, candidates: string[]) {
     }
   }
   const result = accepted.length ? accepted : urls.slice(0, 1);
-  distinctImageCache.set(id, result);
+  distinctImageCache.set(cacheKey, result);
   return result;
+}
+
+export async function countDistinctAnimalImages(id: string, candidates: string[]) {
+  return (await distinctImages(id, candidates)).length;
 }
 
 function mapAnimal(item: AbandonedItem): Animal | null {
@@ -97,6 +102,14 @@ export async function getAnimals(limit = 24): Promise<Animal[]> {
   if (animalCache && Date.now() - animalCache.at < CACHE_MS) return animalCache.data.slice(0, limit);
   try { const data = (await request<AbandonedItem>(ABANDONED_API, Math.max(limit, 100))).map(mapAnimal).filter((item): item is Animal => Boolean(item)); if (data.length) animalCache = { at: Date.now(), data }; return (data.length ? data : fallbackAnimals).slice(0, limit); }
   catch { return fallbackAnimals.slice(0, limit); }
+}
+
+export async function getAnimalsWithPhotoCounts(limit = 24): Promise<Animal[]> {
+  const items = await getAnimals(limit);
+  return Promise.all(items.map(async animal => {
+    const images = await distinctImages(animal.id, animal.images || [animal.image]);
+    return { ...animal, photoCount: images.length };
+  }));
 }
 
 export async function getAnimalById(id: string) {

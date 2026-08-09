@@ -113,6 +113,18 @@ test("protects new operations, verification, alerts, and saved-search APIs", asy
   }
 });
 
+test("shows verified multi-photo counts on discovery thumbnails", async () => {
+  const [findPage, card, publicData] = await Promise.all([
+    readFile(new URL("../app/find/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/AnimalCard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/public-data.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(findPage, /getAnimalsWithPhotoCounts/);
+  assert.match(card, /사진 \{animal\.photoCount\}장/);
+  assert.match(publicData, /getAnimalsWithPhotoCounts/);
+  assert.match(publicData, /distinctImages/);
+});
+
 test("preserves additional public animal photos and provides an original-size gallery", async () => {
   const [publicData, gallery, detail] = await Promise.all([
     readFile(new URL("../lib/public-data.ts", import.meta.url), "utf8"),

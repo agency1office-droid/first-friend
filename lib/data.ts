@@ -12,6 +12,7 @@ export type Animal = {
   updated: string;
   image: string;
   images?: string[];
+  photoCount?: number;
   colors: string[];
   traits: string[];
   summary: string;

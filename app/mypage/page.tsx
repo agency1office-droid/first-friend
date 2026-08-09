@@ -1,35 +1,37 @@
 import type { Metadata } from "next";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getChatGPTUser, chatGPTSignInPath, chatGPTSignOutPath } from "../chatgpt-auth";
 import { getDb } from "../../db";
-import { applications, directAnimals, favorites, lostReports, members, posts, readinessAssessments } from "../../db/schema";
+import { applications, directAnimals, favorites, lostReports, members, notifications, posts, readinessAssessments, savedSearches } from "../../db/schema";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Callout } from "seed-design/ui/callout";
 import { List, ListLinkItem, ListDivider } from "seed-design/ui/list";
 import { Avatar } from "seed-design/ui/avatar";
 import { Badge } from "@seed-design/react";
-import { IconArticleLine, IconCheckmarkShieldFill, IconChevronRightLine, IconHeartLine, IconHousePlusLine, IconMagnifyingglassLine, IconPawprintLine } from "@karrotmarket/react-monochrome-icon";
+import { IconArticleLine, IconCheckmarkShieldFill, IconChevronRightLine, IconGearLine, IconHeartLine, IconHousePlusLine, IconMagnifyingglassLine, IconPawprintLine, IconPersonShieldLine } from "@karrotmarket/react-monochrome-icon";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "나의 페이지" };
-const statusLabel: Record<string, string> = { submitted: "접수", review: "검토 중", consulting: "상담 중", approved: "승인", withdrawn: "종료" };
+const statusLabel: Record<string, string> = { submitted: "접수", review: "검토 중", consulting: "상담 중", approved: "승인", rejected: "미승인", handover: "인계 중", completed: "입양 완료", return_support: "돌봄 위기 지원", withdrawn: "종료" };
 
 export default async function MyPage() {
   const user = await getChatGPTUser();
-  let dashboard: { readiness: typeof readinessAssessments.$inferSelect | undefined; applications: typeof applications.$inferSelect[]; favorites: number; posts: number; reports: number; registrations: number } | null = null;
+  let dashboard: { readiness: typeof readinessAssessments.$inferSelect | undefined; applications: typeof applications.$inferSelect[]; favorites: number; posts: number; reports: number; registrations: number; searches:number; unread:number } | null = null;
   if (user) {
     try {
       const db = getDb();
       await db.insert(members).values({ id: user.userId, email: user.email, displayName: user.displayName }).onConflictDoUpdate({ target: members.id, set: { email: user.email, displayName: user.displayName } });
-      const [readiness, applicationRows, favoriteRows, postRows, reportRows, registrationRows] = await Promise.all([
+      const [readiness, applicationRows, favoriteRows, postRows, reportRows, registrationRows, searchRows, notificationRows] = await Promise.all([
         db.query.readinessAssessments.findFirst({ where: eq(readinessAssessments.memberId, user.userId), orderBy: [desc(readinessAssessments.completedAt)] }),
         db.select().from(applications).where(eq(applications.memberId, user.userId)).orderBy(desc(applications.createdAt)),
         db.select({ id: favorites.id }).from(favorites).where(eq(favorites.memberId, user.userId)),
         db.select({ id: posts.id }).from(posts).where(eq(posts.memberId, user.userId)),
         db.select({ id: lostReports.id }).from(lostReports).where(eq(lostReports.memberId, user.userId)),
         db.select({ id: directAnimals.id }).from(directAnimals).where(eq(directAnimals.memberId, user.userId)),
+        db.select({ id:savedSearches.id }).from(savedSearches).where(eq(savedSearches.memberId,user.userId)),
+        db.select({ id:notifications.id }).from(notifications).where(and(eq(notifications.memberId,user.userId),eq(notifications.read,false))),
       ]);
-      dashboard = { readiness, applications: applicationRows, favorites: favoriteRows.length, posts: postRows.length, reports: reportRows.length, registrations: registrationRows.length };
+      dashboard = { readiness, applications: applicationRows, favorites: favoriteRows.length, posts: postRows.length, reports: reportRows.length, registrations: registrationRows.length, searches:searchRows.length, unread:notificationRows.length };
     } catch { dashboard = null; }
   }
 
@@ -43,7 +45,7 @@ export default async function MyPage() {
       </>}
     </>}
     <div className="ff-divider"/>
-    <section className="ff-section"><h2 className="ff-section-title" style={{ marginBottom: 10 }}>나의 활동</h2><List><ListLinkItem href="/find" prefix={<IconHeartLine/>} title="관심 친구와 동물 찾기" detail={dashboard ? `${dashboard.favorites}마리 저장` : undefined} suffix={<IconChevronRightLine/>}/><ListDivider/><ListLinkItem href="/readiness" prefix={<IconCheckmarkShieldFill/>} title="입양 준비 시험과 교육" suffix={<IconChevronRightLine/>}/><ListDivider/><ListLinkItem href="/stories/new" prefix={<IconArticleLine/>} title="나의 공개 이야기" suffix={<IconChevronRightLine/>}/><ListDivider/><ListLinkItem href="/lost-found" prefix={<IconMagnifyingglassLine/>} title="실종·발견 신고와 알림" suffix={<IconChevronRightLine/>}/><ListDivider/><ListLinkItem href="/foster" prefix={<IconHousePlusLine/>} title="임시보호 동물 직접 등록" detail={dashboard ? `${dashboard.registrations}건 등록` : undefined} suffix={<IconChevronRightLine/>}/></List></section>
+    <section className="ff-section"><h2 className="ff-section-title" style={{ marginBottom: 10 }}>나의 활동</h2><List><ListLinkItem href="/find" prefix={<IconHeartLine/>} title="관심 친구와 저장 검색" detail={dashboard ? `${dashboard.favorites}마리 · 알림 조건 ${dashboard.searches}개` : undefined} suffix={<IconChevronRightLine/>}/><ListDivider/><ListLinkItem href="/notifications" prefix={<IconArticleLine/>} title="알림함" detail={dashboard ? `읽지 않은 알림 ${dashboard.unread}개` : undefined} suffix={<IconChevronRightLine/>}/><ListDivider/><ListLinkItem href="/readiness" prefix={<IconCheckmarkShieldFill/>} title="입양 준비 시험과 교육" suffix={<IconChevronRightLine/>}/><ListDivider/><ListLinkItem href="/stories/new" prefix={<IconArticleLine/>} title="나의 공개 이야기" suffix={<IconChevronRightLine/>}/><ListDivider/><ListLinkItem href="/lost-found" prefix={<IconMagnifyingglassLine/>} title="실종·발견 신고와 알림" suffix={<IconChevronRightLine/>}/><ListDivider/><ListLinkItem href="/foster" prefix={<IconHousePlusLine/>} title="임시보호 동물 직접 등록" detail={dashboard ? `${dashboard.registrations}건 등록` : undefined} suffix={<IconChevronRightLine/>}/><ListDivider/><ListLinkItem href="/verification" prefix={<IconPersonShieldLine/>} title="임시보호자·보호단체 역할 인증" suffix={<IconChevronRightLine/>}/><ListDivider/><ListLinkItem href="/operations" prefix={<IconGearLine/>} title="보호처 운영 콘솔" detail="권한이 없으면 데모로 열립니다" suffix={<IconChevronRightLine/>}/></List></section>
     <section className="ff-section"><Callout tone="informative" title="도움과 운영 기록" description="운영 후원·굿즈·물품 지원은 목적과 전달 결과를 분리해 투명하게 기록하는 방식으로 순차적으로 열립니다."/></section>
   </div>;
 }

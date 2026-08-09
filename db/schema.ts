@@ -23,7 +23,7 @@ export const applications = sqliteTable("applications", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   memberId: text("member_id").notNull().references(() => members.id),
   animalId: text("animal_id").notNull(),
-  status: text("status", { enum: ["submitted", "review", "consulting", "approved", "withdrawn"] }).notNull().default("submitted"),
+  status: text("status", { enum: ["submitted", "review", "consulting", "approved", "rejected", "handover", "completed", "return_support", "withdrawn"] }).notNull().default("submitted"),
   household: text("household").notNull(),
   carePlan: text("care_plan").notNull(),
   readinessScore: integer("readiness_score").notNull(),
@@ -131,5 +131,68 @@ export const reports = sqliteTable("reports", {
   targetType: text("target_type").notNull(),
   targetId: text("target_id").notNull(),
   reason: text("reason").notNull(),
+  severity: text("severity", { enum:["normal","high","critical"] }).notNull().default("normal"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [uniqueIndex("idx_reports_unique_member_target").on(table.memberId, table.targetType, table.targetId)]);
+
+export const savedSearches = sqliteTable("saved_searches", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  memberId: text("member_id").notNull().references(() => members.id),
+  name: text("name").notNull(),
+  criteriaJson: text("criteria_json").notNull(),
+  alertsEnabled: integer("alerts_enabled", { mode: "boolean" }).notNull().default(true),
+  lastMatchedAt: text("last_matched_at"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("idx_saved_searches_member_created").on(table.memberId, table.createdAt)]);
+
+export const notifications = sqliteTable("notifications", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  memberId: text("member_id").notNull().references(() => members.id),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  href: text("href").notNull().default("/mypage"),
+  read: integer("read", { mode: "boolean" }).notNull().default(false),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("idx_notifications_member_read_created").on(table.memberId, table.read, table.createdAt)]);
+
+export const verificationRequests = sqliteTable("verification_requests", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  memberId: text("member_id").notNull().references(() => members.id),
+  requestedRole: text("requested_role", { enum: ["foster", "shelter"] }).notNull(),
+  organization: text("organization").notNull().default(""),
+  evidenceKey: text("evidence_key"),
+  status: text("status", { enum: ["submitted", "verified", "rejected", "expired"] }).notNull().default("submitted"),
+  reviewedBy: text("reviewed_by"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("idx_verification_status_created").on(table.status, table.createdAt)]);
+
+export const applicationEvents = sqliteTable("application_events", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  applicationId: integer("application_id").notNull().references(() => applications.id),
+  actorId: text("actor_id").notNull().references(() => members.id),
+  eventType: text("event_type").notNull(),
+  note: text("note").notNull().default(""),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("idx_application_events_application_created").on(table.applicationId, table.createdAt)]);
+
+export const returnRequests = sqliteTable("return_requests", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  applicationId: integer("application_id").notNull().references(() => applications.id),
+  memberId: text("member_id").notNull().references(() => members.id),
+  urgency: text("urgency", { enum: ["consult", "soon", "emergency"] }).notNull(),
+  reason: text("reason").notNull(),
+  safeUntil: text("safe_until").notNull().default(""),
+  status: text("status", { enum: ["open", "connected", "resolved"] }).notNull().default("open"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("idx_return_requests_status_created").on(table.status, table.createdAt)]);
+
+export const moderationActions = sqliteTable("moderation_actions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  actorId: text("actor_id").notNull().references(() => members.id),
+  targetType: text("target_type").notNull(),
+  targetId: text("target_id").notNull(),
+  action: text("action").notNull(),
+  reason: text("reason").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("idx_moderation_target_created").on(table.targetType, table.targetId, table.createdAt)]);

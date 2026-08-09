@@ -88,3 +88,27 @@ test("keeps durable bindings and generated migration", async () => {
   assert.match(packageJson, /@seed-design\/css/);
   assert.match(notices, /Apache License, Version 2\.0/);
 });
+
+test("implements on-device visual tags and explicit external dummies", async () => {
+  const [finder, analyzer, integrations, migration, packageJson] = await Promise.all([
+    readFile(new URL("../app/components/Finder.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/visual-analysis.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/integrations.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0002_eminent_mandroid.sql", import.meta.url), "utf8"),
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+  ]);
+  assert.match(finder, /온디바이스 시각 분석/);
+  assert.match(analyzer, /edgeDensity|eyeRatio|MobileNet/);
+  assert.match(packageJson, /@tensorflow-models\/mobilenet/);
+  assert.match(integrations, /DUMMY INTEGRATION/g);
+  for (const table of ["saved_searches", "notifications", "verification_requests", "application_events", "return_requests", "moderation_actions"]) assert.match(migration, new RegExp("CREATE TABLE `" + table + "`"));
+  assert.match(migration, /PRAGMA optimize/);
+});
+
+test("protects new operations, verification, alerts, and saved-search APIs", async () => {
+  const files = await Promise.all(["operations", "verification", "notifications", "saved-searches"].map(name => readFile(new URL(`../app/api/${name}/route.ts`, import.meta.url), "utf8")));
+  for (const source of files) {
+    assert.match(source, /authenticatedDb\(\)/);
+    assert.match(source, /status:\s*401/);
+  }
+});

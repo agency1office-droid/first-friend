@@ -1,0 +1,5 @@
+import { desc, eq } from "drizzle-orm";
+import { verificationRequests } from "../../../db/schema";
+import { authenticatedDb, clean } from "../_helpers";
+export async function GET(){const auth=await authenticatedDb();if(!auth)return Response.json({error:"본인 확인이 필요합니다."},{status:401});const requests=await auth.db.select().from(verificationRequests).where(eq(verificationRequests.memberId,auth.user.userId)).orderBy(desc(verificationRequests.createdAt));return Response.json({requests});}
+export async function POST(request:Request){const auth=await authenticatedDb();if(!auth)return Response.json({error:"본인 확인이 필요합니다."},{status:401});const data=await request.json() as Record<string,unknown>,requestedRole=clean(data.requestedRole,20) as "foster"|"shelter",organization=clean(data.organization,120),evidenceKey=clean(data.evidenceKey,300);if(!["foster","shelter"].includes(requestedRole)||!evidenceKey)return Response.json({error:"역할과 확인 자료를 입력해 주세요."},{status:400});const [row]=await auth.db.insert(verificationRequests).values({memberId:auth.user.userId,requestedRole,organization,evidenceKey}).returning();return Response.json({request:row},{status:201});}

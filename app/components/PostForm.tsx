@@ -6,13 +6,14 @@ import { ActionButton } from "seed-design/ui/action-button";
 import { TextField, TextFieldInput, TextFieldTextarea } from "seed-design/ui/text-field";
 import { Callout } from "seed-design/ui/callout";
 import { Checkbox } from "seed-design/ui/checkbox";
+import { sanitizeImageFile } from "../../lib/client-image";
 
 export function PostForm() {
   const [done, setDone] = useState(false), [publicConfirmed, setPublicConfirmed] = useState(false), [error, setError] = useState(""), [imageName, setImageName] = useState("");
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); if (!publicConfirmed) { setError("전체 공개와 개인정보 안내를 확인해 주세요."); return; }
     const form = new FormData(event.currentTarget); let imageKey = ""; const file = form.get("image");
-    if (file instanceof File && file.size) { const upload = new FormData(); upload.set("file", file); const uploadResponse = await fetch("/api/uploads", { method: "POST", body: upload }); if (uploadResponse.status === 401) { window.location.href = "/signin-with-chatgpt?return_to=%2Fstories%2Fnew"; return; } if (!uploadResponse.ok) { setError((await uploadResponse.json()).error); return; } imageKey = (await uploadResponse.json()).key; }
+    if (file instanceof File && file.size) { const upload = new FormData(); upload.set("file", await sanitizeImageFile(file)); const uploadResponse = await fetch("/api/uploads", { method: "POST", body: upload }); if (uploadResponse.status === 401) { window.location.href = "/signin-with-chatgpt?return_to=%2Fstories%2Fnew"; return; } if (!uploadResponse.ok) { setError((await uploadResponse.json()).error); return; } imageKey = (await uploadResponse.json()).key; }
     const response = await fetch("/api/posts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ category: form.get("category"), title: form.get("title"), body: form.get("body"), imageKey }) });
     if (response.status === 401) { window.location.href = "/signin-with-chatgpt?return_to=%2Fstories%2Fnew"; return; }
     if (response.ok) setDone(true); else setError((await response.json()).error || "공개하지 못했어요.");

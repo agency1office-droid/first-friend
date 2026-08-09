@@ -193,6 +193,21 @@ img { display: block; max-width: 100%; }
 .ff-lost-card h3 { margin: 3px 0 5px; font-size: 16px; line-height: 23px; }
 .ff-lost-mark { margin: 8px 0 0; font-size: 13px; line-height: 19px; }
 .ff-shelter-phone { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
+.ff-analysis-card { display: grid; gap: 12px; margin: 14px 0; padding: 16px; border: 1px solid var(--seed-color-stroke-brand-weak); border-radius: 14px; background: var(--seed-color-bg-brand-weak); }
+.ff-analysis-card p { margin: 0; color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 20px; }
+.ff-analysis-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ff-analysis-head span { display: block; color: var(--seed-color-fg-neutral-muted); font-size: 11px; }
+.ff-analysis-head strong { display: block; margin-top: 2px; font-size: 16px; }
+.ff-analysis-badge { flex: none; padding: 6px 9px; border-radius: 999px; color: var(--seed-color-fg-brand) !important; background: var(--seed-color-bg-layer-default); font-weight: 700; }
+.ff-save-search { display: grid; justify-items: start; gap: 7px; margin-top: 18px; }
+.ff-ops-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 18px 0; }
+.ff-ops-summary > div { padding: 14px 8px; border-radius: 12px; text-align: center; background: var(--seed-color-bg-neutral-weak); }
+.ff-ops-summary strong, .ff-ops-summary span { display: block; }
+.ff-ops-summary strong { font-size: 22px; }
+.ff-ops-summary span { margin-top: 3px; color: var(--seed-color-fg-neutral-muted); font-size: 11px; }
+.ff-ops-list { display: grid; gap: 10px; }
+.ff-ops-list > article { padding: 14px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 12px; }
+.ff-ops-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 
-@media (max-width: 360px) { .ff-hero-actions, .ff-actions { grid-template-columns: 1fr; } .ff-animal-grid { grid-template-columns: 1fr; } }
+@media (max-width: 360px) { .ff-hero-actions, .ff-actions { grid-template-columns: 1fr; } .ff-animal-grid { grid-template-columns: 1fr; } .ff-ops-summary { grid-template-columns: 1fr 1fr; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }

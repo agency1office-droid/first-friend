@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Animal } from "../../lib/data";
+import { analyzeVisual, animalVisualTags, type VisualAnalysis } from "../../lib/visual-analysis";
 import { AnimalCard } from "./AnimalCard";
 import { ActionButton } from "seed-design/ui/action-button";
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
@@ -21,6 +22,7 @@ type Mode = "draw" | "photo" | "conditions";
 
 export function Finder({ animals }: { animals: Animal[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
   const drawing = useRef(false);
   const undoStack = useRef<ImageData[]>([]);
   const [mode, setMode] = useState<Mode>("draw");
@@ -37,6 +39,9 @@ export function Finder({ animals }: { animals: Animal[] }) {
   const [region, setRegion] = useState("전국");
   const [matched, setMatched] = useState(false);
   const [ranked, setRanked] = useState(animals);
+  const [analysis, setAnalysis] = useState<VisualAnalysis | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [saveState, setSaveState] = useState("");
 
   const breeds = useMemo(() => ["상관 없음", ...Array.from(new Set(animals.map((animal) => animal.breed))).slice(0, 30)], [animals]);
   const regions = useMemo(() => ["전국", ...Array.from(new Set(animals.map((animal) => animal.region.split(" ")[0]))).filter(Boolean)], [animals]);
@@ -60,12 +65,12 @@ export function Finder({ animals }: { animals: Animal[] }) {
   function point(event: React.PointerEvent<HTMLCanvasElement>) { const rect = event.currentTarget.getBoundingClientRect(); return { x: event.clientX - rect.left, y: event.clientY - rect.top }; }
   function start(event: React.PointerEvent<HTMLCanvasElement>) { const canvas = event.currentTarget, context = canvas.getContext("2d"); if (!context) return; undoStack.current.push(context.getImageData(0, 0, canvas.width, canvas.height)); if (undoStack.current.length > 12) undoStack.current.shift(); drawing.current = true; canvas.setPointerCapture(event.pointerId); const p = point(event); context.beginPath(); context.moveTo(p.x, p.y); }
   function move(event: React.PointerEvent<HTMLCanvasElement>) { if (!drawing.current) return; const context = event.currentTarget.getContext("2d"); if (!context) return; const p = point(event); context.strokeStyle = brushColor.hex; context.lineWidth = brushSize; context.lineTo(p.x, p.y); context.stroke(); }
-  function clear() { const canvas = canvasRef.current, context = canvas?.getContext("2d"); if (!canvas || !context) return; undoStack.current.push(context.getImageData(0, 0, canvas.width, canvas.height)); context.save(); context.setTransform(1, 0, 0, 1, 0, 0); context.fillStyle = "#fff"; context.fillRect(0, 0, canvas.width, canvas.height); context.restore(); setMatched(false); }
+  function clear() { const canvas = canvasRef.current, context = canvas?.getContext("2d"); if (!canvas || !context) return; undoStack.current.push(context.getImageData(0, 0, canvas.width, canvas.height)); context.save(); context.setTransform(1, 0, 0, 1, 0, 0); context.fillStyle = "#fff"; context.fillRect(0, 0, canvas.width, canvas.height); context.restore(); setMatched(false); setAnalysis(null); }
   function undo() { const canvas = canvasRef.current, context = canvas?.getContext("2d"), previous = undoStack.current.pop(); if (canvas && context && previous) context.putImageData(previous, 0, 0); }
   function saveDrawing() { const link = document.createElement("a"); link.download = `퍼스트프렌드-그림-${new Date().toISOString().slice(0, 10)}.png`; link.href = canvasRef.current?.toDataURL("image/png") || ""; link.click(); }
-  function upload(event: React.ChangeEvent<HTMLInputElement>) { const file = event.target.files?.[0]; if (!file) return; if (preview) URL.revokeObjectURL(preview); setUploaded(file.name); setPreview(URL.createObjectURL(file)); setMatched(false); }
+  function upload(event: React.ChangeEvent<HTMLInputElement>) { const file = event.target.files?.[0]; if (!file) return; if (preview) URL.revokeObjectURL(preview); setUploaded(file.name); setPreview(URL.createObjectURL(file)); setMatched(false); setAnalysis(null); }
 
-  function score(animal: Animal) {
+  function score(animal: Animal, visual = analysis) {
     let value = 0;
     const haystack = `${animal.name} ${animal.breed} ${animal.species} ${animal.ageGroup} ${animal.sex} ${animal.region} ${animal.colors.join(" ")} ${animal.traits.join(" ")}`.toLowerCase();
     if (species !== "전체") value += animal.species.includes(species) ? 30 : -50;
@@ -76,16 +81,32 @@ export function Finder({ animals }: { animals: Animal[] }) {
     if (gender !== "상관 없음") value += animal.sex.includes(gender) ? 8 : 0;
     if (region !== "전국") value += animal.region.startsWith(region) ? 12 : 0;
     if (query && haystack.includes(query.toLowerCase())) value += 15;
+    if (visual) {
+      const animalTags = animalVisualTags(animal);
+      if (visual.species !== "전체") value += animal.species.includes(visual.species) ? 38 : -55;
+      for (const color of visual.colors) if (animal.colors.some((item) => item.includes(color) || color.includes(item))) value += 10;
+      for (const hint of visual.breedHints) if (animal.breed.includes(hint) || hint.includes(animal.breed)) value += 16;
+      for (const tag of [visual.size, visual.eyes, visual.fur, visual.pattern]) if (animalTags.includes(tag)) value += 6;
+    }
     value += Math.max(0, 6 - animals.indexOf(animal) * 0.1);
     return value;
   }
 
-  function match() { const result = [...animals].sort((a, b) => score(b) - score(a)); setRanked(result); setMatched(true); document.getElementById("match-results")?.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  async function match() {
+    setAnalyzing(true); setSaveState(""); let visual: VisualAnalysis | null = null;
+    try {
+      if (mode === "draw" && canvasRef.current) visual = await analyzeVisual(canvasRef.current, true);
+      if (mode === "photo" && imageRef.current) visual = await analyzeVisual(imageRef.current, false);
+      if (visual) { setAnalysis(visual); if (visual.species !== "전체") setSpecies(visual.species); if (visual.colors[0]) setCoat(visual.colors[0]); }
+      const result = [...animals].sort((a, b) => score(b, visual) - score(a, visual)); setRanked(result); setMatched(true); document.getElementById("match-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } finally { setAnalyzing(false); }
+  }
+  async function saveSearch() { const response = await fetch("/api/saved-searches", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ name:analysis ? analysis.tags.slice(0,3).join(" · ") : `${species} ${region}`, criteria:{species,breed,coat,age,gender,region,query,tags:analysis?.tags||[]} }) }); if(response.status===401){setSaveState("로그인하면 이 조건과 신규 등록 알림을 저장할 수 있어요.");return;} setSaveState(response.ok?"검색 조건을 저장하고 신규 친구 알림을 켰어요.":"저장하지 못했어요."); }
 
   const visible = (matched ? ranked : animals).filter((animal) => !query || `${animal.name} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
 
   return <>
-    <TabsRoot value={mode} onValueChange={(value) => { setMode(value as Mode); setMatched(false); }}>
+    <TabsRoot value={mode} onValueChange={(value) => { setMode(value as Mode); setMatched(false); setAnalysis(null); }}>
       <TabsList><TabsTrigger value="draw">직접 그리기</TabsTrigger><TabsTrigger value="photo">사진 올리기</TabsTrigger><TabsTrigger value="conditions">조건으로 찾기</TabsTrigger></TabsList>
       <TabsContent value="draw">
         <section className="ff-canvas-panel">
@@ -96,7 +117,7 @@ export function Finder({ animals }: { animals: Animal[] }) {
         </section>
       </TabsContent>
       <TabsContent value="photo">
-        <section className="ff-canvas-panel"><h2 className="ff-section-title">그림이나 참고 사진을 올려주세요</h2><p className="ff-description" style={{ margin: "5px 0 14px" }}>JPG, PNG, WEBP 파일을 기기에서 선택할 수 있어요. 원본은 매칭 용도로만 사용합니다.</p><label className="ff-photo-drop" htmlFor="finder-photo"><IconPictureLine/>{preview ? <img src={preview} alt="업로드한 참고 이미지 미리보기"/> : <span>사진 또는 저장한 그림 선택</span>}<input id="finder-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={upload}/></label>{uploaded && <p className="ff-meta" style={{ marginTop: 8 }}>선택한 파일: {uploaded}</p>}</section>
+        <section className="ff-canvas-panel"><h2 className="ff-section-title">그림이나 참고 사진을 올려주세요</h2><p className="ff-description" style={{ margin: "5px 0 14px" }}>이미지는 기기 안에서 분석하며 서버에 저장하지 않아요. JPG, PNG, WEBP를 사용할 수 있어요.</p><label className="ff-photo-drop" htmlFor="finder-photo"><IconPictureLine/>{preview ? <img ref={imageRef} src={preview} alt="업로드한 참고 이미지 미리보기"/> : <span>사진 또는 저장한 그림 선택</span>}<input id="finder-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={upload}/></label>{uploaded && <p className="ff-meta" style={{ marginTop: 8 }}>선택한 파일: {uploaded}</p>}</section>
       </TabsContent>
       <TabsContent value="conditions">
         <section className="ff-canvas-panel"><h2 className="ff-section-title">원하는 모습을 골라주세요</h2><p className="ff-description" style={{ margin: "5px 0 16px" }}>한 가지만 골라도 되고, 나이는 상관없음으로 둘 수 있어요.</p><div className="ff-condition-grid"><div className="ff-field"><label htmlFor="breed">품종</label><select id="breed" className="ff-native-select" value={breed} onChange={(event) => setBreed(event.target.value)}>{breeds.map((item) => <option key={item}>{item}</option>)}</select></div><div className="ff-field"><label htmlFor="coat">털색·무늬</label><select id="coat" className="ff-native-select" value={coat} onChange={(event) => setCoat(event.target.value)}><option>상관 없음</option>{palette.map((item) => <option key={item.name}>{item.name}</option>)}<option>줄무늬</option><option>삼색</option></select></div><div className="ff-field"><label htmlFor="age">나이</label><select id="age" className="ff-native-select" value={age} onChange={(event) => setAge(event.target.value)}><option>상관 없음</option><option>어린 친구</option><option>어른 친구</option></select></div><div className="ff-field"><label htmlFor="gender">성별</label><select id="gender" className="ff-native-select" value={gender} onChange={(event) => setGender(event.target.value)}><option>상관 없음</option><option>수컷</option><option>암컷</option></select></div><div className="ff-field"><label htmlFor="region">지역</label><select id="region" className="ff-native-select" value={region} onChange={(event) => setRegion(event.target.value)}>{regions.map((item) => <option key={item}>{item}</option>)}</select></div></div></section>
@@ -106,15 +127,17 @@ export function Finder({ animals }: { animals: Animal[] }) {
     <section className="ff-search-options">
       <div className="ff-kicker">공통 조건</div><div className="ff-chip-row"><Chip.RadioRoot value={species} onValueChange={(value) => setSpecies(value as string)}>{["전체", "고양이", "강아지"].map((item) => <Chip.RadioItem value={item} key={item}><Chip.Label>{item}</Chip.Label></Chip.RadioItem>)}</Chip.RadioRoot></div>
       <div style={{ marginTop: 14 }}><TextField prefixIcon={<IconMagnifyingglassLine/>} aria-label="보호동물 검색"><TextFieldInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder="품종, 지역, 특징 검색"/></TextField></div>
-      <ActionButton size="large" className="ff-action-link" style={{ marginTop: 12 }} onClick={match}><PrefixIcon svg={mode === "photo" ? <IconCameraLine/> : <IconMagnifyingglassSparkleLine/>}/>닮은 친구 찾기</ActionButton>
+      <ActionButton size="large" className="ff-action-link" style={{ marginTop: 12 }} onClick={match} disabled={analyzing || (mode==="photo"&&!preview)}><PrefixIcon svg={mode === "photo" ? <IconCameraLine/> : <IconMagnifyingglassSparkleLine/>}/>{analyzing ? "기기에서 특징 분석 중…" : "특징을 분석해 친구 찾기"}</ActionButton>
     </section>
 
     <section className="ff-section" id="match-results">
       <div className="ff-section-head"><h2 className="ff-section-title">{matched ? "닮은 순서로 찾은 친구" : "현재 보호 중인 친구"}</h2><span className="ff-meta">{visible.length}마리</span></div>
-      {matched && visible[0] && <Callout tone="positive" title={`${visible[0].name} 친구가 가장 가까워요`} description={`${visible[0].matchReason} 공공데이터에 없는 건강·성격 정보는 추측하지 않았어요.`}/>}
+      {analysis && <div className="ff-analysis-card"><div className="ff-analysis-head"><div><span>온디바이스 시각 분석</span><strong>그림에서 찾은 검색 태그</strong></div><span className="ff-analysis-badge">{analysis.usedOpenSourceModel ? "MobileNet + 특징 분석" : "특징 분석"}</span></div><div className="ff-tags">{analysis.tags.map(tag=><span className="ff-tag" key={tag}>{tag}</span>)}</div><p>색상·그림이 차지하는 면적·어두운 눈 영역·경계 밀도를 태그로 바꿨어요. 오픈소스 MobileNet은 종·품종 후보만 보조하며, 결과는 공공데이터 태그와 비교합니다.</p></div>}
+      {matched && visible[0] && <Callout tone="positive" title={`${visible[0].name} 친구가 가장 가까워요`} description={`${visible[0].matchReason} 분석 태그와 공개된 품종·털색·체중 단서를 비교했으며 건강·성격·입양 성공은 추측하지 않았어요.`}/>}
       <div className="ff-animal-grid" style={{ marginTop: 14 }}>{visible.map((animal) => <AnimalCard animal={animal} key={animal.id}/>)}</div>
-      {!visible.length && <div className="ff-empty">조건에 맞는 친구가 아직 없어요. 조건을 조금 넓혀보세요.</div>}
+      {!visible.length && <div className="ff-empty"><strong>조건에 맞는 친구가 아직 없어요.</strong><p>지역이나 나이를 넓히거나, 같은 털색의 다른 품종을 살펴보세요.</p><ActionButton variant="neutralWeak" size="small" onClick={()=>{setRegion("전국");setAge("상관 없음");setQuery("");setRanked(animals);}}>조건 넓히기</ActionButton></div>}
       {matched && visible[0] && <div className="ff-result-shortcut"><a href={`/friends/${visible[0].id}`}>첫 번째 친구 자세히 보기</a></div>}
+      {matched && <div className="ff-save-search"><ActionButton variant="neutralWeak" onClick={saveSearch}>이 조건과 신규 등록 알림 저장</ActionButton>{saveState&&<p className="ff-meta">{saveState}</p>}</div>}
     </section>
   </>;
 }

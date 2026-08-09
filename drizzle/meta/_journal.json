@@ -15,6 +15,13 @@
       "when": 1786283227667,
       "tag": "0001_overconfident_leo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1786287505662,
+      "tag": "0002_eminent_mandroid",
+      "breakpoints": true
     }
   ]
 }

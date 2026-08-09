@@ -1,0 +1,34 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { ActionButton } from "seed-design/ui/action-button";
+import { Callout } from "seed-design/ui/callout";
+import { Checkbox, CheckboxGroup } from "seed-design/ui/checkbox";
+import { TextField, TextFieldInput, TextFieldTextarea } from "seed-design/ui/text-field";
+
+const questions = [
+  { q: "동물 자체의 가격이나 개인 수익 목적의 책임비를 요구할 수 있나요?", a: false },
+  { q: "공공 게시물에는 정확한 구조 위치와 개인 연락처를 적어야 하나요?", a: false },
+  { q: "알고 있는 질병·치료·구조 경위는 사실대로 공개해야 하나요?", a: true },
+  { q: "입양 신청자를 빨리 온 순서로만 결정해야 하나요?", a: false },
+  { q: "돌봄이 어려워지면 숨기지 말고 플랫폼과 관계기관에 도움을 요청해야 하나요?", a: true },
+];
+
+export function FosterRegistration() {
+  const [educated, setEducated] = useState<boolean | null>(null);
+  const [answers, setAnswers] = useState<Record<number, boolean>>({});
+  const [terms, setTerms] = useState<string[]>([]);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+  const [uploadName, setUploadName] = useState("");
+  useEffect(() => { fetch("/api/foster-onboarding").then((response) => response.ok ? response.json() : { completed: false }).then((data) => setEducated(data.completed)).catch(() => setEducated(false)); }, []);
+  const score = Math.round(questions.reduce((sum, item, index) => sum + (answers[index] === item.a ? 1 : 0), 0) / questions.length * 100);
+
+  async function completeEducation() { const response = await fetch("/api/foster-onboarding", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ score }) }); if (response.status === 401) window.location.href = "/signin-with-chatgpt?return_to=%2Ffoster"; else if (response.ok) setEducated(true); else setError("80점 이상이 필요해요. 틀린 내용을 다시 확인해 주세요."); }
+  async function register(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); setError(""); if (terms.length < 4) { setError("등록 약관을 모두 확인해 주세요."); return; } const form = new FormData(event.currentTarget); let imageKey = ""; const file = form.get("image"); if (file instanceof File && file.size) { const upload = new FormData(); upload.set("file", file); const uploadResponse = await fetch("/api/uploads", { method: "POST", body: upload }); if (!uploadResponse.ok) { setError((await uploadResponse.json()).error); return; } imageKey = (await uploadResponse.json()).key; } const response = await fetch("/api/direct-animals", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: form.get("name"), species: form.get("species"), region: form.get("region"), rescueStory: form.get("rescueStory"), adoptionTerms: form.get("adoptionTerms"), imageKey, health: { weight: form.get("weight"), vaccination: form.get("vaccination"), neutered: form.get("neutered"), treatment: form.get("treatment") }, life: { personality: form.get("personality"), aloneTime: form.get("aloneTime"), toilet: form.get("toilet") } }) }); if (response.status === 401) window.location.href = "/signin-with-chatgpt?return_to=%2Ffoster"; else if (response.ok) setDone(true); else setError((await response.json()).error || "등록하지 못했어요."); }
+
+  if (educated === null) return <div className="ff-empty">교육 이력을 확인하고 있어요.</div>;
+  if (!educated) return <section className="ff-form"><Callout tone="warning" title="개인 임시보호자 기본 교육" description="허위 정보, 사기성 금전 요구, 재유기 위험을 줄이기 위한 5문항입니다. 80점 이상이면 직접 등록을 시작할 수 있어요."/>{questions.map((item, index) => <fieldset className="ff-quiz-question" key={item.q}><legend><span>{index + 1}</span>{item.q}</legend><label><input type="radio" name={`foster-${index}`} checked={answers[index] === true} onChange={() => setAnswers((current) => ({ ...current, [index]: true }))}/><span>예</span></label><label><input type="radio" name={`foster-${index}`} checked={answers[index] === false} onChange={() => setAnswers((current) => ({ ...current, [index]: false }))}/><span>아니오</span></label></fieldset>)}{error && <Callout tone="critical" description={error}/>}<ActionButton size="large" disabled={Object.keys(answers).length < questions.length} onClick={completeEducation}>채점하기 · 현재 {score}점</ActionButton></section>;
+  if (done) return <div className="ff-result"><h2 className="ff-section-title">검토 요청을 접수했어요</h2><p className="ff-description" style={{ margin: "8px 0 16px" }}>공개 전 건강·구조·개인정보 항목을 운영자가 확인합니다. 개인 임시보호 등록 라벨로 명확히 표시됩니다.</p><ActionButton asChild><a href="/mypage">등록 상태 보기</a></ActionButton></div>;
+  return <form className="ff-form" onSubmit={register}><Callout tone="informative" title="개인 임시보호 등록" description="보호소 인증 마크는 제공되지 않으며 연락처와 정확한 주소는 공개되지 않습니다."/><TextField label="동물의 이름 또는 임시 이름" required><TextFieldInput name="name" required/></TextField><div className="ff-condition-grid"><div className="ff-field"><label htmlFor="foster-species">동물 종류</label><select id="foster-species" name="species" className="ff-native-select" required><option>고양이</option><option>강아지</option></select></div><TextField label="대략 지역" required><TextFieldInput name="region" placeholder="예: 서울 마포구" required/></TextField><TextField label="추정 체중"><TextFieldInput name="weight" placeholder="예: 4.2kg"/></TextField><div className="ff-field"><label htmlFor="neutered">중성화</label><select id="neutered" name="neutered" className="ff-native-select"><option>미상</option><option>완료</option><option>하지 않음</option><option>예정</option></select></div></div><label className="ff-photo-drop ff-upload-compact" htmlFor="foster-image"><span>대표 사진 선택 · 최대 8MB</span><input id="foster-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setUploadName(event.target.files?.[0]?.name || "")}/></label>{uploadName && <div className="ff-meta">{uploadName}</div>}<TextField label="구조 경위와 시점" required><TextFieldTextarea name="rescueStory" minLength={30} required/></TextField><TextField label="접종·검진 정보"><TextFieldTextarea name="vaccination"/></TextField><TextField label="치료·투약·알려진 질환"><TextFieldTextarea name="treatment"/></TextField><TextField label="성격과 사회성"><TextFieldTextarea name="personality"/></TextField><TextField label="혼자 있을 수 있는 시간"><TextFieldInput name="aloneTime" placeholder="예: 최대 5시간"/></TextField><TextField label="배변·산책·생활 특성"><TextFieldTextarea name="toilet"/></TextField><TextField label="입양 조건과 상담할 점" required><TextFieldTextarea name="adoptionTerms" minLength={20} required/></TextField><CheckboxGroup label="등록 약관 필수 동의">{["동물 가격·개인 수익 목적의 책임비를 요구하지 않습니다.", "건강과 구조 경위를 사실대로 작성했습니다.", "불공정한 추가 조건이나 임의 계약을 강요하지 않습니다.", "허위·사기·학대·유기 시 삭제와 제재에 동의합니다."].map((label) => <Checkbox key={label} label={label} checked={terms.includes(label)} onCheckedChange={(checked) => setTerms((current) => checked ? [...current, label] : current.filter((item) => item !== label))}/>)}</CheckboxGroup>{error && <Callout tone="critical" description={error}/>}<ActionButton size="large">검토 요청하기</ActionButton></form>;
+}

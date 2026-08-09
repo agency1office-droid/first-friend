@@ -49,6 +49,23 @@ test("renders public discovery and safety principles", async () => {
   assert.match(aboutHtml, /정확한 위치와 연락처를 보호해요/);
 });
 
+test("renders the complete adoption education and community journeys", async () => {
+  const [guide, readiness, stories, foster] = await Promise.all([render("/guide"), render("/readiness"), render("/stories"), render("/foster")]);
+  for (const response of [guide, readiness, stories, foster]) assert.equal(response.status, 200);
+  assert.match(await guide.text(), /입양의 8단계/);
+  assert.match(await readiness.text(), /입양 전 필수 과정/);
+  assert.match(await stories.text(), /댓글과 별점 대신/);
+  assert.match(await foster.text(), /본인 확인과 기본 교육/);
+});
+
+test("protects private mutation APIs at the source boundary", async () => {
+  const files = await Promise.all(["applications", "favorites", "uploads", "direct-animals"].map(name => readFile(new URL(`../app/api/${name}/route.ts`, import.meta.url), "utf8")));
+  for (const source of files) {
+    assert.match(source, /authenticatedDb\(\)/);
+    assert.match(source, /status:\s*401/);
+  }
+});
+
 test("keeps durable bindings and generated migration", async () => {
   const [hosting, migration, packageJson, notices] = await Promise.all([
     readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
@@ -60,6 +77,12 @@ test("keeps durable bindings and generated migration", async () => {
   assert.match(hosting, /"r2": "MEDIA"/);
   assert.match(migration, /CREATE TABLE `applications`/);
   assert.match(migration, /CREATE TABLE `lost_reports`/);
+  const expandedMigration = await readFile(new URL("../drizzle/0001_overconfident_leo.sql", import.meta.url), "utf8");
+  assert.match(expandedMigration, /CREATE TABLE `readiness_assessments`/);
+  assert.match(expandedMigration, /CREATE TABLE `adoption_agreements`/);
+  assert.match(expandedMigration, /CREATE TABLE `handover_reservations`/);
+  assert.match(expandedMigration, /CREATE TABLE `direct_animals`/);
+  assert.match(expandedMigration, /PRAGMA optimize/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(packageJson, /@seed-design\/react/);
   assert.match(packageJson, /@seed-design\/css/);

@@ -6,7 +6,7 @@ const LOSS_API = "https://apis.data.go.kr/1543061/lossInfoService/lossInfo";
 const CACHE_MS = 10 * 60 * 1000;
 
 type ApiEnvelope<T> = { response?: { header?: { resultCode?: string; resultMsg?: string }; body?: { items?: { item?: T | T[] } } } };
-type AbandonedItem = { desertionNo?: string; happenDt?: string; happenPlace?: string; kindFullNm?: string; upKindNm?: string; kindNm?: string; colorCd?: string; age?: string; weight?: string; noticeNo?: string; noticeSdt?: string; noticeEdt?: string; popfile1?: string; processState?: string; sexCd?: string; neuterYn?: string; specialMark?: string; careNm?: string; orgNm?: string; updTm?: string };
+type AbandonedItem = { desertionNo?: string; happenDt?: string; happenPlace?: string; kindFullNm?: string; upKindNm?: string; kindNm?: string; colorCd?: string; age?: string; weight?: string; noticeNo?: string; noticeSdt?: string; noticeEdt?: string; popfile1?: string; processState?: string; sexCd?: string; neuterYn?: string; specialMark?: string; careNm?: string; careTel?: string; careAddr?: string; orgNm?: string; updTm?: string };
 type LossItem = { happenDt?: string; happenAddr?: string; happenPlace?: string; orgNm?: string; popfile?: string; kindCd?: string; colorCd?: string; sexCd?: string; age?: string; specialMark?: string };
 type ShelterItem = { careRegNo?: string; careNm?: string; orgNm?: string; saveTrgtAnimal?: string; careAddr?: string; careTel?: string; weekOprStime?: string; weekOprEtime?: string; closeDay?: string };
 
@@ -16,6 +16,7 @@ export type Shelter = { id: string; name: string; organization: string; animals:
 let animalCache: { at: number; data: Animal[] } | undefined;
 let lossCache: { at: number; data: LostAnimal[] } | undefined;
 let shelterCache: { at: number; data: Shelter[] } | undefined;
+const animalContacts = new Map<string, { shelter: string; phone: string; address: string; organization: string }>();
 
 function key() { return process.env.PUBLIC_DATA_API_KEY?.trim(); }
 function list<T>(value: T | T[] | undefined): T[] { return !value ? [] : Array.isArray(value) ? value : [value]; }
@@ -44,11 +45,12 @@ function displayName(item: AbandonedItem) { return [item.kindNm || species(item)
 
 function mapAnimal(item: AbandonedItem): Animal | null {
   if (!item.desertionNo || !item.popfile1) return null;
+  animalContacts.set(item.desertionNo, { shelter: item.careNm || "관할 보호센터", phone: item.careTel || "", address: item.careAddr?.split(" ").slice(0, 2).join(" ") || "", organization: item.orgNm || "" });
   const animalSpecies = species(item);
   const state = item.processState || "공고중";
   const notice = item.noticeSdt && item.noticeEdt ? `공고 ${compactDate(item.noticeSdt)} ~ ${compactDate(item.noticeEdt)}` : "공고 기간은 상세 상담에서 확인해 주세요";
   return {
-    id: item.desertionNo, name: displayName(item), species: animalSpecies, age: item.age || "나이 미상", ageGroup: ageGroup(item.age), sex: sex(item.sexCd),
+    id: item.desertionNo, name: displayName(item), species: animalSpecies, breed: item.kindNm || "품종 미상", age: item.age || "나이 미상", ageGroup: ageGroup(item.age), sex: sex(item.sexCd),
     region: item.orgNm || "지역 확인 중", shelter: item.careNm || "관할 보호센터", source: "국가동물보호정보시스템", updated: compactDate(item.updTm || item.happenDt),
     image: secureImage(item.popfile1), colors: item.colorCd?.split(/[,&+·]/).map((value) => value.trim()).filter(Boolean) || [],
     traits: [item.colorCd, item.weight, state].filter((value): value is string => Boolean(value)).slice(0, 3),
@@ -67,6 +69,12 @@ export async function getAnimals(limit = 24): Promise<Animal[]> {
 }
 
 export async function getAnimalById(id: string) { const items = await getAnimals(100); return items.find((item) => item.id === id) || fallbackAnimals.find((item) => item.id === id); }
+
+export async function getAnimalContactById(id: string) {
+  if (!key()) return null;
+  if (animalContacts.has(id)) return animalContacts.get(id) || null;
+  try { (await request<AbandonedItem>(ABANDONED_API, 100)).forEach(mapAnimal); return animalContacts.get(id) || null; } catch { return null; }
+}
 
 export async function getLostAnimals(limit = 12): Promise<LostAnimal[]> {
   if (!key()) return [];

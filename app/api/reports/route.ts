@@ -1,0 +1,5 @@
+import { and, count, eq } from "drizzle-orm";
+import { posts, reports } from "../../../db/schema";
+import { authenticatedDb, clean } from "../_helpers";
+
+export async function POST(request: Request) { const auth = await authenticatedDb(); if (!auth) return Response.json({ error: "본인 확인이 필요합니다." }, { status: 401 }); const data = await request.json() as Record<string, unknown>; const targetType = clean(data.targetType, 30), targetId = clean(data.targetId, 40), reason = clean(data.reason, 500); if (!targetType || !targetId || reason.length < 5) return Response.json({ error: "신고 사유를 확인해 주세요." }, { status: 400 }); await auth.db.insert(reports).values({ memberId: auth.user.userId, targetType, targetId, reason }).onConflictDoNothing(); const [{ value }] = await auth.db.select({ value: count() }).from(reports).where(and(eq(reports.targetType, targetType), eq(reports.targetId, targetId))); if (targetType === "post" && value >= 50) await auth.db.update(posts).set({ hidden: true }).where(eq(posts.id, Number(targetId))); return Response.json({ received: true, hidden: value >= 50 }, { status: 201 }); }

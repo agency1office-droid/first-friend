@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1786245832626,
+      "tag": "0000_unique_rumiko_fujikawa",
+      "breakpoints": true
+    }
+  ]
+}

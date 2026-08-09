@@ -1,0 +1,3 @@
+import type { Metadata } from "next"; import { ReadinessQuiz } from "../components/ReadinessQuiz";
+export const metadata: Metadata = {title:"입양 준비도",description:"평가가 아닌 준비를 위한 입양 준비도 안내"};
+export default function ReadinessPage(){return <div className="page"><span className="eyebrow">Ready together</span><h1 className="page-title">좋은 마음이 오래가도록</h1><p className="page-subtitle">정답을 맞히는 검사가 아니에요. 나와 특정 친구가 편안히 살아가기 위해 필요한 것을 발견하는 과정입니다.</p><ReadinessQuiz/><section className="info-card"><h2>한 달 돌봄 비용 가이드</h2><ul className="check-list"><li>고양이 기본 생활비 약 8만~18만원</li><li>강아지 기본 생활비 약 10만~30만원</li><li>초기 안전용품과 정기검진은 별도</li><li>예상 밖 진료를 위한 비상자금 권장</li></ul><p className="page-subtitle" style={{margin:"12px 0 0"}}>지역·병원·건강 상태에 따라 달라지는 참고 범위이며 확정 가격이 아닙니다.</p></section></div>}

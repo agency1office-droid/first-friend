@@ -126,5 +126,7 @@ test("preserves additional public animal photos and provides an original-size ga
   assert.match(gallery, /showModal\(\)/);
   assert.match(gallery, /새 탭에서 원본 열기/);
   assert.match(gallery, /aria-pressed/);
+  assert.match(gallery, /사진 \{available\.length\}장/);
+  assert.match(gallery, /\{index \+ 1\}\/\{available\.length\}/);
   assert.match(detail, /AnimalGallery/);
 });

@@ -5,19 +5,21 @@ import { Callout } from "seed-design/ui/callout";
 import { Checkbox } from "seed-design/ui/checkbox";
 import { TextField } from "seed-design/ui/text-field";
 import { RadioGroup, RadioGroupItem } from "seed-design/ui/radio-group";
+import { useAppFeedback } from "./AppFeedback";
 
 type Data = { application: { id:number; animalId:string; status:string; readinessScore:number; household:string; carePlan:string; absencePlan:string; emergencyPlan:string; createdAt:string }; agreement?: { signedName:string; agreedAt:string }; handover?: { method:string; scheduledAt:string; region:string; adopterConfirmed:boolean; guardianConfirmed:boolean; checklistJson:string }; returnRequest?:{urgency:string;status:string}; messages: { id:number; body:string; createdAt:string }[] };
 const steps = ["신청 접수", "내용 검토", "상담", "승인", "약정·인계"];
 const stage: Record<string, number> = { submitted: 0, review: 1, consulting: 2, approved: 3, rejected: -1, handover: 4, completed: 4, return_support: 4, withdrawn: -1 };
 
 export function ApplicationProgress({ id }: { id:number }) {
+  const feedback = useAppFeedback();
   const [data, setData] = useState<Data|null>(null), [error, setError] = useState("");
   const [message, setMessage] = useState(""), [signedName, setSignedName] = useState(""), [accepted, setAccepted] = useState(false);
   const [method, setMethod] = useState("visit"), [scheduledAt, setScheduledAt] = useState(""), [region, setRegion] = useState("");
   const [showCrisis,setShowCrisis]=useState(false),[urgency,setUrgency]=useState("consult"),[crisisReason,setCrisisReason]=useState(""),[safeUntil,setSafeUntil]=useState("");
   const load = () => fetch(`/api/applications/${id}`).then(r => r.json()).then(v => v.error ? setError(v.error) : setData(v)).catch(() => setError("신청 정보를 불러오지 못했어요."));
   useEffect(load, [id]);
-  const post = async (payload: Record<string, unknown>) => { setError(""); const response = await fetch(`/api/applications/${id}`, { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(payload) }); const body = await response.json(); if (!response.ok) return setError(body.error || "처리하지 못했어요."); await load(); };
+  const post = async (payload: Record<string, unknown>) => { setError(""); const response = await fetch(`/api/applications/${id}`, { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(payload) }); const body = await response.json(); if (!response.ok) { const message=body.error || "처리하지 못했어요."; setError(message); feedback.error(message); return; } const labels:Record<string,string>={message:"메시지를 보냈어요",agreement:"전자 약정에 서명했어요",handover:"인계 일정을 제안했어요","confirm-handover":"인계받음 확인을 저장했어요","return-support":"비공개 도움 요청을 접수했어요"}; feedback.success(labels[String(payload.action)]||"변경 내용을 저장했어요"); await load(); };
   if (!data) return <div className="ff-result">{error || "신청 정보를 불러오는 중이에요…"}</div>;
   const current = stage[data.application.status] ?? 0;
   return <>

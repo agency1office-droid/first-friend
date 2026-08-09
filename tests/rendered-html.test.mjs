@@ -254,3 +254,35 @@ test("keeps draw, photo, and condition matching as independent non-tab journeys"
   assert.doesNotMatch(finder, /TabsRoot|TabsContent|TabsTrigger/);
   assert.match(finder, /\{matched && <section className="ff-section" id="match-results">/);
 });
+
+test("uses queued SEED snackbars for transient feedback across core actions", async () => {
+  const [layout, feedback, favorite, application, operations] = await Promise.all([
+    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/AppFeedback.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/FavoriteButton.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/ApplicationProgress.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/OperationsConsole.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(layout, /AppFeedbackProvider/);
+  assert.match(feedback, /SnackbarProvider strategy="queued"/);
+  assert.match(feedback, /variant="positive"|variant: "positive"/);
+  assert.match(feedback, /variant="critical"|variant: "critical"/);
+  for (const source of [favorite, application, operations]) assert.match(source, /useAppFeedback/);
+});
+
+test("adapts an accessible board-row information pattern without mixing design tokens", async () => {
+  const [board, detail, prepare, draw, photo, conditions] = await Promise.all([
+    readFile(new URL("../app/components/InfoBoard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/friends/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/prepare/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/find/draw/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/find/photo/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/find/conditions/page.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(board, /seed-design\/ui\/accordion/);
+  assert.match(board, /AccordionTrigger/);
+  assert.match(detail, /<InfoBoard/);
+  assert.match(prepare, /<InfoBoard/);
+  for (const source of [draw, photo, conditions]) assert.doesNotMatch(source, /‹ 친구 찾기/);
+  assert.doesNotMatch(detail, /ff-gallery-back/);
+});

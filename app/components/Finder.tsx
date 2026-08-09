@@ -11,6 +11,7 @@ import { Chip } from "seed-design/ui/chip";
 import { Callout } from "seed-design/ui/callout";
 import { PrefixIcon } from "@seed-design/react";
 import { IconCameraLine, IconArrowDownHorizlineLine, IconEraserHorizlineLine, IconMagnifyingglassLine, IconMagnifyingglassSparkleLine, IconPictureLine, IconArrowCounterclockwiseCircularLine } from "@karrotmarket/react-monochrome-icon";
+import { useAppFeedback } from "./AppFeedback";
 
 const palette = [
   { name: "검정", hex: "#242424" }, { name: "흰색", hex: "#ffffff" }, { name: "회색", hex: "#8b8b8b" },
@@ -20,6 +21,7 @@ const palette = [
 type Mode = "draw" | "photo" | "conditions";
 
 export function Finder({ animals, modeOnly }: { animals: Animal[]; modeOnly?: Mode }) {
+  const feedback = useAppFeedback();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const drawing = useRef(false);
@@ -100,7 +102,7 @@ export function Finder({ animals, modeOnly }: { animals: Animal[]; modeOnly?: Mo
       const result = [...animals].sort((a, b) => score(b, visual) - score(a, visual)); setRanked(result); setMatched(true); document.getElementById("match-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
     } finally { setAnalyzing(false); }
   }
-  async function saveSearch() { const response = await fetch("/api/saved-searches", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ name:analysis ? analysis.tags.slice(0,3).join(" · ") : `${species} ${region}`, criteria:{species,breed,coat,age,gender,region,query,tags:analysis?.tags||[]} }) }); if(response.status===401){setSaveState("로그인하면 이 조건과 신규 등록 알림을 저장할 수 있어요.");return;} setSaveState(response.ok?"검색 조건을 저장하고 신규 친구 알림을 켰어요.":"저장하지 못했어요."); }
+  async function saveSearch() { const response = await fetch("/api/saved-searches", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ name:analysis ? analysis.tags.slice(0,3).join(" · ") : `${species} ${region}`, criteria:{species,breed,coat,age,gender,region,query,tags:analysis?.tags||[]} }) }); if(response.status===401){setSaveState("로그인하면 이 조건과 신규 등록 알림을 저장할 수 있어요.");return;} if(response.ok){setSaveState("");feedback.success("검색 조건과 새 친구 알림을 저장했어요",{actionLabel:"알림관리",onAction:()=>{location.href="/mypage/searches"}})}else feedback.error("검색 조건을 저장하지 못했어요"); }
 
   const visible = (matched ? ranked : animals).filter((animal) => !query || `${animal.name} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
 

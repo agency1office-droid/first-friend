@@ -32,6 +32,7 @@ test("renders public lost-animal and shelter surfaces", async () => {
   const shelterHtml = await shelters.text();
   assert.match(lostHtml, /공공 분실동물 정보 연동/);
   assert.match(lostHtml, /최근 분실동물/);
+  assert.match(lostHtml, /가까운 보호센터/);
   assert.match(shelterHtml, /동물보호센터 공공데이터/);
   assert.match(shelterHtml, /전국 보호센터/);
 });

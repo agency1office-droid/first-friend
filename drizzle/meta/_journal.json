@@ -43,6 +43,13 @@
       "when": 1786294967899,
       "tag": "0005_bored_unicorn",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786296017039,
+      "tag": "0006_robust_dagger",
+      "breakpoints": true
     }
   ]
 }

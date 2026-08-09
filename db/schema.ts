@@ -124,6 +124,7 @@ export const directAnimals = sqliteTable("direct_animals", {
   imageKey: text("image_key"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  reconfirmedAt: text("reconfirmed_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [index("idx_direct_animals_member_status").on(table.memberId, table.status)]);
 
 export const postReactions = sqliteTable("post_reactions", {
@@ -263,6 +264,13 @@ export const shelterUpdates = sqliteTable("shelter_updates", {
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [index("idx_shelter_updates_shelter_created").on(table.shelterId, table.createdAt)]);
 
+export const shelterUpdateReactions = sqliteTable("shelter_update_reactions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  updateId: integer("update_id").notNull().references(() => shelterUpdates.id),
+  memberId: text("member_id").notNull().references(() => members.id),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [uniqueIndex("idx_shelter_update_reaction_unique").on(table.updateId, table.memberId)]);
+
 export const volunteerPosts = sqliteTable("volunteer_posts", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   shelterId: integer("shelter_id").notNull().references(() => shelterProfiles.id),
@@ -343,6 +351,31 @@ export const accountSanctions = sqliteTable("account_sanctions", {
   fingerprintHash: text("fingerprint_hash").notNull().default(""),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [index("idx_account_sanctions_member_status").on(table.memberId, table.status)]);
+
+export const sanctionAppeals = sqliteTable("sanction_appeals", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  sanctionId: integer("sanction_id").notNull().references(() => accountSanctions.id),
+  memberId: text("member_id").notNull().references(() => members.id),
+  reason: text("reason").notNull(),
+  evidenceKey: text("evidence_key"),
+  status: text("status", { enum: ["submitted", "accepted", "rejected"] }).notNull().default("submitted"),
+  reviewedBy: text("reviewed_by"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("idx_sanction_appeals_status_created").on(table.status, table.createdAt)]);
+
+export const adoptionCertifications = sqliteTable("adoption_certifications", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  memberId: text("member_id").notNull().references(() => members.id),
+  applicationId: integer("application_id").references(() => applications.id),
+  source: text("source", { enum: ["platform", "external"] }).notNull(),
+  shelterName: text("shelter_name").notNull().default(""),
+  animalName: text("animal_name").notNull().default(""),
+  verificationCodeHash: text("verification_code_hash").notNull().default(""),
+  evidenceKey: text("evidence_key"),
+  status: text("status", { enum: ["submitted", "verified", "rejected"] }).notNull().default("submitted"),
+  reviewedBy: text("reviewed_by"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("idx_adoption_certifications_member_status").on(table.memberId, table.status)]);
 
 export const adminAuditLogs = sqliteTable("admin_audit_logs", {
   id: integer("id").primaryKey({ autoIncrement: true }),

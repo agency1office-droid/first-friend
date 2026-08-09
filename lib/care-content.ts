@@ -38,10 +38,9 @@ export const encyclopedias = {
 };
 
 export const tnrRegions = [
-  { region: "서울특별시", office: "각 자치구 동물보호 담당 부서", season: "통상 봄·가을 집중, 자치구별 공고 확인", route: "120 또는 자치구 홈페이지에서 길고양이 TNR 접수" },
-  { region: "경기도", office: "시·군 축산·동물보호 담당 부서", season: "시·군별 사업 기간 상이", route: "관할 시·군 콜센터에서 접수 기관과 협력 병원 확인" },
-  { region: "부산광역시", office: "구·군 동물보호 담당 부서", season: "예산·기온에 따라 운영", route: "120 또는 구·군청 동물보호 사업 안내 확인" },
-  { region: "그 외 지역", office: "시·군·구 동물보호 담당 부서", season: "지역 공고에 따라 운영", route: "국가동물보호정보시스템과 지자체 대표번호에서 공식 절차 확인" },
+  { region: "서울특별시", office: "자치구 동물보호 담당 부서", season: "자치구 공고·기상·예산에 따라 운영", route: "120 또는 관할 구청에 접수하고 지정 포획자·협력 병원을 확인", sourceUrl: "https://news.seoul.go.kr/env/archives/216413" },
+  ...["부산광역시","대구광역시","인천광역시","광주광역시","대전광역시","울산광역시","세종특별자치시"].map(region=>({ region, office:"구·군 또는 시청 동물보호 담당 부서", season:"지자체 공고·기상·예산에 따라 운영", route:"지역번호+120 또는 시·구·군 대표번호에서 접수 기간과 지정 병원을 확인", sourceUrl:"https://www.animal.go.kr/front/index.do" })),
+  ...["경기도","강원특별자치도","충청북도","충청남도","전북특별자치도","전라남도","경상북도","경상남도","제주특별자치도"].map(region=>({ region, office:"시·군 축산·동물보호 담당 부서", season:"시·군 공고·기상·예산에 따라 운영", route:"관할 시·군 대표번호에서 접수 기관·포획 절차·협력 병원을 확인", sourceUrl:"https://www.animal.go.kr/front/index.do" })),
 ];
 
 export const seedCoverage = [

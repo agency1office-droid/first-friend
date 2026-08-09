@@ -206,3 +206,38 @@ test("connects saved-search alerts, real shelter updates, and visual lost matchi
   assert.match(lostForm, /visualTags/);
   assert.match(lostApi, /data\.visualTags/);
 });
+
+test("implements external adoption proof, sanction appeal, and two-sided operator review", async () => {
+  const [schema, certification, appeal, appealUpload, posts, operations] = await Promise.all([
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/adoption-certifications/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/appeals/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/appeal-evidence/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/posts/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/operations/route.ts", import.meta.url), "utf8"),
+  ]);
+  for (const name of ["adoptionCertifications", "sanctionAppeals", "shelterUpdateReactions"]) assert.match(schema, new RegExp(`export const ${name}`));
+  assert.match(certification, /verificationCodeHash/);
+  assert.match(appeal, /status:"appealed"/);
+  assert.match(appealUpload, /purpose: "sanction-appeal"/);
+  assert.match(posts, /adoptionCertifications\.status,"verified"/);
+  assert.match(operations, /adoption-certification-status/);
+  assert.match(operations, /appeal-status/);
+});
+
+test("supports actionable foster and shelter management with stale-listing protection", async () => {
+  const [foster, shelter, publicData, migration, tnr] = await Promise.all([
+    readFile(new URL("../app/api/foster/manage/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/shelters/manage/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/public-data.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0006_robust_dagger.sql", import.meta.url), "utf8"),
+    readFile(new URL("../lib/care-content.ts", import.meta.url), "utf8"),
+  ]);
+  for (const action of ["application-status", "message", "reconfirm"]) assert.match(foster, new RegExp(action));
+  for (const action of ["volunteer-application-status", "need-received"]) assert.match(shelter, new RegExp(action));
+  assert.match(publicData, /reconfirmedAt/);
+  assert.doesNotMatch(publicData, /item\.happenPlace \|\| item\.orgNm/);
+  assert.match(migration, /CREATE TABLE `adoption_certifications`/);
+  assert.match(migration, /CREATE TABLE `sanction_appeals`/);
+  assert.match(tnr, /제주특별자치도/);
+});

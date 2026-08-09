@@ -50,7 +50,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const method = clean(data.method, 20) as "visit" | "volunteer" | "transport";
     const scheduledAt = clean(data.scheduledAt, 40), region = clean(data.region, 80);
     if (!(["visit", "volunteer", "transport"] as string[]).includes(method) || !scheduledAt || !region) return Response.json({ error: "인계 방법·일시·지역을 확인해 주세요." }, { status: 400 });
-    const checklist = ["이동장과 인식표 준비", "급여·투약 기록 인수", "이동 중 문 개방 금지", "도착 후 양측 인계 확인"];
+    const checklist = ["몸에 맞는 이동장과 인식표 준비", "자가용·대중교통·펫택시 이동수단 확정", "계절별 냉난방과 이동장 덮개 준비", "급여·투약·접종 기록 인수", "첫날 분리 휴식 공간과 물·화장실 준비", "이동 중 이동장 문 개방 금지", "정확한 만남 장소는 내부 메시지에서만 확인", "도착 후 입양자·보호자 양측 인계 확인"];
     const [handover] = await owned.db.insert(handoverReservations).values({ applicationId: owned.application.id, method, scheduledAt, region, checklistJson: JSON.stringify(checklist) }).onConflictDoNothing().returning();
     const transportRequest = method === "transport" ? await requestVerifiedTransport({ applicationId: owned.application.id, region }) : null;
     return Response.json({ handover, transportRequest }, { status: 201 });

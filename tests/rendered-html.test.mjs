@@ -168,3 +168,8 @@ test("preserves additional public animal photos and provides an original-size ga
   assert.match(gallery, /\{index \+ 1\}\/\{available\.length\}/);
   assert.match(detail, /AnimalGallery/);
 });
+
+test("excludes closed public notices from adoption discovery", async () => {
+  const source = await readFile(new URL("../lib/public-data.ts", import.meta.url), "utf8");
+  assert.match(source, /processState[\s\S]*startsWith\("종료"\)/);
+});

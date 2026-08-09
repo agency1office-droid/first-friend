@@ -82,6 +82,8 @@ export async function countDistinctAnimalImages(id: string, candidates: string[]
 
 function mapAnimal(item: AbandonedItem): Animal | null {
   if (!item.desertionNo || !item.popfile1) return null;
+  // 입양 탐색에는 반환·입양·방사·자연사 등 이미 종료된 공고를 노출하지 않습니다.
+  if ((item.processState || "").trim().startsWith("종료")) return null;
   const images = Array.from(new Set([item.popfile1, item.popfile2].map(secureImage).filter(Boolean)));
   animalContacts.set(item.desertionNo, { shelter: item.careNm || "관할 보호센터", phone: item.careTel || "", address: item.careAddr?.split(" ").slice(0, 2).join(" ") || "", organization: item.orgNm || "" });
   const animalSpecies = species(item);

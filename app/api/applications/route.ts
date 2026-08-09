@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { applications, directAnimals, readinessAssessments, shelterProfiles } from "../../../db/schema";
-import { getAnimalById, getAnimalContactById } from "../../../lib/public-data";
+import { getAnimalById, getAnimalContactById, getShelters } from "../../../lib/public-data";
 import { authenticatedDb, clean } from "../_helpers";
 
 export async function GET() {
@@ -23,8 +23,9 @@ export async function POST(request: Request) {
   suitability=Math.max(0,Math.min(100,suitability));const suitabilityJson=JSON.stringify({reasons,concerns,animalTraits:animal?.traits||[]});
   const directId=animalId.startsWith("direct-")?Number(animalId.slice(7)):NaN;
   const guardian=Number.isInteger(directId)?await auth.db.query.directAnimals.findFirst({where:eq(directAnimals.id,directId)}):null;
-  const shelterProfile=!guardian&&animal?await auth.db.query.shelterProfiles.findFirst({where:eq(shelterProfiles.name,animal.shelter)}):null;
-  const [application] = await auth.db.insert(applications).values({ memberId: auth.user.userId, guardianId:guardian?.memberId||shelterProfile?.ownerId||null, animalId, household, carePlan, absencePlan, emergencyPlan, readinessScore: assessment.readinessScore, suitabilityScore:suitability,suitabilityJson, readinessAssessmentId: assessment.id, agreementAccepted: true }).returning();
+  const publicShelter=!guardian&&animal?(await getShelters(100)).find(item=>item.name===animal.shelter):null;
+  const shelterProfile=!guardian&&animal?await auth.db.query.shelterProfiles.findFirst({where:publicShelter?eq(shelterProfiles.publicId,publicShelter.id):eq(shelterProfiles.name,animal.shelter)}):null;
+  const [application] = await auth.db.insert(applications).values({ memberId: auth.user.userId, guardianId:guardian?.memberId||shelterProfile?.ownerId||null, shelterPublicId:publicShelter?.id||null, animalId, household, carePlan, absencePlan, emergencyPlan, readinessScore: assessment.readinessScore, suitabilityScore:suitability,suitabilityJson, readinessAssessmentId: assessment.id, agreementAccepted: true }).returning();
   const contact = await getAnimalContactById(animalId);
-  return Response.json({ application, contact }, { status: 201 });
+  return Response.json({ application, contact, channelStatus: application.guardianId ? "delivered" : publicShelter ? "awaiting_onboarding" : "direct_contact" }, { status: 201 });
 }

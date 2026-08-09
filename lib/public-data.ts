@@ -8,10 +8,10 @@ const CACHE_MS = 10 * 60 * 1000;
 type ApiEnvelope<T> = { response?: { header?: { resultCode?: string; resultMsg?: string }; body?: { items?: { item?: T | T[] } } } };
 type AbandonedItem = { desertionNo?: string; happenDt?: string; happenPlace?: string; kindFullNm?: string; upKindNm?: string; kindNm?: string; colorCd?: string; age?: string; weight?: string; noticeNo?: string; noticeSdt?: string; noticeEdt?: string; popfile1?: string; popfile2?: string; processState?: string; sexCd?: string; neuterYn?: string; specialMark?: string; careNm?: string; careTel?: string; careAddr?: string; orgNm?: string; updTm?: string };
 type LossItem = { happenDt?: string; happenAddr?: string; happenPlace?: string; orgNm?: string; popfile?: string; kindCd?: string; colorCd?: string; sexCd?: string; age?: string; specialMark?: string };
-type ShelterItem = { careRegNo?: string; careNm?: string; orgNm?: string; saveTrgtAnimal?: string; careAddr?: string; careTel?: string; weekOprStime?: string; weekOprEtime?: string; closeDay?: string };
+type ShelterItem = { careRegNo?: string; careNm?: string; orgNm?: string; saveTrgtAnimal?: string; careAddr?: string; careTel?: string; weekOprStime?: string; weekOprEtime?: string; closeDay?: string; lat?: string; lng?: string };
 
 export type LostAnimal = { id: string; species: string; breed: string; sex: string; age: string; color: string; happenedAt: string; region: string; place: string; description: string; image: string };
-export type Shelter = { id: string; name: string; organization: string; animals: string; address: string; phone: string; hours: string; closed: string };
+export type Shelter = { id: string; name: string; organization: string; animals: string; address: string; phone: string; hours: string; closed: string; lat: number; lng: number; approximateLocation: boolean };
 
 let animalCache: { at: number; data: Animal[] } | undefined;
 let lossCache: { at: number; data: LostAnimal[] } | undefined;
@@ -40,6 +40,16 @@ async function request<T>(endpoint: string, rows: number): Promise<T[]> {
 function secureImage(url = "") { return url.replace(/^http:\/\//, "https://"); }
 function compactDate(value = "") { const digits = value.replace(/\D/g, "").slice(0, 8); return digits.length === 8 ? `${digits.slice(0, 4)}. ${Number(digits.slice(4, 6))}. ${Number(digits.slice(6, 8))}.` : value; }
 function sex(value = "") { return value === "M" ? "수컷" : value === "F" ? "암컷" : "미상"; }
+const regionCenters: Record<string, [number, number]> = {
+  서울: [37.5665, 126.978], 부산: [35.1796, 129.0756], 대구: [35.8714, 128.6014], 인천: [37.4563, 126.7052], 광주: [35.1595, 126.8526], 대전: [36.3504, 127.3845], 울산: [35.5384, 129.3114], 세종: [36.4801, 127.289], 경기: [37.275, 127.009], 강원: [37.8854, 127.7298], 충북: [36.6357, 127.4917], 충남: [36.6588, 126.6728], 전북: [35.8202, 127.1089], 전남: [34.8161, 126.4629], 경북: [36.5759, 128.5056], 경남: [35.2383, 128.6924], 제주: [33.4996, 126.5312],
+};
+function shelterPoint(item: ShelterItem) {
+  const lat = Number(item.lat), lng = Number(item.lng);
+  if (Number.isFinite(lat) && Number.isFinite(lng) && lat > 30 && lat < 40 && lng > 120 && lng < 135) return { lat, lng, approximateLocation: false };
+  const region = Object.keys(regionCenters).find(name => `${item.orgNm || ""} ${item.careAddr || ""}`.includes(name)) || "서울";
+  const [fallbackLat, fallbackLng] = regionCenters[region];
+  return { lat: fallbackLat, lng: fallbackLng, approximateLocation: true };
+}
 function species(item: AbandonedItem) { return item.upKindNm || item.kindFullNm?.match(/^\[([^\]]+)/)?.[1] || "기타"; }
 function ageGroup(value = ""): Animal["ageGroup"] { if (value.includes("60일미만")) return "어린 친구"; const born = Number(value.match(/(19|20)\d{2}/)?.[0]); return born && new Date().getFullYear() - born <= 1 ? "어린 친구" : "어른 친구"; }
 function displayName(item: AbandonedItem) { return [item.kindNm || species(item), item.noticeNo?.split("-").at(-1)].filter(Boolean).join(" · "); }
@@ -148,6 +158,7 @@ export async function getShelters(limit = 20): Promise<Shelter[]> {
   try {
     const data = (await request<ShelterItem>(SHELTER_API, Math.max(limit, 50))).map((item, index) => ({
       id: item.careRegNo || `shelter-${index}`, name: item.careNm || "동물보호센터", organization: item.orgNm || "관할 기관", animals: item.saveTrgtAnimal?.replaceAll("+", " · ") || "보호 동물 문의", address: item.careAddr || "주소 정보 없음", phone: item.careTel || "전화번호 정보 없음", hours: item.weekOprStime && item.weekOprEtime ? `${item.weekOprStime} ~ ${item.weekOprEtime}` : "운영시간 문의", closed: item.closeDay && item.closeDay !== "0" ? item.closeDay : "휴무일 문의",
+      ...shelterPoint(item),
     }));
     shelterCache = { at: Date.now(), data }; return data.slice(0, limit);
   } catch { return []; }

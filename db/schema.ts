@@ -13,6 +13,32 @@ export const members = sqliteTable("members", {
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const authAccounts = sqliteTable("auth_accounts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  memberId: text("member_id").notNull().references(() => members.id),
+  provider: text("provider", { enum: ["email", "google", "kakao", "naver"] }).notNull(),
+  providerUserId: text("provider_user_id").notNull(),
+  email: text("email").notNull(),
+  passwordHash: text("password_hash"),
+  passwordSalt: text("password_salt"),
+  emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex("idx_auth_accounts_provider_user").on(table.provider, table.providerUserId),
+  index("idx_auth_accounts_email").on(table.email),
+]);
+
+export const authSessions = sqliteTable("auth_sessions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  memberId: text("member_id").notNull().references(() => members.id),
+  tokenHash: text("token_hash").notNull(),
+  expiresAt: text("expires_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex("idx_auth_sessions_token").on(table.tokenHash),
+  index("idx_auth_sessions_member_expires").on(table.memberId, table.expiresAt),
+]);
+
 export const favorites = sqliteTable("favorites", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   memberId: text("member_id").notNull().references(() => members.id),
@@ -24,6 +50,7 @@ export const applications = sqliteTable("applications", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   memberId: text("member_id").notNull().references(() => members.id),
   guardianId: text("guardian_id").references(() => members.id),
+  shelterPublicId: text("shelter_public_id"),
   animalId: text("animal_id").notNull(),
   status: text("status", { enum: ["submitted", "review", "consulting", "approved", "rejected", "handover", "completed", "return_support", "withdrawn"] }).notNull().default("submitted"),
   household: text("household").notNull(),

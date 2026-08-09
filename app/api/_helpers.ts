@@ -12,6 +12,8 @@ export async function authenticatedDb() {
   const blocked=await db.query.accountSanctions.findFirst({where:eq(accountSanctions.fingerprintHash,fingerprintHash)});
   if(blocked?.status==="confirmed")return null;
   await db.insert(members).values({ id: user.userId, email: user.email, displayName: user.displayName }).onConflictDoUpdate({ target: members.id, set: { email: user.email, displayName: user.displayName } });
+  const administrators = (process.env.ADMIN_EMAILS || "").split(",").map(value => value.trim().toLowerCase()).filter(Boolean);
+  if (administrators.includes(user.email.trim().toLowerCase())) await db.update(members).set({ role: "admin", verified: true }).where(eq(members.id, user.userId));
   const member = await db.query.members.findFirst({ where: eq(members.id, user.userId) });
   if (!member || member.sanctioned) return null;
   return { db, user, member };

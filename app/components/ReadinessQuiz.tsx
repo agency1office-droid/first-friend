@@ -8,6 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "se
 import { RadioGroup, RadioGroupItem } from "seed-design/ui/radio-group";
 import { ProgressCircle } from "seed-design/ui/progress-circle";
 import { IconCheckmarkCircleFill, IconLightbulbDot5Fill, IconCheckmarkShieldFill } from "@karrotmarket/react-monochrome-icon";
+import { educationScore as calculateEducation, readinessScore as calculateReadiness } from "../../lib/readiness-score";
 
 type Species = "cat" | "dog";
 type Profile = { homeAllowed: string; homeType: string; household: string; absence: number; careMinutes: number; safety: string; currentPets: string; longAbsence: string; monthlyBudget: number; emergencyFund: number; experience: string };
@@ -46,14 +47,15 @@ export function ReadinessQuiz() {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [saved, setSaved] = useState<"idle" | "saved" | "signin" | "error">("idle");
   const questions = useMemo(() => [...commonQuestions, ...speciesQuestions[species]], [species]);
-  const educationScore = Math.round(questions.reduce((score, question, index) => score + (answers[index] === question.answer ? 1 : 0), 0) / questions.length * 100);
-  const readinessScore = Math.max(35, Math.min(98, 50 + (profile.homeAllowed === "yes" ? 10 : -12) + (profile.household === "yes" ? 8 : -5) + (profile.absence <= 6 ? 9 : profile.absence <= 9 ? 3 : -7) + (profile.careMinutes >= (species === "dog" ? 90 : 45) ? 8 : 2) + (profile.safety === "ready" ? 7 : 0) + (profile.longAbsence === "ready" ? 5 : 0) + (profile.monthlyBudget >= (species === "dog" ? 200000 : 150000) ? 6 : 1) + (profile.emergencyFund >= 1000000 ? 5 : 1)));
+  const submittedAnswers = questions.map((_, index) => answers[index]);
+  const educationScore = calculateEducation(submittedAnswers);
+  const readinessScore = calculateReadiness(species, profile);
   const monthlyRange = species === "cat" ? [90000, 220000] : [130000, 350000];
   const initialRange = species === "cat" ? [250000, 700000] : [300000, 900000];
   const passed = educationScore >= 80;
 
   function update<K extends keyof Profile>(key: K, value: Profile[K]) { setProfile((current) => ({ ...current, [key]: value })); }
-  async function saveResult() { setSaved("idle"); const response = await fetch("/api/readiness", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ species, profile, readinessScore, educationScore }) }); if (response.ok) setSaved("saved"); else if (response.status === 401) setSaved("signin"); else setSaved("error"); }
+  async function saveResult() { setSaved("idle"); const response = await fetch("/api/readiness", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ species, profile, answers: submittedAnswers }) }); if (response.ok) setSaved("saved"); else if (response.status === 401) setSaved("signin"); else setSaved("error"); }
   function submitExam() { setStep(3); if (educationScore >= 80) void saveResult(); }
 
   return <div className="ff-readiness">
@@ -104,8 +106,8 @@ export function ReadinessQuiz() {
       {saved === "signin" && <Callout
         tone="informative"
         title="결과를 저장해 주세요"
-        description="입양 신청에 사용하려면 ChatGPT로 본인 확인이 필요해요."
-        linkProps={{ href: "/signin-with-chatgpt?return_to=%2Freadiness", children: "로그인" }}
+        description="입양 신청에 사용하려면 퍼스트프렌드 계정 로그인이 필요해요."
+        linkProps={{ href: "/login?return_to=%2Freadiness", children: "로그인" }}
       />}
       {saved === "error" && <Callout tone="critical" description="결과를 저장하지 못했어요. 잠시 후 다시 시도해 주세요."/>}
       <div className="ff-row" style={{ marginTop: 18 }}>{!passed ? <ActionButton className="ff-grow" onClick={() => { setAnswers({}); setStep(2); }}>해설 보고 다시 풀기</ActionButton> : <><ActionButton variant="neutralWeak" onClick={saveResult}>다시 저장</ActionButton><ActionButton asChild className="ff-grow"><a href="/find">입양할 친구 찾기</a></ActionButton></>}</div>

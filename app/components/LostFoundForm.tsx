@@ -25,10 +25,10 @@ export function LostFoundForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); const form = new FormData(event.currentTarget); let imageKey = ""; const file = form.get("image");
     let visualTags:string[]=[];
-    if (file instanceof File && file.size) { if(imageRef.current){try{visualTags=(await analyzeVisual(imageRef.current,false)).tags}catch{/* 텍스트 특징으로 계속 접수 */}} const upload = new FormData(); upload.set("file", await sanitizeImageFile(file)); const uploadResponse = await fetch("/api/uploads", { method: "POST", body: upload }); if (uploadResponse.status === 401) { window.location.href = "/signin-with-chatgpt?return_to=%2Flost-found"; return; } if (!uploadResponse.ok) { setError((await uploadResponse.json()).error); return; } imageKey = (await uploadResponse.json()).key; }
+    if (file instanceof File && file.size) { if(imageRef.current){try{visualTags=(await analyzeVisual(imageRef.current,false)).tags}catch{/* 텍스트 특징으로 계속 접수 */}} const upload = new FormData(); upload.set("file", await sanitizeImageFile(file)); const uploadResponse = await fetch("/api/uploads", { method: "POST", body: upload }); if (uploadResponse.status === 401) { window.location.href = "/login?return_to=%2Flost-found"; return; } if (!uploadResponse.ok) { setError((await uploadResponse.json()).error); return; } imageKey = (await uploadResponse.json()).key; }
     const payload = { kind, species: String(form.get("species")), region: String(form.get("region")), occurredAt: String(form.get("occurredAt")), description: String(form.get("description")), ownershipQuestion: String(form.get("ownershipQuestion") || "발견 당시 착용하고 있던 물건은 무엇인가요?"), alertRegion: alerts ? String(form.get("region")) : "", imageKey,visualTags };
     const response = await fetch("/api/lost-found", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
-    if (response.status === 401) { window.location.href = "/signin-with-chatgpt?return_to=%2Flost-found"; return; }
+    if (response.status === 401) { window.location.href = "/login?return_to=%2Flost-found"; return; }
     if (response.ok) { const body=await response.json(); setDone({ id: body.report.id, ...payload, matches:body.matches }); } else setError((await response.json()).error || "접수하지 못했어요.");
   }
 

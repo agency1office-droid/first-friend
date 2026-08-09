@@ -13,7 +13,7 @@ type Assessment = { id: number; readinessScore: number; educationScore: number; 
 export function ApplicationForm({ animalId, animalName }: { animalId: string; animalName: string }) {
   const [assessment, setAssessment] = useState<Assessment | null | undefined>(undefined);
   const [agreements, setAgreements] = useState<string[]>([]);
-  const [sent, setSent] = useState<{ id: number; contact?: { shelter: string; phone: string; address: string; organization: string } | null } | null>(null);
+  const [sent, setSent] = useState<{ id: number; channelStatus: "delivered" | "awaiting_onboarding" | "direct_contact"; contact?: { shelter: string; phone: string; address: string; organization: string } | null } | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => { fetch("/api/readiness").then(async (response) => response.ok ? (await response.json()).assessment : null).then(setAssessment).catch(() => setAssessment(null)); }, []);
@@ -23,8 +23,8 @@ export function ApplicationForm({ animalId, animalName }: { animalId: string; an
     if (agreements.length < 4) { setError("필수 동의를 모두 확인해 주세요."); return; }
     const form = new FormData(event.currentTarget);
     const response = await fetch("/api/applications", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ animalId, household: form.get("household"), carePlan: form.get("carePlan"), absencePlan: form.get("absencePlan"), emergencyPlan: form.get("emergencyPlan"), agreementAccepted: true }) });
-    if (response.ok) { const result = await response.json(); setSent({ id: result.application.id, contact: result.contact }); }
-    else if (response.status === 401) window.location.href = `/signin-with-chatgpt?return_to=${encodeURIComponent(`/apply/${animalId}`)}`;
+    if (response.ok) { const result = await response.json(); setSent({ id: result.application.id, contact: result.contact, channelStatus: result.channelStatus }); }
+    else if (response.status === 401) window.location.href = `/login?return_to=${encodeURIComponent(`/apply/${animalId}`)}`;
     else if (response.status === 412) setAssessment(null);
     else setError((await response.json().catch(() => null))?.error || "신청을 저장하지 못했어요.");
   }
@@ -35,7 +35,9 @@ export function ApplicationForm({ animalId, animalName }: { animalId: string; an
   if (sent) return <div className="ff-result">
     <div className="ff-kicker">신청 #{sent.id}</div><h2 className="ff-section-title">{animalName}의 보호자에게 마음이 전달됐어요</h2><p className="ff-description" style={{ margin: "8px 0 16px" }}>신청 순서가 입양을 결정하지 않습니다. 보호자가 모든 신청을 확인하고 상담을 시작해요.</p>
     <List><ListItem prefix={<IconDocumentLine/>} title="신청서 접수" detail="지금 단계예요"/><ListDivider/><ListItem prefix={<IconCheckmarkChatbubbleLeftLine/>} title="보호자 검토와 플랫폼 상담" detail="연락처를 공개하지 않고 대화해요"/><ListDivider/><ListItem prefix={<IconClockLine/>} title="동의서·안전 인계 예약" detail="승인 후 날짜와 이동 방법을 정해요"/></List>
-    {sent.contact && <div className="ff-contact-card"><div className="ff-kicker">공식 보호센터 연락</div><strong>{sent.contact.shelter}</strong><p>{sent.contact.organization}<br/>{sent.contact.address}</p><ActionButton asChild><a href={`tel:${sent.contact.phone.replace(/[^\d+]/g, "")}`}>{sent.contact.phone || "보호센터 전화하기"}</a></ActionButton><p className="ff-meta">공공데이터 동물은 신청서가 보호센터로 자동 전송되지 않습니다. 퍼스트 프렌드 신청 번호와 공고번호를 말하고 현재 보호 상태를 다시 확인해 주세요.</p></div>}
+    {sent.channelStatus === "delivered" && <Callout tone="positive" title="입점 보호소 관리자 신청함에 전달했어요" description="보호소 담당자는 지원자 준비도와 적합도, 상담 기록을 한 화면에서 확인할 수 있어요."/>}
+    {sent.channelStatus === "awaiting_onboarding" && <Callout tone="warning" title="보호소 채널 대기함에 안전하게 보관했어요" description="해당 보호소가 채널을 연결하면 기존 신청도 관리자 신청함으로 자동 인계됩니다. 현재 보호 여부는 아래 공식 연락처로 먼저 확인해 주세요."/>}
+    {sent.contact && <div className="ff-contact-card"><div className="ff-kicker">공식 보호센터 연락</div><strong>{sent.contact.shelter}</strong><p>{sent.contact.organization}<br/>{sent.contact.address}</p><ActionButton asChild><a href={`tel:${sent.contact.phone.replace(/[^\d+]/g, "")}`}>{sent.contact.phone || "보호센터 전화하기"}</a></ActionButton><p className="ff-meta">전화할 때 퍼스트 프렌드 신청 번호와 공고번호를 함께 말하면 확인이 쉬워요. 연락처는 공공데이터의 최신 값이며 방문 전 운영시간을 다시 확인해 주세요.</p></div>}
     <div style={{ marginTop: 16 }}><ActionButton asChild variant="neutralSolid" className="ff-action-link"><a href="/mypage">진행 상황 보기</a></ActionButton></div>
   </div>;
 

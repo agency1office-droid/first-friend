@@ -50,6 +50,13 @@
       "when": 1786296017039,
       "tag": "0006_robust_dagger",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1786301851348,
+      "tag": "0007_naive_captain_midlands",
+      "breakpoints": true
     }
   ]
 }

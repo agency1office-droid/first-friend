@@ -13,9 +13,9 @@ export function PostForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); if (!publicConfirmed) { setError("전체 공개와 개인정보 안내를 확인해 주세요."); return; }
     const form = new FormData(event.currentTarget); let imageKey = ""; const file = form.get("image");
-    if (file instanceof File && file.size) { const upload = new FormData(); upload.set("file", await sanitizeImageFile(file)); const uploadResponse = await fetch("/api/uploads", { method: "POST", body: upload }); if (uploadResponse.status === 401) { window.location.href = "/signin-with-chatgpt?return_to=%2Fstories%2Fnew"; return; } if (!uploadResponse.ok) { setError((await uploadResponse.json()).error); return; } imageKey = (await uploadResponse.json()).key; }
+    if (file instanceof File && file.size) { const upload = new FormData(); upload.set("file", await sanitizeImageFile(file)); const uploadResponse = await fetch("/api/uploads", { method: "POST", body: upload }); if (uploadResponse.status === 401) { window.location.href = "/login?return_to=%2Fstories%2Fnew"; return; } if (!uploadResponse.ok) { setError((await uploadResponse.json()).error); return; } imageKey = (await uploadResponse.json()).key; }
     const response = await fetch("/api/posts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ category: form.get("category"), title: form.get("title"), body: form.get("body"), imageKey }) });
-    if (response.status === 401) { window.location.href = "/signin-with-chatgpt?return_to=%2Fstories%2Fnew"; return; }
+    if (response.status === 401) { window.location.href = "/login?return_to=%2Fstories%2Fnew"; return; }
     if (response.ok) setDone(true); else setError((await response.json()).error || "공개하지 못했어요.");
   }
   if (done) return <div className="ff-result"><h2 className="ff-section-title">이야기를 공개했어요</h2><p className="ff-description" style={{ margin: "8px 0 16px" }}>댓글은 없고 공감과 응원만 받을 수 있어요. 언제든 나의 페이지에서 수정·삭제할 수 있습니다.</p><ActionButton asChild variant="neutralSolid"><a href="/stories">이야기 보기</a></ActionButton></div>;

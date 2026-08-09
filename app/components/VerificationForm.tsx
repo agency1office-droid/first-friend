@@ -15,9 +15,9 @@ export function VerificationForm() {
     event.preventDefault(); setError("");
     const form = new FormData(event.currentTarget), file = form.get("evidence");
     if (!(file instanceof File) || !file.size) return setError("확인 자료 이미지를 선택해 주세요.");
-    const safe = await sanitizeImageFile(file), upload = new FormData(); upload.set("file", safe);
+    const safe = await sanitizeImageFile(file), upload = new FormData(); upload.set("file", safe); upload.set("purpose", "role-verification");
     const uploaded = await fetch("/api/uploads", { method:"POST", body:upload });
-    if (uploaded.status === 401) { location.href = "/signin-with-chatgpt?return_to=%2Fverification"; return; }
+    if (uploaded.status === 401) { location.href = "/login?return_to=%2Fverification"; return; }
     if (!uploaded.ok) return setError((await uploaded.json()).error);
     const response = await fetch("/api/verification", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ requestedRole:form.get("role"), organization:form.get("organization"),representativeName:form.get("representativeName"),businessNumber:form.get("businessNumber"),shelterType:form.get("shelterType"), evidenceKey:(await uploaded.json()).key }) });
     if (response.ok) setDone(true); else setError((await response.json()).error);

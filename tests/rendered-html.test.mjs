@@ -16,7 +16,9 @@ test("server-renders the First Friend home experience", async () => {
   assert.match(html, /퍼스트 프렌드/);
   assert.match(html, /마음속 친구를/);
   assert.match(html, /그려서 찾기/);
-  assert.match(html, /지금 가족을 기다려요/);
+  assert.match(html, /가족을 기다리는 친구/);
+  assert.match(html, /data-seed/);
+  assert.match(html, /seed-action-button/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
   assert.match(html, /og\.png/);
 });
@@ -28,20 +30,24 @@ test("renders public discovery and safety principles", async () => {
   const findHtml = await find.text();
   const aboutHtml = await about.text();
   assert.match(findHtml, /친구 찾기/);
-  assert.match(findHtml, /건강이나 성격을 AI가 추측하지 않습니다/);
+  assert.match(findHtml, /AI는 외형의 유사성만 비교하며 건강·성격·입양 성공을 판단하지 않아요/);
   assert.match(aboutHtml, /생명을 점수로 평가하지 않아요/);
   assert.match(aboutHtml, /정확한 위치와 연락처를 보호해요/);
 });
 
 test("keeps durable bindings and generated migration", async () => {
-  const [hosting, migration, packageJson] = await Promise.all([
+  const [hosting, migration, packageJson, notices] = await Promise.all([
     readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0000_unique_rumiko_fujikawa.sql", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../THIRD_PARTY_NOTICES.md", import.meta.url), "utf8"),
   ]);
   assert.match(hosting, /"d1": "DB"/);
   assert.match(hosting, /"r2": "MEDIA"/);
   assert.match(migration, /CREATE TABLE `applications`/);
   assert.match(migration, /CREATE TABLE `lost_reports`/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
+  assert.match(packageJson, /@seed-design\/react/);
+  assert.match(packageJson, /@seed-design\/css/);
+  assert.match(notices, /Apache License, Version 2\.0/);
 });

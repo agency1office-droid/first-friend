@@ -1,14 +1,3 @@
 /* eslint-disable @next/next/no-img-element */
-import type { Animal } from "../../lib/data";
-
-export function AnimalCard({ animal }: { animal: Animal }) {
-  return <a className="animal-card" href={`/friends/${animal.id}`}>
-    <img src={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} loading="lazy" />
-    <div className="animal-card-body">
-      <div className="animal-meta"><span>{animal.species}</span><span>·</span><span>{animal.age}</span><span>·</span><span>{animal.region.split(" ")[0]}</span></div>
-      <div className="animal-name">{animal.name}</div>
-      <div className="tag-row">{animal.traits.slice(0,2).map((trait) => <span className="tag" key={trait}>{trait}</span>)}</div>
-      <span className="source-label">{animal.source}</span>
-    </div>
-  </a>;
-}
+import type {Animal} from "../../lib/data";import {IconHeartLine} from "@karrotmarket/react-monochrome-icon";
+export function AnimalCard({animal}:{animal:Animal}){return <a href={`/friends/${animal.id}`}><div className="ff-animal-image-wrap"><img className="ff-animal-image" src={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} loading="lazy"/><button type="button" className="ff-card-heart" aria-label={`${animal.name} 관심 친구 추가`}><IconHeartLine/></button></div><div className="ff-animal-info"><div className="ff-meta">{animal.region} · {animal.source}</div><div className="ff-animal-name">{animal.name}</div><div className="ff-meta">{animal.age} · {animal.sex}</div><div className="ff-tags">{animal.traits.slice(0,2).map(x=><span className="ff-tag" key={x}>{x}</span>)}</div></div></a>}

@@ -11,6 +11,7 @@ export type Animal = {
   source: string;
   updated: string;
   image: string;
+  images?: string[];
   colors: string[];
   traits: string[];
   summary: string;

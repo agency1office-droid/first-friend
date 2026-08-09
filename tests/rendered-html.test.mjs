@@ -112,3 +112,17 @@ test("protects new operations, verification, alerts, and saved-search APIs", asy
     assert.match(source, /status:\s*401/);
   }
 });
+
+test("preserves additional public animal photos and provides an original-size gallery", async () => {
+  const [publicData, gallery, detail] = await Promise.all([
+    readFile(new URL("../lib/public-data.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/AnimalGallery.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/friends/[id]/page.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(publicData, /popfile2/);
+  assert.match(publicData, /images/);
+  assert.match(gallery, /showModal\(\)/);
+  assert.match(gallery, /새 탭에서 원본 열기/);
+  assert.match(gallery, /aria-pressed/);
+  assert.match(detail, /AnimalGallery/);
+});

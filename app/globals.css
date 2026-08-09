@@ -120,6 +120,24 @@ img { display: block; max-width: 100%; }
 .ff-filter-button[data-active="true"] { color: var(--seed-color-fg-neutral-inverted); border-color: var(--seed-color-bg-neutral-solid); background: var(--seed-color-bg-neutral-solid); }
 
 .ff-detail-image { width: 100%; height: 390px; object-fit: cover; }
+.ff-gallery { background: #111; }
+.ff-gallery-main { position: relative; width: 100%; display: block; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
+.ff-gallery-expand, .ff-gallery-count { position: absolute; display: flex; align-items: center; gap: 5px; padding: 7px 10px; border-radius: 999px; color: #fff; background: rgba(0,0,0,.62); backdrop-filter: blur(8px); font-size: 12px; font-weight: 700; }
+.ff-gallery-expand { right: 12px; bottom: 12px; }
+.ff-gallery-expand svg { width: 15px; height: 15px; }
+.ff-gallery-count { left: 12px; bottom: 12px; }
+.ff-gallery-thumbs { display: flex; gap: 8px; padding: 10px 12px 12px; overflow-x: auto; }
+.ff-gallery-thumbs button, .ff-image-dialog-nav button { flex: none; width: 66px; height: 66px; padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: 9px; background: #222; opacity: .62; }
+.ff-gallery-thumbs button[data-active="true"], .ff-image-dialog-nav button[data-active="true"] { border-color: var(--seed-color-bg-brand-solid); opacity: 1; }
+.ff-gallery-thumbs img, .ff-image-dialog-nav img { width: 100%; height: 100%; object-fit: cover; }
+.ff-image-dialog { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; padding: 0; border: 0; background: rgba(0,0,0,.94); }
+.ff-image-dialog::backdrop { background: rgba(0,0,0,.94); }
+.ff-image-dialog-inner { width: 100%; min-height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+.ff-image-dialog-inner > img { width: 100%; height: calc(100dvh - 132px); object-fit: contain; }
+.ff-image-dialog-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 12px; color: #fff; }
+.ff-image-dialog-actions a, .ff-image-dialog-actions button { min-height: 42px; display: flex; align-items: center; gap: 5px; padding: 8px 11px; border: 0; border-radius: 999px; color: #fff; background: rgba(255,255,255,.14); font-size: 13px; }
+.ff-image-dialog-actions button { width: 42px; justify-content: center; }
+.ff-image-dialog-nav { display: flex; justify-content: center; gap: 8px; padding: 10px 12px 14px; overflow-x: auto; }
 .ff-detail-body { padding: 24px 16px 36px; }
 .ff-detail-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .ff-detail-name { margin: 4px 0 0; font-size: 28px; line-height: 36px; font-weight: 700; }

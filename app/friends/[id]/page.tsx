@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getAnimalById } from "../../../lib/public-data";
@@ -7,6 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "se
 import { Callout } from "seed-design/ui/callout";
 import { Badge } from "@seed-design/react";
 import { IconCheckmarkCircleFill, IconChevronLeftLine } from "@karrotmarket/react-monochrome-icon";
+import { AnimalGallery } from "../../components/AnimalGallery";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,7 @@ export default async function AnimalPage({ params }: { params: Promise<{ id: str
   if (!animal) notFound();
   return <>
     <div style={{ position: "relative" }}>
-      <img className="ff-detail-image" src={animal.image} alt={`${animal.name}의 공공데이터 등록 사진`}/>
+      <AnimalGallery name={animal.name} image={animal.image} images={animal.images}/>
       <a className="ff-icon-link" style={{ position: "absolute", top: 16, left: 12, background: "var(--seed-color-bg-layer-floating)" }} href="/find" aria-label="뒤로"><IconChevronLeftLine/></a>
     </div>
     <article className="ff-detail-body">

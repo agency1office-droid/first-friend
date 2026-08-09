@@ -6,7 +6,7 @@ const LOSS_API = "https://apis.data.go.kr/1543061/lossInfoService/lossInfo";
 const CACHE_MS = 10 * 60 * 1000;
 
 type ApiEnvelope<T> = { response?: { header?: { resultCode?: string; resultMsg?: string }; body?: { items?: { item?: T | T[] } } } };
-type AbandonedItem = { desertionNo?: string; happenDt?: string; happenPlace?: string; kindFullNm?: string; upKindNm?: string; kindNm?: string; colorCd?: string; age?: string; weight?: string; noticeNo?: string; noticeSdt?: string; noticeEdt?: string; popfile1?: string; processState?: string; sexCd?: string; neuterYn?: string; specialMark?: string; careNm?: string; careTel?: string; careAddr?: string; orgNm?: string; updTm?: string };
+type AbandonedItem = { desertionNo?: string; happenDt?: string; happenPlace?: string; kindFullNm?: string; upKindNm?: string; kindNm?: string; colorCd?: string; age?: string; weight?: string; noticeNo?: string; noticeSdt?: string; noticeEdt?: string; popfile1?: string; popfile2?: string; processState?: string; sexCd?: string; neuterYn?: string; specialMark?: string; careNm?: string; careTel?: string; careAddr?: string; orgNm?: string; updTm?: string };
 type LossItem = { happenDt?: string; happenAddr?: string; happenPlace?: string; orgNm?: string; popfile?: string; kindCd?: string; colorCd?: string; sexCd?: string; age?: string; specialMark?: string };
 type ShelterItem = { careRegNo?: string; careNm?: string; orgNm?: string; saveTrgtAnimal?: string; careAddr?: string; careTel?: string; weekOprStime?: string; weekOprEtime?: string; closeDay?: string };
 
@@ -45,6 +45,7 @@ function displayName(item: AbandonedItem) { return [item.kindNm || species(item)
 
 function mapAnimal(item: AbandonedItem): Animal | null {
   if (!item.desertionNo || !item.popfile1) return null;
+  const images = Array.from(new Set([item.popfile1, item.popfile2].map(secureImage).filter(Boolean)));
   animalContacts.set(item.desertionNo, { shelter: item.careNm || "관할 보호센터", phone: item.careTel || "", address: item.careAddr?.split(" ").slice(0, 2).join(" ") || "", organization: item.orgNm || "" });
   const animalSpecies = species(item);
   const state = item.processState || "공고중";
@@ -52,7 +53,7 @@ function mapAnimal(item: AbandonedItem): Animal | null {
   return {
     id: item.desertionNo, name: displayName(item), species: animalSpecies, breed: item.kindNm || "품종 미상", age: item.age || "나이 미상", ageGroup: ageGroup(item.age), sex: sex(item.sexCd),
     region: item.orgNm || "지역 확인 중", shelter: item.careNm || "관할 보호센터", source: "국가동물보호정보시스템", updated: compactDate(item.updTm || item.happenDt),
-    image: secureImage(item.popfile1), colors: item.colorCd?.split(/[,&+·]/).map((value) => value.trim()).filter(Boolean) || [],
+    image: images[0], images, colors: item.colorCd?.split(/[,&+·]/).map((value) => value.trim()).filter(Boolean) || [],
     traits: [item.colorCd, item.weight, state].filter((value): value is string => Boolean(value)).slice(0, 3),
     summary: item.specialMark?.trim() || `${item.happenPlace || item.orgNm || "관할 지역"}에서 구조되어 보호 중인 ${animalSpecies}입니다.`,
     health: [item.weight ? `공개 체중 ${item.weight}` : "체중 정보 없음", item.neuterYn === "Y" ? "중성화 완료로 등록됨" : item.neuterYn === "N" ? "중성화되지 않은 것으로 등록됨" : "중성화 여부 미상", `현재 상태: ${state}`],

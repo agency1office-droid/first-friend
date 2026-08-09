@@ -241,3 +241,16 @@ test("supports actionable foster and shelter management with stale-listing prote
   assert.match(migration, /CREATE TABLE `sanction_appeals`/);
   assert.match(tnr, /제주특별자치도/);
 });
+
+test("keeps draw, photo, and condition matching as independent non-tab journeys", async () => {
+  const [finder, draw, photo, conditions] = await Promise.all([
+    readFile(new URL("../app/components/Finder.tsx", import.meta.url), "utf8"),
+    render("/find/draw"), render("/find/photo"), render("/find/conditions"),
+  ]);
+  for (const response of [draw, photo, conditions]) {
+    assert.equal(response.status, 200);
+    assert.doesNotMatch(await response.clone().text(), /role="tablist"|role="tabpanel"/);
+  }
+  assert.doesNotMatch(finder, /TabsRoot|TabsContent|TabsTrigger/);
+  assert.match(finder, /\{matched && <section className="ff-section" id="match-results">/);
+});

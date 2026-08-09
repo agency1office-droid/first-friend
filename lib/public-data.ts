@@ -17,6 +17,7 @@ let animalCache: { at: number; data: Animal[] } | undefined;
 let lossCache: { at: number; data: LostAnimal[] } | undefined;
 let shelterCache: { at: number; data: Shelter[] } | undefined;
 const animalContacts = new Map<string, { shelter: string; phone: string; address: string; organization: string }>();
+const distinctImageCache = new Map<string, string[]>();
 
 function key() { return process.env.PUBLIC_DATA_API_KEY?.trim(); }
 function list<T>(value: T | T[] | undefined): T[] { return !value ? [] : Array.isArray(value) ? value : [value]; }
@@ -42,6 +43,35 @@ function sex(value = "") { return value === "M" ? "수컷" : value === "F" ? "�
 function species(item: AbandonedItem) { return item.upKindNm || item.kindFullNm?.match(/^\[([^\]]+)/)?.[1] || "기타"; }
 function ageGroup(value = ""): Animal["ageGroup"] { if (value.includes("60일미만")) return "어린 친구"; const born = Number(value.match(/(19|20)\d{2}/)?.[0]); return born && new Date().getFullYear() - born <= 1 ? "어린 친구" : "어른 친구"; }
 function displayName(item: AbandonedItem) { return [item.kindNm || species(item), item.noticeNo?.split("-").at(-1)].filter(Boolean).join(" · "); }
+
+async function imageDigest(url: string) {
+  const response = await fetch(url, { cache: "force-cache", signal: AbortSignal.timeout(5000) });
+  if (!response.ok) throw new Error(`Animal image returned ${response.status}`);
+  const size = Number(response.headers.get("content-length") || 0);
+  if (size > 8 * 1024 * 1024) throw new Error("Animal image is too large to compare");
+  const digest = await crypto.subtle.digest("SHA-256", await response.arrayBuffer());
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function distinctImages(id: string, candidates: string[]) {
+  const cached = distinctImageCache.get(id);
+  if (cached) return cached;
+  const urls = Array.from(new Set(candidates.filter(Boolean)));
+  if (urls.length < 2) return urls;
+  const accepted: string[] = [], hashes = new Set<string>();
+  for (const url of urls) {
+    try {
+      const hash = await imageDigest(url);
+      if (!hashes.has(hash)) { hashes.add(hash); accepted.push(url); }
+    } catch {
+      // 검증할 수 없는 추가 사진은 중복 노출을 피하기 위해 숨기고 대표 사진은 항상 유지합니다.
+      if (!accepted.length) accepted.push(url);
+    }
+  }
+  const result = accepted.length ? accepted : urls.slice(0, 1);
+  distinctImageCache.set(id, result);
+  return result;
+}
 
 function mapAnimal(item: AbandonedItem): Animal | null {
   if (!item.desertionNo || !item.popfile1) return null;
@@ -69,7 +99,13 @@ export async function getAnimals(limit = 24): Promise<Animal[]> {
   catch { return fallbackAnimals.slice(0, limit); }
 }
 
-export async function getAnimalById(id: string) { const items = await getAnimals(100); return items.find((item) => item.id === id) || fallbackAnimals.find((item) => item.id === id); }
+export async function getAnimalById(id: string) {
+  const items = await getAnimals(100);
+  const animal = items.find((item) => item.id === id) || fallbackAnimals.find((item) => item.id === id);
+  if (!animal) return undefined;
+  const images = await distinctImages(animal.id, animal.images || [animal.image]);
+  return { ...animal, image: images[0] || animal.image, images };
+}
 
 export async function getAnimalContactById(id: string) {
   if (!key()) return null;

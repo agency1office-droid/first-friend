@@ -121,6 +121,8 @@ test("preserves additional public animal photos and provides an original-size ga
   ]);
   assert.match(publicData, /popfile2/);
   assert.match(publicData, /images/);
+  assert.match(publicData, /crypto\.subtle\.digest\("SHA-256"/);
+  assert.match(publicData, /distinctImages/);
   assert.match(gallery, /showModal\(\)/);
   assert.match(gallery, /새 탭에서 원본 열기/);
   assert.match(gallery, /aria-pressed/);

@@ -10,7 +10,9 @@ import IconXmarkLine from "@karrotmarket/react-monochrome-icon/IconXmarkLine";
 import { Icon, BottomSheet as SeedBottomSheet, VisuallyHidden } from "@seed-design/react";
 import { Portal } from "@seed-design/react-portal";
 import type * as React from "react";
-import { forwardRef, useRef } from "react";
+import { createContext, forwardRef, useContext, useRef } from "react";
+
+const BottomSheetScrollContext = createContext<{ current: number } | null>(null);
 
 export interface BottomSheetRootProps extends SeedBottomSheet.RootProps {}
 
@@ -27,7 +29,6 @@ export const BottomSheetRoot = (props: BottomSheetRootProps) => {
   };
 
   const handleOpenChange: NonNullable<BottomSheetRootProps["onOpenChange"]> = (open, details) => {
-    if (open) scrollPosition.current = document.scrollingElement?.scrollTop ?? 0;
     onOpenChange?.(open, details);
     requestAnimationFrame(restoreScrollPosition);
   };
@@ -37,12 +38,23 @@ export const BottomSheetRoot = (props: BottomSheetRootProps) => {
     onAnimationEnd?.(open);
   };
 
-  return <SeedBottomSheet.Root {...otherProps} onOpenChange={handleOpenChange} onAnimationEnd={handleAnimationEnd}>{children}</SeedBottomSheet.Root>;
+  return <BottomSheetScrollContext.Provider value={scrollPosition}><SeedBottomSheet.Root {...otherProps} onOpenChange={handleOpenChange} onAnimationEnd={handleAnimationEnd}>{children}</SeedBottomSheet.Root></BottomSheetScrollContext.Provider>;
 };
 
 export interface BottomSheetTriggerProps extends SeedBottomSheet.TriggerProps {}
 
-export const BottomSheetTrigger = SeedBottomSheet.Trigger;
+export const BottomSheetTrigger = forwardRef<HTMLButtonElement, BottomSheetTriggerProps>(
+  ({ onClickCapture, ...props }, ref) => {
+    const scrollPosition = useContext(BottomSheetScrollContext);
+
+    return <SeedBottomSheet.Trigger ref={ref} {...props} onClickCapture={(event) => {
+      if (scrollPosition) scrollPosition.current = document.scrollingElement?.scrollTop ?? 0;
+      onClickCapture?.(event);
+    }} />;
+  },
+);
+
+BottomSheetTrigger.displayName = "BottomSheetTrigger";
 
 export interface BottomSheetContentProps extends Omit<SeedBottomSheet.ContentProps, "title"> {
   title?: React.ReactNode;

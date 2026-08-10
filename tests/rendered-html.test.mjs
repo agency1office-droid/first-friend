@@ -22,17 +22,22 @@ test("server-renders the First Friend home experience", async () => {
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /퍼스트 프렌드/);
-  assert.match(html, /마음속 친구를/);
-  assert.match(html, /그려서 찾기/);
-  assert.match(html, /오늘 등록된 보호동물/);
-  assert.match(html, /국가동물보호정보시스템/);
+  assert.match(html, /가족을 기다리는 친구/);
+  assert.match(html, /현재 위치를 설정하면 가까운 순/);
+  assert.match(html, /다른 방법으로 친구 찾기/);
   assert.match(html, /data-seed/);
-  assert.match(html, /seed-action-button/);
+  assert.match(html, /seed-chip/);
   assert.doesNotMatch(
     html,
     /codex-preview|Your site is taking shape|react-loading-skeleton/i,
   );
   assert.match(html, /og\.png/);
+});
+
+test("keeps every requested home search journey in the floating search menu", async () => {
+  const source = await readFile(new URL("../app/components/HomeSearchFab.tsx", import.meta.url), "utf8");
+  for (const path of ["/find/conditions", "/find/draw", "/find/photo", "/find/worldcup", "/drawings"])
+    assert.match(source, new RegExp(path.replaceAll("/", "\\/")));
 });
 
 test("renders public lost-animal and shelter surfaces", async () => {
@@ -508,7 +513,8 @@ test("keeps all 36 product-review pages discoverable and under the shared app-qu
   ];
   assert.equal(pages.length, 36);
   const sources = await Promise.all(pages.map(path => readFile(new URL(`../${path}`, import.meta.url), "utf8")));
-  for (const source of sources) assert.match(source, /<h1/);
+  assert.match(sources[0], /HomeAnimalFeed/);
+  for (const source of sources.slice(1)) assert.match(source, /<h1/);
   const [chrome, css] = await Promise.all([
     readFile(new URL("../app/components/AppChrome.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),

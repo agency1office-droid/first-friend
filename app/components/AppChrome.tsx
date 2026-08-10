@@ -4,6 +4,7 @@
 import { usePathname } from "next/navigation";
 import { IconBellLine, IconChevronLeftLine } from "@karrotmarket/react-monochrome-icon";
 import { BottomNav } from "./BottomNav";
+import { HomeTopbar } from "./HomeTopbar";
 
 type RouteChrome={rule:RegExp;title:string;back?:string;mode?:"detail"|"form"|"main"};
 const routes:RouteChrome[]=[
@@ -50,13 +51,13 @@ export function AppChrome({children}:{children:React.ReactNode}){
   const aboutPage=path==="/about";
   return <div className="ff-shell" data-route-mode={route?.mode||"main"}>
     <a className="ff-skip-link" href="#main-content">본문으로 바로가기</a>
-    <header className="ff-topbar">
+    {path==="/"?<HomeTopbar/>:<header className="ff-topbar">
       {route?.back?<a className="ff-app-back" href={route.back} aria-label={`${route.title}에서 뒤로 가기`}><IconChevronLeftLine aria-hidden/><span>{route.title}</span></a>:<a className="ff-brand" href="/" aria-label="퍼스트 프렌드 홈">{route?.title||"퍼스트 프렌드"}</a>}
       <div className="ff-top-actions">
         {!aboutPage&&<a className="ff-promise-link" href="/about">우리의 약속</a>}
         <a className="ff-icon-link" href="/notifications" aria-label="알림 확인"><IconBellLine aria-hidden/></a>
       </div>
-    </header>
+    </header>}
     <main className="ff-main" id="main-content" tabIndex={-1}>{children}</main>
     {!hideBottom&&<BottomNav/>}
   </div>

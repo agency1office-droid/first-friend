@@ -1,5 +1,5 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
-import { applications, shelterNeeds, shelterProfiles, shelterUpdates, supportRecords, volunteerApplications, volunteerPosts } from "../../../../db/schema";
+import { applications, shelterNeeds, shelterProfiles, shelterUpdates, supportRecords, volunteerApplications, volunteerBadges, volunteerPosts } from "../../../../db/schema";
 import { authenticatedDb, clean } from "../../_helpers";
 
 async function owner() {
@@ -55,9 +55,9 @@ export async function POST(request: Request) {
     return Response.json({ row }, { status: 201 });
   }
   if (action === "volunteer") {
-    const title = clean(data.title, 120), description = clean(data.description, 1000), scheduledAt = clean(data.scheduledAt, 80), capacity = Math.max(1, Math.min(100, Number(data.capacity) || 1));
+    const title = clean(data.title, 120), description = clean(data.description, 1000), scheduledAt = clean(data.scheduledAt, 80), capacity = Math.max(1, Math.min(100, Number(data.capacity) || 1)), category=clean(data.category,20) as "cleaning"|"photography"|"transport"|"medical"|"care"|"event";
     if (!title || description.length < 20 || !scheduledAt) return Response.json({ error: "봉사 내용과 일정을 확인해 주세요." }, { status: 400 });
-    const [row] = await state.auth.db.insert(volunteerPosts).values({ shelterId: state.profile.id, title, description, region: state.profile.region, scheduledAt, capacity }).returning();
+    const [row] = await state.auth.db.insert(volunteerPosts).values({ shelterId: state.profile.id, title, description, category:["cleaning","photography","transport","medical","care","event"].includes(category)?category:"care", region: state.profile.region, scheduledAt, capacity }).returning();
     return Response.json({ row }, { status: 201 });
   }
   if (action === "need") {
@@ -72,6 +72,7 @@ export async function POST(request: Request) {
     const post = application ? await state.auth.db.query.volunteerPosts.findFirst({ where: eq(volunteerPosts.id, application.postId) }) : null;
     if (!application || post?.shelterId !== state.profile.id || !["accepted", "declined", "completed"].includes(status)) return Response.json({ error: "봉사 지원과 상태를 확인해 주세요." }, { status: 403 });
     const [row] = await state.auth.db.update(volunteerApplications).set({ status }).where(eq(volunteerApplications.id, id)).returning();
+    if(status==="completed"){const labels:Record<string,string>={cleaning:"깨끗한 하루",photography:"프로필 사진가",transport:"안전 이동",medical:"의료 도움",care:"돌봄 메이트",event:"현장 지원"};await state.auth.db.insert(volunteerBadges).values({memberId:application.memberId,kind:"first",label:"첫 봉사"}).onConflictDoNothing();await state.auth.db.insert(volunteerBadges).values({memberId:application.memberId,kind:(post.category==="event"?"care":post.category)as"cleaning"|"photography"|"transport"|"medical"|"care",label:labels[post.category]||"돌봄 메이트"}).onConflictDoNothing()}
     return Response.json({ row });
   }
   if (action === "need-received") {

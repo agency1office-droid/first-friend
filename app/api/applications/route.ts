@@ -16,8 +16,8 @@ export async function POST(request: Request) {
   const assessment = await auth.db.query.readinessAssessments.findFirst({ where: eq(readinessAssessments.memberId, auth.user.userId), orderBy: [desc(readinessAssessments.completedAt)] });
   if (!assessment?.passed) return Response.json({ error: "입양 준비 시험을 먼저 완료해 주세요." }, { status: 412 });
   const data = await request.json() as Record<string, unknown>;
-  const animalId = clean(data.animalId, 40), household = clean(data.household), carePlan = clean(data.carePlan), absencePlan = clean(data.absencePlan), emergencyPlan = clean(data.emergencyPlan);
-  if (!animalId || household.length < 30 || carePlan.length < 30 || absencePlan.length < 20 || emergencyPlan.length < 20 || data.agreementAccepted !== true) return Response.json({ error: "신청 내용과 필수 동의를 확인해 주세요." }, { status: 400 });
+  const animalId = clean(data.animalId, 40), household = clean(data.household), carePlan = clean(data.carePlan), absencePlan = clean(data.absencePlan), emergencyPlan = clean(data.emergencyPlan),adopterAge=Math.max(18,Math.min(90,Number(data.adopterAge)||0));
+  if (!animalId || adopterAge<18 || household.length < 30 || carePlan.length < 30 || absencePlan.length < 20 || emergencyPlan.length < 20 || data.agreementAccepted !== true) return Response.json({ error: "나이·신청 내용과 필수 동의를 확인해 주세요." }, { status: 400 });
   const animal=await getAnimalById(animalId),profile=JSON.parse(assessment.profileJson||"{}") as Record<string,unknown>,reasons:string[]=[],concerns:string[]=[];let suitability=assessment.readinessScore;
   if(animal){const desired=assessment.species==="cat"?"고양이":"강아지";if(animal.species.includes(desired)){suitability+=5;reasons.push("종별 필수 교육 완료")}if(Number(profile.absence)<=6){suitability+=3;reasons.push("부재 시간이 돌봄 계획과 잘 맞아요")}else if(animal.traits.some(v=>v.includes("활발"))){suitability-=8;concerns.push("활동량 대비 긴 부재 시간을 상담해 주세요")}if(profile.household==="yes")reasons.push("동거인 동의 확인");else{concerns.push("가족 동의가 더 필요해요");suitability-=8}if(Number(profile.emergencyFund)>=1000000)reasons.push("응급 진료 대비금 준비")}
   suitability=Math.max(0,Math.min(100,suitability));const suitabilityJson=JSON.stringify({reasons,concerns,animalTraits:animal?.traits||[]});
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   const guardian=Number.isInteger(directId)?await auth.db.query.directAnimals.findFirst({where:eq(directAnimals.id,directId)}):null;
   const publicShelter=!guardian&&animal?(await getShelters(100)).find(item=>item.name===animal.shelter):null;
   const shelterProfile=!guardian&&animal?await auth.db.query.shelterProfiles.findFirst({where:publicShelter?eq(shelterProfiles.publicId,publicShelter.id):eq(shelterProfiles.name,animal.shelter)}):null;
-  const [application] = await auth.db.insert(applications).values({ memberId: auth.user.userId, guardianId:guardian?.memberId||shelterProfile?.ownerId||null, shelterPublicId:publicShelter?.id||null, animalId, household, carePlan, absencePlan, emergencyPlan, readinessScore: assessment.readinessScore, suitabilityScore:suitability,suitabilityJson, readinessAssessmentId: assessment.id, agreementAccepted: true }).returning();
+  const [application] = await auth.db.insert(applications).values({ memberId: auth.user.userId, guardianId:guardian?.memberId||shelterProfile?.ownerId||null, shelterPublicId:publicShelter?.id||null, animalId, household, carePlan, absencePlan, emergencyPlan, adopterAge, readinessScore: assessment.readinessScore, suitabilityScore:suitability,suitabilityJson, readinessAssessmentId: assessment.id, agreementAccepted: true }).returning();
   const contact = await getAnimalContactById(animalId);
   return Response.json({ application, contact, channelStatus: application.guardianId ? "delivered" : publicShelter ? "awaiting_onboarding" : "direct_contact" }, { status: 201 });
 }

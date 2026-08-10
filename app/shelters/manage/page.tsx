@@ -1,1 +1,9 @@
-import type{Metadata}from"next";import Link from"next/link";import{ShelterManager}from"../../components/ShelterManager";import{ActionButton}from"seed-design/ui/action-button";export const metadata:Metadata={title:"보호소 비즈니스"};export default function Page(){return <div className="ff-page"><header className="ff-page-header"><div className="ff-kicker">보호소 비즈니스</div><h1 className="ff-title">입양·봉사·후원을<br/>한곳에서 운영해요</h1><p className="ff-description">입점 보호소 담당자가 신청자, 보호 동물, 소식, 봉사 공고와 물품 수령을 모바일에서 바로 관리합니다.</p></header><div className="ff-business-shortcuts"><ActionButton asChild><Link href="/operations">입양 신청자 관리</Link></ActionButton><ActionButton asChild variant="neutralSolid"><Link href="/shelters">공개 채널 확인</Link></ActionButton></div><ShelterManager/></div>}
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ActionButton } from "seed-design/ui/action-button";
+import { ShelterFundraiserForm } from "../../components/ShelterFundraiserForm";
+import { ShelterManager } from "../../components/ShelterManager";
+import { ShelterNamePicker } from "../../components/ShelterNamePicker";
+
+export const metadata:Metadata={title:"보호소 비즈니스"};
+export default function Page(){return <div className="ff-page"><header className="ff-page-header"><div className="ff-kicker">보호소 비즈니스</div><h1 className="ff-title">입양·봉사·후원을<br/>한곳에서 운영해요</h1><p className="ff-description">입점 보호소 담당자가 신청자, 보호 동물, 소식, 봉사 공고와 물품 수령을 모바일에서 바로 관리합니다.</p></header><div className="ff-business-shortcuts"><ActionButton asChild><Link href="/operations">입양 신청자 관리</Link></ActionButton><ActionButton asChild variant="neutralSolid"><Link href="/shelters">공개 채널 확인</Link></ActionButton></div><ShelterManager/><ShelterNamePicker/><ShelterFundraiserForm/></div>}

@@ -22,7 +22,7 @@ export function ApplicationForm({ animalId, animalName }: { animalId: string; an
     event.preventDefault(); setError("");
     if (agreements.length < 4) { setError("필수 동의를 모두 확인해 주세요."); return; }
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/applications", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ animalId, household: form.get("household"), carePlan: form.get("carePlan"), absencePlan: form.get("absencePlan"), emergencyPlan: form.get("emergencyPlan"), agreementAccepted: true }) });
+    const response = await fetch("/api/applications", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ animalId, adopterAge:form.get("adopterAge"), household: form.get("household"), carePlan: form.get("carePlan"), absencePlan: form.get("absencePlan"), emergencyPlan: form.get("emergencyPlan"), agreementAccepted: true }) });
     if (response.ok) { const result = await response.json(); setSent({ id: result.application.id, contact: result.contact, channelStatus: result.channelStatus }); }
     else if (response.status === 401) window.location.href = `/login?return_to=${encodeURIComponent(`/apply/${animalId}`)}`;
     else if (response.status === 412) setAssessment(null);
@@ -43,6 +43,7 @@ export function ApplicationForm({ animalId, animalName }: { animalId: string; an
 
   return <form className="ff-form" onSubmit={submit}>
     <Callout tone="positive" title={`준비도 ${assessment.readinessScore}점 · 시험 ${assessment.educationScore}점`} description="이 결과는 신청자를 자동 탈락시키지 않으며 보호자의 상담 참고 자료로만 전달됩니다."/>
+    <TextField label="입양자의 현재 나이" description="평균 수명 이후까지 돌봄을 이어갈 가족·후견 계획을 상담할 때 사용합니다." required><input className="ff-native-input" name="adopterAge" type="number" min="18" max="90" required/></TextField>
     <TextField label="함께 사는 환경" description="주거 형태, 동거인, 기존 반려동물, 평일 생활 리듬을 구체적으로 적어주세요." required><TextFieldTextarea name="household" required minLength={30}/></TextField>
     <TextField label="매일의 돌봄 계획" description="급여, 놀이·산책, 배변·청소, 첫 적응 기간을 어떻게 돌볼지 적어주세요." required><TextFieldTextarea name="carePlan" required minLength={30}/></TextField>
     <TextField label="부재·여행 계획" description="평일 부재 시간과 출장·여행 시 맡길 사람 또는 시설을 적어주세요." required><TextFieldTextarea name="absencePlan" required minLength={20}/></TextField>

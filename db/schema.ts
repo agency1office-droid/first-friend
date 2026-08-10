@@ -5,7 +5,7 @@ export const members = sqliteTable("members", {
   id: text("id").primaryKey(),
   email: text("email").notNull(),
   displayName: text("display_name").notNull(),
-  role: text("role", { enum: ["member", "foster", "shelter", "admin"] }).notNull().default("member"),
+  role: text("role", { enum: ["member", "foster", "shelter", "veterinarian", "admin"] }).notNull().default("member"),
   verified: integer("verified", { mode: "boolean" }).notNull().default(true),
   sanctioned: integer("sanctioned", { mode: "boolean" }).notNull().default(false),
   homeRegion: text("home_region").notNull().default(""),
@@ -61,6 +61,7 @@ export const applications = sqliteTable("applications", {
   readinessAssessmentId: integer("readiness_assessment_id"),
   absencePlan: text("absence_plan").notNull().default(""),
   emergencyPlan: text("emergency_plan").notNull().default(""),
+  adopterAge: integer("adopter_age").notNull().default(0),
   agreementAccepted: integer("agreement_accepted", { mode: "boolean" }).notNull().default(false),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [index("idx_applications_member_status").on(table.memberId, table.status)]);
@@ -196,7 +197,7 @@ export const notifications = sqliteTable("notifications", {
 export const verificationRequests = sqliteTable("verification_requests", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   memberId: text("member_id").notNull().references(() => members.id),
-  requestedRole: text("requested_role", { enum: ["foster", "shelter"] }).notNull(),
+  requestedRole: text("requested_role", { enum: ["foster", "shelter", "veterinarian"] }).notNull(),
   organization: text("organization").notNull().default(""),
   representativeName: text("representative_name").notNull().default(""),
   businessNumber: text("business_number").notNull().default(""),
@@ -303,6 +304,7 @@ export const volunteerPosts = sqliteTable("volunteer_posts", {
   shelterId: integer("shelter_id").notNull().references(() => shelterProfiles.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
+  category: text("category", { enum: ["cleaning", "photography", "transport", "medical", "care", "event"] }).notNull().default("care"),
   region: text("region").notNull(),
   scheduledAt: text("scheduled_at").notNull(),
   capacity: integer("capacity").notNull().default(1),
@@ -414,3 +416,93 @@ export const adminAuditLogs = sqliteTable("admin_audit_logs", {
   afterJson: text("after_json").notNull().default("{}"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [index("idx_admin_audit_target_created").on(table.targetType, table.targetId, table.createdAt)]);
+
+export const drawingPosts = sqliteTable("drawing_posts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  memberId: text("member_id").notNull().references(() => members.id),
+  imageKey: text("image_key").notNull(),
+  species: text("species", { enum: ["cat", "dog"] }).notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull().default(""),
+  tagsJson: text("tags_json").notNull().default("[]"),
+  status: text("status", { enum: ["open", "matched", "closed"] }).notNull().default("open"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, table => [index("idx_drawing_posts_status_created").on(table.status, table.createdAt)]);
+
+export const drawingMatches = sqliteTable("drawing_matches", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  postId: integer("post_id").notNull().references(() => drawingPosts.id),
+  memberId: text("member_id").notNull().references(() => members.id),
+  animalId: text("animal_id").notNull(),
+  reason: text("reason").notNull(),
+  selected: integer("selected", { mode: "boolean" }).notNull().default(false),
+  points: integer("points").notNull().default(0),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, table => [uniqueIndex("idx_drawing_match_unique").on(table.postId, table.memberId, table.animalId)]);
+
+export const animalNameSuggestions = sqliteTable("animal_name_suggestions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  animalId: text("animal_id").notNull(),
+  memberId: text("member_id").notNull().references(() => members.id),
+  name: text("name").notNull(),
+  reason: text("reason").notNull().default(""),
+  votes: integer("votes").notNull().default(0),
+  selected: integer("selected", { mode: "boolean" }).notNull().default(false),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, table => [uniqueIndex("idx_animal_name_member_name").on(table.animalId, table.memberId, table.name), index("idx_animal_name_votes").on(table.animalId, table.votes)]);
+
+export const animalNameVotes = sqliteTable("animal_name_votes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  suggestionId: integer("suggestion_id").notNull().references(() => animalNameSuggestions.id),
+  memberId: text("member_id").notNull().references(() => members.id),
+}, table => [uniqueIndex("idx_animal_name_vote_unique").on(table.suggestionId, table.memberId)]);
+
+export const communityQuestions = sqliteTable("community_questions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  memberId: text("member_id").notNull().references(() => members.id),
+  category: text("category", { enum: ["adoption", "health", "behavior", "care", "shelter"] }).notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  status: text("status", { enum: ["open", "answered", "closed"] }).notNull().default("open"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, table => [index("idx_community_questions_status_created").on(table.status, table.createdAt)]);
+
+export const communityAnswers = sqliteTable("community_answers", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  questionId: integer("question_id").notNull().references(() => communityQuestions.id),
+  memberId: text("member_id").notNull().references(() => members.id),
+  body: text("body").notNull(),
+  helpful: integer("helpful").notNull().default(0),
+  accepted: integer("accepted", { mode: "boolean" }).notNull().default(false),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, table => [index("idx_community_answers_question_helpful").on(table.questionId, table.helpful)]);
+
+export const fundraisers = sqliteTable("fundraisers", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  shelterId: integer("shelter_id").notNull().references(() => shelterProfiles.id),
+  animalId: text("animal_id").notNull(),
+  title: text("title").notNull(),
+  purpose: text("purpose").notNull(),
+  targetAmount: integer("target_amount").notNull(),
+  raisedAmount: integer("raised_amount").notNull().default(0),
+  evidenceKey: text("evidence_key"),
+  status: text("status", { enum: ["review", "open", "funded", "settled", "rejected"] }).notNull().default("review"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, table => [index("idx_fundraisers_status_created").on(table.status, table.createdAt)]);
+
+export const fundraiserPledges = sqliteTable("fundraiser_pledges", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  fundraiserId: integer("fundraiser_id").notNull().references(() => fundraisers.id),
+  memberId: text("member_id").notNull().references(() => members.id),
+  amount: integer("amount").notNull(),
+  status: text("status", { enum: ["pledged", "paid", "refunded"] }).notNull().default("pledged"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, table => [index("idx_fundraiser_pledges_campaign").on(table.fundraiserId, table.createdAt)]);
+
+export const volunteerBadges = sqliteTable("volunteer_badges", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  memberId: text("member_id").notNull().references(() => members.id),
+  kind: text("kind", { enum: ["first", "cleaning", "photography", "transport", "medical", "care", "regular"] }).notNull(),
+  label: text("label").notNull(),
+  awardedAt: text("awarded_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, table => [uniqueIndex("idx_volunteer_badge_unique").on(table.memberId, table.kind)]);

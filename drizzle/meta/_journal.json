@@ -57,6 +57,13 @@
       "when": 1786301851348,
       "tag": "0007_naive_captain_midlands",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1786322670705,
+      "tag": "0008_lively_bloodstrike",
+      "breakpoints": true
     }
   ]
 }

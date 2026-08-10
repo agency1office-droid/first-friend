@@ -20,7 +20,7 @@ const palette = [
 
 type Mode = "draw" | "photo" | "conditions";
 
-export function Finder({ animals, modeOnly }: { animals: Animal[]; modeOnly?: Mode }) {
+export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Animal[]; modeOnly?: Mode; initialTags?: string }) {
   const feedback = useAppFeedback();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -31,7 +31,7 @@ export function Finder({ animals, modeOnly }: { animals: Animal[]; modeOnly?: Mo
   const [brushSize, setBrushSize] = useState(6);
   const [uploaded, setUploaded] = useState("");
   const [preview, setPreview] = useState("");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialTags.split(",")[0] || "");
   const [species, setSpecies] = useState("전체");
   const [breed, setBreed] = useState("상관 없음");
   const [coat, setCoat] = useState("상관 없음");

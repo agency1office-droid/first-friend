@@ -493,3 +493,30 @@ test("implements lifetime planning, human drawing matches, expert Q&A, transpare
   assert.match(questions, /QABoard/);
   assert.match(volunteer, /청소/);
 });
+
+test("keeps all 36 product-review pages discoverable and under the shared app-quality system", async () => {
+  const pages = [
+    "app/page.tsx", "app/find/page.tsx", "app/friends/[id]/page.tsx", "app/apply/[id]/page.tsx",
+    "app/readiness/page.tsx", "app/guide/page.tsx", "app/prepare/page.tsx", "app/find/conditions/page.tsx",
+    "app/find/draw/page.tsx", "app/find/photo/page.tsx", "app/find/worldcup/page.tsx", "app/drawings/page.tsx",
+    "app/shelters/page.tsx", "app/shelters/map/page.tsx", "app/shelters/manage/page.tsx", "app/volunteer/page.tsx",
+    "app/verification/page.tsx", "app/operations/page.tsx", "app/encyclopedia/page.tsx", "app/questions/page.tsx",
+    "app/stories/page.tsx", "app/stories/new/page.tsx", "app/support/page.tsx", "app/lost-found/page.tsx",
+    "app/tnr/page.tsx", "app/foster/page.tsx", "app/adoption-verification/page.tsx", "app/appeal/page.tsx",
+    "app/mypage/page.tsx", "app/mypage/favorites/page.tsx", "app/mypage/searches/page.tsx", "app/mypage/family/page.tsx",
+    "app/mypage/messages/page.tsx", "app/mypage/reputation/page.tsx", "app/notifications/page.tsx", "app/login/page.tsx",
+  ];
+  assert.equal(pages.length, 36);
+  const sources = await Promise.all(pages.map(path => readFile(new URL(`../${path}`, import.meta.url), "utf8")));
+  for (const source of sources) assert.match(source, /<h1/);
+  const [chrome, css] = await Promise.all([
+    readFile(new URL("../app/components/AppChrome.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(chrome, /ff-skip-link/);
+  assert.match(chrome, /data-route-mode/);
+  assert.match(chrome, /find\\\/worldcup/);
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /safe-area-inset-bottom/);
+  assert.match(css, /@media \(max-width: 360px\)/);
+});

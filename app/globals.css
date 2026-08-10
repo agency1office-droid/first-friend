@@ -301,3 +301,88 @@ img { display: block; max-width: 100%; }
 /* Playful discovery, lifetime care, trusted knowledge and action systems */
 .ff-lifetime-card,.ff-play-card,.ff-fund-panel{display:grid;gap:14px;margin:22px 0;padding:18px;border:1px solid var(--seed-color-stroke-neutral-muted);border-radius:22px;background:var(--seed-color-bg-layer-default)}.ff-lifetime-card h3,.ff-play-card h2,.ff-fund-panel h2{margin:0}.ff-age-inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ff-age-inputs label{display:grid;gap:7px;padding:14px;border-radius:16px;background:var(--seed-color-bg-neutral-weak);font-weight:700}.ff-age-inputs input{width:100%;padding:11px;border:1px solid var(--seed-color-stroke-neutral-muted);border-radius:10px;background:var(--seed-color-bg-layer-default);font-size:18px;font-weight:800}.ff-age-inputs span{font-size:12px;color:var(--seed-color-fg-neutral-muted)}.ff-lifetime-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ff-lifetime-summary>div{display:grid;gap:4px;padding:14px;border-radius:16px;background:var(--seed-color-bg-brand-weak)}.ff-lifetime-summary span,.ff-lifetime-summary small{font-size:11px;color:var(--seed-color-fg-neutral-muted)}.ff-lifetime-summary strong{font-size:18px}.ff-chip-results{display:flex;flex-wrap:wrap;gap:8px}.ff-chip-results button{display:flex;gap:7px;padding:9px 12px;border:0;border-radius:999px;background:var(--seed-color-bg-brand-weak);cursor:pointer}.ff-chip-results span{color:var(--seed-color-fg-brand)}.ff-fund-panel article{padding:15px;border-radius:16px;background:var(--seed-color-bg-neutral-weak)}.ff-fund-progress{height:9px;margin:12px 0;border-radius:99px;background:var(--seed-color-bg-neutral-muted);overflow:hidden}.ff-fund-progress span{display:block;height:100%;border-radius:inherit;background:var(--seed-color-bg-brand-solid)}.ff-pledge-buttons{display:flex;gap:6px;margin-top:12px}.ff-worldcup{text-align:center}.ff-worldcup-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.ff-worldcup-pair button{display:grid;gap:10px;min-height:240px;padding:24px 12px;border:2px solid transparent;border-radius:24px;background:var(--seed-color-bg-neutral-weak);cursor:pointer}.ff-worldcup-pair button:hover,.ff-worldcup-pair button:focus-visible{border-color:var(--seed-color-stroke-brand-solid);transform:translateY(-2px)}.ff-worldcup-pair span,.ff-worldcup-emoji{font-size:82px}.ff-worldcup-pair strong{font-size:18px}.ff-worldcup-pair small{color:var(--seed-color-fg-neutral-muted)}.ff-worldcup-result{display:grid;justify-items:center;gap:16px;padding:30px 16px;text-align:center;border-radius:24px;background:var(--seed-color-bg-brand-weak)}.ff-trait-guide{margin-bottom:16px}.ff-trait-examples,.ff-volunteer-types{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.ff-trait-examples>div,.ff-volunteer-types>div{display:grid;justify-items:center;gap:8px;padding:16px 8px;border-radius:16px;background:var(--seed-color-bg-neutral-weak);text-align:center}.ff-trait-examples span,.ff-volunteer-types span{font-size:38px}.ff-trait-examples strong,.ff-volunteer-types strong{font-size:12px}.ff-drawing-board,.ff-qa-list{display:grid;gap:14px;margin-top:18px}.ff-drawing-board>article{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(0,1.4fr);gap:16px;padding:16px;border:1px solid var(--seed-color-stroke-neutral-muted);border-radius:20px}.ff-drawing-board>article>img{width:100%;height:100%;min-height:230px;object-fit:contain;border-radius:14px;background:#fff}.ff-match-answer{display:grid;gap:3px;margin-top:8px;padding:11px;border-radius:12px;color:inherit;text-decoration:none;background:var(--seed-color-bg-brand-weak)}.ff-match-answer span{font-size:12px;color:var(--seed-color-fg-neutral-muted)}.ff-qa-list>article,.ff-qa-list>a{display:block;padding:18px;border:1px solid var(--seed-color-stroke-neutral-muted);border-radius:18px;color:inherit;text-decoration:none;background:var(--seed-color-bg-layer-default)}.ff-qa-list h2{margin:7px 0}.ff-qa-list p{line-height:1.6}.ff-answer{margin:12px 0;padding:14px;border-radius:14px;background:var(--seed-color-bg-neutral-weak)}.ff-reputation-score{display:grid;justify-items:center;gap:5px;padding:28px;border-radius:24px;background:var(--seed-color-bg-brand-weak)}.ff-reputation-score strong{font-size:42px}.ff-badge-wall{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.ff-badge-wall>div{display:grid;justify-items:center;gap:7px;padding:14px;border-radius:16px;background:var(--seed-color-bg-neutral-weak)}.ff-badge-wall span{font-size:34px}
 @media(max-width:520px){.ff-age-inputs,.ff-worldcup-pair,.ff-drawing-board>article{grid-template-columns:1fr}.ff-lifetime-summary{grid-template-columns:1fr}.ff-trait-examples,.ff-volunteer-types{grid-template-columns:repeat(2,1fr)}.ff-worldcup-pair button{min-height:190px}.ff-worldcup-pair span{font-size:64px}}
+
+/* 36-route detail pass: hierarchy, touch, keyboard, safe areas and resilient content */
+html { scroll-behavior: smooth; scroll-padding-top: calc(72px + env(safe-area-inset-top)); }
+body { min-width: 320px; overflow-x: hidden; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+button:not(:disabled), select, label[for], input[type="checkbox"], input[type="radio"] { cursor: pointer; }
+button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: not-allowed; opacity: .48; }
+:where(a,button,input,textarea,select,[tabindex]):focus-visible { outline: 3px solid var(--seed-color-stroke-brand-weak); outline-offset: 2px; }
+.ff-skip-link { position: fixed; z-index: 100; left: 50%; top: 8px; transform: translate(-50%,-160%); padding: 10px 14px; border-radius: 12px; color: var(--seed-color-fg-neutral-inverted); background: var(--seed-color-bg-neutral-solid); font-size: 14px; font-weight: 700; transition: transform .16s ease; }
+.ff-skip-link:focus { transform: translate(-50%,0); }
+.ff-shell { min-height: 100dvh; padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+.ff-shell[data-route-mode="detail"], .ff-shell[data-route-mode="form"] { padding-bottom: env(safe-area-inset-bottom); }
+.ff-topbar { height: calc(56px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); }
+.ff-app-back { max-width: min(64%, 310px); }
+.ff-app-back span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ff-brand { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ff-top-actions { flex: none; }
+.ff-promise-link { min-height: 40px; display: inline-flex; align-items: center; padding: 0 10px; border-radius: 999px; color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; font-weight: 700; }
+.ff-promise-link:hover { color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
+.ff-main:focus { outline: none; }
+.ff-main { min-width: 0; }
+.ff-page { width: 100%; padding-bottom: 44px; }
+.ff-page-header { max-width: 460px; }
+.ff-page-header .ff-kicker { margin-bottom: 6px; }
+.ff-title, .ff-section-title, .ff-detail-name, .ff-hero h1 { word-break: keep-all; text-wrap: balance; }
+.ff-description, .ff-story-content, .ff-legal p, .ff-info-board-content { word-break: keep-all; overflow-wrap: anywhere; }
+.ff-description { max-width: 44ch; }
+.ff-section + .ff-section { margin-top: 4px; }
+.ff-section-head { min-height: 44px; margin-bottom: 16px; }
+.ff-more { flex: none; padding-inline: 6px; border-radius: 8px; }
+.ff-more:hover { color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
+.ff-bottom-nav { height: calc(70px + env(safe-area-inset-bottom)); padding: 5px 8px env(safe-area-inset-bottom); box-shadow: 0 -10px 30px rgba(0,0,0,.035); }
+.ff-nav-item { min-height: 54px; border-radius: 14px; font-size: 11px; font-weight: 600; transition: color .15s ease, background .15s ease, transform .15s ease; }
+.ff-nav-item[data-active="true"] { background: var(--seed-color-bg-brand-weak); }
+.ff-nav-item:active { transform: scale(.96); }
+.ff-nav-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ff-animal-card, .ff-search-entry-grid > a, .ff-story, .ff-qa-list > article, .ff-qa-list > a, .ff-manage-list article, .ff-ops-list > article { transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease; }
+.ff-animal-card:hover, .ff-search-entry-grid > a:hover, .ff-qa-list > a:hover { transform: translateY(-2px); }
+.ff-animal-image-wrap { box-shadow: inset 0 0 0 1px rgba(0,0,0,.035); }
+.ff-animal-name, .ff-story-title, .ff-qa-list h2 { overflow-wrap: anywhere; }
+.ff-tag { min-height: 26px; display: inline-flex; align-items: center; }
+.ff-filter-bar, .ff-popular-scroll, .ff-gallery-thumbs, .ff-drawing-actions, .ff-chip-row { overscroll-behavior-inline: contain; scroll-snap-type: x proximity; }
+.ff-filter-button { min-height: 44px; }
+.ff-form { min-width: 0; }
+.ff-form > *, .ff-field, .ff-inline-form > * { min-width: 0; }
+.ff-native-input, .ff-native-select, .ff-native-textarea { border-radius: 12px; transition: border-color .15s ease, box-shadow .15s ease, background .15s ease; }
+.ff-native-input:hover, .ff-native-select:hover, .ff-native-textarea:hover { border-color: var(--seed-color-stroke-neutral-solid); background: var(--seed-color-bg-neutral-weak); }
+.ff-native-input:focus, .ff-native-select:focus, .ff-native-textarea:focus { border-color: var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-layer-default); box-shadow: 0 0 0 3px var(--seed-color-stroke-brand-weak); outline: 0; }
+.ff-empty { min-height: 148px; display: grid; place-items: center; line-height: 1.6; word-break: keep-all; }
+.ff-result, .ff-play-card, .ff-lifetime-card, .ff-fund-panel, .ff-auth-card { box-shadow: 0 1px 2px rgba(0,0,0,.025); }
+.ff-sticky-actions { bottom: env(safe-area-inset-bottom); box-shadow: 0 -10px 30px rgba(0,0,0,.05); }
+.ff-worldcup { display: grid; gap: 14px; }
+.ff-worldcup-progress { height: 6px; overflow: hidden; border-radius: 99px; background: var(--seed-color-bg-neutral-weak); }
+.ff-worldcup-progress > span { display: block; height: 100%; border-radius: inherit; background: var(--seed-color-bg-brand-solid); transition: width .2s ease; }
+.ff-worldcup-pair button { position: relative; overflow: hidden; transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
+.ff-worldcup-pair button::after { content: "선택"; position: absolute; right: 12px; top: 12px; padding: 5px 8px; border-radius: 999px; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-layer-default); font-size: 11px; font-weight: 800; opacity: 0; transform: translateY(-4px); transition: opacity .16s ease, transform .16s ease; }
+.ff-worldcup-pair button:hover::after, .ff-worldcup-pair button:focus-visible::after { opacity: 1; transform: translateY(0); }
+.ff-worldcup-pair button:hover, .ff-worldcup-pair button:focus-visible { box-shadow: 0 12px 30px rgba(0,0,0,.08); }
+.ff-worldcup-pair button:active { transform: scale(.985); }
+.ff-qa-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--seed-color-fg-neutral-muted); font-size: 12px; }
+.ff-answer { border-left: 3px solid var(--seed-color-stroke-brand-weak); }
+.ff-match-answer > a { display: grid; gap: 3px; min-width: 0; }
+.ff-match-answer > button { justify-self: start; min-height: 36px; margin-top: 7px; padding: 0 10px; border: 0; border-radius: 9px; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-layer-default); font-size: 12px; font-weight: 800; }
+.ff-ops-list, .ff-manage-list, .ff-qa-list, .ff-drawing-board { min-width: 0; }
+.ff-ops-list > article, .ff-manage-list article { overflow: hidden; }
+.ff-legal { max-width: 66ch; margin-inline: auto; }
+
+@media (hover: none) {
+  .ff-animal-card:hover, .ff-search-entry-grid > a:hover, .ff-qa-list > a:hover, .ff-worldcup-pair button:hover { transform: none; box-shadow: none; }
+}
+@media (max-width: 360px) {
+  .ff-promise-link { display: none; }
+  .ff-topbar { padding-inline: 12px; }
+  .ff-title { font-size: 26px; line-height: 34px; }
+  .ff-hero h1 { font-size: 31px; line-height: 40px; }
+  .ff-radio-grid, .ff-cost-summary, .ff-shelter-channel-actions, .ff-business-shortcuts { grid-template-columns: 1fr; }
+  .ff-story { grid-template-columns: 76px minmax(0,1fr); }
+  .ff-story-image { width: 76px; height: 76px; }
+}
+@media (min-width: 521px) {
+  body { padding-block: 18px; }
+  .ff-shell { min-height: calc(100dvh - 36px); border-radius: 24px; overflow: clip; }
+  .ff-topbar { border-radius: 24px 24px 0 0; }
+  .ff-bottom-nav { bottom: 18px; border-radius: 0 0 24px 24px; }
+}

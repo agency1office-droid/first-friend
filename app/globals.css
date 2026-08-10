@@ -425,6 +425,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-home-search-menu a > span:nth-child(2) { min-width: 0; display: grid; gap: 3px; }
 .ff-home-search-menu strong { font-size: 15px; }
 .ff-home-search-menu small { overflow: hidden; color: var(--seed-color-fg-neutral-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+/* Portaled sheets stay aligned with the 520px app surface on wide screens. */
+.seed-bottom-sheet__positioner { left: 50%; right: auto; width: min(100%,520px); transform: translateX(-50%); }
 @media (max-width: 360px) {
   .ff-animal-card-row > a { grid-template-columns: 104px minmax(0,1fr); gap: 12px; }
   .ff-animal-card-row .ff-animal-image-wrap { width: 104px; height: 112px; }

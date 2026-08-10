@@ -40,6 +40,13 @@ test("keeps every requested home search journey in the floating search menu", as
     assert.match(source, new RegExp(path.replaceAll("/", "\\/")));
 });
 
+test("portals bottom sheets outside sticky navigation containers", async () => {
+  const source = await readFile(new URL("../seed-design/ui/bottom-sheet.tsx", import.meta.url), "utf8");
+  assert.match(source, /@seed-design\/react-portal/);
+  assert.match(source, /<Portal>/);
+  assert.match(source, /<SeedBottomSheet\.Positioner/);
+});
+
 test("renders public lost-animal and shelter surfaces", async () => {
   const [lost, shelters] = await Promise.all([
     render("/lost-found"),

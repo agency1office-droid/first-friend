@@ -102,7 +102,13 @@ export const BottomSheetContent = forwardRef<HTMLDivElement, BottomSheetContentP
 
     return (
       <Portal>
-        <SeedBottomSheet.Positioner style={{ "--layer-index": layerIndex } as React.CSSProperties}>
+        <SeedBottomSheet.Positioner style={{
+          "--layer-index": layerIndex,
+          insetInline: 0,
+          marginInline: "auto",
+          maxWidth: 520,
+          width: "100%",
+        } as React.CSSProperties}>
           <SeedBottomSheet.Backdrop />
           <SeedBottomSheet.Content ref={ref} {...otherProps}>
             {showHandle && <SeedBottomSheet.Handle />}

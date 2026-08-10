@@ -11,7 +11,7 @@ img { display: block; max-width: 100%; }
 .ff-topbar { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--seed-color-bg-layer-default) 92%, transparent); border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); backdrop-filter: blur(16px); }
 .ff-brand { font-size: 20px; line-height: 28px; font-weight: 700; letter-spacing: -.02em; }
 .ff-top-actions { display: flex; align-items: center; gap: 4px; }
-.ff-icon-link { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 999px; color: var(--seed-color-fg-neutral); }
+.ff-icon-link { width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 999px; color: var(--seed-color-fg-neutral); background: transparent; }
 .ff-icon-link:hover { background: var(--seed-color-bg-neutral-weak); }
 .ff-main { min-height: calc(100vh - 132px); }
 .ff-page { padding: 20px 16px 32px; }
@@ -425,8 +425,6 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-home-search-menu a > span:nth-child(2) { min-width: 0; display: grid; gap: 3px; }
 .ff-home-search-menu strong { font-size: 15px; }
 .ff-home-search-menu small { overflow: hidden; color: var(--seed-color-fg-neutral-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-/* Portaled sheets stay aligned with the 520px app surface on wide screens. */
-.seed-bottom-sheet__positioner { left: 50%; right: auto; width: min(100%,520px); transform: translateX(-50%); }
 @media (max-width: 360px) {
   .ff-animal-card-row > a { grid-template-columns: 104px minmax(0,1fr); gap: 12px; }
   .ff-animal-card-row .ff-animal-image-wrap { width: 104px; height: 112px; }

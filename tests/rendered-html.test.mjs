@@ -47,6 +47,8 @@ test("portals bottom sheets outside sticky navigation containers", async () => {
   assert.match(source, /<SeedBottomSheet\.Positioner/);
   assert.match(source, /scrollPosition/);
   assert.match(source, /requestAnimationFrame\(restoreScrollPosition\)/);
+  assert.match(source, /insetInline: 0/);
+  assert.match(source, /maxWidth: 520/);
 });
 
 test("renders public lost-animal and shelter surfaces", async () => {

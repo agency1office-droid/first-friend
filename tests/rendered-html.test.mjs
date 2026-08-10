@@ -45,6 +45,8 @@ test("portals bottom sheets outside sticky navigation containers", async () => {
   assert.match(source, /@seed-design\/react-portal/);
   assert.match(source, /<Portal>/);
   assert.match(source, /<SeedBottomSheet\.Positioner/);
+  assert.match(source, /scrollPosition/);
+  assert.match(source, /requestAnimationFrame\(restoreScrollPosition\)/);
 });
 
 test("renders public lost-animal and shelter surfaces", async () => {

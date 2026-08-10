@@ -10,7 +10,7 @@ import IconXmarkLine from "@karrotmarket/react-monochrome-icon/IconXmarkLine";
 import { Icon, BottomSheet as SeedBottomSheet, VisuallyHidden } from "@seed-design/react";
 import { Portal } from "@seed-design/react-portal";
 import type * as React from "react";
-import { forwardRef } from "react";
+import { forwardRef, useRef } from "react";
 
 export interface BottomSheetRootProps extends SeedBottomSheet.RootProps {}
 
@@ -18,8 +18,26 @@ export interface BottomSheetRootProps extends SeedBottomSheet.RootProps {}
  * @see https://seed-design.io/react/components/action-sheet
  */
 export const BottomSheetRoot = (props: BottomSheetRootProps) => {
-  const { children, ...otherProps } = props;
-  return <SeedBottomSheet.Root {...otherProps}>{children}</SeedBottomSheet.Root>;
+  const { children, onAnimationEnd, onOpenChange, ...otherProps } = props;
+  const scrollPosition = useRef(0);
+
+  const restoreScrollPosition = () => {
+    const scrollingElement = document.scrollingElement;
+    if (scrollingElement) scrollingElement.scrollTop = scrollPosition.current;
+  };
+
+  const handleOpenChange: NonNullable<BottomSheetRootProps["onOpenChange"]> = (open, details) => {
+    if (open) scrollPosition.current = document.scrollingElement?.scrollTop ?? 0;
+    onOpenChange?.(open, details);
+    requestAnimationFrame(restoreScrollPosition);
+  };
+
+  const handleAnimationEnd: NonNullable<BottomSheetRootProps["onAnimationEnd"]> = (open) => {
+    restoreScrollPosition();
+    onAnimationEnd?.(open);
+  };
+
+  return <SeedBottomSheet.Root {...otherProps} onOpenChange={handleOpenChange} onAnimationEnd={handleAnimationEnd}>{children}</SeedBottomSheet.Root>;
 };
 
 export interface BottomSheetTriggerProps extends SeedBottomSheet.TriggerProps {}

@@ -22,8 +22,13 @@ export function AnimalFundraiserPanel({
     feedback = useAppFeedback();
   useEffect(() => {
     fetch(`/api/community?type=fundraisers&id=${encodeURIComponent(animalId)}`)
-      .then((r) => r.json())
-      .then((b) => setRows(b.fundraisers || []));
+      .then(async (response) => {
+        if (!response.ok) return { fundraisers: [] };
+        const body = await response.text();
+        return body ? JSON.parse(body) : { fundraisers: [] };
+      })
+      .then((body) => setRows(body.fundraisers || []))
+      .catch(() => setRows([]));
   }, [animalId]);
   async function pledge(id: number, amount: number) {
     const r = await fetch("/api/community", {
@@ -35,13 +40,19 @@ export function AnimalFundraiserPanel({
           amount,
         }),
       }),
-      b = await r.json();
+      responseBody = await r.text();
+    let body: { message?: string; error?: string } = {};
+    try {
+      body = responseBody ? JSON.parse(responseBody) : {};
+    } catch {
+      body = {};
+    }
     if (r.status === 401) {
       window.location.assign(`/login?return_to=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
-    if (r.ok) feedback.success(b.message);
-    else feedback.error(b.error);
+    if (r.ok) feedback.success(body.message || "참여 의향을 기록했어요");
+    else feedback.error(body.error || "잠시 후 다시 시도해 주세요");
   }
   const open = rows.filter((row) => row.status === "open");
   return (

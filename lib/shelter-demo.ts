@@ -1,0 +1,73 @@
+// LOCAL DUMMY DATA: 보호소 입점 전 소식·봉사·후원 화면을 검수하기 위한 개발 환경 전용 콘텐츠입니다.
+export function localShelterDemoContent(region: string) {
+  return {
+    updates: [
+      {
+        id: -101,
+        shelterId: -1,
+        authorId: null,
+        category: "daily" as const,
+        title: "오늘도 편안하게 지내고 있어요",
+        body: "보호 중인 친구들이 아침 식사를 마치고 햇볕이 드는 자리에서 쉬고 있어요. 보내주신 관심 덕분에 안정적으로 하루를 보내고 있습니다.",
+        imageKey: null,
+        hidden: false,
+        reactions: 28,
+        createdAt: "2026-08-12 09:30:00",
+      },
+      {
+        id: -102,
+        shelterId: -1,
+        authorId: null,
+        category: "notice" as const,
+        title: "이번 주 토요일 입양 상담을 진행해요",
+        body: "오후 1시부터 4시까지 예약 상담을 진행합니다. 동물의 성격과 생활 환경을 충분히 안내해 드리니 방문 전에 문의해 주세요.",
+        imageKey: null,
+        hidden: false,
+        reactions: 17,
+        createdAt: "2026-08-11 15:00:00",
+      },
+      {
+        id: -103,
+        shelterId: -1,
+        authorId: null,
+        category: "result" as const,
+        title: "보내주신 사료가 잘 도착했어요",
+        body: "후원해 주신 사료와 배변 패드를 확인했습니다. 필요한 친구들에게 빠짐없이 전달하고 사용 결과도 소식으로 알려드릴게요.",
+        imageKey: null,
+        hidden: false,
+        reactions: 41,
+        createdAt: "2026-08-10 11:20:00",
+      },
+    ],
+    volunteers: [
+      {
+        id: -201,
+        shelterId: -1,
+        title: "주말 보호실 청소를 함께해 주세요",
+        description: "급수기와 생활 공간을 정리하고 세탁물을 분류해요. 처음 오시는 분도 안전교육 후 참여할 수 있어요.",
+        category: "cleaning" as const,
+        region,
+        scheduledAt: "8월 17일 일요일 10:00~12:00",
+        capacity: 4,
+        status: "open" as const,
+        createdAt: "2026-08-12 10:00:00",
+      },
+      {
+        id: -202,
+        shelterId: -1,
+        title: "보호동물 프로필 사진을 찍어주세요",
+        description: "입양 공고에 사용할 자연스러운 사진을 촬영하고 간단한 보정을 도와주실 분을 기다려요.",
+        category: "photography" as const,
+        region,
+        scheduledAt: "8월 20일 수요일 14:00~16:00",
+        capacity: 2,
+        status: "open" as const,
+        createdAt: "2026-08-11 13:00:00",
+      },
+    ],
+    needs: [
+      { id: -301, shelterId: -1, itemName: "고양이 모래 6L", targetQuantity: 20, receivedQuantity: 7, unitPrice: 8_900, status: "needed" as const },
+      { id: -302, shelterId: -1, itemName: "대형 배변 패드", targetQuantity: 10, receivedQuantity: 3, unitPrice: 13_500, status: "needed" as const },
+    ],
+  };
+}

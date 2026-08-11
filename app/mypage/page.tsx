@@ -8,7 +8,7 @@ import { ActionButton } from "seed-design/ui/action-button";
 import { Callout } from "seed-design/ui/callout";
 import { List, ListLinkItem, ListDivider } from "seed-design/ui/list";
 import { Avatar } from "seed-design/ui/avatar";
-import { Badge } from "@seed-design/react";
+import { Badge } from "seed-design/ui/badge";
 import { IconArticleLine, IconCheckmarkShieldFill, IconChevronRightLine, IconGearLine, IconHeartLine, IconHousePlusLine, IconMagnifyingglassLine, IconPawprintLine, IconPersonShieldLine } from "@karrotmarket/react-monochrome-icon";
 
 export const dynamic = "force-dynamic";
@@ -51,4 +51,3 @@ export default async function MyPage() {
     <section className="ff-section"><h2 className="ff-section-title" style={{marginBottom:10}}>가족·상담·도움 관리</h2><div className="ff-service-grid"><a href="/mypage/favorites"><IconHeartLine/><strong>관심 친구</strong><span>찜한 친구 다시 보기</span></a><a href="/mypage/searches"><IconMagnifyingglassLine/><strong>검색 알림</strong><span>조건 켜기·끄기·삭제</span></a><a href="/mypage/family"><IconHeartLine/><strong>가족 상의</strong><span>함께 본 친구와 의견</span></a><a href="/mypage/messages"><IconArticleLine/><strong>메시지함</strong><span>입양 상담과 인계 기록</span></a><a href="/adoption-verification"><IconCheckmarkShieldFill/><strong>외부 입양 인증</strong><span>보호소 코드·증빙 검토</span></a><a href="/appeal"><IconPersonShieldLine/><strong>제재 이의제기</strong><span>운영자 재검토 요청</span></a><a href="/stories/manage"><IconArticleLine/><strong>글 관리</strong><span>수정·삭제·공유</span></a><a href="/mypage/help"><IconHousePlusLine/><strong>도움 기록</strong><span>후원·굿즈·물품 상태</span></a><a href="/shelters/manage"><IconGearLine/><strong>보호소 운영</strong><span>소식·봉사·필요 물품</span></a><a href="/mypage/reputation"><IconCheckmarkShieldFill/><strong>포인트·봉사 배지</strong><span>매칭 도움과 완료 봉사 기록</span></a><a href="/volunteer"><IconHousePlusLine/><strong>유형별 봉사 찾기</strong><span>청소·사진·이동·의료·돌봄</span></a></div></section>
   </div>;
 }
-

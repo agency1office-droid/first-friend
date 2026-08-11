@@ -83,6 +83,7 @@ export const BottomSheetContent = forwardRef<HTMLDivElement, BottomSheetContentP
       layerIndex,
       showCloseButton = true,
       showHandle = false,
+      className,
       ...otherProps
     },
     ref,
@@ -110,7 +111,7 @@ export const BottomSheetContent = forwardRef<HTMLDivElement, BottomSheetContentP
           width: "100%",
         } as React.CSSProperties}>
           <SeedBottomSheet.Backdrop />
-          <SeedBottomSheet.Content ref={ref} {...otherProps}>
+          <SeedBottomSheet.Content ref={ref} className={["ff-bottom-sheet-content", className].filter(Boolean).join(" ")} {...otherProps}>
             {showHandle && <SeedBottomSheet.Handle />}
             {shouldRenderHeader && (
               <SeedBottomSheet.Header>

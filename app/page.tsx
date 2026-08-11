@@ -1,7 +1,9 @@
-import { getAnimalsWithPhotoCounts } from "../lib/public-data";
+import type { AnimalPage } from "../lib/public-animal-store";
 import { HomeAnimalFeed } from "./components/HomeAnimalFeed";
 import { HomeSearchFab } from "./components/HomeSearchFab";
 
 export const dynamic="force-dynamic";
 
-export default async function Home(){const animals=await getAnimalsWithPhotoCounts(30);return <div className="ff-page ff-home-page"><HomeAnimalFeed animals={animals}/><HomeSearchFab/></div>}
+const initialPage: AnimalPage = { items: [], total: 0, nextCursor: null, syncedAt: null, stale: false };
+
+export default function Home(){return <div className="ff-page ff-home-page"><HomeAnimalFeed initialPage={initialPage}/><HomeSearchFab/></div>}

@@ -1,1 +1,30 @@
-import type{Metadata}from"next";import{eq}from"drizzle-orm";import{requireChatGPTUser}from"../../chatgpt-auth";import{getDb}from"../../../db";import{favorites}from"../../../db/schema";import{getAnimalsWithPhotoCounts}from"../../../lib/public-data";import{AnimalCard}from"../../components/AnimalCard";export const dynamic="force-dynamic";export const metadata:Metadata={title:"관심 친구"};export default async function Page(){const user=await requireChatGPTUser("/mypage/favorites"),rows=await getDb().select().from(favorites).where(eq(favorites.memberId,user.userId)),ids=new Set(rows.map(r=>r.animalId)),animals=(await getAnimalsWithPhotoCounts(100)).filter(a=>ids.has(a.id));return <div className="ff-page"><header className="ff-page-header"><div className="ff-kicker">다시 천천히 살펴보기</div><h1 className="ff-title">관심 친구</h1><p className="ff-description">공고 상태가 바뀌면 목록에서 제외될 수 있어요.</p></header>{animals.length?<div className="ff-animal-grid">{animals.map(animal=><AnimalCard key={animal.id} animal={animal}/>)}</div>:<div className="ff-empty">현재 확인 가능한 관심 친구가 없어요.</div>}</div>}
+import type { Metadata } from "next";
+import { desc, eq } from "drizzle-orm";
+import { requireChatGPTUser } from "../../chatgpt-auth";
+import { getDb } from "../../../db";
+import { favorites } from "../../../db/schema";
+import { getAnimalById } from "../../../lib/public-data";
+import { FavoriteAnimalGrid } from "../../components/FavoriteAnimalGrid";
+
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "관심 친구" };
+
+export default async function Page() {
+  const user = await requireChatGPTUser("/mypage/favorites");
+  const rows = await getDb()
+    .select()
+    .from(favorites)
+    .where(eq(favorites.memberId, user.userId))
+    .orderBy(desc(favorites.createdAt));
+  const resolved = await Promise.all(rows.map((row) => getAnimalById(row.animalId)));
+  const animals = resolved.filter((animal) => animal !== undefined);
+
+  return <div className="ff-page">
+    <header className="ff-page-header">
+      <div className="ff-kicker">다시 천천히 살펴보기</div>
+      <h1 className="ff-title">관심 친구</h1>
+      <p className="ff-description">최근 스크랩한 친구부터 보여드려요. 공고가 종료되면 상세 정보가 제한될 수 있어요.</p>
+    </header>
+    <FavoriteAnimalGrid animals={animals}/>
+  </div>;
+}

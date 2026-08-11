@@ -1,6 +1,12 @@
 import { and, desc, eq } from "drizzle-orm";
 import { lostMatches, lostReports, notifications } from "../../../db/schema";
 import { authenticatedDb, clean } from "../_helpers";
+import { getLostAnimals, prioritizeLostAnimals } from "../../../lib/public-data";
+
+export async function GET(request: Request) {
+  const homeRegion = new URL(request.url).searchParams.get("region") || "";
+  return Response.json({ animals: prioritizeLostAnimals(await getLostAnimals(1000), homeRegion) });
+}
 
 export async function POST(request: Request) {
   const auth = await authenticatedDb();

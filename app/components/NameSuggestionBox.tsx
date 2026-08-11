@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ActionButton } from "seed-design/ui/action-button";
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
 import { Callout } from "seed-design/ui/callout";
@@ -20,11 +20,16 @@ export function NameSuggestionBox({
 }) {
   const [items, setItems] = useState<Suggestion[]>([]),
     feedback = useAppFeedback();
-  const load = () =>
+  const load = useCallback(() =>
     fetch(`/api/community?type=names&id=${encodeURIComponent(animalId)}`)
-      .then((r) => r.json())
-      .then((b) => setItems(b.suggestions || []));
-  useEffect(load, [animalId]);
+      .then(async (response) => {
+        if (!response.ok) return { suggestions: [] };
+        const body = await response.text();
+        return body ? JSON.parse(body) : { suggestions: [] };
+      })
+      .then((body) => setItems(body.suggestions || []))
+      .catch(() => setItems([])), [animalId]);
+  useEffect(() => { void load(); }, [load]);
   async function suggest(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget),

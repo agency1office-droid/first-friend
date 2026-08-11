@@ -37,11 +37,16 @@ export async function createSession(db: Db, memberId: string) {
   return { token, expiresAt };
 }
 
-export function sessionCookie(token: string, maxAge = SESSION_DAYS * 86400) {
-  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
+export function sessionCookie(token: string, maxAge = SESSION_DAYS * 86400, secure = true) {
+  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; ${secure ? "Secure; " : ""}SameSite=Lax; Max-Age=${maxAge}`;
 }
 
-export function clearSessionCookie() { return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`; }
+export function clearSessionCookie(secure = true) { return `${SESSION_COOKIE}=; Path=/; HttpOnly; ${secure ? "Secure; " : ""}SameSite=Lax; Max-Age=0`; }
+
+export function isLocalRequest(request: Request) {
+  const hostname = new URL(request.url).hostname;
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+}
 
 export async function memberFromSession(db: Db, token: string) {
   const session = await db.query.authSessions.findFirst({ where: and(eq(authSessions.tokenHash, await sha256(token)), gt(authSessions.expiresAt, new Date().toISOString())) });

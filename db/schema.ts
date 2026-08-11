@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const members = sqliteTable("members", {
   id: text("id").primaryKey(),
@@ -279,6 +279,13 @@ export const shelterProfiles = sqliteTable("shelter_profiles", {
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [uniqueIndex("idx_shelter_profiles_public_id").on(table.publicId), index("idx_shelter_profiles_region").on(table.region)]);
 
+export const shelterFollows = sqliteTable("shelter_follows", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  shelterPublicId: text("shelter_public_id").notNull(),
+  memberId: text("member_id").notNull().references(() => members.id),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [uniqueIndex("idx_shelter_follow_unique").on(table.shelterPublicId, table.memberId), index("idx_shelter_follow_member").on(table.memberId)]);
+
 export const shelterUpdates = sqliteTable("shelter_updates", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   shelterId: integer("shelter_id").notNull().references(() => shelterProfiles.id),
@@ -506,3 +513,65 @@ export const volunteerBadges = sqliteTable("volunteer_badges", {
   label: text("label").notNull(),
   awardedAt: text("awarded_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, table => [uniqueIndex("idx_volunteer_badge_unique").on(table.memberId, table.kind)]);
+
+export const publicShelters = sqliteTable("public_shelters", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  organization: text("organization").notNull().default(""),
+  address: text("address").notNull().default(""),
+  phone: text("phone").notNull().default(""),
+  hours: text("hours").notNull().default(""),
+  closed: text("closed").notNull().default(""),
+  lat: real("lat"),
+  lng: real("lng"),
+  approximateLocation: integer("approximate_location", { mode: "boolean" }).notNull().default(false),
+  syncedAt: text("synced_at").notNull(),
+}, table => [index("idx_public_shelters_name").on(table.name)]);
+
+export const publicAnimals = sqliteTable("public_animals", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  species: text("species").notNull(),
+  breed: text("breed").notNull(),
+  upKindCd: text("up_kind_cd").notNull().default(""),
+  kindCd: text("kind_cd").notNull().default(""),
+  age: text("age").notNull(),
+  ageGroup: text("age_group", { enum: ["어린 친구", "어른 친구", "나이 미상"] }).notNull(),
+  sex: text("sex").notNull(),
+  region: text("region").notNull(),
+  shelterId: text("shelter_id"),
+  shelterName: text("shelter_name").notNull(),
+  shelterAddress: text("shelter_address").notNull().default(""),
+  shelterPhone: text("shelter_phone").notNull().default(""),
+  shelterLat: real("shelter_lat"),
+  shelterLng: real("shelter_lng"),
+  approximateShelterLocation: integer("approximate_shelter_location", { mode: "boolean" }).notNull().default(false),
+  updated: text("updated").notNull(),
+  image1: text("image_1").notNull(),
+  image2: text("image_2").notNull().default(""),
+  colorsJson: text("colors_json").notNull().default("[]"),
+  traitsJson: text("traits_json").notNull().default("[]"),
+  summary: text("summary").notNull(),
+  healthJson: text("health_json").notNull().default("[]"),
+  lifeJson: text("life_json").notNull().default("[]"),
+  matchReason: text("match_reason").notNull(),
+  processState: text("process_state").notNull().default(""),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  lastSeenSync: text("last_seen_sync").notNull(),
+  syncedAt: text("synced_at").notNull(),
+}, table => [
+  index("idx_public_animals_active_updated").on(table.active, table.updated),
+  index("idx_public_animals_species_active").on(table.species, table.active),
+  index("idx_public_animals_kind_active").on(table.upKindCd, table.kindCd, table.active),
+  index("idx_public_animals_shelter").on(table.shelterId),
+]);
+
+export const publicSyncState = sqliteTable("public_sync_state", {
+  id: text("id").primaryKey(),
+  status: text("status", { enum: ["running", "complete", "failed"] }).notNull(),
+  lastStartedAt: text("last_started_at").notNull(),
+  lastCompletedAt: text("last_completed_at"),
+  itemCount: integer("item_count").notNull().default(0),
+  pageCount: integer("page_count").notNull().default(0),
+  message: text("message").notNull().default(""),
+});

@@ -1,1 +1,59 @@
-import type{Metadata}from"next";import{desc,eq}from"drizzle-orm";import{requireChatGPTUser}from"../../chatgpt-auth";import{getDb}from"../../../db";import{supportRecords}from"../../../db/schema";import{Callout}from"seed-design/ui/callout";import{Badge}from"@seed-design/react";export const dynamic="force-dynamic";export const metadata:Metadata={title:"나의 도움 기록"};const labels:Record<string,string>={operations:"운영 후원",goods:"굿즈",shelter_item:"보호소 물품",affiliate:"제휴가",insurance_referral:"보험 안내"};export default async function Page(){const user=await requireChatGPTUser("/mypage/help"),rows=await getDb().select().from(supportRecords).where(eq(supportRecords.memberId,user.userId)).orderBy(desc(supportRecords.createdAt));return <div className="ff-page"><header className="ff-page-header"><div className="ff-kicker">목적과 결과를 분리해서</div><h1 className="ff-title">나의 도움 기록</h1><p className="ff-description">결제·전달·수령 확인이 서로 다른 상태로 남아요.</p></header><Callout tone="informative" description="현재 외부 결제·보험 계약 전 기록은 ‘의향’ 상태이며 실제 청구되지 않았습니다."/><div className="ff-manage-list">{rows.map(row=><article key={row.id}><div><Badge tone="neutral" variant="weak">{labels[row.kind]||row.kind}</Badge><h2>{row.title}</h2><p>{row.disclosure}</p><small>{new Date(row.createdAt).toLocaleString("ko-KR")}</small></div><Badge tone="informative" variant="weak">{row.status}</Badge></article>)}{!rows.length&&<div className="ff-empty">아직 도움 기록이 없어요.</div>}</div></div>}
+import type { Metadata } from "next";
+import { desc, eq } from "drizzle-orm";
+import { requireChatGPTUser } from "../../chatgpt-auth";
+import { getDb } from "../../../db";
+import { supportRecords } from "../../../db/schema";
+import { Callout } from "seed-design/ui/callout";
+import { Badge } from "seed-design/ui/badge";
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "나의 도움 기록" };
+const labels: Record<string, string> = {
+  operations: "운영 후원",
+  goods: "굿즈",
+  shelter_item: "보호소 물품",
+  affiliate: "제휴가",
+  insurance_referral: "보험 안내",
+};
+export default async function Page() {
+  const user = await requireChatGPTUser("/mypage/help"),
+    rows = await getDb()
+      .select()
+      .from(supportRecords)
+      .where(eq(supportRecords.memberId, user.userId))
+      .orderBy(desc(supportRecords.createdAt));
+  return (
+    <div className="ff-page">
+      <header className="ff-page-header">
+        <div className="ff-kicker">목적과 결과를 분리해서</div>
+        <h1 className="ff-title">나의 도움 기록</h1>
+        <p className="ff-description">
+          결제·전달·수령 확인이 서로 다른 상태로 남아요.
+        </p>
+      </header>
+      <Callout
+        tone="informative"
+        description="현재 외부 결제·보험 계약 전 기록은 ‘의향’ 상태이며 실제 청구되지 않았습니다."
+      />
+      <div className="ff-manage-list">
+        {rows.map((row) => (
+          <article key={row.id}>
+            <div>
+              <Badge tone="neutral" variant="weak">
+                {labels[row.kind] || row.kind}
+              </Badge>
+              <h2>{row.title}</h2>
+              <p>{row.disclosure}</p>
+              <small>{new Date(row.createdAt).toLocaleString("ko-KR")}</small>
+            </div>
+            <Badge tone="informative" variant="weak">
+              {row.status}
+            </Badge>
+          </article>
+        ))}
+        {!rows.length && (
+          <div className="ff-empty">아직 도움 기록이 없어요.</div>
+        )}
+      </div>
+    </div>
+  );
+}

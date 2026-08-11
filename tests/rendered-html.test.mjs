@@ -22,16 +22,32 @@ test("server-renders the First Friend home experience", async () => {
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /퍼스트 프렌드/);
-  assert.match(html, /가족을 기다리는 친구/);
-  assert.match(html, /현재 위치를 설정하면 가까운 순/);
+  const homeFeedSource = await readFile(new URL("../app/components/HomeAnimalFeed.tsx", import.meta.url), "utf8");
+  assert.match(homeFeedSource, /ff-home-feed-(?:head|summary)/);
+  assert.match(homeFeedSource, /AnimalFilterBar/);
   assert.match(html, /다른 방법으로 친구 찾기/);
   assert.match(html, /data-seed/);
-  assert.match(html, /seed-chip/);
+  assert.match(html, /ff-animal-filter-chip/);
   assert.doesNotMatch(
     html,
     /codex-preview|Your site is taking shape|react-loading-skeleton/i,
   );
   assert.match(html, /og\.png/);
+});
+
+test("keeps shelter animal cards identical to the home feed without clipping text", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.doesNotMatch(css, /\.ff-shelter-channel-page \.ff-animal-card-row \.ff-animal-name/);
+  assert.match(css, /\.ff-animal-card-row \.ff-animal-row-info \{ min-height: 126px; display: flex; flex-direction: column;/);
+  assert.doesNotMatch(css, /grid-template-rows: 18px 27px 23px 18px 22px/);
+  assert.match(css, /\.ff-animal-row-info \.ff-animal-name \{[^}]*height: auto;/);
+});
+
+test("wraps shelter info icon-only actions with the required SEED Icon component", async () => {
+  const source = await readFile(new URL("../app/components/ShelterInfoValue.tsx", import.meta.url), "utf8");
+  assert.match(source, /layout="iconOnly"[\s\S]*<Icon svg=\{expanded \?/);
+  assert.match(source, /layout="iconOnly"[\s\S]*<Icon svg=\{<IconSquare2StackedLine\/>\}/);
+  assert.doesNotMatch(source, /layout="iconOnly"[^>]*>[\s\S]{0,80}<IconSquare2StackedLine aria-hidden/);
 });
 
 test("keeps every requested home search journey in the floating search menu", async () => {
@@ -40,8 +56,143 @@ test("keeps every requested home search journey in the floating search menu", as
     assert.match(source, new RegExp(path.replaceAll("/", "\\/")));
 });
 
+test("keeps notifications before the rightmost home menu", async () => {
+  const source = await readFile(new URL("../app/components/HomeTopbar.tsx", import.meta.url), "utf8");
+  const actions = source.slice(source.indexOf('<div className="ff-top-actions">'));
+  assert.ok(actions.indexOf('<NotificationBell home />') < actions.indexOf('<GlobalMenuButton />'));
+  const notificationBell = await readFile(new URL("../app/components/NotificationBell.tsx", import.meta.url), "utf8");
+  assert.match(notificationBell, /ff-home-notification/);
+  assert.match(notificationBell, /unread > 99 \? "99\+" : unread/);
+  assert.match(notificationBell, /notifications\/summary/);
+});
+
+test("uses consistent main and stacked app topbars", async () => {
+  const source = await readFile(new URL("../app/components/AppChrome.tsx", import.meta.url), "utf8");
+  assert.match(source, /function MainTopbar/);
+  assert.match(source, /function StackTopbar/);
+  assert.match(source, /ff-topbar-title/);
+  assert.match(source, /<NotificationBell\/><GlobalMenuButton\/>/);
+  assert.doesNotMatch(source, /ff-promise-link/);
+});
+
+test("uses a contextual animal detail topbar", async () => {
+  const [chrome, bridge, page] = await Promise.all([
+    readFile(new URL("../app/components/AppChrome.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/AnimalDetailChromeBridge.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/friends/[id]/page.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(chrome, /title:"친구 정보",topbarTitle:""/);
+  assert.match(bridge, /getBoundingClientRect\(\)\.bottom <= 56/);
+  assert.match(bridge, /FavoriteButton/);
+  assert.match(bridge, /IconAndroidshareLine/);
+  assert.match(page, /AnimalDetailChromeBridge/);
+});
+
+test("links the bottom navigation to saved friends", async () => {
+  const source = await readFile(new URL("../app/components/BottomNav.tsx", import.meta.url), "utf8");
+  assert.match(source, /href:"\/mypage\/favorites",label:"관심 친구"/);
+  assert.match(source, /IconBookmarkLine/);
+  assert.match(source, /activeHref/);
+  assert.doesNotMatch(source, /label:"친구 찾기"/);
+});
+
+test("keeps favorite add, restore, and removal consistent", async () => {
+  const [button, grid, api, detail, detailChrome] = await Promise.all([
+    readFile(new URL("../app/components/FavoriteButton.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/FavoriteAnimalGrid.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/favorites/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/friends/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/AnimalDetailChromeBridge.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(button, /aria-busy=\{hydrating \|\| busy\}/);
+  assert.match(button, /onFavoriteChange\?\.\(next\)/);
+  assert.match(grid, /current\.filter\(item => item\.id !== animal\.id\)/);
+  assert.match(api, /getAnimalById\(animalId\)/);
+  assert.match(api, /현재 확인할 수 없는 동물이에요/);
+  assert.match(api, /if \(!animalId\)[^;]+status: 400/);
+  assert.match(detail, /AnimalDetailChromeBridge/);
+  assert.match(detailChrome, /<FavoriteButton animalId=\{animalId\} animalName=\{name\}\/>/);
+});
+
+test("keeps Kakao test login local-only and issues a real member session", async () => {
+  const source = await readFile(new URL("../app/api/auth/oauth/[provider]/route.ts", import.meta.url), "utf8");
+  assert.match(source, /provider === "kakao" && isLocalRequest\(request\)/);
+  assert.match(source, /findOrCreateSocialMember/);
+  assert.match(source, /createSession/);
+  assert.match(source, /first-friend-local-kakao-member/);
+});
+
+test("replaces species tabs with actionable shelter-distance animal filters", async () => {
+  const [homeFeed, nearbyFeed, filters, api, store] = await Promise.all([
+    readFile(new URL("../app/components/HomeAnimalFeed.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/NearbyAnimalFeed.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/AnimalFilterBar.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/animals/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8"),
+  ]);
+  assert.doesNotMatch(homeFeed, /speciesOptions|Chip\.RadioRoot/);
+  assert.doesNotMatch(nearbyFeed, /const options|Chip\.RadioRoot/);
+  assert.match(filters, /import \{ Chip \} from "seed-design\/ui\/chip"/);
+  assert.match(filters, /<Chip\.Button/);
+  assert.match(filters, /<Chip\.Label/);
+  assert.match(filters, /<Chip\.SuffixIcon/);
+  assert.match(filters, /<Icon svg=\{<IconChevronDownLine\/>\}/);
+  assert.match(filters, /data-checked=\{active \|\| undefined\}/);
+  assert.match(filters, /variant="outlineWeak"/);
+  assert.doesNotMatch(filters, /<button[^>]+className="ff-animal-filter-chip"/);
+  assert.doesNotMatch(filters, /ff-filter-options/);
+  for (const label of ["가까운 순", "보호 단계", "품종"]) assert.match(filters, new RegExp(label));
+  assert.match(filters, /BreedFilterSheet/);
+  assert.doesNotMatch(filters, /UnifiedFilterSheet|previewTotal/);
+  assert.match(filters, /<SortFilterSheet[\s\S]*<StatusFilterSheet[\s\S]*<BreedFilterSheet/);
+  assert.doesNotMatch(filters, /distanceLabel|title="보호소까지 거리"/);
+  assert.doesNotMatch(filters, /sizeLabel|title="크기"/);
+  assert.doesNotMatch(filters, /ageLabel|title="나이"/);
+  assert.match(filters, /title="품종으로 찾기"/);
+  assert.doesNotMatch(filters, /상세 조건|multiplePhotos|exactLocation/);
+  for (const parameter of ["maxDistance", "breedKeys", "sizeGroup"]) { assert.match(api, new RegExp(parameter === "sizeGroup" ? "size" : parameter === "breedKeys" ? "breeds" : parameter)); assert.match(store, new RegExp(parameter)); }
+  assert.match(filters, /seed-design\/ui\/checkbox/);
+  assert.match(filters, /seed-design\/ui\/segmented-control/);
+  assert.match(filters, /품종 동물 분류/);
+  for (const category of ["모두", "고양이", "강아지"]) assert.match(filters, new RegExp(`<span>${category}<\\/span>`));
+  assert.match(filters, /ff-breed-species-label/);
+  for (const allLabel of ["모든 품종", "모든 고양이", "모든 강아지"]) assert.match(filters, new RegExp(allLabel));
+  assert.doesNotMatch(filters, /ff-breed-all-option/);
+  assert.match(filters, /shownAnimalCount/);
+  assert.match(filters, /\/api\/breeds\?\$\{params\}/);
+  assert.match(filters, /item\.count\.toLocaleString\("ko-KR"\)/);
+  assert.match(filters, /마리<\/small>/);
+  assert.match(store, /breedFilters\.has\(storedBreedKey\(row\)\)/);
+  assert.match(store, /export async function getBreedCounts/);
+  assert.doesNotMatch(store, /row\.breed\.toLocaleLowerCase/);
+  assert.match(store, /return "나이 미상"/);
+  assert.match(store, /function weightKg/);
+  assert.match(store, /function sizeGroup/);
+  assert.match(homeFeed, /조건 모두 지우기/);
+});
+
+test("uses the official public breed catalogue and stable breed codes", async () => {
+  const [catalogue, route, schema] = await Promise.all([
+    readFile(new URL("../lib/public-breeds.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/breeds/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(catalogue, /abandonmentPublicService_v2\/kind_v2/);
+  assert.match(catalogue, /up_kind_cd/);
+  assert.match(catalogue, /417000/);
+  assert.match(catalogue, /422400/);
+  assert.match(route, /getPublicBreeds/);
+  assert.match(route, /getBreedCounts/);
+  assert.match(route, /countCache/);
+  assert.match(schema, /upKindCd: text\("up_kind_cd"\)/);
+  assert.match(schema, /kindCd: text\("kind_cd"\)/);
+});
+
 test("portals bottom sheets outside sticky navigation containers", async () => {
-  const source = await readFile(new URL("../seed-design/ui/bottom-sheet.tsx", import.meta.url), "utf8");
+  const [source, css] = await Promise.all([
+    readFile(new URL("../seed-design/ui/bottom-sheet.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
   assert.match(source, /@seed-design\/react-portal/);
   assert.match(source, /<Portal>/);
   assert.match(source, /<SeedBottomSheet\.Positioner/);
@@ -49,6 +200,10 @@ test("portals bottom sheets outside sticky navigation containers", async () => {
   assert.match(source, /requestAnimationFrame\(restoreScrollPosition\)/);
   assert.match(source, /insetInline: 0/);
   assert.match(source, /maxWidth: 520/);
+  assert.match(source, /ff-bottom-sheet-content/);
+  assert.match(css, /--ff-bottom-sheet-gutter:var\(--seed-dimension-x5\)/);
+  assert.match(css, /seed-bottom-sheet__body\{--seed-box-padding-x-base:var\(--ff-bottom-sheet-gutter\)/);
+  assert.match(css, /seed-bottom-sheet__footer\{gap:var\(--seed-dimension-x2\)/);
 });
 
 test("renders public lost-animal and shelter surfaces", async () => {
@@ -65,6 +220,51 @@ test("renders public lost-animal and shelter surfaces", async () => {
   assert.match(lostHtml, /가까운 보호센터/);
   assert.match(shelterHtml, /동물보호센터 공공데이터/);
   assert.match(shelterHtml, /전국 보호센터/);
+});
+
+test("loads each shelter's animals by its public registration id", async () => {
+  const [page, store, navigation, css] = await Promise.all([
+    readFile(new URL("../app/shelters/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/ShelterSectionNav.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /getAnimalsByShelterId\(publicId\)/);
+  assert.match(page, /layout="row"/);
+  assert.match(page, /shelterAnimals\.total/);
+  assert.match(store, /eq\(publicAnimals\.shelterId, shelterId\)/);
+  assert.match(store, /eq\(publicAnimals\.active, true\)/);
+  assert.match(page, /ShelterSectionNav/);
+  assert.match(page, /ShelterChannelActions/);
+  assert.doesNotMatch(page, /ff-shelter-visit-list/);
+  assert.doesNotMatch(page, /운영시간 보기/);
+  assert.doesNotMatch(page, /ff-shelter-cover/);
+  assert.ok(page.indexOf('id="shelter-animals"') < page.indexOf('id="shelter-updates"'));
+  assert.match(navigation, /\?tab=\$\{value\}/);
+  assert.match(navigation, /\["info", "정보"\],[\s\S]*\["updates", "소식"\],[\s\S]*\["support", "봉사·후원"\],[\s\S]*\["animals", "보호동물"\]/);
+  assert.match(page, /\["info", "updates", "support", "animals"\][\s\S]*\|\| "info"/);
+  assert.match(navigation, /aria-current/);
+  assert.match(navigation, /NotificationBadge size="large"/);
+  assert.doesNotMatch(navigation, /scrollIntoView/);
+  assert.match(page, /visibleUpdates/);
+  assert.match(css, /\.ff-shelter-profile h1[^}]*font-size: var\(--seed-font-size-t7\)[^}]*line-height: var\(--seed-line-height-t7\)[^}]*font-weight: var\(--seed-font-weight-bold\)/);
+  assert.match(css, /\.ff-shelter-section-nav > a[^}]*font-size: var\(--seed-font-size-t5\)[^}]*line-height: var\(--seed-line-height-t5\)[^}]*font-weight: var\(--seed-font-weight-bold\)/);
+  assert.match(css, /\.ff-shelter-info-board > div[^}]*font-size: var\(--seed-font-size-t4\)[^}]*line-height: var\(--seed-line-height-t4\)/);
+  assert.match(page, /IconMapLocationpinLine[\s\S]*위치[\s\S]*IconClockLine[\s\S]*운영시간[\s\S]*IconPhoneLine[\s\S]*연락처/);
+  assert.match(page, /ShelterInfoValue value=\{shelter\.address\} copyLabel="주소"/);
+  assert.match(page, /ShelterInfoValue value=\{shelter\.phone\} copyLabel="연락처"/);
+  assert.match(css, /\.ff-shelter-info-board svg[^}]*width: 18px[^}]*color: var\(--seed-color-fg-neutral-subtle\)/);
+});
+
+test("stores shelter follows and notifies followers about new updates", async () => {
+  const [schema, follows, manage] = await Promise.all([
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/shelter-follows/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/shelters/manage/route.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(schema, /shelter_follows/);
+  assert.match(follows, /shelterFollows/);
+  assert.match(manage, /type: "shelter_update"/);
 });
 
 test("renders public discovery and safety principles", async () => {
@@ -257,23 +457,56 @@ test("protects new operations, verification, alerts, and saved-search APIs", asy
 });
 
 test("shows verified multi-photo counts on discovery thumbnails", async () => {
-  const [findPage, card, publicData] = await Promise.all([
+  const [findPage, card, favorite, publicData, publicStore, css] = await Promise.all([
     readFile(new URL("../app/find/page.tsx", import.meta.url), "utf8"),
     readFile(
       new URL("../app/components/AnimalCard.tsx", import.meta.url),
       "utf8",
     ),
+    readFile(
+      new URL("../app/components/FavoriteButton.tsx", import.meta.url),
+      "utf8",
+    ),
     readFile(new URL("../lib/public-data.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
-  assert.match(findPage, /getAnimalsWithPhotoCounts/);
-  assert.match(card, /사진 \{animal\.photoCount\}장/);
+  assert.match(findPage, /AnimalPage/);
+  assert.match(findPage, /NearbyAnimalFeed initialPage/);
+  assert.match(card, /IconPicture2StackedLine/);
+  assert.match(card, /aria-label=\{`사진 \$\{animal\.photoCount\}장`\}/);
+  assert.match(card, /ff-animal-row-location/);
+  assert.match(card, /ff-animal-row-shelter/);
+  assert.match(card, /animal\.shelter/);
+  assert.match(card, /\/shelters\/\$\{encodeURIComponent\(animal\.shelterId\)\}/);
+  assert.match(card, /보호소 페이지 보기/);
+  assert.match(publicData, /getShelters\(1000\)\)\.find/);
+  assert.match(card, /ff-animal-row-distance/);
+  assert.match(card, /ff-animal-row-public-status/);
+  assert.match(card, /getAnimalPublicStatus/);
+  assert.match(favorite, /import \{ Bookmark \} from "lucide-react"/);
+  assert.match(favorite, /fill=\{saved \? "currentColor" : "none"\}/);
+  assert.match(favorite, /useState\(initialSaved \?\? false\)/);
+  assert.match(favorite, /fetch\("\/api\/favorites"\)/);
+  assert.match(favorite, /ids\.has\(animalId\)/);
+  assert.match(favorite, /favoriteIdsRequest/);
+  assert.match(favorite, /disabled=\{hydrating \|\| busy\}/);
+  assert.doesNotMatch(favorite, /\.catch\(\(\) => new Set/);
+  assert.match(favorite, /ff-card-scrap/);
+  assert.match(css, /\.ff-animal-card-row \.ff-card-scrap \{[^}]*--seed-color-fg-placeholder/);
+  assert.match(css, /\.ff-animal-card-row \.ff-card-scrap:hover \{ color: var\(--seed-color-fg-placeholder\)/);
+  assert.match(css, /\.ff-card-scrap\[aria-pressed="true"\] \{ color: var\(--seed-color-fg-brand\); background: var\(--seed-color-bg-brand-weak\)/);
+  assert.match(card, /formatDistance\(animal\.distanceMeters\)/);
+  assert.match(card, /layout === "row"/);
   assert.match(publicData, /getAnimalsWithPhotoCounts/);
-  assert.match(publicData, /distinctImages/);
+  assert.match(publicData, /distinctAnimalImages/);
+  assert.match(publicStore, /photoCount: new Set\(images\)\.size/);
 });
 
 test("preserves additional public animal photos and provides an original-size gallery", async () => {
-  const [publicData, gallery, detail] = await Promise.all([
+  const [publicData, imageVerifier, gallery, detail] = await Promise.all([
     readFile(new URL("../lib/public-data.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/animal-images.ts", import.meta.url), "utf8"),
     readFile(
       new URL("../app/components/AnimalGallery.tsx", import.meta.url),
       "utf8",
@@ -282,14 +515,35 @@ test("preserves additional public animal photos and provides an original-size ga
   ]);
   assert.match(publicData, /popfile2/);
   assert.match(publicData, /images/);
-  assert.match(publicData, /crypto\.subtle\.digest\("SHA-256"/);
-  assert.match(publicData, /distinctImages/);
+  assert.match(imageVerifier, /crypto\.subtle\.digest\("SHA-256"/);
+  assert.match(imageVerifier, /distinctAnimalImages/);
   assert.match(gallery, /showModal\(\)/);
   assert.match(gallery, /새 탭에서 원본 열기/);
   assert.match(gallery, /aria-pressed/);
   assert.match(gallery, /사진 \{available\.length\}장/);
   assert.match(gallery, /\{index \+ 1\}\/\{available\.length\}/);
   assert.match(detail, /AnimalGallery/);
+});
+
+test("explains public notice deadlines without presenting them as adoption deadlines", async () => {
+  const [detail, status, actions, apply] = await Promise.all([
+    readFile(new URL("../app/friends/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/animal-public-status.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/AnimalActions.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/apply/[id]/page.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(detail, /getAnimalPublicStatus/);
+  assert.match(status, /보호자 확인 공고 중/);
+  assert.match(status, /잃어버린 동물일 수 있어 원래 보호자를 확인하고 있어요/);
+  assert.match(status, /입양 상담 가능/);
+  assert.match(status, /publicOutcomeLabel/);
+  assert.match(status, /현재 처리 상태/);
+  assert.match(status, /상담 이후 실제 입양 가능 여부와 절차는 보호소가 확인합니다/);
+  assert.match(actions, /이 동물을 아시나요\?/);
+  assert.match(actions, /입양 상담하기/);
+  assert.doesNotMatch(actions, /입양 신청/);
+  assert.match(apply, /공공데이터만으로 입양 가능 여부를 확정할 수 없어요/);
+  assert.doesNotMatch(apply, /ApplicationForm/);
 });
 
 test("excludes closed public notices from adoption discovery", async () => {
@@ -525,6 +779,8 @@ test("keeps all 36 product-review pages discoverable and under the shared app-qu
   assert.equal(pages.length, 36);
   const sources = await Promise.all(pages.map(path => readFile(new URL(`../${path}`, import.meta.url), "utf8")));
   assert.match(sources[0], /HomeAnimalFeed/);
+  assert.match(sources[29], /rows\.map\(\(row\) => getAnimalById\(row\.animalId\)\)/);
+  assert.match(sources[29], /FavoriteAnimalGrid/);
   for (const source of sources.slice(1)) assert.match(source, /<h1/);
   const [chrome, css] = await Promise.all([
     readFile(new URL("../app/components/AppChrome.tsx", import.meta.url), "utf8"),
@@ -533,7 +789,109 @@ test("keeps all 36 product-review pages discoverable and under the shared app-qu
   assert.match(chrome, /ff-skip-link/);
   assert.match(chrome, /data-route-mode/);
   assert.match(chrome, /find\\\/worldcup/);
+  assert.match(chrome, /window\.history\.back\(\)/);
+  assert.match(chrome, /sessionStorage/);
+  assert.match(chrome, /<button className="ff-app-back"/);
+  assert.match(chrome, /window\.location\.assign\(fallback\)/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /safe-area-inset-bottom/);
   assert.match(css, /@media \(max-width: 360px\)/);
+});
+
+test("adds Kakao vehicle travel time to the shelter distance summary without exposing the REST key", async () => {
+  const [route, location, geo] = await Promise.all([
+    readFile(new URL("../app/api/maps/directions/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/ShelterLocationCard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/geo.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(route, /apis-navi\.kakaomobility\.com\/v1\/directions/);
+  assert.match(route, /KAKAO_REST_API_KEY/);
+  assert.match(route, /Authorization: `KakaoAK \$\{key\}`/);
+  assert.match(route, /summary\?\.duration/);
+  assert.doesNotMatch(location, /KAKAO_REST_API_KEY/);
+  assert.match(location, /\/api\/maps\/directions/);
+  assert.match(location, /차로 약/);
+  assert.match(geo, /formatDrivingDuration/);
+});
+
+test("centers both Kakao map modes closely on the shelter without a fallback notice card", async () => {
+  const [location, staticMap] = await Promise.all([
+    readFile(new URL("../app/components/ShelterLocationCard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/maps/static/route.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(location, /center: shelterPoint, level: 3/);
+  assert.doesNotMatch(location, /현재는 카카오 정적 지도로 표시해요/);
+  assert.doesNotMatch(location, /homeLat=|homeLng=/);
+  assert.match(staticMap, /searchParams\.set\("center", `\$\{lng\},\$\{lat\}`\)/);
+  assert.match(staticMap, /searchParams\.set\("lv", "3"\)/);
+  assert.doesNotMatch(staticMap, /homeLat|homeLng/);
+});
+
+test("places the public-data badge beside the shelter name", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("../app/shelters/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /ff-shelter-profile-heading[\s\S]*<h1>\{shelter\.name\}<\/h1>[\s\S]*ff-shelter-profile-badge/);
+  assert.match(css, /\.ff-shelter-profile-heading \{[^}]*display: flex;[^}]*flex-wrap: wrap;/);
+  assert.doesNotMatch(css, /ff-shelter-profile-badge \{[^}]*margin:/);
+  const profileHeader = page.slice(page.indexOf('<header className="ff-shelter-profile">'), page.indexOf("<ShelterChannelActions"));
+  assert.doesNotMatch(profileHeader, /shelter\.address|방문 전 전화 확인/);
+});
+
+test("keeps the shelter data notice readable at Korean word boundaries", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("../app/shelters/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /공공데이터와 보호소 확인 정보를 함께 보여드려요/);
+  assert.match(page, /방문 전 운영시간과 상담 가능 여부를 확인해 주세요/);
+  assert.match(css, /\.ff-shelter-data-note \{[^}]*word-break: keep-all;[^}]*text-wrap: pretty;/);
+  assert.match(css, /\.ff-shelter-data-note > span \{ display: block; \}/);
+});
+
+test("uses a compact SEED-scale shelter identity header after removing duplicate details", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("../app/shelters/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /ff-shelter-profile-badge" size="medium"/);
+  assert.match(css, /\.ff-shelter-profile \{[^}]*padding: 16px;/);
+  assert.match(css, /\.ff-shelter-profile \.ff-shelter-avatar \{[^}]*width: 40px; height: 40px; border-radius: 12px;/);
+  assert.match(css, /\.ff-shelter-profile \.ff-shelter-avatar svg \{ width: 20px; height: 20px; \}/);
+  assert.match(css, /\.ff-shelter-profile h1 \{[^}]*font-size: var\(--seed-font-size-t7\);/);
+});
+
+test("shows interactive local-only dummy shelter updates, volunteering, and needs", async () => {
+  const [page, demo, reaction, volunteer, support] = await Promise.all([
+    readFile(new URL("../app/shelters/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/shelter-demo.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/ShelterReactionButton.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/VolunteerButton.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/SupportIntentButton.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /process\.env\.NODE_ENV !== "production" \? localShelterDemoContent/);
+  assert.match(page, /demo=\{update\.id < 0\}/);
+  assert.match(page, /demo=\{post\.id < 0\}/);
+  assert.match(page, /demo=\{need\.id < 0\}/);
+  assert.match(demo, /LOCAL DUMMY DATA/);
+  assert.match(demo, /주말 보호실 청소/);
+  assert.match(demo, /고양이 모래 6L/);
+  for (const source of [reaction, volunteer, support]) assert.match(source, /if\(demo\)/);
+});
+
+test("uses distinct feed, recruitment, and delivery-progress patterns in shelter channels", async () => {
+  const [page, css, support] = await Promise.all([
+    readFile(new URL("../app/shelters/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/SupportIntentButton.tsx", import.meta.url), "utf8"),
+  ]);
+  for (const className of ["ff-shelter-update-meta", "ff-shelter-volunteer-list", "ff-volunteer-facts", "ff-shelter-needs-list", "ff-need-progress"])
+    assert.match(page, new RegExp(className));
+  assert.match(page, /role="progressbar"/);
+  assert.match(page, /label="도움 주기"/);
+  assert.doesNotMatch(page, /<ListItem/);
+  assert.match(css, /\.ff-shelter-help-group \+ \.ff-shelter-help-group[^}]*border-top: 8px solid/);
+  assert.match(css, /\.ff-need-progress > span[^}]*background: var\(--seed-color-bg-brand-solid\)/);
+  assert.match(support, /size\?:"small"\|"medium"/);
 });

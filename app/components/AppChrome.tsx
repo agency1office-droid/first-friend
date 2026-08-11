@@ -1,14 +1,18 @@
-/* eslint-disable @next/next/no-html-link-for-pages */
 "use client";
 
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { IconBellLine, IconChevronLeftLine } from "@karrotmarket/react-monochrome-icon";
+import { IconChevronLeftLine } from "@karrotmarket/react-monochrome-icon";
 import { BottomNav } from "./BottomNav";
 import { HomeTopbar } from "./HomeTopbar";
+import { NotificationBell } from "./NotificationBell";
+import { GlobalMenuButton } from "./GlobalMenuButton";
 
-type RouteChrome={rule:RegExp;title:string;back?:string;mode?:"detail"|"form"|"main"};
+type RouteChrome={rule:RegExp;title:string;topbarTitle?:string;back?:string;mode?:"detail"|"form"|"main"|"stack"};
 const routes:RouteChrome[]=[
-  {rule:/^\/friends\//,title:"친구 상세",back:"/find",mode:"detail"},
+  {rule:/^\/participate\/?$/,title:"함께하기",mode:"main"},
+  {rule:/^\/mypage\/favorites\/?$/,title:"관심 친구",mode:"main"},
+  {rule:/^\/friends\//,title:"친구 정보",topbarTitle:"",back:"/find",mode:"detail"},
   {rule:/^\/apply\//,title:"입양 신청",back:"/find",mode:"form"},
   {rule:/^\/applications\//,title:"입양 진행",back:"/mypage",mode:"detail"},
   {rule:/^\/family\//,title:"가족과 상의하기",back:"/find",mode:"detail"},
@@ -16,6 +20,8 @@ const routes:RouteChrome[]=[
   {rule:/^\/find\/(draw|photo|conditions)/,title:"특별한 방법으로 찾기",back:"/find"},
   {rule:/^\/drawings/,title:"그림 탐정단",back:"/find"},
   {rule:/^\/questions/,title:"질문답변",back:"/"},
+  {rule:/^\/lost-found\/animals\//,title:"실종 동물 상세",back:"/lost-found/animals",mode:"detail"},
+  {rule:/^\/lost-found\/animals\/?$/,title:"실종 동물",back:"/lost-found",mode:"main"},
   {rule:/^\/volunteer/,title:"보호소 봉사",back:"/shelters"},
   {rule:/^\/shelters\/manage/,title:"보호소 비즈니스",back:"/mypage",mode:"form"},
   {rule:/^\/shelters\/map/,title:"주변 보호소",back:"/shelters"},
@@ -39,25 +45,66 @@ const routes:RouteChrome[]=[
   {rule:/^\/support/,title:"후원·제휴",back:"/"},
   {rule:/^\/about/,title:"퍼스트 프렌드의 약속",back:"/"},
   {rule:/^\/(terms|privacy)/,title:"이용 안내",back:"/"},
+  {rule:/^\/notifications/,title:"알림",back:"/"},
+  {rule:/^\/guide/,title:"입양 절차 안내",back:"/"},
   {rule:/^\/shelters/,title:"보호소",mode:"main"},
   {rule:/^\/stories/,title:"이야기",mode:"main"},
   {rule:/^\/find/,title:"친구 찾기",mode:"main"},
   {rule:/^\/mypage/,title:"나의 페이지",mode:"main"},
 ];
 
+const historyKey="ff-app-navigation-history";
+function readHistory(){try{const value=JSON.parse(window.sessionStorage.getItem(historyKey)||"[]");return Array.isArray(value)?value.filter(item=>typeof item==="string").slice(-30):[]}catch{return[]}}
+function writeHistory(value:string[]){try{window.sessionStorage.setItem(historyKey,JSON.stringify(value.slice(-30)))}catch{return}}
+
+function AppBackButton({fallback,title}:{fallback:string;title:string}){
+  const goBack=()=>{
+    const current=`${window.location.pathname}${window.location.search}${window.location.hash}`,stack=readHistory();
+    const currentIndex=stack.lastIndexOf(current);
+    if(currentIndex>=0)stack.splice(currentIndex,1);else if(stack.length)stack.pop();
+    const hasAppPrevious=stack.length>0;
+    if(hasAppPrevious&&window.history.length>1){writeHistory(stack);window.history.back();return}
+    const sameOriginReferrer=Boolean(document.referrer&&new URL(document.referrer).origin===window.location.origin);
+    if(sameOriginReferrer&&window.history.length>1){window.history.back();return}
+    window.location.assign(fallback);
+  };
+  return <button className="ff-app-back" type="button" onClick={goBack} aria-label={`${title}에서 이전 페이지로 돌아가기`}><IconChevronLeftLine aria-hidden/></button>;
+}
+
+function MainTopbar({title}:{title:string}){
+  return <header className="ff-topbar ff-main-topbar">
+    <strong className="ff-topbar-main-title">{title}</strong>
+    <div className="ff-top-actions"><NotificationBell/><GlobalMenuButton/></div>
+  </header>;
+}
+
+function StackTopbar({route}:{route:RouteChrome}){
+  return <header className="ff-topbar ff-stack-topbar">
+    <div className="ff-topbar-side">{route.back&&<AppBackButton fallback={route.back} title={route.title}/>}</div>
+    <strong className="ff-topbar-title">{route.topbarTitle ?? route.title}</strong>
+    <div className="ff-topbar-side ff-topbar-side-end"/>
+  </header>;
+}
+
 export function AppChrome({children}:{children:React.ReactNode}){
   const path=usePathname(),route=routes.find(item=>item.rule.test(path));
+  const initialized=useRef(false);
+  useEffect(()=>{
+    const current=`${window.location.pathname}${window.location.search}${window.location.hash}`;
+    let stack=readHistory();
+    if(!initialized.current){
+      const navigation=performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming|undefined;
+      const sameOriginReferrer=Boolean(document.referrer&&new URL(document.referrer).origin===window.location.origin);
+      if(navigation?.type==="navigate"&&!sameOriginReferrer)stack=[];
+      initialized.current=true;
+    }
+    if(stack.at(-1)!==current){stack.push(current);writeHistory(stack)}
+  },[path]);
   const hideBottom=route?.mode==="detail"||route?.mode==="form";
-  const aboutPage=path==="/about";
+  const resolvedRoute=route||{rule:/.*/,title:"퍼스트 프렌드",back:"/",mode:"stack" as const};
   return <div className="ff-shell" data-route-mode={route?.mode||"main"}>
     <a className="ff-skip-link" href="#main-content">본문으로 바로가기</a>
-    {path==="/"?<HomeTopbar/>:<header className="ff-topbar">
-      {route?.back?<a className="ff-app-back" href={route.back} aria-label={`${route.title}에서 뒤로 가기`}><IconChevronLeftLine aria-hidden/><span>{route.title}</span></a>:<a className="ff-brand" href="/" aria-label="퍼스트 프렌드 홈">{route?.title||"퍼스트 프렌드"}</a>}
-      <div className="ff-top-actions">
-        {!aboutPage&&<a className="ff-promise-link" href="/about">우리의 약속</a>}
-        <a className="ff-icon-link" href="/notifications" aria-label="알림 확인"><IconBellLine aria-hidden/></a>
-      </div>
-    </header>}
+    {path==="/"?<HomeTopbar/>:resolvedRoute.mode==="main"?<MainTopbar title={resolvedRoute.title}/>:<StackTopbar route={resolvedRoute}/>}
     <main className="ff-main" id="main-content" tabIndex={-1}>{children}</main>
     {!hideBottom&&<BottomNav/>}
   </div>

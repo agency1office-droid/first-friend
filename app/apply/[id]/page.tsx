@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getAnimalById } from "../../../lib/public-data";
-import { ApplicationForm } from "../../components/ApplicationForm";
-import { List, ListItem, ListDivider } from "seed-design/ui/list";
-import { IconCheckmarkCircleFill } from "@karrotmarket/react-monochrome-icon";
+import { getAnimalPublicStatus } from "../../../lib/animal-public-status";
+import { ActionButton } from "seed-design/ui/action-button";
+import { Callout } from "seed-design/ui/callout";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "입양 신청" };
@@ -12,9 +12,18 @@ export default async function ApplyPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const animal = await getAnimalById(id);
   if (!animal) notFound();
+  const publicStatus = getAnimalPublicStatus(animal);
+  if (publicStatus.phase === "ended") return <div className="ff-page">
+    <header className="ff-page-header"><div className="ff-kicker">보호 절차 종료</div><h1 className="ff-title">현재 입양 신청을<br/>받지 않아요</h1></header>
+    <Callout tone="neutral" title={publicStatus.statusLabel} description={publicStatus.description || "공공데이터에서 보호 절차가 종료된 동물이에요."}/>
+    <ActionButton asChild variant="neutralWeak"><a href="/find">다른 친구 만나기</a></ActionButton>
+  </div>;
   return <div className="ff-page">
-    <header className="ff-page-header"><div className="ff-kicker">안전한 입양</div><h1 className="ff-title">{animal.name}에게<br/>마음을 전해요</h1><p className="ff-description">신청 순서가 입양을 결정하지 않아요. 실제 입양 가능 여부와 절차는 관할 보호센터가 확인합니다.</p></header>
-    <List><ListItem prefix={<IconCheckmarkCircleFill/>} title="신청서와 준비도 확인" detail="모든 신청자를 빠짐없이 확인해요."/><ListDivider/><ListItem prefix={<IconCheckmarkCircleFill/>} title="보호센터 정보 확인" detail="공고 상태와 인계 조건을 다시 확인해요."/><ListDivider/><ListItem prefix={<IconCheckmarkCircleFill/>} title="안전 동의와 인계" detail="양쪽이 확인한 뒤 가족이 됩니다."/></List>
-    <div className="ff-divider"/><section className="ff-section"><ApplicationForm animalId={animal.id} animalName={animal.name}/></section>
+    <header className="ff-page-header"><div className="ff-kicker">공공 보호동물 정보</div><h1 className="ff-title">신청 전에<br/>보호소 확인이 필요해요</h1></header>
+    <Callout tone={publicStatus.tone} title={publicStatus.detailTitle || publicStatus.statusLabel} description={publicStatus.description || "공공데이터만으로 입양 가능 여부를 확정할 수 없어요."}/>
+    <div className="ff-stack" style={{ marginTop: 16 }}>
+      {animal.shelterPhone&&<ActionButton asChild><a href={`tel:${animal.shelterPhone.replace(/[^0-9+]/g, "")}`}>{publicStatus.phase === "notice" ? "이 동물을 아는 경우 보호소에 연락" : "입양 상담을 위해 보호소에 연락"}</a></ActionButton>}
+      <ActionButton asChild variant="neutralWeak"><a href={`/friends/${animal.id}`}>친구 정보로 돌아가기</a></ActionButton>
+    </div>
   </div>;
 }

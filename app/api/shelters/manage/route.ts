@@ -1,5 +1,5 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
-import { applications, shelterNeeds, shelterProfiles, shelterUpdates, supportRecords, volunteerApplications, volunteerBadges, volunteerPosts } from "../../../../db/schema";
+import { applications, notifications, shelterFollows, shelterNeeds, shelterProfiles, shelterUpdates, supportRecords, volunteerApplications, volunteerBadges, volunteerPosts } from "../../../../db/schema";
 import { authenticatedDb, clean } from "../../_helpers";
 
 async function owner() {
@@ -52,6 +52,8 @@ export async function POST(request: Request) {
     const title = clean(data.title, 120), body = clean(data.body, 2000), category = clean(data.category, 20) as "daily" | "urgent" | "result" | "notice";
     if (!title || body.length < 20) return Response.json({ error: "제목과 20자 이상의 소식을 적어주세요." }, { status: 400 });
     const [row] = await state.auth.db.insert(shelterUpdates).values({ shelterId: state.profile.id, authorId: state.auth.user.userId, title, body, category: ["daily", "urgent", "result", "notice"].includes(category) ? category : "daily" }).returning();
+    const followers = await state.auth.db.select({ memberId: shelterFollows.memberId }).from(shelterFollows).where(eq(shelterFollows.shelterPublicId, state.profile.publicId));
+    for (const follower of followers) await state.auth.db.insert(notifications).values({ memberId: follower.memberId, type: "shelter_update", title: `${state.profile.name} 새 소식`, body: title, href: `/shelters/${encodeURIComponent(state.profile.publicId)}#shelter-updates` });
     return Response.json({ row }, { status: 201 });
   }
   if (action === "volunteer") {

@@ -15,11 +15,65 @@ import {
 } from "../../../db/schema";
 import { authenticatedDb, clean } from "../_helpers";
 
+type CommunityDb = ReturnType<typeof getDb>;
+
+async function ensureAnimalCommunityTables(db: CommunityDb) {
+  await db.run(sql.raw(`CREATE TABLE IF NOT EXISTS animal_name_suggestions (
+    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    animal_id text NOT NULL,
+    member_id text NOT NULL,
+    name text NOT NULL,
+    reason text DEFAULT '' NOT NULL,
+    votes integer DEFAULT 0 NOT NULL,
+    selected integer DEFAULT false NOT NULL,
+    created_at text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FOREIGN KEY (member_id) REFERENCES members(id)
+  )`));
+  await db.run(sql.raw("CREATE UNIQUE INDEX IF NOT EXISTS idx_animal_name_member_name ON animal_name_suggestions (animal_id, member_id, name)"));
+  await db.run(sql.raw("CREATE INDEX IF NOT EXISTS idx_animal_name_votes ON animal_name_suggestions (animal_id, votes)"));
+  await db.run(sql.raw(`CREATE TABLE IF NOT EXISTS animal_name_votes (
+    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    suggestion_id integer NOT NULL,
+    member_id text NOT NULL,
+    FOREIGN KEY (suggestion_id) REFERENCES animal_name_suggestions(id),
+    FOREIGN KEY (member_id) REFERENCES members(id)
+  )`));
+  await db.run(sql.raw("CREATE UNIQUE INDEX IF NOT EXISTS idx_animal_name_vote_unique ON animal_name_votes (suggestion_id, member_id)"));
+  await db.run(sql.raw(`CREATE TABLE IF NOT EXISTS fundraisers (
+    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    shelter_id integer NOT NULL,
+    animal_id text NOT NULL,
+    title text NOT NULL,
+    purpose text NOT NULL,
+    target_amount integer NOT NULL,
+    raised_amount integer DEFAULT 0 NOT NULL,
+    evidence_key text,
+    status text DEFAULT 'review' NOT NULL,
+    created_at text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FOREIGN KEY (shelter_id) REFERENCES shelter_profiles(id)
+  )`));
+  await db.run(sql.raw("CREATE INDEX IF NOT EXISTS idx_fundraisers_status_created ON fundraisers (status, created_at)"));
+  await db.run(sql.raw(`CREATE TABLE IF NOT EXISTS fundraiser_pledges (
+    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    fundraiser_id integer NOT NULL,
+    member_id text NOT NULL,
+    amount integer NOT NULL,
+    status text DEFAULT 'pledged' NOT NULL,
+    created_at text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FOREIGN KEY (fundraiser_id) REFERENCES fundraisers(id),
+    FOREIGN KEY (member_id) REFERENCES members(id)
+  )`));
+  await db.run(sql.raw("CREATE INDEX IF NOT EXISTS idx_fundraiser_pledges_campaign ON fundraiser_pledges (fundraiser_id, created_at)"));
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url),
     type = url.searchParams.get("type"),
     id = clean(url.searchParams.get("id"), 120),
     db = getDb();
+  if (type === "names" || type === "fundraisers") {
+    await ensureAnimalCommunityTables(db);
+  }
   if (type === "drawings") {
     const posts = await db
         .select()
@@ -120,6 +174,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
   const data = (await request.json()) as Record<string, unknown>,
     action = clean(data.action, 40);
+  if (action.startsWith("name-") || action.startsWith("fund")) {
+    await ensureAnimalCommunityTables(auth.db);
+  }
   if (action === "drawing-create") {
     const title = clean(data.title, 100),
       description = clean(data.description, 500),

@@ -1,1 +1,70 @@
-import type{Metadata}from"next";import{SupportIntentButton}from"../components/SupportIntentButton";import{Callout}from"seed-design/ui/callout";import{Badge}from"@seed-design/react";export const metadata:Metadata={title:"후원·굿즈·제휴 안내"};export default function Page(){const items=[{kind:"operations" as const,title:"퍼스트 프렌드 운영 후원",desc:"개발·서버·디자인·운영·인력에 사용합니다. 동물 직접 기부와 목적·기록을 분리해요.",label:"운영 후원 의향 남기기"},{kind:"goods" as const,title:"입양 기념 굿즈",desc:"가족 카드·이름표·키링·기록 앨범을 준비 중입니다. 판매 수익과 수수료를 고지해요.",label:"출시 알림 받기"},{kind:"affiliate" as const,title:"돌봄 지원 제휴가",desc:"인증 구조자·임보자에게 사료·모래·이동장 등 제휴 혜택을 연결합니다.",label:"제휴가 알림 받기"},{kind:"insurance_referral" as const,title:"입양자 보험 안내",desc:"퍼스트 프렌드는 보험을 직접 판매하지 않습니다. 허가된 보험사가 상품·심사·보장·청구를 담당해요.",label:"보험 안내 알림 받기"}];return <div className="ff-page"><header className="ff-page-header"><div className="ff-kicker">목적과 결과를 투명하게</div><h1 className="ff-title">도움이 어디에 쓰이는지<br/>분명하게 보여드려요</h1><p className="ff-description">현재 외부 결제·보험 계약 전이므로 금액은 청구하지 않고 관심 의향과 알림만 실제 저장합니다.</p></header><Callout tone="warning" description="운영 후원과 특정 보호소·동물 지원은 서로 다른 목적입니다. 결제가 열릴 때도 별도 내역과 전달 확인으로 관리합니다."/><div className="ff-support-grid">{items.map(item=><article key={item.kind}><Badge tone="informative" variant="weak">2단계 기능</Badge><h2>{item.title}</h2><p>{item.desc}</p><SupportIntentButton kind={item.kind} title={item.title} targetId="first-friend" label={item.label}/></article>)}</div></div>}
+import type { Metadata } from "next";
+import { SupportIntentButton } from "../components/SupportIntentButton";
+import { Callout } from "seed-design/ui/callout";
+import { Badge } from "seed-design/ui/badge";
+export const metadata: Metadata = { title: "후원·굿즈·제휴 안내" };
+export default function Page() {
+  const items = [
+    {
+      kind: "operations" as const,
+      title: "퍼스트 프렌드 운영 후원",
+      desc: "개발·서버·디자인·운영·인력에 사용합니다. 동물 직접 기부와 목적·기록을 분리해요.",
+      label: "운영 후원 의향 남기기",
+    },
+    {
+      kind: "goods" as const,
+      title: "입양 기념 굿즈",
+      desc: "가족 카드·이름표·키링·기록 앨범을 준비 중입니다. 판매 수익과 수수료를 고지해요.",
+      label: "출시 알림 받기",
+    },
+    {
+      kind: "affiliate" as const,
+      title: "돌봄 지원 제휴가",
+      desc: "인증 구조자·임보자에게 사료·모래·이동장 등 제휴 혜택을 연결합니다.",
+      label: "제휴가 알림 받기",
+    },
+    {
+      kind: "insurance_referral" as const,
+      title: "입양자 보험 안내",
+      desc: "퍼스트 프렌드는 보험을 직접 판매하지 않습니다. 허가된 보험사가 상품·심사·보장·청구를 담당해요.",
+      label: "보험 안내 알림 받기",
+    },
+  ];
+  return (
+    <div className="ff-page">
+      <header className="ff-page-header">
+        <div className="ff-kicker">목적과 결과를 투명하게</div>
+        <h1 className="ff-title">
+          도움이 어디에 쓰이는지
+          <br />
+          분명하게 보여드려요
+        </h1>
+        <p className="ff-description">
+          현재 외부 결제·보험 계약 전이므로 금액은 청구하지 않고 관심 의향과
+          알림만 실제 저장합니다.
+        </p>
+      </header>
+      <Callout
+        tone="warning"
+        description="운영 후원과 특정 보호소·동물 지원은 서로 다른 목적입니다. 결제가 열릴 때도 별도 내역과 전달 확인으로 관리합니다."
+      />
+      <div className="ff-support-grid">
+        {items.map((item) => (
+          <article key={item.kind}>
+            <Badge tone="informative" variant="weak">
+              2단계 기능
+            </Badge>
+            <h2>{item.title}</h2>
+            <p>{item.desc}</p>
+            <SupportIntentButton
+              kind={item.kind}
+              title={item.title}
+              targetId="first-friend"
+              label={item.label}
+            />
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}

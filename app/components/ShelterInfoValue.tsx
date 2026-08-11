@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import {
   IconChevronDownSmallLine,
   IconChevronUpSmallLine,
+  IconSquare2StackedLine,
 } from "@karrotmarket/react-monochrome-icon";
 import { Icon } from "@seed-design/react";
 import { ActionButton } from "seed-design/ui/action-button";
@@ -40,7 +41,9 @@ export function ShelterInfoValue({ value, copyLabel }: { value: string; copyLabe
       {overflowing && <ActionButton type="button" size="small" layout="iconOnly" variant="ghost" onClick={() => setExpanded(current => !current)} aria-label={expanded ? `${value} 접기` : `${value} 펼쳐 보기`}>
         <Icon svg={expanded ? <IconChevronUpSmallLine/> : <IconChevronDownSmallLine/>}/>
       </ActionButton>}
-      {copyLabel && <button type="button" className="ff-address-copy" onClick={copy} aria-label={`${copyLabel} ${value} 복사`}>복사</button>}
+      {copyLabel && <ActionButton type="button" size="small" layout="iconOnly" variant="ghost" onClick={copy} aria-label={`${copyLabel} ${value} 복사`}>
+        <Icon svg={<IconSquare2StackedLine/>}/>
+      </ActionButton>}
     </span>
   </div>;
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { NotificationBadge } from "@seed-design/react";
+
 const sections = [
   ["info", "정보"],
   ["updates", "소식"],
@@ -17,7 +19,7 @@ export function ShelterSectionNav({ shelterId, active, updateCount, animalCount,
         event.preventDefault();
         window.location.replace(href);
       }} data-active={active === value} aria-current={active === value ? "page" : undefined}>
-        <span>{label}</span>{count > 0 && <span className="ff-shelter-section-count" aria-label={`${count}개`}>{count > 99 ? "99+" : count}</span>}
+        <span>{label}</span>{count > 0 && <NotificationBadge size="large" aria-label={`${count}개`}>{count > 99 ? "99+" : count}</NotificationBadge>}
       </a>;
     })}
   </nav>;

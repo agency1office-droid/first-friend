@@ -1,9 +1,7 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 import type { Metadata } from "next";
-import { and, desc, eq } from "drizzle-orm";
 import { getChatGPTUser, chatGPTSignInPath, chatGPTSignOutPath } from "../chatgpt-auth";
-import { getDb } from "../../db";
-import { applications, directAnimals, favorites, lostReports, members, notifications, posts, readinessAssessments, savedSearches } from "../../db/schema";
+import { getSupabaseServerClient } from "../../lib/supabase/server";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Callout } from "seed-design/ui/callout";
 import { List, ListLinkItem, ListDivider } from "seed-design/ui/list";
@@ -17,22 +15,22 @@ const statusLabel: Record<string, string> = { submitted: "접수", review: "검�
 
 export default async function MyPage() {
   const user = await getChatGPTUser();
-  let dashboard: { readiness: typeof readinessAssessments.$inferSelect | undefined; applications: typeof applications.$inferSelect[]; favorites: number; posts: number; reports: number; registrations: number; searches:number; unread:number } | null = null;
+  let dashboard: { readiness: Record<string, unknown> | undefined; applications: Record<string, unknown>[]; favorites: number; posts: number; reports: number; registrations: number; searches: number; unread: number } | null = null;
   if (user) {
     try {
-      const db = getDb();
-      await db.insert(members).values({ id: user.userId, email: user.email, displayName: user.displayName }).onConflictDoUpdate({ target: members.id, set: { email: user.email, displayName: user.displayName } });
+      const client = getSupabaseServerClient();
+      await client.from("members").upsert({ id: user.userId, email: user.email, display_name: user.displayName }, { onConflict: "id" });
       const [readiness, applicationRows, favoriteRows, postRows, reportRows, registrationRows, searchRows, notificationRows] = await Promise.all([
-        db.query.readinessAssessments.findFirst({ where: eq(readinessAssessments.memberId, user.userId), orderBy: [desc(readinessAssessments.completedAt)] }),
-        db.select().from(applications).where(eq(applications.memberId, user.userId)).orderBy(desc(applications.createdAt)),
-        db.select({ id: favorites.id }).from(favorites).where(eq(favorites.memberId, user.userId)),
-        db.select({ id: posts.id }).from(posts).where(eq(posts.memberId, user.userId)),
-        db.select({ id: lostReports.id }).from(lostReports).where(eq(lostReports.memberId, user.userId)),
-        db.select({ id: directAnimals.id }).from(directAnimals).where(eq(directAnimals.memberId, user.userId)),
-        db.select({ id:savedSearches.id }).from(savedSearches).where(eq(savedSearches.memberId,user.userId)),
-        db.select({ id:notifications.id }).from(notifications).where(and(eq(notifications.memberId,user.userId),eq(notifications.read,false))),
+        client.from("readiness_assessments").select("*").eq("member_id", user.userId).order("completed_at", { ascending: false }).limit(1),
+        client.from("applications").select("*").eq("member_id", user.userId).order("created_at", { ascending: false }),
+        client.from("favorites").select("id").eq("member_id", user.userId),
+        client.from("posts").select("id").eq("member_id", user.userId),
+        client.from("lost_reports").select("id").eq("member_id", user.userId),
+        client.from("direct_animals").select("id").eq("member_id", user.userId),
+        client.from("saved_searches").select("id").eq("member_id", user.userId),
+        client.from("notifications").select("id").eq("member_id", user.userId).eq("read", false),
       ]);
-      dashboard = { readiness, applications: applicationRows, favorites: favoriteRows.length, posts: postRows.length, reports: reportRows.length, registrations: registrationRows.length, searches:searchRows.length, unread:notificationRows.length };
+      dashboard = { readiness: readiness.data?.[0], applications: (applicationRows.data || []).map(row => ({ ...row, animalId: row.animal_id, readinessScore: row.readiness_score })), favorites: favoriteRows.data?.length || 0, posts: postRows.data?.length || 0, reports: reportRows.data?.length || 0, registrations: registrationRows.data?.length || 0, searches: searchRows.data?.length || 0, unread: notificationRows.data?.length || 0 };
     } catch { dashboard = null; }
   }
 
@@ -41,7 +39,7 @@ export default async function MyPage() {
     {!user ? <section className="ff-result"><h2 className="ff-section-title">안전한 만남을 위해 로그인이 필요해요</h2><p className="ff-description" style={{ margin: "8px 0 18px" }}>동물과 이야기는 누구나 볼 수 있고, 찜·신청·글쓰기·실종 제보·직접 등록은 로그인 후 이용할 수 있어요.</p><ActionButton asChild size="large" className="ff-action-link"><a href={chatGPTSignInPath("/mypage")}>로그인·회원가입</a></ActionButton></section> : <>
       <div className="ff-profile-row"><Avatar size="48" fallback={user.displayName.slice(0, 1)}/><div className="ff-grow"><strong>{user.displayName}</strong><div className="ff-meta">퍼스트프렌드 회원 · {user.email}</div></div><ActionButton asChild size="small" variant="neutralWeak"><a href={chatGPTSignOutPath("/")}>로그아웃</a></ActionButton></div>
       {dashboard && <><div className="ff-dashboard-grid"><div><strong>{dashboard.favorites}</strong><span>관심 친구</span></div><div><strong>{dashboard.applications.length}</strong><span>입양 신청</span></div><div><strong>{dashboard.posts}</strong><span>나의 이야기</span></div><div><strong>{dashboard.reports}</strong><span>실종·발견</span></div></div>
-        <section className="ff-section"><div className="ff-section-head"><h2 className="ff-section-title">입양 준비</h2><a className="ff-more" href="/readiness">다시 확인</a></div>{dashboard.readiness ? <div className="ff-readiness-summary"><div><span>생활 준비도</span><strong>{dashboard.readiness.readinessScore}</strong></div><div><span>필수 시험</span><strong>{dashboard.readiness.educationScore}</strong></div><Badge tone={dashboard.readiness.passed ? "positive" : "warning"} variant="weak">{dashboard.readiness.passed ? "교육 완료" : "재학습 필요"}</Badge></div> : <Callout tone="warning" title="아직 준비 시험을 완료하지 않았어요" description="입양 신청 전에 생활 환경·비용·필수 교육을 확인해 주세요." linkProps={{ href: "/readiness", children: "시험 시작" }}/>}</section>
+        <section className="ff-section"><div className="ff-section-head"><h2 className="ff-section-title">입양 준비</h2><a className="ff-more" href="/readiness">다시 확인</a></div>{dashboard.readiness ? <div className="ff-readiness-summary"><div><span>생활 준비도</span><strong>{String(dashboard.readiness.readiness_score || 0)}</strong></div><div><span>필수 시험</span><strong>{String(dashboard.readiness.education_score || 0)}</strong></div><Badge tone={dashboard.readiness.passed ? "positive" : "warning"} variant="weak">{dashboard.readiness.passed ? "교육 완료" : "재학습 필요"}</Badge></div> : <Callout tone="warning" title="아직 준비 시험을 완료하지 않았어요" description="입양 신청 전에 생활 환경·비용·필수 교육을 확인해 주세요." linkProps={{ href: "/readiness", children: "시험 시작" }}/>}</section>
         <section className="ff-section"><h2 className="ff-section-title" style={{ marginBottom: 10 }}>진행 중인 입양</h2>{dashboard.applications.length ? <List>{dashboard.applications.slice(0, 5).map((application, index) => <div key={application.id}><ListLinkItem href={`/applications/${application.id}`} prefix={<IconPawprintLine/>} title={`신청 #${application.id}`} detail={`준비도 ${application.readinessScore}점 · ${statusLabel[application.status] || application.status}`} suffix={<IconChevronRightLine/>}/>{index < Math.min(4, dashboard.applications.length - 1) && <ListDivider/>}</div>)}</List> : <div className="ff-empty">진행 중인 입양 신청이 없어요.</div>}</section>
       </>}
     </>}

@@ -16,6 +16,7 @@ export type LostAnimal = { id: string; species: string; breed: string; sex: stri
 export type Shelter = { id: string; name: string; organization: string; animals: string; address: string; phone: string; hours: string; closed: string; lat: number; lng: number; approximateLocation: boolean };
 
 let animalCache: { at: number; data: Animal[] } | undefined;
+const animalDetailCache = new Map<string, { at: number; data: Animal | null }>();
 let lossCache: { at: number; data: LostAnimal[] } | undefined;
 let shelterCache: { at: number; data: Shelter[] } | undefined;
 const animalContacts = new Map<string, { shelter: string; phone: string; address: string; organization: string }>();
@@ -133,9 +134,29 @@ export async function getAnimalsWithPhotoCounts(limit = 24): Promise<Animal[]> {
 export async function getAnimalById(id: string) {
   const stored = await import("./public-animal-store").then(module => module.getStoredAnimalById(id)).catch(() => undefined);
   if (stored) return stored;
-  // Detail pages must be O(1): never scan the public API here. The sync job
-  // owns importing public data into Supabase; the page only reads this ID.
+  const cached = animalDetailCache.get(id);
+  if (cached && Date.now() - cached.at < CACHE_MS) return cached.data || undefined;
+  // This is only a migration fallback for records not yet present in Supabase.
+  // Search a bounded batch in parallel; normal production traffic is served by
+  // the single Supabase lookup above.
+  if (key()) {
+    try {
+      const pages = await Promise.all(Array.from({ length: 10 }, (_, index) => request<AbandonedItem>(ABANDONED_API, 1000, index + 1)));
+      const match = pages.flat().find(item => item.desertionNo === id);
+      if (match) {
+        const [shelters] = await Promise.all([getShelters(1000)]);
+        const animal = mapAnimal(match, shelters);
+        if (animal) {
+          const images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
+          const result = { ...animal, image: images[0] || animal.image, images };
+          animalDetailCache.set(id, { at: Date.now(), data: result });
+          return result;
+        }
+      }
+    } catch { /* show the friendly unavailable state below */ }
+  }
   const animal = fallbackAnimals.find((item) => item.id === id);
+  animalDetailCache.set(id, { at: Date.now(), data: animal || null });
   if (!animal) return undefined;
   const images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
   return { ...animal, image: images[0] || animal.image, images };

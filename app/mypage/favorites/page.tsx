@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { desc, eq } from "drizzle-orm";
 import { requireChatGPTUser } from "../../chatgpt-auth";
-import { getDb } from "../../../db";
-import { favorites } from "../../../db/schema";
 import { getAnimalById } from "../../../lib/public-data";
+import { getSupabaseServerClient } from "../../../lib/supabase/server";
 import { FavoriteAnimalGrid } from "../../components/FavoriteAnimalGrid";
 
 export const dynamic = "force-dynamic";
@@ -11,12 +9,8 @@ export const metadata: Metadata = { title: "관심 친구" };
 
 export default async function Page() {
   const user = await requireChatGPTUser("/mypage/favorites");
-  const rows = await getDb()
-    .select()
-    .from(favorites)
-    .where(eq(favorites.memberId, user.userId))
-    .orderBy(desc(favorites.createdAt));
-  const resolved = await Promise.all(rows.map((row) => getAnimalById(row.animalId)));
+  const { data: rows } = await getSupabaseServerClient().from("favorites").select("animal_id").eq("member_id", user.userId).order("created_at", { ascending: false });
+  const resolved = await Promise.all((rows || []).map((row) => getAnimalById(row.animal_id)));
   const animals = resolved.filter((animal) => animal !== undefined);
 
   return <div className="ff-page">

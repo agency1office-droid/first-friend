@@ -1,13 +1,9 @@
-import { and, eq } from "drizzle-orm";
-import { notifications } from "../../../../db/schema";
-import { authenticatedDb } from "../../_helpers";
+import { getChatGPTUser } from "../../../chatgpt-auth";
+import { getSupabaseServerClient } from "../../../../lib/supabase/server";
 
 export async function GET() {
-  const auth = await authenticatedDb();
-  if (!auth) return Response.json({ unread: 0 }, { status: 401 });
-  const rows = await auth.db
-    .select({ id: notifications.id })
-    .from(notifications)
-    .where(and(eq(notifications.memberId, auth.user.userId), eq(notifications.read, false)));
-  return Response.json({ unread: rows.length });
+  const user = await getChatGPTUser();
+  if (!user) return Response.json({ unread: 0 }, { status: 401 });
+  const { count } = await getSupabaseServerClient().from("notifications").select("id", { count: "exact", head: true }).eq("member_id", user.userId).eq("read", false);
+  return Response.json({ unread: count || 0 });
 }

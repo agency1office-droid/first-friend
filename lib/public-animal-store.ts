@@ -440,7 +440,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
       const last = data.at(-1) as Record<string, unknown> | undefined;
       const total = Number((data[0] as Record<string, unknown> | undefined)?.total_count || 0);
       const nextCursor = data.length === limit && last ? encodeSearchCursor(sort === "distance"
-        ? { distanceMeters: Number(last.distance_meters), id: String(last.id) }
+        ? { distanceMeters: Number.isFinite(Number(last.distance_meters)) ? Number(last.distance_meters) : 1e15, id: String(last.id) }
         : { updatedAt: String(last.updated_at || ""), id: String(last.id) }) : null;
       const completedAt = state?.lastCompletedAt || null;
       return { items, total, nextCursor, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= SYNC_INTERVAL_MS * 2 };

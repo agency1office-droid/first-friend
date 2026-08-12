@@ -294,6 +294,15 @@ function fromStored(row: StoredAnimal): Animal {
 }
 
 function cursorOffset(cursor: string | null | undefined) { const value = Number.parseInt(cursor || "0", 36); return Number.isFinite(value) && value >= 0 ? value : 0; }
+type SearchCursor = { updatedAt?: string; id?: string; distanceMeters?: number };
+function decodeSearchCursor(cursor: string | null | undefined): SearchCursor | null {
+  if (!cursor) return null;
+  try {
+    const decoded = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as SearchCursor;
+    return decoded && typeof decoded === "object" ? decoded : null;
+  } catch { return null; }
+}
+function encodeSearchCursor(value: SearchCursor) { return Buffer.from(JSON.stringify(value)).toString("base64url"); }
 
 async function activeAnimals() {
   if (activeAnimalsCache && Date.now() - activeAnimalsCache.at < ACTIVE_ANIMALS_CACHE_MS) return activeAnimalsCache.rows;
@@ -327,9 +336,46 @@ export async function getBreedCounts(options: BreedCountOptions = {}) {
 }
 
 export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {
-  const state = await ensurePublicAnimals(), rows = await activeAnimals();
-  const speciesFilter = options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : "";
+  const state = await ensurePublicAnimals();
+  const limit = Math.min(50, Math.max(1, options.limit || 20));
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
+  const canUseDatabaseSearch = !options.publicStatus && !options.color && !options.sizeGroup && !options.maxDistance && !options.multiplePhotos && !options.exactLocation;
+  if (canUseDatabaseSearch) {
+    const cursor = decodeSearchCursor(options.cursor);
+    const sort = options.sort === "distance" && hasHome ? "distance" : "recent";
+    const kindCodes = (options.breedKeys || []).map(value => value.split(":")[1]).filter(value => /^\d{6}$/.test(value));
+    const { data, error } = await getSupabaseServerClient().rpc("search_public_animals", {
+      p_limit: limit,
+      p_cursor_updated_at: cursor?.updatedAt || null,
+      p_cursor_id: cursor?.id || null,
+      p_cursor_distance_meters: cursor?.distanceMeters ?? null,
+      p_lat: hasHome ? options.lat : null,
+      p_lng: hasHome ? options.lng : null,
+      p_sort: sort,
+      p_species: options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : null,
+      p_age_group: options.ageGroup || null,
+      p_sex: options.sex === "female" ? "암컷" : options.sex === "male" ? "수컷" : null,
+      p_kind_codes: kindCodes.length ? kindCodes : null,
+      p_color: null,
+      p_public_phase: null,
+    });
+    if (!error && data) {
+      const items = (data as Array<Record<string, unknown>>).map(row => {
+        const animal = fromStored(storedAnimal(row));
+        const distance = Number(row.distance_meters);
+        return Number.isFinite(distance) ? { ...animal, distanceMeters: distance } : animal;
+      });
+      const last = data.at(-1) as Record<string, unknown> | undefined;
+      const total = Number((data[0] as Record<string, unknown> | undefined)?.total_count || 0);
+      const nextCursor = data.length === limit && last ? encodeSearchCursor(sort === "distance"
+        ? { distanceMeters: Number(last.distance_meters), id: String(last.id) }
+        : { updatedAt: String(last.updated_at || ""), id: String(last.id) }) : null;
+      const completedAt = state?.lastCompletedAt || null;
+      return { items, total, nextCursor, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= SYNC_INTERVAL_MS * 2 };
+    }
+  }
+  const rows = await activeAnimals();
+  const speciesFilter = options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : "";
   const ageFilter = options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "어른 친구" : options.ageGroup === "unknown" ? "나이 미상" : "";
   const breedFilters = new Set((options.breedKeys || []).filter(value => /^(417000|422400):\d{6}$/.test(value)).slice(0, 10));
   const sizeFilter = ["small", "medium", "large", "unknown"].includes(options.sizeGroup || "") ? options.sizeGroup : "";
@@ -341,7 +387,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
     const hasExactPoint = hasHome && !row.approximateShelterLocation && validPoint(Number(row.shelterLat), Number(row.shelterLng));
     return hasExactPoint ? { ...animal, distanceMeters: distanceMeters({ lat: Number(options.lat), lng: Number(options.lng) }, { lat: Number(row.shelterLat), lng: Number(row.shelterLng) }) } : animal;
   }).filter((animal): animal is Animal => Boolean(animal)).filter(animal => !options.maxDistance || !hasHome || (animal.distanceMeters !== undefined && animal.distanceMeters <= options.maxDistance)).sort((a, b) => options.sort === "recent" ? b.updated.localeCompare(a.updated) || a.id.localeCompare(b.id) : (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity) || b.updated.localeCompare(a.updated) || a.id.localeCompare(b.id));
-  const limit = Math.min(50, Math.max(1, options.limit || 20)), offset = cursorOffset(options.cursor), pageItems = prepared.slice(offset, offset + limit);
+  const offset = cursorOffset(options.cursor), pageItems = prepared.slice(offset, offset + limit);
   // 목록에서는 동기화된 대표 이미지들만 사용합니다. 추가 사진 조회는 상세페이지에서만 수행해
   // 스크롤마다 카드 수만큼 별도 DB 요청이 발생하지 않도록 합니다.
   const items = pageItems;

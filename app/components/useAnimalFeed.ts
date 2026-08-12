@@ -16,7 +16,7 @@ export type AnimalFeedFilters = {
 };
 
 const defaultFilters: AnimalFeedFilters = { sort: "distance", species: "all", publicStatus: "all", breedKeys: [], sex: "all", color: "all" };
-export const HOME_FEED_SNAPSHOT_KEY = "ff-home-feed-snapshot-v1";
+export const HOME_FEED_SNAPSHOT_KEY = "ff-home-feed-snapshot-v2";
 
 type FeedSnapshot = { url: string; items: Animal[]; total: number; cursor: string | null; syncedAt: string | null; stale: boolean; scrollY: number };
 

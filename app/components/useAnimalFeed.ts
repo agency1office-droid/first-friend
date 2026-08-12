@@ -19,6 +19,7 @@ const defaultFilters: AnimalFeedFilters = { sort: "distance", species: "all", pu
 export const HOME_FEED_SNAPSHOT_KEY = "ff-home-feed-snapshot-v2";
 
 type FeedSnapshot = { url: string; items: Animal[]; total: number; cursor: string | null; syncedAt: string | null; stale: boolean; scrollY: number };
+const preloadedAnimalImages = new Set<string>();
 
 function readFeedSnapshot(): FeedSnapshot | null {
   if (typeof window === "undefined") return null;
@@ -34,7 +35,12 @@ function preloadAnimalImages(items: Animal[]) {
   if (typeof window === "undefined") return;
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
   if (connection?.saveData || connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g") return;
-  const sources = [...new Set(items.map(item => item.image).filter(Boolean))].slice(0, 8);
+  const limit = connection?.effectiveType === "3g" ? 2 : 4;
+  const sources = [...new Set(items.map(item => item.image).filter(Boolean))]
+    .filter(src => !preloadedAnimalImages.has(src))
+    .slice(0, limit);
+  if (!sources.length) return;
+  sources.forEach(src => preloadedAnimalImages.add(src));
   const start = () => sources.forEach(src => { const image = new window.Image(); image.decoding = "async"; image.src = src; });
   const idle = (window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number }).requestIdleCallback;
   if (idle) idle(start, { timeout: 1200 });
@@ -192,11 +198,11 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     };
   }, [cursor, endpoint, filtersReady, ready, userEngaged]);
 
-  // 현재 화면 아래의 카드 이미지를 미리 브라우저 캐시에 넣습니다.
+  // 현재 화면 바로 아래의 카드 이미지를 미리 브라우저 캐시에 넣습니다.
   // 목록 데이터 prefetch와 별개로 이미지 요청을 선행해야 스크롤 순간의 공백을 줄일 수 있습니다.
   useEffect(() => {
     if (!items.length || !userEngaged) return;
-    preloadAnimalImages(items.slice(4, 12));
+    preloadAnimalImages(items.slice(6, 10));
   }, [items, userEngaged]);
 
   useEffect(() => {

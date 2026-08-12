@@ -1,4 +1,4 @@
-export type HomeLocation = { label: string; address?: string; lat: number; lng: number };
+export type HomeLocation = { label: string; address?: string; lat: number; lng: number; source?: "ip" | "manual" };
 export type GeoPoint = { lat: number; lng: number };
 
 export function distanceMeters(a: GeoPoint, b: GeoPoint) {

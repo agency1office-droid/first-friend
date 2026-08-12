@@ -40,9 +40,13 @@ export function HomeTopbar() {
       }
       const ipLocation = await fetch("/api/location/default").then((response) => response.json()).then((body) => body.location as HomeLocation | null).catch(() => null);
       if (ipLocation) {
+        const defaultLocation = { ...ipLocation, source: "ip" as const };
+        setNeighborhoods([defaultLocation]);
         window.localStorage.setItem("ff-ip-location", JSON.stringify(ipLocation));
+        window.localStorage.setItem("ff-home-location", JSON.stringify(defaultLocation));
+        window.localStorage.setItem("ff-home-locations", JSON.stringify([defaultLocation]));
         setRegion(ipLocation.label);
-        window.dispatchEvent(new CustomEvent("ff-region-change", { detail: ipLocation }));
+        window.dispatchEvent(new CustomEvent("ff-region-change", { detail: defaultLocation }));
       }
       const body = await fetch("/api/profile").then((response) => response.json()).catch(() => ({}));
       if (!body.homeRegion) return;
@@ -99,7 +103,7 @@ export function HomeTopbar() {
   }
 
   function activate(item: HomeLocation) {
-    store([item, ...neighborhoods.filter((row) => row.label !== item.label)]);
+    store([item, ...neighborhoods.filter((row) => row.label !== item.label && row.source !== "ip")]);
     feedback.success(`${item.label} 가까운 순으로 바꿨어요`);
   }
 
@@ -110,7 +114,7 @@ export function HomeTopbar() {
       feedback.error("동네는 최대 2개까지 설정할 수 있어요");
       return;
     } else {
-      store([item, ...neighborhoods]);
+      store([item, ...neighborhoods.filter((row) => row.source !== "ip")]);
       feedback.success(`${item.label}을 내 동네로 추가했어요`);
     }
     setDraft("");

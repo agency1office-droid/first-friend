@@ -49,6 +49,7 @@ function apiKey() { return process.env.PUBLIC_DATA_API_KEY?.trim(); }
 function array<T>(value: T | T[] | undefined) { return !value ? [] : Array.isArray(value) ? value : [value]; }
 function secureImage(value = "") { return value.replace(/^http:\/\//, "https://"); }
 function compactDate(value = "") { const digits = value.replace(/\D/g, "").slice(0, 8); return digits.length === 8 ? `${digits.slice(0, 4)}. ${Number(digits.slice(4, 6))}. ${Number(digits.slice(6, 8))}.` : value; }
+function isoDate(value = "") { const match = value.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); if (!match) return null; const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))); return Number.isNaN(date.getTime()) ? null : date.toISOString(); }
 function sex(value = "") { return value === "M" ? "수컷" : value === "F" ? "암컷" : "미상"; }
 function species(item: AnimalItem) { return item.upKindNm || item.kindFullNm?.match(/^\[([^\]]+)/)?.[1] || "기타"; }
 function supported(value: string) { return /고양이|개|강아지/.test(value) && !/기타/.test(value); }
@@ -126,6 +127,9 @@ function storedShelter(row: ShelterRecord) {
 }
 
 function storedAnimalRow(row: AnimalRecord) {
+  const life = row.lifeJson || "", noticeEnd = [...life.matchAll(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/g)].at(-1)?.[0] || "";
+  const noticeEndAt = isoDate(noticeEnd), processState = row.processState || "";
+  const publicPhase = processState.startsWith("종료") ? "ended" : !life.includes("공고 ") ? "unknown" : noticeEndAt && new Date(noticeEndAt).getTime() < Date.now() ? "checking" : "notice";
   return {
     id: row.id, name: row.name, species: row.species, breed: row.breed, up_kind_cd: row.upKindCd, kind_cd: row.kindCd,
     age: row.age, age_group: row.ageGroup, sex: row.sex, region: row.region, shelter_id: row.shelterId,
@@ -134,6 +138,7 @@ function storedAnimalRow(row: AnimalRecord) {
     updated: row.updated, image_1: row.image1, image_2: row.image2, colors_json: row.colorsJson, traits_json: row.traitsJson,
     summary: row.summary, health_json: row.healthJson, life_json: row.lifeJson, match_reason: row.matchReason,
     process_state: row.processState, active: row.active, last_seen_sync: row.lastSeenSync, synced_at: row.syncedAt,
+    updated_at: isoDate(row.updated), notice_end_at: noticeEndAt, public_phase: publicPhase, color_search: (row.colorsJson || "").toLocaleLowerCase("ko-KR"),
   };
 }
 

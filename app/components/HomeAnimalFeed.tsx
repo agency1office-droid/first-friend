@@ -77,6 +77,6 @@ export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
     <div className="ff-animal-list">{feed.items.map((animal, index) => <Fragment key={animal.id}><AnimalCard animal={animal} layout="row" priority={index < 4}/>{(index + 1) % 25 === 0 && lostAnimals[(index + 1) / 25 - 1] && <LostAnimalInsert animal={lostAnimals[(index + 1) / 25 - 1]}/>}</Fragment>)}</div>
     {!feed.items.length && !feed.loading && <div className="ff-filter-empty"><strong>현재 조건에 맞는 친구가 없어요</strong><p>조건을 모두 지우면 가까운 친구부터 다시 볼 수 있어요.</p><ActionButton variant="neutralWeak" onClick={feed.resetFilters}>조건 모두 지우기</ActionButton></div>}
     {feed.error && <div className="ff-feed-error">{feed.error}<button type="button" onClick={() => void feed.loadMore()}>다시 시도</button></div>}
-    <div className="ff-feed-sentinel" ref={sentinel}>{feed.loading ? "가까운 친구를 더 찾고 있어요…" : feed.cursor ? <button type="button" onClick={() => void feed.loadMore()}>친구 더 보기</button> : feed.items.length ? "현재 확인 가능한 친구를 모두 봤어요" : ""}</div>
+    <div className="ff-feed-sentinel" ref={sentinel} aria-hidden="true" />
   </section>;
 }

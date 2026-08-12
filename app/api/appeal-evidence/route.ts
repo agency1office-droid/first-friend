@@ -1,5 +1,5 @@
-import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "../../chatgpt-auth";
+import { uploadStoredFile } from "../../../lib/supabase/storage";
 
 const allowed = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -14,6 +14,6 @@ export async function POST(request: Request) {
   }
   const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
   const key = `appeal-evidence/${user.userId}/${crypto.randomUUID()}.${extension}`;
-  await env.MEDIA.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: file.type }, customMetadata: { ownerId: user.userId, purpose: "sanction-appeal" } });
+  await uploadStoredFile(key, await file.arrayBuffer(), file.type);
   return Response.json({ key }, { status: 201 });
 }

@@ -1,5 +1,5 @@
-import { env } from "cloudflare:workers";
 import { authenticatedDb } from "../_helpers";
+import { uploadStoredFile } from "../../../lib/supabase/storage";
 
 const allowed = new Set(["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"]);
 
@@ -14,6 +14,6 @@ export async function POST(request: Request) {
   const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : file.type === "video/mp4" ? "mp4" : file.type === "video/webm" ? "webm" : "jpg";
   const privateEvidence = ["role-verification", "adoption-verification"].includes(purpose);
   const key = `${privateEvidence ? "private-evidence" : "uploads"}/${auth.user.userId}/${crypto.randomUUID()}.${extension}`;
-  await env.MEDIA.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: file.type }, customMetadata: { ownerId: auth.user.userId, purpose } });
+  await uploadStoredFile(key, await file.arrayBuffer(), file.type);
   return Response.json({ key }, { status: 201 });
 }

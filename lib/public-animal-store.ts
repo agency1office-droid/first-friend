@@ -1,10 +1,9 @@
-import { and, count, desc, eq, ne, sql } from "drizzle-orm";
-import { getDb } from "../db";
 import { publicAnimals, publicShelters, publicSyncState } from "../db/schema";
 import type { Animal } from "./data";
 import { distanceMeters } from "./geo";
 import { distinctAnimalImages } from "./animal-images";
 import { matchesAnimalPublicStatus } from "./animal-public-status";
+import { getSupabaseServerClient } from "./supabase/server";
 
 const ANIMAL_ENDPOINT = "https://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2";
 const SHELTER_ENDPOINT = "https://apis.data.go.kr/1543061/animalShelterSrvc_v2/shelterInfo_v2";
@@ -77,53 +76,62 @@ function matchesColorGroup(colorsJsonValue: string, color: string) {
 function storedBreedKey(row: StoredAnimal) { const upKindCd = /^(417000|422400)$/.test(row.upKindCd) ? row.upKindCd : row.species === "고양이" ? "422400" : "417000"; const kindCd = /^\d{6}$/.test(row.kindCd) ? row.kindCd : "000000"; return `${upKindCd}:${kindCd}`; }
 function chunks<T>(items: T[], size: number) { const result: T[][] = []; for (let index = 0; index < items.length; index += size) result.push(items.slice(index, index + size)); return result; }
 
-async function addColumn(statement: string) {
-  try { await getDb().run(sql.raw(statement)); return true; }
-  catch (error) {
-    const messages: string[] = [];
-    let current: unknown = error;
-    for (let depth = 0; current && depth < 5; depth += 1) {
-      messages.push(current instanceof Error ? current.message : String(current));
-      current = typeof current === "object" && "cause" in current ? (current as { cause?: unknown }).cause : undefined;
-    }
-    if (/duplicate column/i.test(messages.join("\n"))) return false;
-    throw error;
-  }
+async function ensureTables() {
+  return false;
 }
 
-async function ensureTables() {
-  const db = getDb();
-  await db.run(sql.raw(`CREATE TABLE IF NOT EXISTS public_shelters (
-    id text PRIMARY KEY NOT NULL, name text NOT NULL, organization text DEFAULT '' NOT NULL,
-    address text DEFAULT '' NOT NULL, phone text DEFAULT '' NOT NULL, hours text DEFAULT '' NOT NULL,
-    closed text DEFAULT '' NOT NULL, lat real, lng real, approximate_location integer DEFAULT false NOT NULL,
-    synced_at text NOT NULL
-  )`));
-  await db.run(sql.raw("CREATE INDEX IF NOT EXISTS idx_public_shelters_name ON public_shelters (name)"));
-  await db.run(sql.raw(`CREATE TABLE IF NOT EXISTS public_animals (
-    id text PRIMARY KEY NOT NULL, name text NOT NULL, species text NOT NULL, breed text NOT NULL,
-    up_kind_cd text DEFAULT '' NOT NULL, kind_cd text DEFAULT '' NOT NULL,
-    age text NOT NULL, age_group text NOT NULL, sex text NOT NULL, region text NOT NULL,
-    shelter_id text, shelter_name text NOT NULL, shelter_address text DEFAULT '' NOT NULL,
-    shelter_phone text DEFAULT '' NOT NULL, shelter_lat real, shelter_lng real,
-    approximate_shelter_location integer DEFAULT false NOT NULL, updated text NOT NULL,
-    image_1 text NOT NULL, image_2 text DEFAULT '' NOT NULL, colors_json text DEFAULT '[]' NOT NULL,
-    traits_json text DEFAULT '[]' NOT NULL, summary text NOT NULL, health_json text DEFAULT '[]' NOT NULL,
-    life_json text DEFAULT '[]' NOT NULL, match_reason text NOT NULL, process_state text DEFAULT '' NOT NULL,
-    active integer DEFAULT true NOT NULL, last_seen_sync text NOT NULL, synced_at text NOT NULL
-  )`));
-  const addedUpKind = await addColumn("ALTER TABLE public_animals ADD COLUMN up_kind_cd text DEFAULT '' NOT NULL");
-  const addedKind = await addColumn("ALTER TABLE public_animals ADD COLUMN kind_cd text DEFAULT '' NOT NULL");
-  await db.run(sql.raw("CREATE INDEX IF NOT EXISTS idx_public_animals_active_updated ON public_animals (active, updated)"));
-  await db.run(sql.raw("CREATE INDEX IF NOT EXISTS idx_public_animals_species_active ON public_animals (species, active)"));
-  await db.run(sql.raw("CREATE INDEX IF NOT EXISTS idx_public_animals_kind_active ON public_animals (up_kind_cd, kind_cd, active)"));
-  await db.run(sql.raw("CREATE INDEX IF NOT EXISTS idx_public_animals_shelter ON public_animals (shelter_id)"));
-  await db.run(sql.raw(`CREATE TABLE IF NOT EXISTS public_sync_state (
-    id text PRIMARY KEY NOT NULL, status text NOT NULL, last_started_at text NOT NULL,
-    last_completed_at text, item_count integer DEFAULT 0 NOT NULL, page_count integer DEFAULT 0 NOT NULL,
-    message text DEFAULT '' NOT NULL
-  )`));
-  return addedUpKind || addedKind;
+function storedAnimal(row: Record<string, unknown>) {
+  return {
+    ...row,
+    upKindCd: row.up_kind_cd ?? "",
+    kindCd: row.kind_cd ?? "",
+    ageGroup: row.age_group ?? "나이 미상",
+    shelterId: row.shelter_id ?? null,
+    shelterName: row.shelter_name ?? "관할 보호센터",
+    shelterAddress: row.shelter_address ?? "",
+    shelterPhone: row.shelter_phone ?? "",
+    shelterLat: row.shelter_lat ?? null,
+    shelterLng: row.shelter_lng ?? null,
+    approximateShelterLocation: row.approximate_shelter_location ?? true,
+    image1: row.image_1 ?? "",
+    image2: row.image_2 ?? "",
+    colorsJson: row.colors_json ?? "[]",
+    traitsJson: row.traits_json ?? "[]",
+    healthJson: row.health_json ?? "[]",
+    lifeJson: row.life_json ?? "[]",
+    matchReason: row.match_reason ?? "",
+    processState: row.process_state ?? "",
+    lastSeenSync: row.last_seen_sync ?? "",
+    syncedAt: row.synced_at ?? "",
+  } as StoredAnimal;
+}
+
+function storedShelter(row: ShelterRecord) {
+  return {
+    id: row.id,
+    name: row.name,
+    organization: row.organization,
+    address: row.address,
+    phone: row.phone,
+    hours: row.hours,
+    closed: row.closed,
+    lat: row.lat,
+    lng: row.lng,
+    approximate_location: row.approximateLocation,
+    synced_at: row.syncedAt,
+  };
+}
+
+function storedAnimalRow(row: AnimalRecord) {
+  return {
+    id: row.id, name: row.name, species: row.species, breed: row.breed, up_kind_cd: row.upKindCd, kind_cd: row.kindCd,
+    age: row.age, age_group: row.ageGroup, sex: row.sex, region: row.region, shelter_id: row.shelterId,
+    shelter_name: row.shelterName, shelter_address: row.shelterAddress, shelter_phone: row.shelterPhone,
+    shelter_lat: row.shelterLat, shelter_lng: row.shelterLng, approximate_shelter_location: row.approximateShelterLocation,
+    updated: row.updated, image_1: row.image1, image_2: row.image2, colors_json: row.colorsJson, traits_json: row.traitsJson,
+    summary: row.summary, health_json: row.healthJson, life_json: row.lifeJson, match_reason: row.matchReason,
+    process_state: row.processState, active: row.active, last_seen_sync: row.lastSeenSync, synced_at: row.syncedAt,
+  };
 }
 
 async function fetchPage<T>(endpoint: string, pageNo: number, numOfRows: number) {
@@ -215,28 +223,21 @@ function mapAnimal(item: AnimalItem, shelterMap: Map<string, ShelterRecord>, syn
 }
 
 async function writeShelters(rows: ShelterRecord[]) {
-  const db = getDb();
-  // D1은 한 SQL 문에 사용할 수 있는 바인딩 수가 제한되므로 작은 묶음으로 저장합니다.
-  for (const group of chunks(rows, 8)) {
-    await db.insert(publicShelters).values(group).onConflictDoUpdate({ target: publicShelters.id, set: {
-      name: sql`excluded.name`, organization: sql`excluded.organization`, address: sql`excluded.address`, phone: sql`excluded.phone`, hours: sql`excluded.hours`, closed: sql`excluded.closed`, lat: sql`excluded.lat`, lng: sql`excluded.lng`, approximateLocation: sql`excluded.approximate_location`, syncedAt: sql`excluded.synced_at`,
-    } });
-  }
+  const { error } = await getSupabaseServerClient().from("public_shelters").upsert(rows.map(storedShelter), { onConflict: "id" });
+  if (error) throw error;
 }
 
 async function writeAnimals(rows: AnimalRecord[]) {
-  const db = getDb();
-  for (const group of chunks(rows, 3)) {
-    await db.insert(publicAnimals).values(group).onConflictDoUpdate({ target: publicAnimals.id, set: {
-      name: sql`excluded.name`, species: sql`excluded.species`, breed: sql`excluded.breed`, upKindCd: sql`excluded.up_kind_cd`, kindCd: sql`excluded.kind_cd`, age: sql`excluded.age`, ageGroup: sql`excluded.age_group`, sex: sql`excluded.sex`, region: sql`excluded.region`, shelterId: sql`excluded.shelter_id`, shelterName: sql`excluded.shelter_name`, shelterAddress: sql`excluded.shelter_address`, shelterPhone: sql`excluded.shelter_phone`, shelterLat: sql`excluded.shelter_lat`, shelterLng: sql`excluded.shelter_lng`, approximateShelterLocation: sql`excluded.approximate_shelter_location`, updated: sql`excluded.updated`, image1: sql`excluded.image_1`, image2: sql`excluded.image_2`, colorsJson: sql`excluded.colors_json`, traitsJson: sql`excluded.traits_json`, summary: sql`excluded.summary`, healthJson: sql`excluded.health_json`, lifeJson: sql`excluded.life_json`, matchReason: sql`excluded.match_reason`, processState: sql`excluded.process_state`, active: true, lastSeenSync: sql`excluded.last_seen_sync`, syncedAt: sql`excluded.synced_at`,
-    } });
+  for (const group of chunks(rows.map(storedAnimalRow), 500)) {
+    const { error } = await getSupabaseServerClient().from("public_animals").upsert(group, { onConflict: "id" });
+    if (error) throw error;
   }
 }
 
 export async function syncPublicAnimals() {
   await ensureTables();
-  const db = getDb(), startedAt = new Date().toISOString(), syncId = crypto.randomUUID();
-  await db.insert(publicSyncState).values({ id: "public-animals", status: "running", lastStartedAt: startedAt, itemCount: 0, pageCount: 0 }).onConflictDoUpdate({ target: publicSyncState.id, set: { status: "running", lastStartedAt: startedAt, message: "" } });
+  const supabase = getSupabaseServerClient(), startedAt = new Date().toISOString(), syncId = crypto.randomUUID();
+  await supabase.from("public_sync_state").upsert({ id: "public-animals", status: "running", last_started_at: startedAt, item_count: 0, page_count: 0, message: "" }, { onConflict: "id" });
   try {
     const sheltersResult = await fetchAll<ShelterItem>(SHELTER_ENDPOINT);
     const shelterRows = sheltersResult.items.map(item => mapShelter(item, startedAt)).filter((item): item is ShelterRecord => Boolean(item));
@@ -245,28 +246,34 @@ export async function syncPublicAnimals() {
     const animalsResult = await fetchAll<AnimalItem>(ANIMAL_ENDPOINT);
     const animalRows = animalsResult.items.map(item => mapAnimal(item, shelterMap, syncId, startedAt)).filter((item): item is AnimalRecord => Boolean(item));
     await writeAnimals(animalRows);
-    await db.update(publicAnimals).set({ active: false }).where(ne(publicAnimals.lastSeenSync, syncId));
+    const { error: deactivateError } = await supabase.from("public_animals").update({ active: false }).neq("last_seen_sync", syncId);
+    if (deactivateError) throw deactivateError;
     const completedAt = new Date().toISOString(), pages = sheltersResult.pages + animalsResult.pages;
-    await db.update(publicSyncState).set({ status: "complete", lastCompletedAt: completedAt, itemCount: animalRows.length, pageCount: pages, message: "" }).where(eq(publicSyncState.id, "public-animals"));
+    await supabase.from("public_sync_state").update({ status: "complete", last_completed_at: completedAt, item_count: animalRows.length, page_count: pages, message: "" }).eq("id", "public-animals");
     return { count: animalRows.length, pages, syncedAt: completedAt };
   } catch (error) {
-    await db.update(publicSyncState).set({ status: "failed", message: error instanceof Error ? error.message.slice(0, 500) : "동기화 실패" }).where(eq(publicSyncState.id, "public-animals"));
+    await supabase.from("public_sync_state").update({ status: "failed", message: error instanceof Error ? error.message.slice(0, 500) : "동기화 실패" }).eq("id", "public-animals");
     throw error;
   }
 }
 
 export async function ensurePublicAnimals() {
   const schemaChanged = await ensureTables();
-  const db = getDb();
-  const [state] = await db.select().from(publicSyncState).where(eq(publicSyncState.id, "public-animals")).limit(1);
-  const [existing] = await db.select({ id: publicAnimals.id }).from(publicAnimals).where(eq(publicAnimals.active, true)).limit(1);
-  const completed = state?.lastCompletedAt ? new Date(state.lastCompletedAt).getTime() : 0;
+  const supabase = getSupabaseServerClient();
+  const [{ data: states }, { data: existingRows }] = await Promise.all([
+    supabase.from("public_sync_state").select("*").eq("id", "public-animals").limit(1),
+    supabase.from("public_animals").select("id").eq("active", true).limit(1),
+  ]);
+  const state = states?.[0] as (typeof publicSyncState.$inferSelect | undefined);
+  const existing = existingRows?.[0];
+  const completed = state?.lastCompletedAt ? new Date(state.lastCompletedAt).getTime() : state?.last_completed_at ? new Date(state.last_completed_at).getTime() : 0;
   if (existing && !schemaChanged && Date.now() - completed < SYNC_INTERVAL_MS) return state;
   if (!runningSync) runningSync = syncPublicAnimals().finally(() => { runningSync = null; });
   // 저장 데이터가 있으면 즉시 응답하고 뒤에서 갱신해 화면을 50초씩 막지 않습니다.
   if (existing && !schemaChanged) { void runningSync.catch(() => undefined); return state; }
   await runningSync;
-  const [next] = await db.select().from(publicSyncState).where(eq(publicSyncState.id, "public-animals")).limit(1);
+  const { data: nextRows } = await supabase.from("public_sync_state").select("*").eq("id", "public-animals").limit(1);
+  const next = nextRows?.[0] as (typeof publicSyncState.$inferSelect | undefined);
   return next;
 }
 
@@ -284,9 +291,15 @@ function fromStored(row: StoredAnimal): Animal {
 
 function cursorOffset(cursor: string | null | undefined) { const value = Number.parseInt(cursor || "0", 36); return Number.isFinite(value) && value >= 0 ? value : 0; }
 
+async function activeAnimals() {
+  const { data, error } = await getSupabaseServerClient().from("public_animals").select("*").eq("active", true).order("updated", { ascending: false }).limit(10000);
+  if (error) throw error;
+  return (data || []).map(row => storedAnimal(row as Record<string, unknown>));
+}
+
 export async function getBreedCounts(options: BreedCountOptions = {}) {
   await ensurePublicAnimals();
-  const rows = await getDb().select().from(publicAnimals).where(eq(publicAnimals.active, true)).limit(10000);
+  const rows = await activeAnimals();
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
   const ageFilter = options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "어른 친구" : options.ageGroup === "unknown" ? "나이 미상" : "";
   const sizeFilter = ["small", "medium", "large", "unknown"].includes(options.sizeGroup || "") ? options.sizeGroup : "";
@@ -307,8 +320,7 @@ export async function getBreedCounts(options: BreedCountOptions = {}) {
 }
 
 export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {
-  const state = await ensurePublicAnimals(), db = getDb();
-  const rows = await db.select().from(publicAnimals).where(eq(publicAnimals.active, true)).orderBy(desc(publicAnimals.updated)).limit(10000);
+  const state = await ensurePublicAnimals(), rows = await activeAnimals();
   const speciesFilter = options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : "";
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
   const ageFilter = options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "어른 친구" : options.ageGroup === "unknown" ? "나이 미상" : "";
@@ -334,22 +346,24 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
 
 export async function getStoredAnimalById(id: string) {
   await ensureTables();
-  const [row] = await getDb().select().from(publicAnimals).where(eq(publicAnimals.id, id)).limit(1);
-  if (!row) return undefined;
-  const animal = fromStored(row), images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
+  const { data, error } = await getSupabaseServerClient().from("public_animals").select("*").eq("id", id).limit(1);
+  if (error || !data?.[0]) return undefined;
+  const animal = fromStored(storedAnimal(data[0] as Record<string, unknown>)), images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
   return { ...animal, image: images[0] || animal.image, images, photoCount: images.length };
 }
 
 export async function getAnimalsByShelterId(shelterId: string, limit = 200) {
   await ensurePublicAnimals();
-  const db = getDb(), where = and(eq(publicAnimals.active, true), eq(publicAnimals.shelterId, shelterId));
-  const [rows, totals] = await Promise.all([
-    db.select().from(publicAnimals).where(where).orderBy(desc(publicAnimals.updated)).limit(Math.min(500, Math.max(1, limit))),
-    db.select({ value: count() }).from(publicAnimals).where(where),
+  const supabase = getSupabaseServerClient(), safeLimit = Math.min(500, Math.max(1, limit));
+  const [{ data, error }, { count: total, error: countError }] = await Promise.all([
+    supabase.from("public_animals").select("*").eq("active", true).eq("shelter_id", shelterId).order("updated", { ascending: false }).limit(safeLimit),
+    supabase.from("public_animals").select("id", { count: "exact", head: true }).eq("active", true).eq("shelter_id", shelterId),
   ]);
+  if (error || countError) throw error || countError;
+  const rows = (data || []).map(row => storedAnimal(row as Record<string, unknown>));
   const items = await Promise.all(rows.map(async row => {
     const animal = fromStored(row), images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
     return { ...animal, image: images[0] || animal.image, images, photoCount: images.length };
   }));
-  return { items, total: Number(totals[0]?.value || 0) };
+  return { items, total: total || 0 };
 }

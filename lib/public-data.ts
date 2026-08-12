@@ -9,10 +9,10 @@ const CACHE_MS = 10 * 60 * 1000;
 
 type ApiEnvelope<T> = { response?: { header?: { resultCode?: string; resultMsg?: string }; body?: { items?: { item?: T | T[] }; totalCount?: number | string } } };
 type AbandonedItem = { desertionNo?: string; happenDt?: string; happenPlace?: string; kindFullNm?: string; upKindNm?: string; kindNm?: string; colorCd?: string; age?: string; weight?: string; noticeNo?: string; noticeSdt?: string; noticeEdt?: string; popfile1?: string; popfile2?: string; processState?: string; sexCd?: string; neuterYn?: string; specialMark?: string; careRegNo?: string; careNm?: string; careTel?: string; careAddr?: string; orgNm?: string; updTm?: string };
-type LossItem = { happenDt?: string; happenAddr?: string; happenPlace?: string; orgNm?: string; popfile?: string; kindCd?: string; colorCd?: string; sexCd?: string; age?: string; specialMark?: string };
+type LossItem = { happenDt?: string; happenAddr?: string; happenPlace?: string; orgNm?: string; popfile?: string; kindCd?: string; colorCd?: string; sexCd?: string; age?: string; specialMark?: string; rfidCd?: string };
 type ShelterItem = { careRegNo?: string; careNm?: string; orgNm?: string; saveTrgtAnimal?: string; careAddr?: string; careTel?: string; weekOprStime?: string; weekOprEtime?: string; closeDay?: string; lat?: string; lng?: string };
 
-export type LostAnimal = { id: string; species: string; breed: string; sex: string; age: string; color: string; happenedAt: string; region: string; address: string; place: string; description: string; image: string };
+export type LostAnimal = { id: string; legacyId?: string; species: string; breed: string; sex: string; age: string; color: string; happenedAt: string; region: string; address: string; place: string; description: string; image: string };
 export type Shelter = { id: string; name: string; organization: string; animals: string; address: string; phone: string; hours: string; closed: string; lat: number; lng: number; approximateLocation: boolean };
 
 let animalCache: { at: number; data: Animal[] } | undefined;
@@ -179,14 +179,19 @@ export async function getLostAnimals(limit = 12): Promise<LostAnimal[]> {
       if (page.items.length < pageSize) break;
     }
     const data = rawItems.map((item, index) => ({
-      id: `${item.happenDt || "loss"}-${index}`, species: lostSpecies(item.kindCd), breed: item.kindCd || "품종 미상", sex: sex(item.sexCd), age: item.age || "나이 미상", color: item.colorCd || "털색 미상", happenedAt: item.happenDt?.replace(/\.0$/, "") || "발생일 미상", region: item.orgNm || "지역 미상", address: item.happenAddr || "", place: `${item.orgNm || item.happenAddr?.split(" ").slice(0, 2).join(" ") || "관할 지역"} 인근 · 상세 위치 비공개`, description: item.specialMark || "등록된 특징이 없습니다.", image: secureImage(item.popfile),
+      id: item.rfidCd?.trim() || `${item.happenDt || "loss"}-${index}`, legacyId: `${item.happenDt || "loss"}-${index}`, species: lostSpecies(item.kindCd), breed: item.kindCd || "품종 미상", sex: sex(item.sexCd), age: item.age || "나이 미상", color: item.colorCd || "털색 미상", happenedAt: item.happenDt?.replace(/\.0$/, "") || "발생일 미상", region: item.orgNm || "지역 미상", address: item.happenAddr || "", place: `${item.orgNm || item.happenAddr?.split(" ").slice(0, 2).join(" ") || "관할 지역"} 인근 · 상세 위치 비공개`, description: item.specialMark || "등록된 특징이 없습니다.", image: secureImage(item.popfile),
     })).filter((item) => item.image);
     lossCache = { at: Date.now(), data }; return data.slice(0, limit);
   } catch { return []; }
 }
 
 export async function getLostAnimalById(id: string) {
-  return (await getLostAnimals(1000)).find(animal => animal.id === id);
+  const animals = await getLostAnimals(1000);
+  const exact = animals.find(animal => animal.id === id || animal.legacyId === id);
+  if (exact) return exact;
+  // 기존 홈 링크가 배열 순번 ID를 사용하던 시기의 URL도 날짜로 복구합니다.
+  const legacyDate = id.match(/^(.*)-\d+$/)?.[1];
+  return legacyDate ? animals.find(animal => animal.happenedAt === legacyDate || animal.happenedAt.startsWith(legacyDate)) : undefined;
 }
 
 function normalizeRegion(value: string) {

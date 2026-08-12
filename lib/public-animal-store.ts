@@ -162,17 +162,19 @@ async function fetchPage<T>(endpoint: string, pageNo: number, numOfRows: number)
   return { items: array(payload.response.body?.items?.item), total: Number(payload.response.body?.totalCount || 0) };
 }
 
-async function fetchAll<T>(endpoint: string) {
+type FetchAllResult<T> = { items: T[]; pages: number; total: number; complete: boolean };
+
+async function fetchAll<T>(endpoint: string): Promise<FetchAllResult<T>> {
   const items: T[] = [];
-  let page = 1, total = Infinity;
-  while (page <= MAX_PAGES && items.length < total) {
+  let page = 1, total = 0;
+  while (page <= MAX_PAGES) {
     const result = await fetchPage<T>(endpoint, page, PAGE_SIZE);
     items.push(...result.items);
-    total = result.total || (result.items.length < PAGE_SIZE ? items.length : Infinity);
-    if (!result.items.length || result.items.length < PAGE_SIZE) break;
+    total = result.total;
+    if (!result.items.length || items.length >= total || result.items.length < PAGE_SIZE) break;
     page += 1;
   }
-  return { items, pages: page };
+  return { items, pages: page, total, complete: total === 0 || items.length >= total };
 }
 
 function mapShelter(item: ShelterItem, syncedAt: string): ShelterRecord | null {
@@ -298,11 +300,15 @@ export async function syncPublicAnimals() {
   await supabase.from("public_sync_state").upsert({ id: "public-animals", status: "running", last_started_at: startedAt, item_count: 0, page_count: 0, message: "" }, { onConflict: "id" });
   try {
     const sheltersResult = await fetchAll<ShelterItem>(SHELTER_ENDPOINT);
-    const shelterRows = sheltersResult.items.map(item => mapShelter(item, startedAt)).filter((item): item is ShelterRecord => Boolean(item));
-    await writeShelters(shelterRows);
-    const shelterMap = new Map(shelterRows.map(item => [item.id, item]));
     const animalsResult = await fetchAll<AnimalItem>(ANIMAL_ENDPOINT);
+    if (!sheltersResult.complete || !animalsResult.complete) {
+      throw new Error(`공공데이터 전체 수집이 완료되지 않았습니다. 보호소 ${sheltersResult.items.length}/${sheltersResult.total}, 동물 ${animalsResult.items.length}/${animalsResult.total}`);
+    }
+    const shelterRows = sheltersResult.items.map(item => mapShelter(item, startedAt)).filter((item): item is ShelterRecord => Boolean(item));
+    const shelterMap = new Map(shelterRows.map(item => [item.id, item]));
     const animalRows = animalsResult.items.map(item => mapAnimal(item, shelterMap, syncId, startedAt)).filter((item): item is AnimalRecord => Boolean(item));
+    if (animalsResult.total > 0 && animalRows.length === 0) throw new Error("공공데이터는 수집됐지만 화면에 반영할 동물이 0건입니다. 매핑 조건을 확인해야 합니다.");
+    await writeShelters(shelterRows);
     await writeAnimals(animalRows);
     const { error: deactivateError } = await supabase.from("public_animals").update({ active: false }).neq("last_seen_sync", syncId);
     if (deactivateError) throw deactivateError;

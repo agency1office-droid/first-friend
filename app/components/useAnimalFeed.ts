@@ -104,16 +104,31 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   }, [filters, filtersReady]);
 
   useEffect(() => {
-    const update = (event?: Event) => {
+    let active = true;
+    const update = async (event?: Event) => {
       const detail = (event as CustomEvent<HomeLocation> | undefined)?.detail;
-      const next = detail || readHomeLocation();
+      let next = detail || readHomeLocation();
+      // 상단 주소 표시보다 피드가 먼저 마운트될 수 있습니다.
+      // IP 좌표를 확보하기 전에는 첫 목록 요청을 보내지 않아
+      // 거리순 요청이 최신순으로 대체되는 것을 막습니다.
+      if (!next && !detail) {
+        next = await fetch("/api/location/default", { cache: "no-store" })
+          .then(response => response.ok ? response.json() as Promise<{ location?: HomeLocation | null }> : { location: null })
+          .then(body => body.location || null)
+          .catch(() => null);
+        if (next && active) {
+          window.localStorage.setItem("ff-ip-location", JSON.stringify(next));
+          window.localStorage.setItem("ff-home-location", JSON.stringify(next));
+        }
+      }
+      if (!active) return;
       setLocation(next);
       setRegion(next?.label || window.localStorage.getItem("ff-home-region") || "");
       setReady(true);
     };
-    update();
+    void update();
     window.addEventListener("ff-region-change", update);
-    return () => window.removeEventListener("ff-region-change", update);
+    return () => { active = false; window.removeEventListener("ff-region-change", update); };
   }, []);
 
   useEffect(() => {

@@ -43,6 +43,7 @@ const regionCenters: Record<string, [number, number]> = {
 let runningSync: Promise<{ count: number; pages: number; syncedAt: string }> | null = null;
 let activeAnimalsCache: { at: number; rows: StoredAnimal[] } | null = null;
 const ACTIVE_ANIMALS_CACHE_MS = 60 * 1000;
+const LIST_ANIMAL_COLUMNS = "id,name,species,breed,up_kind_cd,kind_cd,age,age_group,sex,region,shelter_id,shelter_name,shelter_address,shelter_phone,shelter_lat,shelter_lng,approximate_shelter_location,updated,image_1,image_2,colors_json,traits_json,summary,health_json,life_json,match_reason,process_state,active,last_seen_sync,synced_at";
 
 function apiKey() { return process.env.PUBLIC_DATA_API_KEY?.trim(); }
 function array<T>(value: T | T[] | undefined) { return !value ? [] : Array.isArray(value) ? value : [value]; }
@@ -296,7 +297,7 @@ function cursorOffset(cursor: string | null | undefined) { const value = Number.
 
 async function activeAnimals() {
   if (activeAnimalsCache && Date.now() - activeAnimalsCache.at < ACTIVE_ANIMALS_CACHE_MS) return activeAnimalsCache.rows;
-  const { data, error } = await getSupabaseServerClient().from("public_animals").select("*").eq("active", true).order("updated", { ascending: false }).limit(10000);
+  const { data, error } = await getSupabaseServerClient().from("public_animals").select(LIST_ANIMAL_COLUMNS).eq("active", true).order("updated", { ascending: false }).limit(10000);
   if (error) throw error;
   const rows = (data || []).map(row => storedAnimal(row as Record<string, unknown>));
   activeAnimalsCache = { at: Date.now(), rows };

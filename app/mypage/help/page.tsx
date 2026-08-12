@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { desc, eq } from "drizzle-orm";
 import { requireChatGPTUser } from "../../chatgpt-auth";
-import { getDb } from "../../../db";
-import { supportRecords } from "../../../db/schema";
+import { getSupabaseServerClient } from "../../../lib/supabase/server";
 import { Callout } from "seed-design/ui/callout";
 import { Badge } from "seed-design/ui/badge";
 export const dynamic = "force-dynamic";
@@ -15,12 +13,7 @@ const labels: Record<string, string> = {
   insurance_referral: "보험 안내",
 };
 export default async function Page() {
-  const user = await requireChatGPTUser("/mypage/help"),
-    rows = await getDb()
-      .select()
-      .from(supportRecords)
-      .where(eq(supportRecords.memberId, user.userId))
-      .orderBy(desc(supportRecords.createdAt));
+  const user = await requireChatGPTUser("/mypage/help"), { data: rows } = await getSupabaseServerClient().from("support_records").select("*").eq("member_id", user.userId).order("created_at", { ascending: false });
   return (
     <div className="ff-page">
       <header className="ff-page-header">
@@ -35,7 +28,7 @@ export default async function Page() {
         description="현재 외부 결제·보험 계약 전 기록은 ‘의향’ 상태이며 실제 청구되지 않았습니다."
       />
       <div className="ff-manage-list">
-        {rows.map((row) => (
+        {(rows || []).map((row) => (
           <article key={row.id}>
             <div>
               <Badge tone="neutral" variant="weak">
@@ -43,7 +36,7 @@ export default async function Page() {
               </Badge>
               <h2>{row.title}</h2>
               <p>{row.disclosure}</p>
-              <small>{new Date(row.createdAt).toLocaleString("ko-KR")}</small>
+              <small>{new Date(row.created_at).toLocaleString("ko-KR")}</small>
             </div>
             <Badge tone="informative" variant="weak">
               {row.status}

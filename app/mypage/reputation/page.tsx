@@ -1,23 +1,11 @@
 import type { Metadata } from "next";
-import { eq } from "drizzle-orm";
 import { requireChatGPTUser } from "../../chatgpt-auth";
-import { getDb } from "../../../db";
-import { drawingMatches, volunteerBadges } from "../../../db/schema";
+import { getSupabaseServerClient } from "../../../lib/supabase/server";
 import { Badge } from "seed-design/ui/badge";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "나의 포인트와 봉사 배지" };
 export default async function Page() {
-  const user = await requireChatGPTUser("/mypage/reputation"),
-    db = getDb(),
-    matches = await db
-      .select()
-      .from(drawingMatches)
-      .where(eq(drawingMatches.memberId, user.userId)),
-    badges = await db
-      .select()
-      .from(volunteerBadges)
-      .where(eq(volunteerBadges.memberId, user.userId)),
-    points = matches.reduce((sum, row) => sum + row.points, 0),
+  const user = await requireChatGPTUser("/mypage/reputation"), client = getSupabaseServerClient(), [{ data: matches }, { data: badges }] = await Promise.all([client.from("drawing_matches").select("points").eq("member_id", user.userId), client.from("volunteer_badges").select("*").eq("member_id", user.userId)]), points = (matches || []).reduce((sum, row) => sum + Number(row.points || 0), 0),
     grade =
       points >= 1000
         ? "퍼스트 프렌드 탐정"
@@ -42,7 +30,7 @@ export default async function Page() {
       <section className="ff-section">
         <h2 className="ff-section-title">나의 봉사 배지</h2>
         <div className="ff-badge-wall">
-          {badges.map((row) => (
+          {(badges || []).map((row) => (
             <div key={row.id}>
               <span>🏅</span>
               <Badge tone="positive" variant="weak">

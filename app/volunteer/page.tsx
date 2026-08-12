@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { desc, eq } from "drizzle-orm";
-import { getDb } from "../../db";
-import { volunteerPosts, shelterProfiles } from "../../db/schema";
+import { getSupabaseServerClient } from "../../lib/supabase/server";
 import { Badge } from "seed-design/ui/badge";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "보호소 봉사 찾기" };
@@ -14,15 +12,7 @@ const labels: Record<string, string> = {
   event: "행사·현장 지원",
 };
 export default async function Page() {
-  const db = getDb(),
-    posts = await db
-      .select()
-      .from(volunteerPosts)
-      .where(eq(volunteerPosts.status, "open"))
-      .orderBy(desc(volunteerPosts.createdAt))
-      .limit(50),
-    shelters = await db.select().from(shelterProfiles),
-    map = new Map(shelters.map((s) => [s.id, s]));
+  const client = getSupabaseServerClient(), [{ data: posts }, { data: shelters }] = await Promise.all([client.from("volunteer_posts").select("*").eq("status", "open").order("created_at", { ascending: false }).limit(50), client.from("shelter_profiles").select("*")]), map = new Map((shelters || []).map(s => [s.id, s]));
   return (
     <div className="ff-page">
       <header className="ff-page-header">
@@ -60,7 +50,7 @@ export default async function Page() {
       <div className="ff-qa-list">
         {posts.map((post) => (
           <a
-            href={`/shelters/${encodeURIComponent(map.get(post.shelterId)?.publicId || "")}`}
+            href={`/shelters/${encodeURIComponent(map.get(post.shelter_id)?.public_id || "")}`}
             key={post.id}
           >
             <Badge tone="informative" variant="weak">
@@ -68,9 +58,9 @@ export default async function Page() {
             </Badge>
             <h2>{post.title}</h2>
             <p>
-              {map.get(post.shelterId)?.name} · {post.region}
+              {map.get(post.shelter_id)?.name} · {post.region}
               <br />
-              {post.scheduledAt} · 정원 {post.capacity}명
+              {post.scheduled_at} · 정원 {post.capacity}명
             </p>
           </a>
         ))}

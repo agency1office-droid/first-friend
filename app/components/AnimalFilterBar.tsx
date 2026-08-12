@@ -11,6 +11,7 @@ import { LoadingIndicator } from "./LoadingIndicator";
 import { SegmentedControl, SegmentedControlItem } from "seed-design/ui/segmented-control";
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
 import type { AnimalFeedFilters } from "./useAnimalFeed";
+import { AllAnimalFilters } from "./AllAnimalFilters";
 
 type BreedOption = { key: string; kindNm: string; species: "dog" | "cat"; count: number };
 
@@ -217,6 +218,7 @@ export function AnimalFilterBar({ filters, location, hasLocation, activeCount, s
 }) {
   return <div className="ff-animal-filter-wrap" aria-label="보호동물 목록 필터">
     <div className="ff-animal-filter-scroll">
+      <AllAnimalFilters activeCount={activeCount} setFilter={setFilter} resetFilters={resetFilters} />
       <SortFilterSheet value={hasLocation ? filters.sort : "recent"} active={(hasLocation && filters.sort === "distance") || filters.sort === "recent"} hasLocation={hasLocation} onChange={value => setFilter("sort", value)} onReset={() => setFilter("sort", "distance")}/>
       <StatusFilterSheet value={filters.publicStatus} active={filters.publicStatus !== "all"} onChange={value => setFilter("publicStatus", value)} onReset={() => setFilter("publicStatus", "all")}/>
       <BreedFilterSheet filters={filters} location={location} onApply={(species, breedKeys) => { setFilter("species", species); setFilter("breedKeys", breedKeys); }}/>

@@ -409,6 +409,25 @@ export async function getBreedCounts(options: BreedCountOptions = {}) {
   return counts;
 }
 
+export async function getPublicRawFilterOptions() {
+  const { data, error } = await getSupabaseServerClient().from("public_animals")
+    .select("up_kind_cd,kind_cd,species,breed,sex,age,colors_json,traits_json,process_state,region")
+    .eq("active", true).limit(10000);
+  if (error) throw error;
+  const sets = { species: new Set<string>(), breeds: new Map<string, { key: string; label: string; species: string }>(), sex: new Set<string>(), colors: new Set<string>(), ages: new Set<string>(), weights: new Set<string>(), states: new Set<string>(), regions: new Set<string>() };
+  for (const row of data || []) {
+    const item = row as Record<string, unknown>, animalSpecies = String(item.species || "");
+    if (animalSpecies) sets.species.add(animalSpecies);
+    const upKindCd = String(item.up_kind_cd || ""), kindCd = String(item.kind_cd || ""), breed = String(item.breed || "");
+    if (breed) sets.breeds.set(`${upKindCd}:${kindCd}`, { key: `${upKindCd}:${kindCd}`, label: breed, species: animalSpecies });
+    for (const [set, value] of [[sets.sex, item.sex], [sets.ages, item.age], [sets.states, item.process_state], [sets.regions, item.region]] as const) if (value) set.add(String(value));
+    for (const color of jsonArray(String(item.colors_json || "[]"))) sets.colors.add(color);
+    for (const trait of jsonArray(String(item.traits_json || "[]"))) if (/kg/i.test(trait)) sets.weights.add(trait);
+  }
+  const sorted = (set: Set<string>) => [...set].sort((a, b) => a.localeCompare(b, "ko-KR"));
+  return { species: sorted(sets.species), breeds: [...sets.breeds.values()].sort((a, b) => a.label.localeCompare(b.label, "ko-KR")), sex: sorted(sets.sex), colors: sorted(sets.colors), ages: sorted(sets.ages), weights: sorted(sets.weights), states: sorted(sets.states), regions: sorted(sets.regions) };
+}
+
 export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {
   const state = await ensurePublicAnimals({ allowSync: false });
   const limit = Math.min(50, Math.max(1, options.limit || 20));

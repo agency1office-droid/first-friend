@@ -5,7 +5,7 @@ const regionNames: Record<string, string> = {
 };
 
 const cityNames: Record<string, string> = {
-  "Gangnam-gu": "강남구", "Gangdong-gu": "강동구", "Gangbuk-gu": "강북구", "Gangseo-gu": "강서구",
+  "Gangnam-gu": "강남구", "Gangdong-gu": "강동구", "Gangbuk-gu": "강북구", "Gangseo-gu": "강서구", "Geumjeong-gu": "금정구",
   "Geumcheon-gu": "금천구", "Guro-gu": "구로구", "Gwanak-gu": "관악구", "Gwangjin-gu": "광진구",
   "Jongno-gu": "종로구", "Jung-gu": "중구", "Jungnang-gu": "중랑구", "Mapo-gu": "마포구",
   "Nowon-gu": "노원구", "Seocho-gu": "서초구", "Seodaemun-gu": "서대문구", "Seongbuk-gu": "성북구",
@@ -29,5 +29,5 @@ export async function GET() {
   const province = regionNames[regionCode] || "";
   const translatedCity = cityNames[city] || city;
   const label = province && !translatedCity.includes(province) ? `${province} ${translatedCity}` : translatedCity;
-  return Response.json({ location: { label, lat: latitude, lng: longitude, source: "ip" } }, { headers: { "cache-control": "private, max-age=3600" } });
+  return Response.json({ location: { label, lat: latitude, lng: longitude, source: "ip" } }, { headers: { "cache-control": "no-store" } });
 }

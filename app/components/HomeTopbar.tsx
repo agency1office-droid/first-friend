@@ -33,9 +33,10 @@ export function HomeTopbar() {
     async function hydrate() {
       await Promise.resolve();
       const local = savedLocations();
-      if (local.length) {
-        setNeighborhoods(local);
-        setRegion(local[0].label);
+      const manualLocal = local.filter((row) => row.source !== "ip" && !/^[A-Za-z\s-]+$/.test(row.label));
+      if (manualLocal.length) {
+        setNeighborhoods(manualLocal);
+        setRegion(manualLocal[0].label);
         return;
       }
       const ipLocation = await fetch("/api/location/default").then((response) => response.json()).then((body) => body.location as HomeLocation | null).catch(() => null);

@@ -133,30 +133,9 @@ export async function getAnimalsWithPhotoCounts(limit = 24): Promise<Animal[]> {
 export async function getAnimalById(id: string) {
   const stored = await import("./public-animal-store").then(module => module.getStoredAnimalById(id)).catch(() => undefined);
   if (stored) return stored;
-  if (key()) {
-    try {
-      const shelters = await getShelters(1000);
-      // The public API does not reliably filter by desertionNo, so search its
-      // paginated result when a detail link points outside the first feed page.
-      for (let pageNo = 1; pageNo <= 50; pageNo += 1) {
-        const rows = await request<AbandonedItem>(ABANDONED_API, 1000, pageNo);
-        const match = rows.find(item => item.desertionNo === id);
-        if (match) {
-          const animal = mapAnimal(match, shelters);
-          if (animal) {
-            const images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
-            return { ...animal, image: images[0] || animal.image, images };
-          }
-          return undefined;
-        }
-        if (rows.length < 1000) break;
-      }
-    } catch { /* fall through to the local fallback feed */ }
-  }
-  // A detail link can point to an animal that is not in the first feed page.
-  // Resolve a wider public-data window before treating the link as missing.
-  const items = await getAnimals(1000);
-  const animal = items.find((item) => item.id === id) || fallbackAnimals.find((item) => item.id === id);
+  // Detail pages must be O(1): never scan the public API here. The sync job
+  // owns importing public data into Supabase; the page only reads this ID.
+  const animal = fallbackAnimals.find((item) => item.id === id);
   if (!animal) return undefined;
   const images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
   return { ...animal, image: images[0] || animal.image, images };

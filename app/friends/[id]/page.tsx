@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getAnimalById } from "../../../lib/public-data";
 import { getAnimalPublicStatus } from "../../../lib/animal-public-status";
 import { Callout } from "seed-design/ui/callout";
@@ -35,7 +34,14 @@ export default async function AnimalPage({
 }) {
   const { id } = await params;
   const animal = await getAnimalById(id);
-  if (!animal) notFound();
+  if (!animal) return <div className="ff-page">
+    <Callout
+      tone="warning"
+      title="친구 정보를 불러오지 못했어요"
+      description="공고가 종료되었거나 아직 최신 데이터로 동기화되지 않았을 수 있어요. 목록에서 다른 친구를 다시 살펴봐 주세요."
+      linkProps={{ href: "/", children: "홈으로 돌아가기" }}
+    />
+  </div>;
   const publicStatus = getAnimalPublicStatus(animal);
   return (
     <>

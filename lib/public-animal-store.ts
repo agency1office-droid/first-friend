@@ -41,6 +41,8 @@ const regionCenters: Record<string, [number, number]> = {
 };
 
 let runningSync: Promise<{ count: number; pages: number; syncedAt: string }> | null = null;
+let activeAnimalsCache: { at: number; rows: StoredAnimal[] } | null = null;
+const ACTIVE_ANIMALS_CACHE_MS = 60 * 1000;
 
 function apiKey() { return process.env.PUBLIC_DATA_API_KEY?.trim(); }
 function array<T>(value: T | T[] | undefined) { return !value ? [] : Array.isArray(value) ? value : [value]; }
@@ -232,6 +234,7 @@ async function writeAnimals(rows: AnimalRecord[]) {
     const { error } = await getSupabaseServerClient().from("public_animals").upsert(group, { onConflict: "id" });
     if (error) throw error;
   }
+  activeAnimalsCache = null;
 }
 
 export async function syncPublicAnimals() {
@@ -292,9 +295,12 @@ function fromStored(row: StoredAnimal): Animal {
 function cursorOffset(cursor: string | null | undefined) { const value = Number.parseInt(cursor || "0", 36); return Number.isFinite(value) && value >= 0 ? value : 0; }
 
 async function activeAnimals() {
+  if (activeAnimalsCache && Date.now() - activeAnimalsCache.at < ACTIVE_ANIMALS_CACHE_MS) return activeAnimalsCache.rows;
   const { data, error } = await getSupabaseServerClient().from("public_animals").select("*").eq("active", true).order("updated", { ascending: false }).limit(10000);
   if (error) throw error;
-  return (data || []).map(row => storedAnimal(row as Record<string, unknown>));
+  const rows = (data || []).map(row => storedAnimal(row as Record<string, unknown>));
+  activeAnimalsCache = { at: Date.now(), rows };
+  return rows;
 }
 
 export async function getBreedCounts(options: BreedCountOptions = {}) {
@@ -335,10 +341,9 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
     return hasExactPoint ? { ...animal, distanceMeters: distanceMeters({ lat: Number(options.lat), lng: Number(options.lng) }, { lat: Number(row.shelterLat), lng: Number(row.shelterLng) }) } : animal;
   }).filter((animal): animal is Animal => Boolean(animal)).filter(animal => !options.maxDistance || !hasHome || (animal.distanceMeters !== undefined && animal.distanceMeters <= options.maxDistance)).sort((a, b) => options.sort === "recent" ? b.updated.localeCompare(a.updated) || a.id.localeCompare(b.id) : (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity) || b.updated.localeCompare(a.updated) || a.id.localeCompare(b.id));
   const limit = Math.min(50, Math.max(1, options.limit || 20)), offset = cursorOffset(options.cursor), pageItems = prepared.slice(offset, offset + limit);
-  const items = await Promise.all(pageItems.map(async animal => {
-    const images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
-    return { ...animal, image: images[0] || animal.image, images, photoCount: images.length };
-  }));
+  // 목록에서는 동기화된 대표 이미지들만 사용합니다. 추가 사진 조회는 상세페이지에서만 수행해
+  // 스크롤마다 카드 수만큼 별도 DB 요청이 발생하지 않도록 합니다.
+  const items = pageItems;
   const nextOffset = offset + items.length;
   const completedAt = state?.lastCompletedAt || null;
   return { items, total: prepared.length, nextCursor: nextOffset < prepared.length ? nextOffset.toString(36) : null, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= SYNC_INTERVAL_MS * 2 };

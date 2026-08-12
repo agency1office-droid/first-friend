@@ -266,7 +266,8 @@ export async function syncPublicAnimals() {
   }
 }
 
-export async function ensurePublicAnimals() {
+export async function ensurePublicAnimals(options: { allowSync?: boolean } = {}) {
+  const allowSync = options.allowSync !== false;
   const schemaChanged = await ensureTables();
   const supabase = getSupabaseServerClient();
   const [{ data: states }, { data: existingRows }] = await Promise.all([
@@ -277,6 +278,7 @@ export async function ensurePublicAnimals() {
   const existing = existingRows?.[0];
   const completed = state?.lastCompletedAt ? new Date(state.lastCompletedAt).getTime() : state?.last_completed_at ? new Date(state.last_completed_at).getTime() : 0;
   if (existing && !schemaChanged && Date.now() - completed < SYNC_INTERVAL_MS) return state;
+  if (!allowSync) return state;
   if (!runningSync) runningSync = syncPublicAnimals().finally(() => { runningSync = null; });
   // 저장 데이터가 있으면 즉시 응답하고 뒤에서 갱신해 화면을 50초씩 막지 않습니다.
   if (existing && !schemaChanged) { void runningSync.catch(() => undefined); return state; }
@@ -341,7 +343,7 @@ export async function getBreedCounts(options: BreedCountOptions = {}) {
 }
 
 export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {
-  const state = await ensurePublicAnimals();
+  const state = await ensurePublicAnimals({ allowSync: false });
   const limit = Math.min(50, Math.max(1, options.limit || 20));
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
   const canUseDatabaseSearch = !options.sizeGroup && !options.maxDistance && !options.multiplePhotos && !options.exactLocation;

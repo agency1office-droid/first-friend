@@ -4,6 +4,17 @@ const regionNames: Record<string, string> = {
   "KR-11": "서울", "KR-26": "부산", "KR-27": "대구", "KR-28": "인천", "KR-29": "광주", "KR-30": "대전", "KR-31": "울산", "KR-36": "세종", "KR-41": "경기", "KR-42": "강원", "KR-43": "충북", "KR-44": "충남", "KR-45": "전북", "KR-46": "전남", "KR-47": "경북", "KR-48": "경남", "KR-50": "제주",
 };
 
+const cityNames: Record<string, string> = {
+  "Gangnam-gu": "강남구", "Gangdong-gu": "강동구", "Gangbuk-gu": "강북구", "Gangseo-gu": "강서구",
+  "Geumcheon-gu": "금천구", "Guro-gu": "구로구", "Gwanak-gu": "관악구", "Gwangjin-gu": "광진구",
+  "Jongno-gu": "종로구", "Jung-gu": "중구", "Jungnang-gu": "중랑구", "Mapo-gu": "마포구",
+  "Nowon-gu": "노원구", "Seocho-gu": "서초구", "Seodaemun-gu": "서대문구", "Seongbuk-gu": "성북구",
+  "Seongdong-gu": "성동구", "Songpa-gu": "송파구", "Yangcheon-gu": "양천구", "Yeongdeungpo-gu": "영등포구",
+  "Yongsan-gu": "용산구", "Eunpyeong-gu": "은평구", "Dongdaemun-gu": "동대문구", "Dongjak-gu": "동작구",
+  "Haeundae-gu": "해운대구", "Busanjin-gu": "부산진구", "Saha-gu": "사하구", "Sasang-gu": "사상구",
+  "Nam-gu": "남구", "Buk-gu": "북구", "Dong-gu": "동구", "Seo-gu": "서구",
+};
+
 function text(value: string | null) {
   try { return value ? decodeURIComponent(value).trim() : ""; } catch { return value?.trim() || ""; }
 }
@@ -16,6 +27,7 @@ export async function GET() {
   const longitude = Number(requestHeaders.get("x-vercel-ip-longitude"));
   if (!city || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return Response.json({ location: null });
   const province = regionNames[regionCode] || "";
-  const label = province && !city.includes(province) ? `${province} ${city}` : city;
+  const translatedCity = cityNames[city] || city;
+  const label = province && !translatedCity.includes(province) ? `${province} ${translatedCity}` : translatedCity;
   return Response.json({ location: { label, lat: latitude, lng: longitude, source: "ip" } }, { headers: { "cache-control": "private, max-age=3600" } });
 }

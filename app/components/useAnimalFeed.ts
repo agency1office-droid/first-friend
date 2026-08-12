@@ -184,12 +184,17 @@ export function useAnimalFeed(initialPage: AnimalPage) {
         window.sessionStorage.setItem(HOME_FEED_SNAPSHOT_KEY, JSON.stringify({ url, items, total, cursor, syncedAt, stale, scrollY: Number(current?.scrollY) || window.scrollY } satisfies FeedSnapshot));
       };
       save();
+      let saveTimer: number | null = null;
       const onScroll = () => {
-        const current = JSON.parse(window.sessionStorage.getItem(HOME_FEED_SNAPSHOT_KEY) || "null") as Partial<FeedSnapshot> | null;
-        if (current?.url === url) window.sessionStorage.setItem(HOME_FEED_SNAPSHOT_KEY, JSON.stringify({ ...current, scrollY: window.scrollY }));
+        if (saveTimer !== null) return;
+        saveTimer = window.setTimeout(() => {
+          saveTimer = null;
+          const current = JSON.parse(window.sessionStorage.getItem(HOME_FEED_SNAPSHOT_KEY) || "null") as Partial<FeedSnapshot> | null;
+          if (current?.url === url) window.sessionStorage.setItem(HOME_FEED_SNAPSHOT_KEY, JSON.stringify({ ...current, scrollY: window.scrollY }));
+        }, 200);
       };
       window.addEventListener("scroll", onScroll, { passive: true });
-      return () => window.removeEventListener("scroll", onScroll);
+      return () => { window.removeEventListener("scroll", onScroll); if (saveTimer !== null) window.clearTimeout(saveTimer); };
     } catch { return undefined; }
   }, [cursor, filtersReady, items, ready, stale, syncedAt, total]);
 

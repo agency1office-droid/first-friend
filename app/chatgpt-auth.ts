@@ -7,8 +7,7 @@ export type ChatGPTUser = { userId: string; displayName: string; email: string; 
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const { getDb } = await import("../db");
-  const member = await memberFromSession(getDb(), token);
+  const member = await memberFromSession(undefined, token);
   if (!member || member.sanctioned) return null;
   return { userId: member.id, displayName: member.displayName, email: member.email, fullName: member.displayName };
 }

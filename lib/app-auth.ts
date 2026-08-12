@@ -1,10 +1,15 @@
-import { and, eq, gt } from "drizzle-orm";
-import { authAccounts, authSessions, members } from "../db/schema";
+import { getSupabaseServerClient } from "./supabase/server";
 
 export const SESSION_COOKIE = "ff_session";
 export const SESSION_DAYS = 30;
 
-type Db = ReturnType<typeof import("../db").getDb>;
+type Db = unknown;
+type Member = { id: string; email: string; displayName: string; role: string; verified: boolean; sanctioned?: boolean; [key: string]: unknown };
+
+function memberRow(row: Record<string, unknown> | null): Member | null {
+  if (!row) return null;
+  return { ...row, displayName: String(row.display_name ?? ""), id: String(row.id ?? ""), email: String(row.email ?? ""), role: String(row.role ?? "member"), verified: Boolean(row.verified), sanctioned: Boolean(row.sanctioned) };
+}
 
 function hex(bytes: Uint8Array) { return Array.from(bytes, value => value.toString(16).padStart(2, "0")).join(""); }
 function bytes(value: string) { return new Uint8Array(value.match(/.{1,2}/g)?.map(part => Number.parseInt(part, 16)) || []); }
@@ -33,7 +38,8 @@ export function randomToken(size = 32) { return hex(crypto.getRandomValues(new U
 export async function createSession(db: Db, memberId: string) {
   const token = randomToken();
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 86400000).toISOString();
-  await db.insert(authSessions).values({ memberId, tokenHash: await sha256(token), expiresAt });
+  const { error } = await getSupabaseServerClient().from("auth_sessions").insert({ member_id: memberId, token_hash: await sha256(token), expires_at: expiresAt });
+  if (error) throw error;
   return { token, expiresAt };
 }
 
@@ -49,20 +55,26 @@ export function isLocalRequest(request: Request) {
 }
 
 export async function memberFromSession(db: Db, token: string) {
-  const session = await db.query.authSessions.findFirst({ where: and(eq(authSessions.tokenHash, await sha256(token)), gt(authSessions.expiresAt, new Date().toISOString())) });
-  if (!session) return null;
-  return db.query.members.findFirst({ where: eq(members.id, session.memberId) });
+  const { data: sessions, error } = await getSupabaseServerClient().from("auth_sessions").select("member_id").eq("token_hash", await sha256(token)).gt("expires_at", new Date().toISOString()).limit(1);
+  if (error || !sessions?.[0]) return null;
+  const { data: rows } = await getSupabaseServerClient().from("members").select("*").eq("id", sessions[0].member_id).limit(1);
+  return memberRow((rows?.[0] as Record<string, unknown>) || null);
 }
 
 export async function findOrCreateSocialMember(db: Db, provider: "google" | "kakao" | "naver", providerUserId: string, email: string, displayName: string) {
-  const existing = await db.query.authAccounts.findFirst({ where: and(eq(authAccounts.provider, provider), eq(authAccounts.providerUserId, providerUserId)) });
-  if (existing) return db.query.members.findFirst({ where: eq(members.id, existing.memberId) });
+  const supabase = getSupabaseServerClient();
+  const { data: existingRows } = await supabase.from("auth_accounts").select("member_id").eq("provider", provider).eq("provider_user_id", providerUserId).limit(1);
+  if (existingRows?.[0]) {
+    const { data: rows } = await supabase.from("members").select("*").eq("id", existingRows[0].member_id).limit(1);
+    return memberRow((rows?.[0] as Record<string, unknown>) || null);
+  }
   const normalizedEmail = email.trim().toLowerCase();
-  const emailAccount = normalizedEmail ? await db.query.authAccounts.findFirst({ where: eq(authAccounts.email, normalizedEmail) }) : null;
-  const memberId = emailAccount?.memberId || crypto.randomUUID();
-  if (!emailAccount) await db.insert(members).values({ id: memberId, email: normalizedEmail || `${providerUserId}@${provider}.first-friend.local`, displayName: displayName || "퍼스트프렌드 회원", verified: true });
-  await db.insert(authAccounts).values({ memberId, provider, providerUserId, email: normalizedEmail, emailVerified: Boolean(normalizedEmail) });
-  return db.query.members.findFirst({ where: eq(members.id, memberId) });
+  const { data: emailRows } = normalizedEmail ? await supabase.from("auth_accounts").select("member_id").eq("email", normalizedEmail).limit(1) : { data: [] };
+  const memberId = emailRows?.[0]?.member_id || crypto.randomUUID();
+  if (!emailRows?.[0]) await supabase.from("members").insert({ id: memberId, email: normalizedEmail || `${providerUserId}@${provider}.first-friend.local`, display_name: displayName || "퍼스트프렌드 회원", verified: true });
+  await supabase.from("auth_accounts").insert({ member_id: memberId, provider, provider_user_id: providerUserId, email: normalizedEmail, email_verified: Boolean(normalizedEmail) });
+  const { data: rows } = await supabase.from("members").select("*").eq("id", memberId).limit(1);
+  return memberRow((rows?.[0] as Record<string, unknown>) || null);
 }
 
 export function safeReturnTo(value: string | null | undefined) {

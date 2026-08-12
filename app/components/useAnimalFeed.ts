@@ -81,7 +81,9 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     if (filters.breedKeys.length) params.set("breeds", filters.breedKeys.join(","));
     if (filters.sex !== "all") params.set("sex", filters.sex);
     if (filters.color !== "all") params.set("color", filters.color);
-    if (filters.sort === "recent") params.set("sort", "recent");
+    // 정렬값을 생략하면 서버 기본값이 최신순이 되므로,
+    // 홈 기본 정렬인 가까운 순도 요청에 명시적으로 전달합니다.
+    params.set("sort", filters.sort);
     if (nextCursor) params.set("cursor", nextCursor);
     return `/api/animals?${params}`;
   }, [filters, location]);

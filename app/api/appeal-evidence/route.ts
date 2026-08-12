@@ -2,6 +2,7 @@ import { getChatGPTUser } from "../../chatgpt-auth";
 import { uploadStoredFile } from "../../../lib/supabase/storage";
 
 const allowed = new Set(["image/jpeg", "image/png", "image/webp"]);
+const purpose = "sanction-appeal";
 
 // 제재 상태에서도 이의제기권은 보장되어야 하므로 일반 업로드와 인증 경로를 분리합니다.
 export async function POST(request: Request) {

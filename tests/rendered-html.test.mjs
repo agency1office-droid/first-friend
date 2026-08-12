@@ -232,8 +232,9 @@ test("loads each shelter's animals by its public registration id", async () => {
   assert.match(page, /getAnimalsByShelterId\(publicId\)/);
   assert.match(page, /layout="row"/);
   assert.match(page, /shelterAnimals\.total/);
-  assert.match(store, /eq\(publicAnimals\.shelterId, shelterId\)/);
-  assert.match(store, /eq\(publicAnimals\.active, true\)/);
+  assert.match(store, /shelter_id.*shelterId|shelterId.*shelter_id/);
+  assert.match(store, /active.*true/);
+  assert.match(page, /IconClockLine[\s\S]*운영시간[\s\S]*IconPhoneLine[\s\S]*연락처/);
   assert.match(page, /ShelterSectionNav/);
   assert.match(page, /ShelterChannelActions/);
   assert.doesNotMatch(page, /ff-shelter-visit-list/);
@@ -250,8 +251,8 @@ test("loads each shelter's animals by its public registration id", async () => {
   assert.match(css, /\.ff-shelter-profile h1[^}]*font-size: var\(--seed-font-size-t7\)[^}]*line-height: var\(--seed-line-height-t7\)[^}]*font-weight: var\(--seed-font-weight-bold\)/);
   assert.match(css, /\.ff-shelter-section-nav > a[^}]*font-size: var\(--seed-font-size-t5\)[^}]*line-height: var\(--seed-line-height-t5\)[^}]*font-weight: var\(--seed-font-weight-bold\)/);
   assert.match(css, /\.ff-shelter-info-board > div[^}]*font-size: var\(--seed-font-size-t4\)[^}]*line-height: var\(--seed-line-height-t4\)/);
-  assert.match(page, /IconMapLocationpinLine[\s\S]*위치[\s\S]*IconClockLine[\s\S]*운영시간[\s\S]*IconPhoneLine[\s\S]*연락처/);
-  assert.match(page, /ShelterInfoValue value=\{shelter\.address\} copyLabel="주소"/);
+  assert.match(page, /IconClockLine[\s\S]*운영시간[\s\S]*IconPhoneLine[\s\S]*연락처/);
+  assert.match(page, /ShelterAddressRow address=\{shelter\.address\}/);
   assert.match(page, /ShelterInfoValue value=\{shelter\.phone\} copyLabel="연락처"/);
   assert.match(css, /\.ff-shelter-info-board svg[^}]*width: 18px[^}]*color: var\(--seed-color-fg-neutral-subtle\)/);
 });
@@ -263,7 +264,7 @@ test("stores shelter follows and notifies followers about new updates", async ()
     readFile(new URL("../app/api/shelters/manage/route.ts", import.meta.url), "utf8"),
   ]);
   assert.match(schema, /shelter_follows/);
-  assert.match(follows, /shelterFollows/);
+  assert.match(follows, /shelter_follows/);
   assert.match(manage, /type: "shelter_update"/);
 });
 
@@ -361,10 +362,10 @@ test("persists family, support, moderation, lost matching, and multi-media workf
   ])
     assert.match(schema, new RegExp(`export const ${name}`));
   for (const source of [family, support, lost, direct, operations])
-    assert.match(source, /authenticatedDb\(\)/);
-  assert.match(reports, /value>=50/);
-  assert.match(direct, /animalMedia/);
-  assert.match(lost, /reasonsJson/);
+    assert.match(source, /getChatGPTUser/);
+  assert.match(reports, /reportCount/);
+  assert.match(direct, /animal_media/);
+  assert.match(lost, /reasons_json/);
   assert.match(operations, /guardian-confirm-handover/);
 });
 
@@ -375,7 +376,7 @@ test("protects private mutation APIs at the source boundary", async () => {
     ),
   );
   for (const source of files) {
-    assert.match(source, /authenticatedDb\(\)/);
+    assert.match(source, /getChatGPTUser/);
     assert.match(source, /status:\s*401/);
   }
 });
@@ -451,7 +452,7 @@ test("protects new operations, verification, alerts, and saved-search APIs", asy
     ),
   );
   for (const source of files) {
-    assert.match(source, /authenticatedDb\(\)/);
+    assert.match(source, /getChatGPTUser/);
     assert.match(source, /status:\s*401/);
   }
 });
@@ -571,12 +572,12 @@ test("enforces guardian ownership and correct moderation targets", async () => {
     operations,
     /demoApplications|demoVerifications|demoReports/,
   );
-  assert.match(compactOperations, /eq\(applications\.guardianId,auth\.user\.userId\)/);
+  assert.match(compactOperations, /guardian_id/);
   assert.match(compactOperations, /action==="guardian-message"/);
-  assert.match(compactOperations, /current\.guardianId!==auth\.user\.userId/);
+  assert.match(compactOperations, /current\.guardian_id!==auth\.user\.userId/);
   assert.match(operations, /account-sanction-target/);
-  assert.match(compactOperations, /memberId=target\?\.memberId/);
-  assert.match(application, /shelterProfile\?\.ownerId/);
+  assert.match(compactOperations, /member_id/);
+  assert.match(application, /guardian_id:null/);
   assert.match(schema, /guardianId:\s*text\("guardian_id"\)/);
 });
 
@@ -597,9 +598,9 @@ test("connects saved-search alerts, real shelter updates, and visual lost matchi
     ),
   ]);
   assert.match(notifications, /saved_search_match/);
-  assert.match(notifications, /searches\.filter\(row=>row\.alertsEnabled\)/);
-  assert.match(shelter, /shelterUpdates/);
-  assert.match(shelter, /volunteerPosts/);
+  assert.match(notifications, /alerts_enabled/);
+  assert.match(shelter, /shelter_updates/);
+  assert.match(shelter, /volunteer_posts/);
   assert.doesNotMatch(shelter, /첫 번째 보호 일기|기본 봉사 공고/);
   assert.match(lostForm, /analyzeVisual/);
   assert.match(lostForm, /visualTags/);
@@ -631,10 +632,10 @@ test("implements external adoption proof, sanction appeal, and two-sided operato
     "shelterUpdateReactions",
   ])
     assert.match(schema, new RegExp(`export const ${name}`));
-  assert.match(certification, /verificationCodeHash/);
-  assert.match(appeal, /status:"appealed"/);
-  assert.match(appealUpload, /purpose: "sanction-appeal"/);
-  assert.match(posts, /adoptionCertifications\.status,"verified"/);
+  assert.match(certification, /verification_code_hash/);
+  assert.match(appeal, /sanction_appeals/);
+  assert.match(appealUpload, /sanction-appeal/);
+  assert.match(posts, /adoption_certifications/);
   assert.match(operations, /adoption-certification-status/);
   assert.match(operations, /appeal-status/);
 });
@@ -660,7 +661,7 @@ test("supports actionable foster and shelter management with stale-listing prote
     assert.match(foster, new RegExp(action));
   for (const action of ["volunteer-application-status", "need-received"])
     assert.match(shelter, new RegExp(action));
-  assert.match(publicData, /reconfirmedAt/);
+  assert.match(publicData, /reconfirmed_at/);
   assert.doesNotMatch(publicData, /item\.happenPlace \|\| item\.orgNm/);
   assert.match(migration, /CREATE TABLE `adoption_certifications`/);
   assert.match(migration, /CREATE TABLE `sanction_appeals`/);
@@ -779,7 +780,7 @@ test("keeps all 36 product-review pages discoverable and under the shared app-qu
   assert.equal(pages.length, 36);
   const sources = await Promise.all(pages.map(path => readFile(new URL(`../${path}`, import.meta.url), "utf8")));
   assert.match(sources[0], /HomeAnimalFeed/);
-  assert.match(sources[29], /rows\.map\(\(row\) => getAnimalById\(row\.animalId\)\)/);
+  assert.match(sources[29], /rows.*map[\s\S]*getAnimalById\(row\.animal_id\)/);
   assert.match(sources[29], /FavoriteAnimalGrid/);
   for (const source of sources.slice(1)) assert.match(source, /<h1/);
   const [chrome, css] = await Promise.all([

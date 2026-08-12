@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 
 const regionNames: Record<string, string> = {
-  "KR-11": "서울", "KR-26": "부산", "KR-27": "대구", "KR-28": "인천", "KR-29": "광주", "KR-30": "대전", "KR-31": "울산", "KR-36": "세종", "KR-41": "경기", "KR-42": "강원", "KR-43": "충북", "KR-44": "충남", "KR-45": "전북", "KR-46": "전남", "KR-47": "경북", "KR-48": "경남", "KR-50": "제주",
+  "KR-11": "서울시", "KR-26": "부산시", "KR-27": "대구시", "KR-28": "인천시", "KR-29": "광주시", "KR-30": "대전시", "KR-31": "울산시", "KR-36": "세종시", "KR-41": "경기도", "KR-42": "강원도", "KR-43": "충청북도", "KR-44": "충청남도", "KR-45": "전라북도", "KR-46": "전라남도", "KR-47": "경상북도", "KR-48": "경상남도", "KR-50": "제주도",
 };
 
 const cityNames: Record<string, string> = {
@@ -31,6 +31,7 @@ export async function GET() {
   const translatedCity = cityNames[city] || city;
   const unknownEnglishCity = /^[A-Za-z\s-]+$/.test(translatedCity) && !cityNames[city];
   const safeCity = unknownEnglishCity && province ? province : translatedCity;
-  const label = province && !safeCity.includes(province) ? `${province} ${safeCity}` : safeCity;
+  const provinceRoot = province.replace(/(특별시|광역시|시|도)$/, "");
+  const label = province && safeCity === provinceRoot ? province : province && !safeCity.includes(province) ? `${province} ${safeCity}` : safeCity;
   return Response.json({ location: { label, lat: latitude, lng: longitude, source: "ip" } }, { headers: { "cache-control": "no-store" } });
 }

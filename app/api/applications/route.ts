@@ -1,31 +1,22 @@
-import { desc, eq } from "drizzle-orm";
-import { applications, directAnimals, readinessAssessments, shelterProfiles } from "../../../db/schema";
+import { getChatGPTUser } from "../../chatgpt-auth";import { getSupabaseServerClient } from "../../../lib/supabase/server";
 import { getAnimalById, getAnimalContactById, getShelters } from "../../../lib/public-data";
-import { authenticatedDb, clean } from "../_helpers";
+import { clean } from "../_helpers";
 
 export async function GET() {
-  const auth = await authenticatedDb();
-  if (!auth) return Response.json({ error: "본인 확인이 필요합니다." }, { status: 401 });
-  const rows = await auth.db.select().from(applications).where(eq(applications.memberId, auth.user.userId)).orderBy(desc(applications.createdAt));
-  return Response.json({ applications: rows });
+  const user=await getChatGPTUser();if(!user)return Response.json({error:"본인 확인이 필요합니다."},{status:401});const{data:rows}=await getSupabaseServerClient().from("applications").select("*").eq("member_id",user.userId).order("created_at",{ascending:false});return Response.json({applications:rows||[]});
 }
 
 export async function POST(request: Request) {
-  const auth = await authenticatedDb();
-  if (!auth) return Response.json({ error: "본인 확인이 필요합니다." }, { status: 401 });
-  const assessment = await auth.db.query.readinessAssessments.findFirst({ where: eq(readinessAssessments.memberId, auth.user.userId), orderBy: [desc(readinessAssessments.completedAt)] });
-  if (!assessment?.passed) return Response.json({ error: "입양 준비 시험을 먼저 완료해 주세요." }, { status: 412 });
+  const user=await getChatGPTUser();if(!user)return Response.json({error:"본인 확인이 필요합니다."},{status:401});const client=getSupabaseServerClient();const{data:assessments}=await client.from("readiness_assessments").select("*").eq("member_id",user.userId).order("completed_at",{ascending:false}).limit(1);const assessment=assessments?.[0];if(!assessment?.passed)return Response.json({error:"입양 준비 시험을 먼저 완료해 주세요."},{status:412});
   const data = await request.json() as Record<string, unknown>;
   const animalId = clean(data.animalId, 40), household = clean(data.household), carePlan = clean(data.carePlan), absencePlan = clean(data.absencePlan), emergencyPlan = clean(data.emergencyPlan),adopterAge=Math.max(18,Math.min(90,Number(data.adopterAge)||0));
   if (!animalId || adopterAge<18 || household.length < 30 || carePlan.length < 30 || absencePlan.length < 20 || emergencyPlan.length < 20 || data.agreementAccepted !== true) return Response.json({ error: "나이·신청 내용과 필수 동의를 확인해 주세요." }, { status: 400 });
-  const animal=await getAnimalById(animalId),profile=JSON.parse(assessment.profileJson||"{}") as Record<string,unknown>,reasons:string[]=[],concerns:string[]=[];let suitability=assessment.readinessScore;
+  const animal=await getAnimalById(animalId),profile=JSON.parse(assessment.profile_json||"{}") as Record<string,unknown>,reasons:string[]=[],concerns:string[]=[];let suitability=assessment.readiness_score;
   if(animal){const desired=assessment.species==="cat"?"고양이":"강아지";if(animal.species.includes(desired)){suitability+=5;reasons.push("종별 필수 교육 완료")}if(Number(profile.absence)<=6){suitability+=3;reasons.push("부재 시간이 돌봄 계획과 잘 맞아요")}else if(animal.traits.some(v=>v.includes("활발"))){suitability-=8;concerns.push("활동량 대비 긴 부재 시간을 상담해 주세요")}if(profile.household==="yes")reasons.push("동거인 동의 확인");else{concerns.push("가족 동의가 더 필요해요");suitability-=8}if(Number(profile.emergencyFund)>=1000000)reasons.push("응급 진료 대비금 준비")}
   suitability=Math.max(0,Math.min(100,suitability));const suitabilityJson=JSON.stringify({reasons,concerns,animalTraits:animal?.traits||[]});
-  const directId=animalId.startsWith("direct-")?Number(animalId.slice(7)):NaN;
-  const guardian=Number.isInteger(directId)?await auth.db.query.directAnimals.findFirst({where:eq(directAnimals.id,directId)}):null;
+  const guardian=null;
   const publicShelter=!guardian&&animal?(await getShelters(100)).find(item=>item.name===animal.shelter):null;
-  const shelterProfile=!guardian&&animal?await auth.db.query.shelterProfiles.findFirst({where:publicShelter?eq(shelterProfiles.publicId,publicShelter.id):eq(shelterProfiles.name,animal.shelter)}):null;
-  const [application] = await auth.db.insert(applications).values({ memberId: auth.user.userId, guardianId:guardian?.memberId||shelterProfile?.ownerId||null, shelterPublicId:publicShelter?.id||null, animalId, household, carePlan, absencePlan, emergencyPlan, adopterAge, readinessScore: assessment.readinessScore, suitabilityScore:suitability,suitabilityJson, readinessAssessmentId: assessment.id, agreementAccepted: true }).returning();
+  const {data:application,error}=await client.from("applications").insert({member_id:user.userId,guardian_id:null,shelter_public_id:publicShelter?.id||null,animal_id:animalId,household,care_plan:carePlan,absence_plan:absencePlan,emergency_plan:emergencyPlan,adopter_age:adopterAge,readiness_score:assessment.readiness_score,suitability_score:suitability,suitability_json:suitabilityJson,readiness_assessment_id:assessment.id,agreement_accepted:true}).select("*").single();if(error)return Response.json({error:"입양 신청을 저장하지 못했어요."},{status:500});
   const contact = await getAnimalContactById(animalId);
-  return Response.json({ application, contact, channelStatus: application.guardianId ? "delivered" : publicShelter ? "awaiting_onboarding" : "direct_contact" }, { status: 201 });
+  return Response.json({ application, contact, channelStatus: application.guardian_id ? "delivered" : publicShelter ? "awaiting_onboarding" : "direct_contact" }, { status: 201 });
 }

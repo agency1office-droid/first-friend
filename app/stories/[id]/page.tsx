@@ -1,9 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { eq, sql } from "drizzle-orm";
 import { getStories } from "../../../lib/stories";
-import { posts } from "../../../db/schema";
+import { getSupabaseServerClient } from "../../../lib/supabase/server";
 import { StoryActions } from "../../components/StoryActions";
 import { Callout } from "seed-design/ui/callout";
 
@@ -11,6 +10,6 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> { const { id } = await params; const story = (await getStories()).find(item => item.id === id); return story ? { title: story.title, description: story.body.slice(0, 140), openGraph: { title: story.title, description: story.body.slice(0, 140), images: [story.image] } } : {}; }
 export default async function StoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params, story = (await getStories()).find(item => item.id === id); if (!story) notFound();
-  if (story.postId && !(typeof process !== "undefined" && process.release?.name === "node")) try { const { getDb } = await import("../../../db"); await getDb().update(posts).set({ views: sql`${posts.views} + 1` }).where(eq(posts.id, story.postId)); } catch { /* 조회 화면은 계속 표시 */ }
+  if (story.postId) try { const client = getSupabaseServerClient(), { data: post } = await client.from("posts").select("views").eq("id", story.postId).maybeSingle(); if (post) await client.from("posts").update({ views: Number(post.views || 0) + 1 }).eq("id", story.postId); } catch { /* 조회 화면은 계속 표시 */ }
   return <article><img className="ff-story-hero" src={story.image} alt="" /><div className="ff-detail-body"><div className="ff-kicker">{story.category}</div><h1 className="ff-title">{story.title}</h1><div className="ff-story-byline">{story.author} · 전체 공개</div><div className="ff-story-content">{story.body.split("\n").map(paragraph => <p key={paragraph}>{paragraph}</p>)}</div><StoryActions postId={story.postId} initialCount={story.reactions} /><section className="ff-section"><Callout tone="neutral" description="입양 후 이야기는 자발적 기록입니다. 정확한 동물 위치·급식 장소·개인 연락처를 발견하면 신고해 주세요." /></section></div></article>;
 }

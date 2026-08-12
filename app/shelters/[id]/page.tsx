@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { desc, eq } from "drizzle-orm";
 import { getShelterById } from "../../../lib/public-data";
+import { getSupabaseServerClient } from "../../../lib/supabase/server";
 import { getAnimalsByShelterId } from "../../../lib/public-animal-store";
 import { localShelterDemoContent } from "../../../lib/shelter-demo";
-import {
-  shelterNeeds,
-  shelterProfiles,
-  shelterUpdates,
-  volunteerPosts,
-} from "../../../db/schema";
 import { AnimalCard } from "../../components/AnimalCard";
 import { SupportIntentButton } from "../../components/SupportIntentButton";
 import { VolunteerButton } from "../../components/VolunteerButton";
@@ -35,6 +29,9 @@ import {
 export const dynamic = "force-dynamic";
 const updateCategoryLabels: Record<string, string> = { daily: "일상", urgent: "긴급", result: "지원 결과", notice: "공지" };
 const volunteerCategoryLabels: Record<string, string> = { cleaning: "환경 정리", photography: "사진 촬영", transport: "이동 지원", medical: "의료 봉사", care: "돌봄", event: "행사 지원" };
+type UpdateRow = { id: number; category: string; createdAt: string; title: string; body: string; reactions: number; hidden: boolean };
+type VolunteerRow = { id: number; category: string; scheduledAt: string; shelterId: number; createdAt: string; region: string; title: string; description: string; capacity: number; status: string };
+type NeedRow = { id: number; itemName: string; targetQuantity: number; receivedQuantity: number; unitPrice: number; status: string };
 function compactDate(value: string) {
   const [, month, day] = value.slice(0, 10).split("-").map(Number);
   return `${month}월 ${day}일`;
@@ -69,36 +66,9 @@ export default async function Page({
   const shelterAnimals = await getAnimalsByShelterId(publicId),
     animals = shelterAnimals.items,
     region = shelter.address.split(" ").slice(0, 2).join(" ");
-  let profile: typeof shelterProfiles.$inferSelect | undefined;
-  let updates: (typeof shelterUpdates.$inferSelect)[] = [],
-    volunteers: (typeof volunteerPosts.$inferSelect)[] = [],
-    needs: (typeof shelterNeeds.$inferSelect)[] = [];
-  try {
-      const { getDb } = await import("../../../db"),
-        db = getDb();
-      profile = await db.query.shelterProfiles.findFirst({
-        where: eq(shelterProfiles.publicId, publicId),
-      });
-      if (profile)
-        [updates, volunteers, needs] = await Promise.all([
-          db
-            .select()
-            .from(shelterUpdates)
-            .where(eq(shelterUpdates.shelterId, profile.id))
-            .orderBy(desc(shelterUpdates.createdAt)),
-          db
-            .select()
-            .from(volunteerPosts)
-            .where(eq(volunteerPosts.shelterId, profile.id))
-            .orderBy(desc(volunteerPosts.createdAt)),
-          db
-            .select()
-            .from(shelterNeeds)
-            .where(eq(shelterNeeds.shelterId, profile.id)),
-        ]);
-  } catch {
-    /* 공개 공공데이터 프로필은 계속 표시 */
-  }
+  let profile: Record<string, unknown> | undefined;
+  let updates: UpdateRow[] = [], volunteers: VolunteerRow[] = [], needs: NeedRow[] = [];
+  try { const client = getSupabaseServerClient(), { data: rawProfile } = await client.from("shelter_profiles").select("*").eq("public_id", publicId).maybeSingle(); if (rawProfile) { profile = { ...rawProfile, publicId: rawProfile.public_id, ownerId: rawProfile.owner_id, createdAt: rawProfile.created_at }; const [{ data: rawUpdates }, { data: rawVolunteers }, { data: rawNeeds }] = await Promise.all([client.from("shelter_updates").select("*").eq("shelter_id", rawProfile.id).order("created_at", { ascending: false }), client.from("volunteer_posts").select("*").eq("shelter_id", rawProfile.id).order("created_at", { ascending: false }), client.from("shelter_needs").select("*").eq("shelter_id", rawProfile.id)]); updates = (rawUpdates || []).map(row => ({ ...row, createdAt: row.created_at, authorId: row.author_id })); volunteers = (rawVolunteers || []).map(row => ({ ...row, scheduledAt: row.scheduled_at, shelterId: row.shelter_id, createdAt: row.created_at })); needs = (rawNeeds || []).map(row => ({ ...row, itemName: row.item_name, targetQuantity: row.target_quantity, receivedQuantity: row.received_quantity, unitPrice: row.unit_price })); } } catch { /* 공개 공공데이터 프로필은 계속 표시 */ }
   const localDemo = process.env.NODE_ENV !== "production" ? localShelterDemoContent(region) : null,
     realOpenVolunteers = volunteers.filter((item) => item.status === "open"),
     realOpenNeeds = needs.filter((item) => item.status === "needed"),

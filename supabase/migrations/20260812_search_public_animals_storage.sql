@@ -49,4 +49,5 @@ as $$
   join public.public_animals a on a.id = r.id;
 $$;
 
-grant execute on function public.search_public_animals_with_storage(integer, timestamptz, text, double precision, double precision, double precision, text, text, text, text[], text, text, text, text, boolean, boolean, double precision) to anon, authenticated, service_role;
+-- Supabase의 기본 함수 실행 권한으로 anon/authenticated가 읽을 수 있습니다.
+-- 별도 GRANT는 환경별 함수 시그니처 차이로 SQL 전체가 실패할 수 있어 생략합니다.

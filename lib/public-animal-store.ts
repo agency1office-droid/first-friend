@@ -412,7 +412,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
     const cursor = decodeSearchCursor(options.cursor);
     const sort = options.sort === "distance" && hasHome ? "distance" : "recent";
     const kindCodes = (options.breedKeys || []).map(value => value.split(":")[1]).filter(value => /^\d{6}$/.test(value));
-    const { data, error } = await getSupabaseServerClient().rpc("search_public_animals", {
+    const { data, error } = await getSupabaseServerClient().rpc("search_public_animals_with_storage", {
       p_limit: limit,
       p_cursor_updated_at: cursor?.updatedAt || null,
       p_cursor_id: cursor?.id || null,

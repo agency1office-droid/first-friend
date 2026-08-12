@@ -1,4 +1,4 @@
-import { publicAnimals, publicShelters, publicSyncState } from "../db/schema";
+import type { publicAnimals, publicShelters, publicSyncState } from "../db/schema";
 import type { Animal } from "./data";
 import { distanceMeters } from "./geo";
 import { distinctAnimalImages } from "./animal-images";

@@ -1,5 +1,6 @@
 import { animals as fallbackAnimals, type Animal } from "./data";
 import { distinctAnimalImages } from "./animal-images";
+import { getSupabaseServerClient } from "./supabase/server";
 
 const ABANDONED_API = "https://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2";
 const SHELTER_API = "https://apis.data.go.kr/1543061/animalShelterSrvc_v2/shelterInfo_v2";
@@ -75,7 +76,15 @@ function species(item: AbandonedItem) { return item.upKindNm || item.kindFullNm?
 function ageGroup(value = ""): Animal["ageGroup"] { if (value.includes("60일미만")) return "어린 친구"; const born = Number(value.match(/(19|20)\d{2}/)?.[0]); if (!born) return "나이 미상"; return new Date().getFullYear() - born <= 1 ? "어린 친구" : "어른 친구"; }
 function displayName(item: AbandonedItem) { return [item.kindNm || species(item), item.noticeNo?.split("-").at(-1)].filter(Boolean).join(" · "); }
 
-async function mergeDirectAnimals(base:Animal[],limit:number){if(typeof process!=="undefined"&&process.release?.name==="node")return base.slice(0,limit);try{const[{getDb},schema,{eq,asc}]=await Promise.all([import("../db"),import("../db/schema"),import("drizzle-orm")]);const db=getDb(),rows=await db.select().from(schema.directAnimals).where(eq(schema.directAnimals.status,"published")),media=rows.length?await db.select().from(schema.animalMedia).orderBy(asc(schema.animalMedia.sortOrder)):[];const activeRows=rows.filter(row=>Date.now()-new Date(row.reconfirmedAt).getTime()<=30*86400000);const direct=activeRows.map(row=>{const health=JSON.parse(row.healthJson||"{}")as Record<string,string>,life=JSON.parse(row.lifeJson||"{}")as Record<string,string>,images=media.filter(m=>m.animalId===row.id&&m.mediaType==="image").map(m=>`/media/${m.objectKey}`),traits=[life.personality,health.weight,health.neutered].filter(Boolean).slice(0,3);return{id:`direct-${row.id}`,name:row.name,species:row.species,breed:"직접 등록 · 상담 확인",age:"상담 확인",ageGroup:"어른 친구"as const,sex:"상담 확인",region:row.region,shelter:"개인 임시보호",source:"개인 임시보호 등록",updated:compactDate(row.updatedAt),image:images[0]||(row.imageKey?`/media/${row.imageKey}`:""),images,photoCount:images.length,colors:[],traits,summary:row.rescueStory.slice(0,160),health:[health.vaccination,health.neutered&&`중성화 ${health.neutered}`,health.treatment].filter(Boolean),life:[life.personality,life.aloneTime,life.toilet,life.compatibility].filter(Boolean),matchReason:"임시보호자가 등록한 외형·생활 정보를 조건과 비교했어요."}satisfies Animal});return[...direct,...base].slice(0,limit)}catch{return base.slice(0,limit)}}
+async function mergeDirectAnimals(base: Animal[], limit: number) {
+  try {
+    const client = getSupabaseServerClient();
+    const [{ data: rows }, { data: media }] = await Promise.all([client.from("direct_animals").select("*").eq("status", "published"), client.from("animal_media").select("*").eq("media_type", "image").order("sort_order")]);
+    const activeRows = (rows || []).filter(row => !row.reconfirmed_at || Date.now() - new Date(row.reconfirmed_at).getTime() <= 30 * 86400000);
+    const direct = activeRows.map(row => { const health = JSON.parse(row.health_json || "{}") as Record<string, string>, life = JSON.parse(row.life_json || "{}") as Record<string, string>, images = (media || []).filter(item => item.animal_id === row.id).map(item => `/media/${item.object_key}`), traits = [life.personality, health.weight, health.neutered].filter(Boolean).slice(0, 3); return { id: `direct-${row.id}`, name: row.name, species: row.species, breed: "직접 등록 · 상담 확인", age: "상담 확인", ageGroup: "어른 친구" as const, sex: "상담 확인", region: row.region, shelter: "개인 임시보호", source: "개인 임시보호 등록", updated: compactDate(row.updated_at), image: images[0] || (row.image_key ? `/media/${row.image_key}` : ""), images, photoCount: images.length, colors: [], traits, summary: row.rescue_story.slice(0, 160), health: [health.vaccination, health.neutered && `중성화 ${health.neutered}`, health.treatment].filter(Boolean), life: [life.personality, life.aloneTime, life.toilet, life.compatibility].filter(Boolean), matchReason: "임시보호자가 등록한 외형·생활 정보를 조건과 비교했어요." } satisfies Animal; });
+    return [...direct, ...base].slice(0, limit);
+  } catch { return base.slice(0, limit); }
+}
 
 export async function countDistinctAnimalImages(id: string, candidates: string[]) {
   return (await distinctAnimalImages(id, candidates)).length;

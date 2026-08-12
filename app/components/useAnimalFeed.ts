@@ -30,6 +30,17 @@ function readFeedSnapshot(): FeedSnapshot | null {
   } catch { return null; }
 }
 
+function preloadAnimalImages(items: Animal[]) {
+  if (typeof window === "undefined") return;
+  const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  if (connection?.saveData || connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g") return;
+  const sources = [...new Set(items.map(item => item.image).filter(Boolean))].slice(0, 8);
+  const start = () => sources.forEach(src => { const image = new window.Image(); image.decoding = "async"; image.src = src; });
+  const idle = (window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number }).requestIdleCallback;
+  if (idle) idle(start, { timeout: 1200 });
+  else window.setTimeout(start, 200);
+}
+
 function filtersFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const sort = params.get("sort"), species = params.get("species"), publicStatus = params.get("status"), sex = params.get("sex"), color = params.get("color");
@@ -167,6 +178,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     prefetchedPage.current = fetch(url, { signal: controller.signal }).then(async response => {
       const body = await response.json() as Record<string, unknown>;
       if (!response.ok) throw new Error(typeof body.error === "string" ? body.error : "다음 친구를 불러오지 못했어요.");
+      if (Array.isArray(body.items)) preloadAnimalImages(body.items as Animal[]);
       return body;
     }).catch(errorValue => {
       if (controller.signal.aborted) throw errorValue;
@@ -179,6 +191,13 @@ export function useAnimalFeed(initialPage: AnimalPage) {
       if (prefetchedUrl.current === url) { prefetchedPage.current = null; prefetchedUrl.current = null; }
     };
   }, [cursor, endpoint, filtersReady, ready, userEngaged]);
+
+  // 현재 화면 아래의 카드 이미지를 미리 브라우저 캐시에 넣습니다.
+  // 목록 데이터 prefetch와 별개로 이미지 요청을 선행해야 스크롤 순간의 공백을 줄일 수 있습니다.
+  useEffect(() => {
+    if (!items.length || !userEngaged) return;
+    preloadAnimalImages(items.slice(4, 12));
+  }, [items, userEngaged]);
 
   useEffect(() => {
     const engage = () => setUserEngaged(true);

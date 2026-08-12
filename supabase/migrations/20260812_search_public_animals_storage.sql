@@ -49,4 +49,4 @@ as $$
   join public.public_animals a on a.id = r.id;
 $$;
 
-grant execute on function public.search_public_animals_with_storage(integer, timestamptz, text, double precision, double precision, double precision, text, text, text, text[], text, text, text, boolean, boolean, double precision) to anon, authenticated, service_role;
+grant execute on function public.search_public_animals_with_storage(integer, timestamptz, text, double precision, double precision, double precision, text, text, text, text[], text, text, text, text, boolean, boolean, double precision) to anon, authenticated, service_role;

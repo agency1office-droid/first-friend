@@ -7,7 +7,13 @@ export type ChatGPTUser = { userId: string; displayName: string; email: string; 
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const member = await memberFromSession(undefined, token);
+  let member;
+  try {
+    member = await memberFromSession(undefined, token);
+  } catch {
+    // A stale local cookie must not turn a signed-out/private page into a 500.
+    return null;
+  }
   if (!member || member.sanctioned) return null;
   return { userId: member.id, displayName: member.displayName, email: member.email, fullName: member.displayName };
 }

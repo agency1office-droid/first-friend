@@ -1,2 +1,24 @@
-import{and,eq,sql}from"drizzle-orm";import{shelterUpdateReactions,shelterUpdates}from"../../../db/schema";import{authenticatedDb}from"../_helpers";
-export async function POST(request:Request){const auth=await authenticatedDb();if(!auth)return Response.json({error:"본인 확인이 필요합니다."},{status:401});const updateId=Number((await request.json()as{updateId?:number}).updateId),update=await auth.db.query.shelterUpdates.findFirst({where:eq(shelterUpdates.id,updateId)});if(!update||update.hidden)return Response.json({error:"소식을 찾을 수 없습니다."},{status:404});const existing=await auth.db.query.shelterUpdateReactions.findFirst({where:and(eq(shelterUpdateReactions.updateId,updateId),eq(shelterUpdateReactions.memberId,auth.user.userId))});if(existing){await auth.db.delete(shelterUpdateReactions).where(eq(shelterUpdateReactions.id,existing.id));await auth.db.update(shelterUpdates).set({reactions:sql`max(0, ${shelterUpdates.reactions} - 1)`}).where(eq(shelterUpdates.id,updateId));return Response.json({active:false,count:Math.max(0,update.reactions-1)})}await auth.db.insert(shelterUpdateReactions).values({updateId,memberId:auth.user.userId});await auth.db.update(shelterUpdates).set({reactions:sql`${shelterUpdates.reactions} + 1`}).where(eq(shelterUpdates.id,updateId));return Response.json({active:true,count:update.reactions+1},{status:201})}
+import { getChatGPTUser } from "../../chatgpt-auth";
+import { getSupabaseServerClient } from "../../../lib/supabase/server";
+
+export async function POST(request: Request) {
+  const user = await getChatGPTUser();
+  if (!user) return Response.json({ error: "본인 확인이 필요합니다." }, { status: 401 });
+  const updateId = Number((await request.json() as { updateId?: number }).updateId);
+  if (!updateId) return Response.json({ error: "소식 정보가 필요합니다." }, { status: 400 });
+  const client = getSupabaseServerClient();
+  const { data: update } = await client.from("shelter_updates").select("id,hidden,reactions").eq("id", updateId).maybeSingle();
+  if (!update || update.hidden) return Response.json({ error: "소식을 찾을 수 없습니다." }, { status: 404 });
+  const { data: existing } = await client.from("shelter_update_reactions").select("id").eq("update_id", updateId).eq("member_id", user.userId).maybeSingle();
+  const current = Number(update.reactions || 0);
+  if (existing) {
+    await client.from("shelter_update_reactions").delete().eq("id", existing.id);
+    const count = Math.max(0, current - 1);
+    await client.from("shelter_updates").update({ reactions: count }).eq("id", updateId);
+    return Response.json({ active: false, count });
+  }
+  await client.from("shelter_update_reactions").insert({ update_id: updateId, member_id: user.userId });
+  const count = current + 1;
+  await client.from("shelter_updates").update({ reactions: count }).eq("id", updateId);
+  return Response.json({ active: true, count }, { status: 201 });
+}

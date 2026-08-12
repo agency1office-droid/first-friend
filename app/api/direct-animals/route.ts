@@ -1,16 +1,2 @@
-import { animalMedia, directAnimals } from "../../../db/schema";
-import { authenticatedDb, clean } from "../_helpers";
-
-export async function POST(request: Request) {
-  const auth = await authenticatedDb();
-  if (!auth) return Response.json({ error: "본인 확인이 필요합니다." }, { status: 401 });
-  if (!auth.member.fosterEducationCompleted && !["foster", "shelter", "admin"].includes(auth.member.role)) return Response.json({ error: "임시보호자 기본 교육을 먼저 완료해 주세요." }, { status: 403 });
-  const data = await request.json() as Record<string, unknown>;
-  const imageKeys=Array.isArray(data.imageKeys)?data.imageKeys.map(v=>clean(v,240)).filter(Boolean).slice(0,8):[],videoKey=clean(data.videoKey,240);
-  const name = clean(data.name, 60), species = clean(data.species, 20), region = clean(data.region, 80), rescueStory = clean(data.rescueStory), adoptionTerms = clean(data.adoptionTerms), imageKey = imageKeys[0]||clean(data.imageKey, 240);
-  if (!name || !species || !region || rescueStory.length < 30 || adoptionTerms.length < 20) return Response.json({ error: "필수 등록 내용을 자세히 작성해 주세요." }, { status: 400 });
-  const [animal] = await auth.db.insert(directAnimals).values({ memberId: auth.user.userId, name, species, region, rescueStory, adoptionTerms, imageKey: imageKey || null, healthJson: JSON.stringify(data.health || {}), lifeJson: JSON.stringify(data.life || {}) }).returning();
-  const media=[...imageKeys.map((objectKey,sortOrder)=>({animalId:animal.id,mediaType:"image" as const,objectKey,sortOrder})),...(videoKey?[{animalId:animal.id,mediaType:"video" as const,objectKey:videoKey,sortOrder:99}]:[])];
-  if(media.length)await auth.db.insert(animalMedia).values(media);
-  return Response.json({ animal }, { status: 201 });
-}
+import { getChatGPTUser } from "../../chatgpt-auth";import { getSupabaseServerClient } from "../../../lib/supabase/server";import { clean } from "../_helpers";
+export async function POST(request:Request){const user=await getChatGPTUser();if(!user)return Response.json({error:"본인 확인이 필요합니다."},{status:401});const client=getSupabaseServerClient(),{data:members}=await client.from("members").select("role,foster_education_completed").eq("id",user.userId).limit(1),member=members?.[0];if(!member)return Response.json({error:"회원 정보를 찾을 수 없습니다."},{status:404});if(!member.foster_education_completed&&!['foster','shelter','admin'].includes(String(member.role)))return Response.json({error:"임시보호자 기본 교육을 먼저 완료해 주세요."},{status:403});const data=await request.json()as Record<string,unknown>,imageKeys=Array.isArray(data.imageKeys)?data.imageKeys.map(v=>clean(v,240)).filter(Boolean).slice(0,8):[],videoKey=clean(data.videoKey,240),name=clean(data.name,60),species=clean(data.species,20),region=clean(data.region,80),rescueStory=clean(data.rescueStory),adoptionTerms=clean(data.adoptionTerms),imageKey=imageKeys[0]||clean(data.imageKey,240);if(!name||!species||!region||rescueStory.length<30||adoptionTerms.length<20)return Response.json({error:"필수 등록 내용을 자세히 작성해 주세요."},{status:400});const{data:animal,error}=await client.from("direct_animals").insert({member_id:user.userId,name,species,region,rescue_story:rescueStory,adoption_terms:adoptionTerms,image_key:imageKey||null,health_json:JSON.stringify(data.health||{}),life_json:JSON.stringify(data.life||{})}).select("*").single();if(error)return Response.json({error:"임시보호 동물을 저장하지 못했어요."},{status:500});const media=[...imageKeys.map((objectKey,sortOrder)=>({animal_id:animal.id,media_type:"image",object_key:objectKey,sort_order:sortOrder})),...(videoKey?[{animal_id:animal.id,media_type:"video",object_key:videoKey,sort_order:99}]:[])];if(media.length)await client.from("animal_media").insert(media);return Response.json({animal},{status:201});}

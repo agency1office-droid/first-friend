@@ -1,5 +1,19 @@
-import { and, eq } from "drizzle-orm";
-import { postReactions } from "../../../db/schema";
-import { authenticatedDb } from "../_helpers";
+import { getChatGPTUser } from "../../chatgpt-auth";
+import { getSupabaseServerClient } from "../../../lib/supabase/server";
 
-export async function POST(request: Request) { const auth = await authenticatedDb(); if (!auth) return Response.json({ error: "본인 확인이 필요합니다." }, { status: 401 }); const data = await request.json() as { postId?: number; reaction?: "cheer" | "heart" }; const postId = Number(data.postId); if (!postId) return Response.json({ error: "이야기 정보가 필요합니다." }, { status: 400 }); const existing = await auth.db.query.postReactions.findFirst({ where: and(eq(postReactions.memberId, auth.user.userId), eq(postReactions.postId, postId)) }); if (existing) { await auth.db.delete(postReactions).where(eq(postReactions.id, existing.id)); return Response.json({ active: false }); } await auth.db.insert(postReactions).values({ memberId: auth.user.userId, postId, reaction: data.reaction || "cheer" }); return Response.json({ active: true }, { status: 201 }); }
+export async function POST(request: Request) {
+  const user = await getChatGPTUser();
+  if (!user) return Response.json({ error: "본인 확인이 필요합니다." }, { status: 401 });
+  const data = await request.json() as { postId?: number; reaction?: "cheer" | "heart" };
+  const postId = Number(data.postId);
+  if (!postId) return Response.json({ error: "이야기 정보가 필요합니다." }, { status: 400 });
+  const client = getSupabaseServerClient();
+  const { data: existing } = await client.from("post_reactions").select("id").eq("member_id", user.userId).eq("post_id", postId).maybeSingle();
+  if (existing) {
+    await client.from("post_reactions").delete().eq("id", existing.id);
+    return Response.json({ active: false });
+  }
+  const { error } = await client.from("post_reactions").insert({ member_id: user.userId, post_id: postId, reaction: data.reaction || "cheer" });
+  if (error) return Response.json({ error: "반응을 저장하지 못했어요." }, { status: 500 });
+  return Response.json({ active: true }, { status: 201 });
+}

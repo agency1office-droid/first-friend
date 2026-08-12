@@ -53,7 +53,8 @@ img { display: block; max-width: 100%; }
 .ff-promise-icon { width: 32px; height: 32px; display: grid; place-items: center; margin: 0 auto 7px; border-radius: 50%; background: var(--seed-color-bg-brand-weak); color: var(--seed-color-fg-brand); }
 
 .ff-animal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; }
-.ff-animal-card { position: relative; min-width: 0; }
+.ff-animal-card { position: relative; min-width: 0; content-visibility: auto; contain-intrinsic-size: 154px; }
+.ff-animal-grid .ff-animal-card { contain-intrinsic-size: 280px; }
 .ff-animal-image-wrap { position: relative; border-radius: 12px; overflow: hidden; background: var(--seed-color-bg-neutral-weak); }
 .ff-animal-card:not(.ff-animal-card-row) .ff-animal-image-wrap { aspect-ratio: 1 / .9; }
 .ff-card-photo-count { position: absolute; right: 8px; bottom: 8px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 7px; color: #fff; background: rgba(0,0,0,.58); backdrop-filter: blur(6px); }

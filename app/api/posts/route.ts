@@ -1,10 +1,11 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { adoptionCertifications, applications, directAnimals, posts } from "../../../db/schema";
 import { authenticatedDb, clean } from "../_helpers";
+import { getSupabaseServerClient } from "../../../lib/supabase/server";
 
 const privatePattern = /(01[016789][\s.-]?\d{3,4}[\s.-]?\d{4})|(\d{1,4}번지)|(\d+동\s*\d+호)|(급식소|밥자리|포획\s*장소).{0,20}(앞|뒤|옆|골목|번지|출구)/;
 
-export async function GET() { const auth = await authenticatedDb().catch(() => null); const db = auth?.db; if (!db) return Response.json({ posts: [] }); const rows = await db.select().from(posts).where(eq(posts.hidden, false)).orderBy(desc(posts.createdAt)).limit(50); return Response.json({ posts: rows }); }
+export async function GET() { const { data } = await getSupabaseServerClient().from("posts").select("*").eq("hidden", false).order("created_at", { ascending: false }).limit(50); return Response.json({ posts: (data || []).map(row => ({ ...row, memberId: row.member_id, imageKey: row.image_key, createdAt: row.created_at, updatedAt: row.updated_at })) }); }
 
 export async function POST(request: Request) {
   const auth = await authenticatedDb();

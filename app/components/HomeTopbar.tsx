@@ -38,6 +38,12 @@ export function HomeTopbar() {
         setRegion(local[0].label);
         return;
       }
+      const ipLocation = await fetch("/api/location/default").then((response) => response.json()).then((body) => body.location as HomeLocation | null).catch(() => null);
+      if (ipLocation) {
+        window.localStorage.setItem("ff-ip-location", JSON.stringify(ipLocation));
+        setRegion(ipLocation.label);
+        window.dispatchEvent(new CustomEvent("ff-region-change", { detail: ipLocation }));
+      }
       const body = await fetch("/api/profile").then((response) => response.json()).catch(() => ({}));
       if (!body.homeRegion) return;
       const locationBody = await fetch(`/api/locations?q=${encodeURIComponent(body.homeRegion)}`).then((response) => response.json()).catch(() => ({}));
@@ -74,6 +80,7 @@ export function HomeTopbar() {
       window.localStorage.removeItem("ff-home-region");
       window.localStorage.removeItem("ff-home-location");
       window.localStorage.removeItem("ff-home-locations");
+      window.localStorage.removeItem("ff-ip-location");
       window.dispatchEvent(new Event("ff-region-change"));
       return;
     }
@@ -82,6 +89,7 @@ export function HomeTopbar() {
     window.localStorage.setItem("ff-home-region", active.label);
     window.localStorage.setItem("ff-home-location", JSON.stringify(active));
     window.localStorage.setItem("ff-home-locations", JSON.stringify(limited));
+    window.localStorage.removeItem("ff-ip-location");
     window.dispatchEvent(new CustomEvent("ff-region-change", { detail: active }));
     void fetch("/api/profile", {
       method: "POST",

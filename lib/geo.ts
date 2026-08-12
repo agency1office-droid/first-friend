@@ -27,7 +27,7 @@ export function formatDrivingDuration(seconds: number) {
 export function readHomeLocation(): HomeLocation | null {
   if (typeof window === "undefined") return null;
   try {
-    const value = JSON.parse(window.localStorage.getItem("ff-home-location") || "null") as HomeLocation | null;
+    const value = JSON.parse(window.localStorage.getItem("ff-home-location") || window.localStorage.getItem("ff-ip-location") || "null") as HomeLocation | null;
     return value && Number.isFinite(value.lat) && Number.isFinite(value.lng) ? value : null;
   } catch {
     return null;

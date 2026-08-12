@@ -353,17 +353,22 @@ export async function getStoredAnimalById(id: string) {
 }
 
 export async function getAnimalsByShelterId(shelterId: string, limit = 200) {
-  await ensurePublicAnimals();
-  const supabase = getSupabaseServerClient(), safeLimit = Math.min(500, Math.max(1, limit));
-  const [{ data, error }, { count: total, error: countError }] = await Promise.all([
-    supabase.from("public_animals").select("*").eq("active", true).eq("shelter_id", shelterId).order("updated", { ascending: false }).limit(safeLimit),
-    supabase.from("public_animals").select("id", { count: "exact", head: true }).eq("active", true).eq("shelter_id", shelterId),
-  ]);
-  if (error || countError) throw error || countError;
-  const rows = (data || []).map(row => storedAnimal(row as Record<string, unknown>));
-  const items = await Promise.all(rows.map(async row => {
-    const animal = fromStored(row), images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
-    return { ...animal, image: images[0] || animal.image, images, photoCount: images.length };
-  }));
-  return { items, total: total || 0 };
+  try {
+    await ensurePublicAnimals();
+    const supabase = getSupabaseServerClient(), safeLimit = Math.min(500, Math.max(1, limit));
+    const [{ data, error }, { count: total, error: countError }] = await Promise.all([
+      supabase.from("public_animals").select("*").eq("active", true).eq("shelter_id", shelterId).order("updated", { ascending: false }).limit(safeLimit),
+      supabase.from("public_animals").select("id", { count: "exact", head: true }).eq("active", true).eq("shelter_id", shelterId),
+    ]);
+    if (error || countError) throw error || countError;
+    const rows = (data || []).map(row => storedAnimal(row as Record<string, unknown>));
+    const items = await Promise.all(rows.map(async row => {
+      const animal = fromStored(row), images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
+      return { ...animal, image: images[0] || animal.image, images, photoCount: images.length };
+    }));
+    return { items, total: total || 0 };
+  } catch {
+    // Public shelter metadata can still render when the optional Supabase feed is unavailable.
+    return { items: [], total: 0 };
+  }
 }

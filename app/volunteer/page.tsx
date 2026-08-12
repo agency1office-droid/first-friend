@@ -3,6 +3,16 @@ import { getSupabaseServerClient } from "../../lib/supabase/server";
 import { Badge } from "seed-design/ui/badge";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "보호소 봉사 찾기" };
+type VolunteerPost = {
+  id: number;
+  shelter_id: number;
+  category: string;
+  title: string;
+  region: string;
+  scheduled_at: string;
+  capacity: number;
+};
+type ShelterProfile = { id: number; public_id: string; name: string };
 const labels: Record<string, string> = {
   cleaning: "청소·정리",
   photography: "사진 찍어주기",
@@ -12,7 +22,20 @@ const labels: Record<string, string> = {
   event: "행사·현장 지원",
 };
 export default async function Page() {
-  const client = getSupabaseServerClient(), [{ data: posts }, { data: shelters }] = await Promise.all([client.from("volunteer_posts").select("*").eq("status", "open").order("created_at", { ascending: false }).limit(50), client.from("shelter_profiles").select("*")]), map = new Map((shelters || []).map(s => [s.id, s]));
+  let posts: VolunteerPost[] = [];
+  let shelters: ShelterProfile[] = [];
+  try {
+    const client = getSupabaseServerClient();
+    const [{ data: postRows }, { data: shelterRows }] = await Promise.all([
+      client.from("volunteer_posts").select("*").eq("status", "open").order("created_at", { ascending: false }).limit(50),
+      client.from("shelter_profiles").select("id, public_id, name"),
+    ]);
+    posts = (postRows || []) as VolunteerPost[];
+    shelters = (shelterRows || []) as ShelterProfile[];
+  } catch {
+    // The informational page remains usable while the optional live feed is unavailable.
+  }
+  const map = new Map(shelters.map((shelter) => [shelter.id, shelter]));
   return (
     <div className="ff-page">
       <header className="ff-page-header">
@@ -48,22 +71,23 @@ export default async function Page() {
         ))}
       </div>
       <div className="ff-qa-list">
-        {posts.map((post) => (
-          <a
-            href={`/shelters/${encodeURIComponent(map.get(post.shelter_id)?.public_id || "")}`}
-            key={post.id}
-          >
+        {posts.map((post) => {
+          const shelter = map.get(post.shelter_id);
+          if (!shelter?.public_id) return null;
+          return (
+          <a href={`/shelters/${encodeURIComponent(shelter.public_id)}`} key={post.id}>
             <Badge tone="informative" variant="weak">
               {labels[post.category] || "돌봄"}
             </Badge>
             <h2>{post.title}</h2>
             <p>
-              {map.get(post.shelter_id)?.name} · {post.region}
+              {shelter.name} · {post.region}
               <br />
               {post.scheduled_at} · 정원 {post.capacity}명
             </p>
           </a>
-        ))}
+          );
+        })}
         {!posts.length && (
           <div className="ff-empty">
             현재 공개된 봉사 공고가 없어요. 보호소 채널에서 새 공고가 열리면

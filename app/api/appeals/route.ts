@@ -1,6 +1,6 @@
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { getSupabaseServerClient } from "../../../lib/supabase/server";
-import { clean } from "../_helpers";
+import { clean, ownedUploadKey, readJson } from "../_helpers";
 
 export async function GET() {
   const user = await getChatGPTUser();
@@ -18,8 +18,10 @@ export async function POST(request: Request) {
   const { data: sanctions } = await client.from("account_sanctions").select("*").eq("member_id", user.userId).eq("status", "confirmed").order("created_at", { ascending: false }).limit(1);
   const sanction = sanctions?.[0];
   if (!sanction) return Response.json({ error: "현재 확정된 제재가 없습니다." }, { status: 400 });
-  const data = await request.json() as Record<string, unknown>, reason = clean(data.reason, 2000), evidenceKey = clean(data.evidenceKey, 240);
-  if (reason.length < 30) return Response.json({ error: "사실관계와 요청 내용을 30자 이상 적어주세요." }, { status: 400 });
+  const data = await readJson(request);
+  if (!data) return Response.json({ error: "요청 형식을 확인해 주세요." }, { status: 400 });
+  const reason = clean(data.reason, 2000), evidenceKey = clean(data.evidenceKey, 240);
+  if (reason.length < 30 || (evidenceKey && !ownedUploadKey(evidenceKey, user.userId, ["appeal-evidence"]))) return Response.json({ error: "사실관계와 본인 증빙 자료를 확인해 주세요." }, { status: 400 });
   const { data: existing } = await client.from("sanction_appeals").select("id").eq("sanction_id", sanction.id).eq("status", "submitted").maybeSingle();
   if (existing) return Response.json({ error: "이미 검토 중인 이의제기가 있습니다." }, { status: 409 });
   const { data: appeal, error } = await client.from("sanction_appeals").insert({ sanction_id: sanction.id, member_id: user.userId, reason, evidence_key: evidenceKey || null }).select("*").single();

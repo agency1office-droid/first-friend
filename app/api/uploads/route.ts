@@ -14,6 +14,10 @@ export async function POST(request: Request) {
   const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : file.type === "video/mp4" ? "mp4" : file.type === "video/webm" ? "webm" : "jpg";
   const privateEvidence = ["role-verification", "adoption-verification"].includes(purpose);
   const key = `${privateEvidence ? "private-evidence" : "uploads"}/${user.userId}/${crypto.randomUUID()}.${extension}`;
-  await uploadStoredFile(key, await file.arrayBuffer(), file.type);
+  try {
+    await uploadStoredFile(key, await file.arrayBuffer(), file.type);
+  } catch {
+    return Response.json({ error: "파일을 저장하지 못했어요. 잠시 후 다시 시도해 주세요." }, { status: 503 });
+  }
   return Response.json({ key }, { status: 201 });
 }

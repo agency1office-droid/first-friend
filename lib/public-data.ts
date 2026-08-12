@@ -23,12 +23,12 @@ const animalContacts = new Map<string, { shelter: string; phone: string; address
 function key() { return process.env.PUBLIC_DATA_API_KEY?.trim(); }
 function list<T>(value: T | T[] | undefined): T[] { return !value ? [] : Array.isArray(value) ? value : [value]; }
 
-async function request<T>(endpoint: string, rows: number): Promise<T[]> {
+async function request<T>(endpoint: string, rows: number, pageNo = 1): Promise<T[]> {
   const serviceKey = key();
   if (!serviceKey) return [];
   const url = new URL(endpoint);
   url.searchParams.set("serviceKey", serviceKey);
-  url.searchParams.set("pageNo", "1");
+  url.searchParams.set("pageNo", String(pageNo));
   url.searchParams.set("numOfRows", String(rows));
   url.searchParams.set("_type", "json");
   const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(7000) });
@@ -133,7 +133,29 @@ export async function getAnimalsWithPhotoCounts(limit = 24): Promise<Animal[]> {
 export async function getAnimalById(id: string) {
   const stored = await import("./public-animal-store").then(module => module.getStoredAnimalById(id)).catch(() => undefined);
   if (stored) return stored;
-  const items = await getAnimals(100);
+  if (key()) {
+    try {
+      const shelters = await getShelters(1000);
+      // The public API does not reliably filter by desertionNo, so search its
+      // paginated result when a detail link points outside the first feed page.
+      for (let pageNo = 1; pageNo <= 50; pageNo += 1) {
+        const rows = await request<AbandonedItem>(ABANDONED_API, 1000, pageNo);
+        const match = rows.find(item => item.desertionNo === id);
+        if (match) {
+          const animal = mapAnimal(match, shelters);
+          if (animal) {
+            const images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
+            return { ...animal, image: images[0] || animal.image, images };
+          }
+          return undefined;
+        }
+        if (rows.length < 1000) break;
+      }
+    } catch { /* fall through to the local fallback feed */ }
+  }
+  // A detail link can point to an animal that is not in the first feed page.
+  // Resolve a wider public-data window before treating the link as missing.
+  const items = await getAnimals(1000);
   const animal = items.find((item) => item.id === id) || fallbackAnimals.find((item) => item.id === id);
   if (!animal) return undefined;
   const images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);

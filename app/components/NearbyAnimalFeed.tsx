@@ -6,6 +6,7 @@ import { Callout } from "seed-design/ui/callout";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { AnimalCard } from "./AnimalCard";
 import { AnimalFilterBar } from "./AnimalFilterBar";
+import { LoadingIndicator } from "./LoadingIndicator";
 import { useAnimalFeed } from "./useAnimalFeed";
 
 export function NearbyAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
@@ -38,6 +39,6 @@ export function NearbyAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
     <div className="ff-animal-grid">{feed.items.map(animal => <AnimalCard key={animal.id} animal={animal}/>)}</div>
     {!feed.items.length && !feed.loading && <div className="ff-filter-empty"><strong>현재 조건에 맞는 친구가 없어요</strong><p>조건을 모두 지우면 보호 중인 친구를 다시 볼 수 있어요.</p><ActionButton variant="neutralWeak" onClick={feed.resetFilters}>조건 모두 지우기</ActionButton></div>}
     {feed.error && <div className="ff-feed-error">{feed.error}<button type="button" onClick={() => void feed.loadMore()}>다시 시도</button></div>}
-    <div className="ff-feed-sentinel" ref={sentinel}>{feed.loading ? "친구를 더 불러오고 있어요…" : feed.cursor ? <button type="button" onClick={() => void feed.loadMore()}>친구 더 보기</button> : feed.items.length ? "현재 확인 가능한 친구를 모두 봤어요" : ""}</div>
+    <div className="ff-feed-sentinel" ref={sentinel}>{feed.loading ? <LoadingIndicator label="다음 친구를 불러오는 중" /> : feed.cursor ? <button type="button" onClick={() => void feed.loadMore()}>친구 더 보기</button> : feed.items.length ? "현재 확인 가능한 친구를 모두 봤어요" : ""}</div>
   </>;
 }

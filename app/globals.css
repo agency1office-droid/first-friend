@@ -248,6 +248,9 @@ img { display: block; max-width: 100%; }
 .ff-lost-detail-info { display: grid; gap: 12px; }
 .ff-lost-detail-info p { display: grid; gap: 4px; margin: 0; color: var(--seed-color-fg-neutral-muted); line-height: 1.5; }
 .ff-lost-detail-info strong { color: var(--seed-color-fg-neutral); font-size: 13px; }
+.ff-loading-indicator { display: inline-grid; place-items: center; width: 24px; height: 24px; color: var(--seed-color-fg-brand); }
+.ff-loading-indicator span { width: 18px; height: 18px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: ff-loading-spin .7s linear infinite; }
+@keyframes ff-loading-spin { to { transform: rotate(360deg); } }
 .ff-action-link-secondary { color: var(--seed-color-fg-neutral-muted); background: var(--seed-color-bg-neutral-weak); }
 .ff-shelter-phone { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
 .ff-analysis-card { display: grid; gap: 12px; margin: 14px 0; padding: 16px; border: 1px solid var(--seed-color-stroke-brand-weak); border-radius: 14px; background: var(--seed-color-bg-brand-weak); }

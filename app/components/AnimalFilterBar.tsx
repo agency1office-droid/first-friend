@@ -7,6 +7,7 @@ import { ActionButton } from "seed-design/ui/action-button";
 import { BottomSheetBody, BottomSheetContent, BottomSheetFooter, BottomSheetRoot, BottomSheetTrigger } from "seed-design/ui/bottom-sheet";
 import { Chip } from "seed-design/ui/chip";
 import { Checkbox } from "seed-design/ui/checkbox";
+import { LoadingIndicator } from "./LoadingIndicator";
 import { SegmentedControl, SegmentedControlItem } from "seed-design/ui/segmented-control";
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
 import type { AnimalFeedFilters } from "./useAnimalFeed";
@@ -136,7 +137,7 @@ function BreedFilterSheet({ filters, location, onApply }: {
         <TextField label="품종 검색" value={query} onValueChange={({ slicedValue }) => setQuery(slicedValue)} maxGraphemeCount={30} hideCharacterCount><TextFieldInput placeholder="예: 믹스견, 한국 고양이, 푸들"/></TextField>
         <p className="ff-breed-filter-summary">{draft.length ? `${draft.length}개 선택됨 · 현재 ${shown.length}개 품종` : `현재 ${shown.length}개 공공데이터 품종`}</p>
         <div className="ff-breed-filter-list" aria-label="공식 품종 목록">
-          {loading&&<p className="ff-breed-filter-state">품종 목록을 불러오는 중이에요.</p>}
+          {loading&&<p className="ff-breed-filter-state"><LoadingIndicator label="품종 목록을 불러오는 중" /></p>}
           {error&&<p className="ff-breed-filter-state is-error">{error}</p>}
           {!loading&&!error&&!query.trim()&&<Checkbox checked={!draft.length} onCheckedChange={() => setDraft([])} label={<span className="ff-breed-filter-label"><strong>{draftSpecies === "cat" ? "모든 고양이" : draftSpecies === "dog" ? "모든 강아지" : "모든 품종"}</strong><small>{shownAnimalCount.toLocaleString("ko-KR")}마리</small></span>}/>} 
           {!loading&&!error&&shown.map(item => <Checkbox key={item.key} checked={draft.includes(item.key)} disabled={!draft.includes(item.key) && (draft.length >= 10 || item.count === 0)} onCheckedChange={checked => toggle(item.key, checked === true)} label={<span className="ff-breed-filter-label"><strong>{item.kindNm}</strong><small>{draftSpecies === "all" ? `${item.species === "dog" ? "강아지" : "고양이"} · ` : ""}{item.count.toLocaleString("ko-KR")}마리</small></span>}/>)}

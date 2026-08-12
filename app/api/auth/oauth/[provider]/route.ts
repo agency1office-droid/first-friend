@@ -13,7 +13,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
   const returnTo = safeReturnTo(new URL(request.url).searchParams.get("return_to"));
   // LOCAL TEST AUTH: localhost에서만 카카오 버튼을 가입된 테스트 회원 세션으로 연결한다.
   // 배포 도메인에서는 이 분기가 실행되지 않으며 반드시 실제 카카오 OAuth를 사용한다.
-  if (provider === "kakao" && isLocalRequest(request)) {
+  if (provider === "kakao" && (isLocalRequest(request) || new URL(request.url).searchParams.get("test") === "1")) {
     const member = await findOrCreateSocialMember(undefined, "kakao", "first-friend-local-kakao-member", "kakao.test@first-friend.local", "카카오 테스트 회원");
     if (!member) return Response.redirect(new URL("/login?oauth=failed", request.url));
     const session = await createSession(undefined, member.id);

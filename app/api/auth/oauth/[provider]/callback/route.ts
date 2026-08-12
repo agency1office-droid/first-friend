@@ -1,4 +1,3 @@
-import { getDb } from "../../../../../../db";
 import { createSession, findOrCreateSocialMember, safeReturnTo, sessionCookie } from "../../../../../../lib/app-auth";
 
 type Provider = "google" | "kakao" | "naver";
@@ -27,8 +26,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
   const kakaoAccount = record(profile.kakao_account), kakaoProfile = record(kakaoAccount.profile), properties = record(profile.properties), naver = record(profile.response);
   const normalized = provider === "google" ? { id: String(profile.sub), email: String(profile.email || ""), name: String(profile.name || "") } : provider === "kakao" ? { id: String(profile.id), email: String(kakaoAccount.email || ""), name: String(properties.nickname || kakaoProfile.nickname || "") } : { id: String(naver.id), email: String(naver.email || ""), name: String(naver.name || naver.nickname || "") };
   if (!normalized.id || normalized.id === "undefined") return Response.redirect(new URL("/login?oauth=failed", request.url));
-  const db = getDb(), member = await findOrCreateSocialMember(db, provider, normalized.id, normalized.email, normalized.name);
+  const member = await findOrCreateSocialMember(undefined, provider, normalized.id, normalized.email, normalized.name);
   if (!member) return Response.redirect(new URL("/login?oauth=failed", request.url));
-  const session = await createSession(db, member.id), returnTo = safeReturnTo(rawReturn ? decodeURIComponent(rawReturn) : "/mypage");
+  const session = await createSession(undefined, member.id), returnTo = safeReturnTo(rawReturn ? decodeURIComponent(rawReturn) : "/mypage");
   return new Response(null, { status: 302, headers: { location: new URL(returnTo, request.url).toString(), "set-cookie": sessionCookie(session.token) } });
 }

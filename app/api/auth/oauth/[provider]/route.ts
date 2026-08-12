@@ -1,4 +1,3 @@
-import { getDb } from "../../../../../db";
 import { createSession, findOrCreateSocialMember, isLocalRequest, randomToken, safeReturnTo, sessionCookie } from "../../../../../lib/app-auth";
 
 type Provider = "google" | "kakao" | "naver";
@@ -15,10 +14,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
   // LOCAL TEST AUTH: localhost에서만 카카오 버튼을 가입된 테스트 회원 세션으로 연결한다.
   // 배포 도메인에서는 이 분기가 실행되지 않으며 반드시 실제 카카오 OAuth를 사용한다.
   if (provider === "kakao" && isLocalRequest(request)) {
-    const db = getDb();
-    const member = await findOrCreateSocialMember(db, "kakao", "first-friend-local-kakao-member", "kakao.test@first-friend.local", "카카오 테스트 회원");
+    const member = await findOrCreateSocialMember(undefined, "kakao", "first-friend-local-kakao-member", "kakao.test@first-friend.local", "카카오 테스트 회원");
     if (!member) return Response.redirect(new URL("/login?oauth=failed", request.url));
-    const session = await createSession(db, member.id);
+    const session = await createSession(undefined, member.id);
     return new Response(null, { status: 302, headers: { location: new URL(returnTo, request.url).toString(), "set-cookie": sessionCookie(session.token, undefined, false) } });
   }
   const clientId = process.env[config.client];

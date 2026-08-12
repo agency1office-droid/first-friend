@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getDb } from "../../../db";
 import {
   animalNameSuggestions,
@@ -9,11 +9,10 @@ import {
   drawingPosts,
   fundraiserPledges,
   fundraisers,
-  members,
   shelterProfiles,
-  volunteerBadges,
 } from "../../../db/schema";
 import { authenticatedDb, clean } from "../_helpers";
+import { getSupabaseServerClient } from "../../../lib/supabase/server";
 
 type CommunityDb = ReturnType<typeof getDb>;
 
@@ -67,94 +66,31 @@ async function ensureAnimalCommunityTables(db: CommunityDb) {
 }
 
 export async function GET(request: Request) {
-  const url = new URL(request.url),
-    type = url.searchParams.get("type"),
-    id = clean(url.searchParams.get("id"), 120),
-    db = getDb();
-  if (type === "names" || type === "fundraisers") {
-    await ensureAnimalCommunityTables(db);
-  }
+  const url = new URL(request.url), type = url.searchParams.get("type"), id = clean(url.searchParams.get("id"), 120), client = getSupabaseServerClient();
   if (type === "drawings") {
-    const posts = await db
-        .select()
-        .from(drawingPosts)
-        .orderBy(desc(drawingPosts.createdAt))
-        .limit(50),
-      matches = posts.length
-        ? await db
-            .select()
-            .from(drawingMatches)
-            .orderBy(desc(drawingMatches.createdAt))
-            .limit(200)
-        : [];
-    return Response.json({
-      posts: posts.map((post) => ({
-        ...post,
-        matches: matches.filter((match) => match.postId === post.id),
-      })),
-    });
+    const { data: posts } = await client.from("drawing_posts").select("*").order("created_at", { ascending: false }).limit(50);
+    const { data: matches } = await client.from("drawing_matches").select("*").order("created_at", { ascending: false }).limit(200);
+    return Response.json({ posts: (posts || []).map(post => ({ ...post, memberId: post.member_id, imageKey: post.image_key, tagsJson: post.tags_json, createdAt: post.created_at, matches: (matches || []).filter(match => match.post_id === post.id).map(match => ({ ...match, postId: match.post_id, memberId: match.member_id, animalId: match.animal_id, createdAt: match.created_at })) })) });
   }
   if (type === "names") {
-    const suggestions = await db
-      .select()
-      .from(animalNameSuggestions)
-      .where(eq(animalNameSuggestions.animalId, id))
-      .orderBy(desc(animalNameSuggestions.votes));
-    return Response.json({ suggestions });
+    const { data } = await client.from("animal_name_suggestions").select("*").eq("animal_id", id).order("votes", { ascending: false });
+    return Response.json({ suggestions: (data || []).map(row => ({ ...row, animalId: row.animal_id, memberId: row.member_id, createdAt: row.created_at })) });
   }
   if (type === "questions") {
-    const questions = await db
-        .select()
-        .from(communityQuestions)
-        .orderBy(desc(communityQuestions.createdAt))
-        .limit(50),
-      answers = await db
-        .select()
-        .from(communityAnswers)
-        .orderBy(desc(communityAnswers.helpful))
-        .limit(200),
-      memberRows = await db.select().from(members),
-      memberMap = new Map(memberRows.map((member) => [member.id, member]));
-    return Response.json({
-      questions: questions.map((question) => ({
-        ...question,
-        answers: answers
-          .filter((answer) => answer.questionId === question.id)
-          .map((answer) => ({
-            ...answer,
-            author: memberMap.get(answer.memberId)?.displayName || "회원",
-            expert: memberMap.get(answer.memberId)?.role === "veterinarian",
-          })),
-      })),
-    });
+    const [{ data: questions }, { data: answers }, { data: memberRows }] = await Promise.all([client.from("community_questions").select("*").order("created_at", { ascending: false }).limit(50), client.from("community_answers").select("*").order("helpful", { ascending: false }).limit(200), client.from("members").select("id,display_name,role")]);
+    const memberMap = new Map((memberRows || []).map(member => [member.id, member]));
+    return Response.json({ questions: (questions || []).map(question => ({ ...question, memberId: question.member_id, createdAt: question.created_at, answers: (answers || []).filter(answer => answer.question_id === question.id).map(answer => ({ ...answer, questionId: answer.question_id, memberId: answer.member_id, createdAt: answer.created_at, author: memberMap.get(answer.member_id)?.display_name || "회원", expert: memberMap.get(answer.member_id)?.role === "veterinarian" })) })) });
   }
   if (type === "fundraisers") {
-    const rows = await db
-      .select()
-      .from(fundraisers)
-      .where(eq(fundraisers.animalId, id))
-      .orderBy(desc(fundraisers.createdAt));
-    return Response.json({ fundraisers: rows });
+    const { data } = await client.from("fundraisers").select("*").eq("animal_id", id).order("created_at", { ascending: false });
+    return Response.json({ fundraisers: (data || []).map(row => ({ ...row, shelterId: row.shelter_id, animalId: row.animal_id, targetAmount: row.target_amount, raisedAmount: row.raised_amount, evidenceKey: row.evidence_key, createdAt: row.created_at })) });
   }
   if (type === "reputation") {
-    const memberId = id,
-      selected = await db
-        .select()
-        .from(drawingMatches)
-        .where(
-          and(
-            eq(drawingMatches.memberId, memberId),
-            eq(drawingMatches.selected, true),
-          ),
-        ),
-      badges = await db
-        .select()
-        .from(volunteerBadges)
-        .where(eq(volunteerBadges.memberId, memberId)),
-      points = selected.reduce((sum, row) => sum + row.points, 0);
+    const [{ data: selected }, { data: badges }] = await Promise.all([client.from("drawing_matches").select("points").eq("member_id", id).eq("selected", true), client.from("volunteer_badges").select("*").eq("member_id", id)]);
+    const points = (selected || []).reduce((sum, row) => sum + Number(row.points || 0), 0);
     return Response.json({
       points,
-      badges,
+      badges: badges || [],
       grade:
         points >= 1000
           ? "퍼스트 프렌드 탐정"

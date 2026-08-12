@@ -5,6 +5,7 @@ const regionNames: Record<string, string> = {
 };
 
 const cityNames: Record<string, string> = {
+  Seoul: "서울", Busan: "부산", Daegu: "대구", Incheon: "인천", Gwangju: "광주", Daejeon: "대전", Ulsan: "울산", Sejong: "세종",
   "Gangnam-gu": "강남구", "Gangdong-gu": "강동구", "Gangbuk-gu": "강북구", "Gangseo-gu": "강서구", "Geumjeong-gu": "금정구",
   "Geumcheon-gu": "금천구", "Guro-gu": "구로구", "Gwanak-gu": "관악구", "Gwangjin-gu": "광진구",
   "Jongno-gu": "종로구", "Jung-gu": "중구", "Jungnang-gu": "중랑구", "Mapo-gu": "마포구",
@@ -28,6 +29,8 @@ export async function GET() {
   if (!city || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return Response.json({ location: null });
   const province = regionNames[regionCode] || "";
   const translatedCity = cityNames[city] || city;
-  const label = province && !translatedCity.includes(province) ? `${province} ${translatedCity}` : translatedCity;
+  const unknownEnglishCity = /^[A-Za-z\s-]+$/.test(translatedCity) && !cityNames[city];
+  const safeCity = unknownEnglishCity && province ? province : translatedCity;
+  const label = province && !safeCity.includes(province) ? `${province} ${safeCity}` : safeCity;
   return Response.json({ location: { label, lat: latitude, lng: longitude, source: "ip" } }, { headers: { "cache-control": "no-store" } });
 }

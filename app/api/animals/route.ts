@@ -25,7 +25,7 @@ export async function GET(request: Request) {
       cursor: params.get("cursor"),
       limit: Math.min(50, Math.max(1, Number(params.get("limit")) || 20)),
     });
-    return Response.json(page, { headers: { "cache-control": "private, max-age=30" } });
+    return Response.json(page, { headers: { "cache-control": "public, s-maxage=30, stale-while-revalidate=120" } });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "보호동물 정보를 불러오지 못했어요." }, { status: 503 });
   }

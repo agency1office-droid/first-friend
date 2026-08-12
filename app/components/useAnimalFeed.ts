@@ -58,6 +58,8 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   const [ready, setReady] = useState(false);
   const [filtersReady, setFiltersReady] = useState(false);
   const requestId = useRef(0);
+  const prefetchedPage = useRef<Promise<Record<string, unknown>> | null>(null);
+  const prefetchedUrl = useRef<string | null>(null);
 
   useEffect(() => {
     const snapshot = readFeedSnapshot();
@@ -135,6 +137,29 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     return () => controller.abort();
   }, [endpoint, filtersReady, ready]);
 
+  // 현재 페이지를 읽는 동안 다음 페이지를 미리 받아 두어 사용자가
+  // sentinel에 도착했을 때 네트워크 대기 시간을 없앱니다.
+  useEffect(() => {
+    if (!ready || !filtersReady || !cursor) return;
+    const url = endpoint(cursor);
+    const controller = new AbortController();
+    prefetchedUrl.current = url;
+    prefetchedPage.current = fetch(url, { signal: controller.signal }).then(async response => {
+      const body = await response.json() as Record<string, unknown>;
+      if (!response.ok) throw new Error(typeof body.error === "string" ? body.error : "다음 친구를 불러오지 못했어요.");
+      return body;
+    }).catch(errorValue => {
+      if (controller.signal.aborted) throw errorValue;
+      prefetchedPage.current = null;
+      prefetchedUrl.current = null;
+      throw errorValue;
+    });
+    return () => {
+      controller.abort();
+      if (prefetchedUrl.current === url) { prefetchedPage.current = null; prefetchedUrl.current = null; }
+    };
+  }, [cursor, endpoint, filtersReady, ready]);
+
   useEffect(() => {
     if (!ready || !filtersReady || !items.length) return;
     try {
@@ -157,15 +182,21 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     if (!cursor || loading) return;
     setLoading(true); setError("");
     try {
-      const response = await fetch(endpoint(cursor));
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error || "다음 친구를 불러오지 못했어요.");
+      const url = endpoint(cursor);
+      const body = prefetchedUrl.current === url && prefetchedPage.current
+        ? await prefetchedPage.current
+        : await fetch(url).then(async response => {
+          const result = await response.json() as Record<string, unknown>;
+          if (!response.ok) throw new Error(typeof result.error === "string" ? result.error : "다음 친구를 불러오지 못했어요.");
+          return result;
+        });
+      prefetchedPage.current = null; prefetchedUrl.current = null;
       setItems(current => {
         const ids = new Set(current.map(item => item.id));
-        return [...current, ...(body.items || []).filter((item: Animal) => !ids.has(item.id))];
+        return [...current, ...((body.items as Animal[] | undefined) || []).filter((item: Animal) => !ids.has(item.id))];
       });
-      setCursor(body.nextCursor || null); setTotal(body.total || total);
-      setSyncedAt(body.syncedAt || syncedAt); setStale(Boolean(body.stale));
+      setCursor(typeof body.nextCursor === "string" ? body.nextCursor : null); setTotal(Number(body.total) || total);
+      setSyncedAt(typeof body.syncedAt === "string" ? body.syncedAt : syncedAt); setStale(Boolean(body.stale));
     } catch (errorValue) {
       setError(errorValue instanceof Error ? errorValue.message : "다음 친구를 불러오지 못했어요.");
     } finally { setLoading(false); }

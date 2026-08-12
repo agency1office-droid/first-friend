@@ -16,6 +16,11 @@ const cityNames: Record<string, string> = {
   "Nam-gu": "남구", "Buk-gu": "북구", "Dong-gu": "동구", "Seo-gu": "서구",
 };
 
+const cityProvinces: Record<string, string> = {
+  "Gangnam-gu": "서울시", "Gangdong-gu": "서울시", "Gangbuk-gu": "서울시", "Gangseo-gu": "서울시", "Geumcheon-gu": "서울시", "Guro-gu": "서울시", "Gwanak-gu": "서울시", "Gwangjin-gu": "서울시", "Jongno-gu": "서울시", "Jung-gu": "서울시", "Jungnang-gu": "서울시", "Mapo-gu": "서울시", "Nowon-gu": "서울시", "Seocho-gu": "서울시", "Seodaemun-gu": "서울시", "Seongbuk-gu": "서울시", "Seongdong-gu": "서울시", "Songpa-gu": "서울시", "Yangcheon-gu": "서울시", "Yeongdeungpo-gu": "서울시", "Yongsan-gu": "서울시", "Eunpyeong-gu": "서울시", "Dongdaemun-gu": "서울시", "Dongjak-gu": "서울시",
+  "Haeundae-gu": "부산시", "Busanjin-gu": "부산시", "Saha-gu": "부산시", "Sasang-gu": "부산시", "Geumjeong-gu": "부산시",
+};
+
 function text(value: string | null) {
   try { return value ? decodeURIComponent(value).trim() : ""; } catch { return value?.trim() || ""; }
 }
@@ -27,7 +32,7 @@ export async function GET() {
   const latitude = Number(requestHeaders.get("x-vercel-ip-latitude"));
   const longitude = Number(requestHeaders.get("x-vercel-ip-longitude"));
   if (!city || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return Response.json({ location: null });
-  const province = regionNames[regionCode] || "";
+  const province = regionNames[regionCode] || cityProvinces[city] || "";
   const translatedCity = cityNames[city] || city;
   const unknownEnglishCity = /^[A-Za-z\s-]+$/.test(translatedCity) && !cityNames[city];
   const safeCity = unknownEnglishCity && province ? province : translatedCity;

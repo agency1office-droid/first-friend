@@ -50,11 +50,12 @@ export function HomeTopbar() {
         window.dispatchEvent(new CustomEvent("ff-region-change", { detail: defaultLocation }));
       }
       const body = await fetch("/api/profile").then((response) => response.json()).catch(() => ({}));
-      if (!body.homeRegion) return;
-      const locationBody = await fetch(`/api/locations?q=${encodeURIComponent(body.homeRegion)}`).then((response) => response.json()).catch(() => ({}));
+      const savedProfileRegion = typeof body.homeRegion === "string" && !/^[A-Za-z\s-]+$/.test(body.homeRegion) ? body.homeRegion : "";
+      if (!savedProfileRegion) return;
+      const locationBody = await fetch(`/api/locations?q=${encodeURIComponent(savedProfileRegion)}`).then((response) => response.json()).catch(() => ({}));
       const restored = locationBody.locations?.[0] as HomeLocation | undefined;
       if (restored) store([restored]);
-      else setRegion(body.homeRegion);
+      else setRegion(savedProfileRegion);
     }
     void hydrate();
   }, []);

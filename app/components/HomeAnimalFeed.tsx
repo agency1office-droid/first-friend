@@ -77,7 +77,7 @@ export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
   return <section className="ff-home-feed" id="nearby-animals" aria-label="새 가족을 기다리는 보호동물">
     <header className="ff-home-feed-head"><div><div className="ff-kicker">{kicker}</div><h1 id="nearby-title">{title}</h1></div><a href="/find">전체 {count}마리</a></header>
     <AnimalFilterBar filters={feed.filters} location={feed.location} hasLocation={Boolean(feed.location)} activeCount={feed.activeCount} setFilter={feed.setFilter} resetFilters={feed.resetFilters}/>
-    <div className="ff-animal-list">{feed.items.map((animal, index) => <Fragment key={animal.id}><AnimalCard animal={animal} layout="row"/>{(index + 1) % 25 === 0 && lostAnimals[(index + 1) / 25 - 1] && <LostAnimalInsert animal={lostAnimals[(index + 1) / 25 - 1]}/>}</Fragment>)}</div>
+    <div className="ff-animal-list">{feed.items.map((animal, index) => <Fragment key={animal.id}><AnimalCard animal={animal} layout="row" priority={index < 4}/>{(index + 1) % 25 === 0 && lostAnimals[(index + 1) / 25 - 1] && <LostAnimalInsert animal={lostAnimals[(index + 1) / 25 - 1]}/>}</Fragment>)}</div>
     {!feed.items.length && !feed.loading && <div className="ff-filter-empty"><strong>현재 조건에 맞는 친구가 없어요</strong><p>조건을 모두 지우면 가까운 친구부터 다시 볼 수 있어요.</p><ActionButton variant="neutralWeak" onClick={feed.resetFilters}>조건 모두 지우기</ActionButton></div>}
     {feed.error && <div className="ff-feed-error">{feed.error}<button type="button" onClick={() => void feed.loadMore()}>다시 시도</button></div>}
     <div className="ff-feed-sentinel" ref={sentinel}>{feed.loading ? "가까운 친구를 더 찾고 있어요…" : feed.cursor ? <button type="button" onClick={() => void feed.loadMore()}>친구 더 보기</button> : feed.items.length ? "현재 확인 가능한 친구를 모두 봤어요" : ""}</div>

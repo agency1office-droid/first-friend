@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "증빙은 8MB 이하 JPG·PNG·WEBP만 가능해요." }, { status: 400 });
   }
   const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-  const key = `appeal-evidence/${user.userId}/${crypto.randomUUID()}.${extension}`;
+  const key = `${purpose}/${user.userId}/${crypto.randomUUID()}.${extension}`;
   await uploadStoredFile(key, await file.arrayBuffer(), file.type);
   return Response.json({ key }, { status: 201 });
 }

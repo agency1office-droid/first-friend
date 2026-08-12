@@ -339,7 +339,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
   const state = await ensurePublicAnimals();
   const limit = Math.min(50, Math.max(1, options.limit || 20));
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
-  const canUseDatabaseSearch = !options.publicStatus && !options.color && !options.sizeGroup && !options.maxDistance && !options.multiplePhotos && !options.exactLocation;
+  const canUseDatabaseSearch = !options.sizeGroup && !options.maxDistance && !options.multiplePhotos && !options.exactLocation;
   if (canUseDatabaseSearch) {
     const cursor = decodeSearchCursor(options.cursor);
     const sort = options.sort === "distance" && hasHome ? "distance" : "recent";
@@ -356,8 +356,8 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
       p_age_group: options.ageGroup || null,
       p_sex: options.sex === "female" ? "암컷" : options.sex === "male" ? "수컷" : null,
       p_kind_codes: kindCodes.length ? kindCodes : null,
-      p_color: null,
-      p_public_phase: null,
+      p_color: options.color || null,
+      p_public_phase: options.publicStatus === "notice" ? "notice" : options.publicStatus === "checking" ? "checking" : null,
     });
     if (!error && data) {
       const items = (data as Array<Record<string, unknown>>).map(row => {

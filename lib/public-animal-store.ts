@@ -43,7 +43,7 @@ const regionCenters: Record<string, [number, number]> = {
 let runningSync: Promise<{ count: number; pages: number; syncedAt: string }> | null = null;
 let activeAnimalsCache: { at: number; rows: StoredAnimal[] } | null = null;
 const ACTIVE_ANIMALS_CACHE_MS = 60 * 1000;
-const LIST_ANIMAL_COLUMNS = "id,name,species,breed,up_kind_cd,kind_cd,age,age_group,sex,region,shelter_id,shelter_name,shelter_address,shelter_phone,shelter_lat,shelter_lng,approximate_shelter_location,updated,image_1,image_2,colors_json,traits_json,summary,health_json,life_json,match_reason,process_state,active,last_seen_sync,synced_at";
+const LIST_ANIMAL_COLUMNS = "id,name,species,breed,up_kind_cd,kind_cd,age,age_group,sex,region,shelter_id,shelter_name,shelter_address,shelter_phone,shelter_lat,shelter_lng,approximate_shelter_location,updated,updated_at,image_1,image_2,colors_json,traits_json,summary,health_json,life_json,match_reason,process_state,active,last_seen_sync,synced_at,size_group,has_multiple_photos,has_exact_location,color_search,public_phase";
 
 function apiKey() { return process.env.PUBLIC_DATA_API_KEY?.trim(); }
 function array<T>(value: T | T[] | undefined) { return !value ? [] : Array.isArray(value) ? value : [value]; }
@@ -138,7 +138,7 @@ function storedAnimalRow(row: AnimalRecord) {
     updated: row.updated, image_1: row.image1, image_2: row.image2, colors_json: row.colorsJson, traits_json: row.traitsJson,
     summary: row.summary, health_json: row.healthJson, life_json: row.lifeJson, match_reason: row.matchReason,
     process_state: row.processState, active: row.active, last_seen_sync: row.lastSeenSync, synced_at: row.syncedAt,
-    updated_at: isoDate(row.updated), notice_end_at: noticeEndAt, public_phase: publicPhase, color_search: (row.colorsJson || "").toLocaleLowerCase("ko-KR"),
+    updated_at: isoDate(row.updated), notice_end_at: noticeEndAt, public_phase: publicPhase, color_search: (row.colorsJson || "").toLocaleLowerCase("ko-KR"), size_group: sizeGroup(row), has_multiple_photos: Boolean(row.image2 && row.image2 !== row.image1), has_exact_location: !row.approximateShelterLocation,
   };
 }
 
@@ -346,7 +346,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
   const state = await ensurePublicAnimals({ allowSync: false });
   const limit = Math.min(50, Math.max(1, options.limit || 20));
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
-  const canUseDatabaseSearch = !options.sizeGroup && !options.maxDistance && !options.multiplePhotos && !options.exactLocation;
+  const canUseDatabaseSearch = true;
   if (canUseDatabaseSearch) {
     const cursor = decodeSearchCursor(options.cursor);
     const sort = options.sort === "distance" && hasHome ? "distance" : "recent";
@@ -365,6 +365,10 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
       p_kind_codes: kindCodes.length ? kindCodes : null,
       p_color: options.color || null,
       p_public_phase: options.publicStatus === "notice" ? "notice" : options.publicStatus === "checking" ? "checking" : null,
+      p_size_group: options.sizeGroup || null,
+      p_multiple_photos: Boolean(options.multiplePhotos),
+      p_exact_location: Boolean(options.exactLocation),
+      p_max_distance_meters: options.maxDistance && hasHome ? options.maxDistance : null,
     });
     if (!error && data) {
       const items = (data as Array<Record<string, unknown>>).map(row => {

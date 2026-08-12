@@ -2,7 +2,10 @@
 -- 3단계: 공고 상태와 털색을 매 요청마다 JSON 파싱하지 않도록 합니다.
 
 alter table public.public_animals
-  add column if not exists color_search text not null default '';
+  add column if not exists color_search text not null default '',
+  add column if not exists size_group text not null default 'unknown',
+  add column if not exists has_multiple_photos boolean not null default false,
+  add column if not exists has_exact_location boolean not null default false;
 
 -- life_json의 공고 기간에서 마지막 날짜를 날짜형으로 옮깁니다.
 update public.public_animals a
@@ -29,6 +32,11 @@ where public_phase is null;
 update public.public_animals
 set color_search = lower(coalesce(colors_json, ''))
 where color_search = '';
+
+update public.public_animals
+set has_multiple_photos = image_2 <> '' and image_2 <> image_1,
+    has_exact_location = not approximate_shelter_location
+where has_multiple_photos = false or has_exact_location = false;
 
 create index if not exists idx_public_animals_feed_phase
   on public.public_animals (public_phase, updated_at desc, id desc)

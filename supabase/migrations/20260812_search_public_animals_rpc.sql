@@ -14,7 +14,11 @@ create or replace function public.search_public_animals(
   p_sex text default null,
   p_kind_codes text[] default null,
   p_color text default null,
-  p_public_phase text default null
+  p_public_phase text default null,
+  p_size_group text default null,
+  p_multiple_photos boolean default false,
+  p_exact_location boolean default false,
+  p_max_distance_meters double precision default null
 )
 returns table (
   id text,
@@ -76,6 +80,10 @@ with calculated as (
     and (p_kind_codes is null or cardinality(p_kind_codes) = 0 or a.kind_cd = any(p_kind_codes))
     and (p_color is null or lower(a.colors_json) like '%' || lower(p_color) || '%')
     and (p_public_phase is null or a.public_phase = p_public_phase)
+    and (p_size_group is null or a.size_group = p_size_group)
+    and (not p_multiple_photos or a.has_multiple_photos)
+    and (not p_exact_location or a.has_exact_location)
+    and (p_max_distance_meters is null or c.calculated_distance <= p_max_distance_meters)
 ), filtered as (
   select *
   from calculated c
@@ -113,5 +121,5 @@ order by
 limit least(greatest(coalesce(p_limit, 20), 1), 50);
 $$;
 
-revoke all on function public.search_public_animals(integer, timestamptz, text, double precision, double precision, double precision, text, text, text, text, text[], text, text) from public;
-grant execute on function public.search_public_animals(integer, timestamptz, text, double precision, double precision, double precision, text, text, text, text, text[], text, text) to anon, authenticated, service_role;
+revoke all on function public.search_public_animals(integer, timestamptz, text, double precision, double precision, double precision, text, text, text, text[], text, text, text, boolean, boolean, double precision) from public;
+grant execute on function public.search_public_animals(integer, timestamptz, text, double precision, double precision, double precision, text, text, text, text[], text, text, text, boolean, boolean, double precision) to anon, authenticated, service_role;

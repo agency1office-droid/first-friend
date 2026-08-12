@@ -27,6 +27,7 @@ export type AnimalPage = {
 };
 
 export type BreedCountOptions = {
+  species?: "cat" | "dog" | "all";
   lat?: number;
   lng?: number;
   ageGroup?: string;
@@ -321,6 +322,17 @@ async function activeAnimals() {
 }
 
 export async function getBreedCounts(options: BreedCountOptions = {}) {
+  const { data: databaseCounts, error: databaseError } = await getSupabaseServerClient().rpc("count_public_animal_breeds", {
+    p_species: options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : null,
+    p_age_group: options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "어른 친구" : options.ageGroup === "unknown" ? "나이 미상" : null,
+    p_sex: options.sex === "female" ? "암컷" : options.sex === "male" ? "수컷" : null,
+    p_size_group: options.sizeGroup && ["small", "medium", "large", "unknown"].includes(options.sizeGroup) ? options.sizeGroup : null,
+    p_public_phase: options.publicStatus === "notice" ? "notice" : options.publicStatus === "checking" ? "checking" : null,
+    p_lat: validPoint(Number(options.lat), Number(options.lng)) ? options.lat : null,
+    p_lng: validPoint(Number(options.lat), Number(options.lng)) ? options.lng : null,
+    p_max_distance_meters: options.maxDistance || null,
+  });
+  if (!databaseError && databaseCounts) return Object.fromEntries((databaseCounts as Array<Record<string, unknown>>).map(row => [`${row.up_kind_cd}:${row.kind_cd}`, { count: Number(row.animal_count) || 0, kindNm: String(row.kind_name || "품종 미상"), species: row.species === "고양이" ? "cat" : "dog" }])) as Record<string, { count: number; kindNm: string; species: "dog" | "cat" }>;
   await ensurePublicAnimals();
   const rows = await activeAnimals();
   const hasHome = validPoint(Number(options.lat), Number(options.lng));

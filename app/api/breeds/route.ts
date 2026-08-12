@@ -19,6 +19,7 @@ export async function GET(request: Request) {
     let counts = cached?.expiresAt && cached.expiresAt > Date.now() ? cached.counts : undefined;
     if (!counts) {
       counts = await getBreedCounts({
+        species,
         lat: coordinate(params.get("lat"), 30, 40),
         lng: coordinate(params.get("lng"), 120, 135),
         publicStatus: params.get("status") || "",

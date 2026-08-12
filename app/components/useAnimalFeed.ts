@@ -57,6 +57,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
   const [filtersReady, setFiltersReady] = useState(false);
+  const [userEngaged, setUserEngaged] = useState(false);
   const requestId = useRef(0);
   const prefetchedPage = useRef<Promise<Record<string, unknown>> | null>(null);
   const prefetchedUrl = useRef<string | null>(null);
@@ -140,7 +141,9 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   // 현재 페이지를 읽는 동안 다음 페이지를 미리 받아 두어 사용자가
   // sentinel에 도착했을 때 네트워크 대기 시간을 없앱니다.
   useEffect(() => {
-    if (!ready || !filtersReady || !cursor) return;
+    if (!ready || !filtersReady || !cursor || !userEngaged) return;
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    if (connection?.saveData || connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g") return;
     const url = endpoint(cursor);
     const controller = new AbortController();
     prefetchedUrl.current = url;
@@ -158,7 +161,19 @@ export function useAnimalFeed(initialPage: AnimalPage) {
       controller.abort();
       if (prefetchedUrl.current === url) { prefetchedPage.current = null; prefetchedUrl.current = null; }
     };
-  }, [cursor, endpoint, filtersReady, ready]);
+  }, [cursor, endpoint, filtersReady, ready, userEngaged]);
+
+  useEffect(() => {
+    const engage = () => setUserEngaged(true);
+    window.addEventListener("scroll", engage, { passive: true, once: true });
+    window.addEventListener("touchmove", engage, { passive: true, once: true });
+    window.addEventListener("wheel", engage, { passive: true, once: true });
+    return () => {
+      window.removeEventListener("scroll", engage);
+      window.removeEventListener("touchmove", engage);
+      window.removeEventListener("wheel", engage);
+    };
+  }, []);
 
   useEffect(() => {
     if (!ready || !filtersReady || !items.length) return;

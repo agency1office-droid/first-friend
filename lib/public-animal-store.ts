@@ -44,7 +44,9 @@ const regionCenters: Record<string, [number, number]> = {
 let runningSync: Promise<{ count: number; pages: number; syncedAt: string }> | null = null;
 let activeAnimalsCache: { at: number; rows: StoredAnimal[] } | null = null;
 const ACTIVE_ANIMALS_CACHE_MS = 60 * 1000;
-const LIST_ANIMAL_COLUMNS = "id,name,species,breed,up_kind_cd,kind_cd,age,age_group,sex,region,shelter_id,shelter_name,shelter_address,shelter_phone,shelter_lat,shelter_lng,approximate_shelter_location,updated,updated_at,image_1,image_2,colors_json,traits_json,summary,health_json,life_json,match_reason,process_state,active,last_seen_sync,synced_at,size_group,has_multiple_photos,has_exact_location,color_search,public_phase";
+const LIST_ANIMAL_COLUMNS = "id,name,species,breed,up_kind_cd,kind_cd,age,age_group,sex,region,shelter_id,shelter_name,shelter_address,shelter_phone,shelter_lat,shelter_lng,approximate_shelter_location,updated,updated_at,image_1,image_2,image_1_storage,image_2_storage,colors_json,traits_json,summary,health_json,life_json,match_reason,process_state,active,last_seen_sync,synced_at,size_group,has_multiple_photos,has_exact_location,color_search,public_phase";
+const STORAGE_BUCKET = "animal-images";
+type StoredAnimalWithImages = StoredAnimal & { image_1_storage?: string | null; image_2_storage?: string | null };
 
 function apiKey() { return process.env.PUBLIC_DATA_API_KEY?.trim(); }
 function array<T>(value: T | T[] | undefined) { return !value ? [] : Array.isArray(value) ? value : [value]; }
@@ -98,8 +100,10 @@ function storedAnimal(row: Record<string, unknown>) {
     shelterLat: row.shelter_lat ?? null,
     shelterLng: row.shelter_lng ?? null,
     approximateShelterLocation: row.approximate_shelter_location ?? true,
-    image1: row.image_1 ?? "",
-    image2: row.image_2 ?? "",
+    image1: row.image_1_storage || row.image_1 || "",
+    image2: row.image_2_storage || row.image_2 || "",
+    image_1_storage: row.image_1_storage ?? null,
+    image_2_storage: row.image_2_storage ?? null,
     colorsJson: row.colors_json ?? "[]",
     traitsJson: row.traits_json ?? "[]",
     healthJson: row.health_json ?? "[]",
@@ -244,6 +248,50 @@ async function writeAnimals(rows: AnimalRecord[]) {
   activeAnimalsCache = null;
 }
 
+async function mirrorAnimalImage(supabase: ReturnType<typeof getSupabaseServerClient>, id: string, slot: number, sourceUrl: string) {
+  if (!sourceUrl) return "";
+  const response = await fetch(sourceUrl, { cache: "no-store", signal: AbortSignal.timeout(15000) });
+  if (!response.ok) throw new Error(`이미지 원본 응답 오류 ${response.status}`);
+  const contentType = (response.headers.get("content-type") || "image/jpeg").split(";")[0].toLowerCase();
+  if (!contentType.startsWith("image/")) throw new Error("이미지 형식이 아닙니다.");
+  const body = await response.arrayBuffer();
+  if (body.byteLength > 10 * 1024 * 1024) throw new Error("이미지 용량이 10MB를 초과합니다.");
+  const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sourceUrl)))].map(value => value.toString(16).padStart(2, "0")).join("").slice(0, 16);
+  const extension = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
+  const path = `public/${id}/${slot}-${digest}.${extension}`;
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, body, { contentType, cacheControl: "31536000", upsert: false });
+  if (error && !/already exists|duplicate/i.test(error.message)) throw error;
+  return supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+export async function syncAnimalImages(limit = 40) {
+  const supabase = getSupabaseServerClient();
+  const { data: rows, error } = await supabase.from("public_animals")
+    .select("id,image_1,image_2,image_1_storage,image_2_storage")
+    .eq("active", true)
+    .or("image_1_storage.is.null,image_1_storage.eq.")
+    .limit(Math.max(1, Math.min(limit, 100)));
+  if (error) throw error;
+  let mirrored = 0, failed = 0;
+  for (const row of rows || []) {
+    try {
+      const image1 = row.image_1_storage || await mirrorAnimalImage(supabase, String(row.id), 1, String(row.image_1 || ""));
+      const image2 = row.image_2 ? (row.image_2_storage || await mirrorAnimalImage(supabase, String(row.id), 2, String(row.image_2))) : "";
+      const update: Record<string, string> = {};
+      if (image1) update.image_1_storage = image1;
+      if (image2) update.image_2_storage = image2;
+      if (Object.keys(update).length) {
+        const { error: updateError } = await supabase.from("public_animals").update(update).eq("id", row.id);
+        if (updateError) throw updateError;
+        mirrored += 1;
+      }
+    } catch {
+      failed += 1;
+    }
+  }
+  return { scanned: rows?.length || 0, mirrored, failed };
+}
+
 export async function syncPublicAnimals() {
   await ensureTables();
   const supabase = getSupabaseServerClient(), startedAt = new Date().toISOString(), syncId = crypto.randomUUID();
@@ -290,13 +338,14 @@ export async function ensurePublicAnimals(options: { allowSync?: boolean } = {})
 }
 
 function fromStored(row: StoredAnimal): Animal {
-  const images = [row.image1, row.image2].filter(Boolean);
+  const storageRow = row as StoredAnimalWithImages;
+  const images = [storageRow.image_1_storage || row.image1, storageRow.image_2_storage || row.image2].filter(Boolean);
   return {
     id: row.id, name: row.name, species: row.species, breed: row.breed, upKindCd: row.upKindCd, kindCd: row.kindCd, age: row.age, ageGroup: ageGroup(row.age), sex: row.sex,
     region: row.region, shelter: row.shelterName, shelterId: row.shelterId || undefined, shelterAddress: row.shelterAddress || undefined,
     shelterPhone: row.shelterPhone || undefined, shelterLat: row.shelterLat ?? undefined, shelterLng: row.shelterLng ?? undefined,
     approximateShelterLocation: row.approximateShelterLocation, source: "국가동물보호정보시스템", updated: row.updated,
-    image: row.image1, images, photoCount: new Set(images).size, colors: jsonArray(row.colorsJson), traits: jsonArray(row.traitsJson),
+    image: images[0] || row.image1, images, photoCount: new Set(images).size, colors: jsonArray(row.colorsJson), traits: jsonArray(row.traitsJson),
     summary: row.summary, health: jsonArray(row.healthJson), life: jsonArray(row.lifeJson), matchReason: row.matchReason,
   };
 }

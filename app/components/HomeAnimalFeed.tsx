@@ -40,7 +40,7 @@ function LostAnimalInsert({ animal }: { animal: LostAnimal }) {
 }
 
 export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
-  const feed = useAnimalFeed(initialPage), sentinel = useRef<HTMLDivElement>(null), autoLoadReady = useRef(false);
+  const feed = useAnimalFeed(initialPage), sentinel = useRef<HTMLDivElement>(null), autoLoading = useRef(false);
   const scrollRestored = useRef(false);
   const [lostAnimals, setLostAnimals] = useState<LostAnimal[]>([]);
   const { cursor, loadMore } = feed;
@@ -56,16 +56,13 @@ export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
   const lostRegion = feed.location?.label || feed.region;
   useEffect(() => { let active = true; const query = lostRegion ? `?region=${encodeURIComponent(lostRegion)}` : ""; fetch(`/api/lost-found${query}`).then(response => response.ok ? response.json() as Promise<{ animals?: LostAnimal[] }> : Promise.reject(new Error("lost animals unavailable"))).then(body => { if (active) setLostAnimals(body.animals || []); }).catch(() => { if (active) setLostAnimals([]); }); return () => { active = false; }; }, [lostRegion]);
   useEffect(() => {
-    const arm = () => { autoLoadReady.current = true; };
-    window.addEventListener("wheel", arm, { passive: true });
-    window.addEventListener("touchmove", arm, { passive: true });
-    window.addEventListener("keydown", arm);
-    return () => { window.removeEventListener("wheel", arm); window.removeEventListener("touchmove", arm); window.removeEventListener("keydown", arm); };
-  }, []);
-  useEffect(() => {
     const node = sentinel.current;
     if (!node || !cursor) return;
-    const observer = new IntersectionObserver(entries => { if (entries[0]?.isIntersecting && autoLoadReady.current) { autoLoadReady.current = false; void loadMore(); } }, { rootMargin: "300px 0px" });
+    const observer = new IntersectionObserver(entries => {
+      if (!entries[0]?.isIntersecting || autoLoading.current) return;
+      autoLoading.current = true;
+      void loadMore().finally(() => { autoLoading.current = false; });
+    }, { rootMargin: "500px 0px" });
     observer.observe(node);
     return () => observer.disconnect();
   }, [cursor, loadMore]);

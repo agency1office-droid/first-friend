@@ -413,11 +413,26 @@ async function mirrorAnimalImage(supabase: ReturnType<typeof getSupabaseServerCl
     .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
     .webp({ quality: 80, effort: 4 })
     .toBuffer();
-  const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sourceUrl)))].map(value => value.toString(16).padStart(2, "0")).join("").slice(0, 16);
+  const digest = await imageSourceDigest(sourceUrl);
   const path = `public/${id}/${slot}-${digest}.webp`;
   const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, body, { contentType: "image/webp", cacheControl: "31536000", upsert: false });
   if (error && !/already exists|duplicate/i.test(error.message)) throw error;
   return supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+async function imageSourceDigest(sourceUrl: string) {
+  return [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sourceUrl)))].map(value => value.toString(16).padStart(2, "0")).join("").slice(0, 16);
+}
+
+function isMirroredSource(storageUrl: unknown, sourceDigest: string) {
+  return typeof storageUrl === "string" && storageUrl.includes(`-${sourceDigest}.webp`);
+}
+
+async function removeStoredImage(supabase: ReturnType<typeof getSupabaseServerClient>, storageUrl: unknown) {
+  const path = storagePathFromUrl(String(storageUrl || ""));
+  if (!path) return;
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).remove([path]);
+  if (error && !/not found|does not exist/i.test(error.message)) throw error;
 }
 
 export async function syncAnimalImages(limit = 100) {
@@ -436,11 +451,15 @@ export async function syncAnimalImages(limit = 100) {
     .limit(Math.max(1, Math.min(limit, 100)));
   if (error) throw error;
   let mirrored = 0, failed = 0;
-  const optimized = (value: unknown) => typeof value === "string" && /\.webp(?:\?|$)/i.test(value);
-  const candidates = (rows || []).flatMap(row => [
+  const rawCandidates = (rows || []).flatMap(row => [
     { row, slot: 1, sourceUrl: String(row.image_1 || ""), storageUrl: row.image_1_storage },
     { row, slot: 2, sourceUrl: String(row.image_2 || ""), storageUrl: row.image_2_storage },
-  ]).filter(item => item.sourceUrl && !optimized(item.storageUrl));
+  ]).filter(item => item.sourceUrl);
+  const candidates = (await Promise.all(rawCandidates.map(async item => {
+    if (!item.storageUrl) return item;
+    const digest = await imageSourceDigest(item.sourceUrl);
+    return isMirroredSource(item.storageUrl, digest) ? null : item;
+  }))).filter((item): item is (typeof rawCandidates)[number] => Boolean(item));
   const ids = Array.from(new Set(candidates.map(item => String(item.row.id))));
   const { data: existingJobs } = ids.length
     ? await supabase.from("animal_image_jobs").select("animal_id,slot,source_url,attempt_count,next_attempt_at").in("animal_id", ids)
@@ -474,6 +493,7 @@ export async function syncAnimalImages(limit = 100) {
         const update: Record<string, string> = row.slot === 1 ? { image_1_storage: mirroredImage } : { image_2_storage: mirroredImage };
         const { error: updateError } = await supabase.from("public_animals").update(update).eq("id", row.row.id);
         if (updateError) throw updateError;
+        if (row.storageUrl && row.storageUrl !== mirroredImage) await removeStoredImage(supabase, row.storageUrl);
         const { error: completeError } = await supabase.from("animal_image_jobs").update({
           status: "completed", storage_url: mirroredImage, updated_at: new Date().toISOString(), last_error: "",
         }).eq("animal_id", row.row.id).eq("slot", row.slot).eq("source_url", row.sourceUrl);

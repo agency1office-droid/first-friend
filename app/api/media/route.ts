@@ -11,6 +11,6 @@ export async function GET(request: Request) {
     if (!response.ok) return new Response("image unavailable", { status: 404 });
     const pathname = String(source.pathname || "").toLowerCase();
     const contentType = pathname.endsWith(".png") ? "image/png" : pathname.endsWith(".webp") ? "image/webp" : "image/jpeg";
-    return new Response(response.body, { headers: { "content-type": contentType, "cache-control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400" } });
+    return new Response(response.body, { headers: { "content-type": contentType, "cache-control": "public, max-age=604800, s-maxage=2592000, stale-while-revalidate=604800", "x-content-type-options": "nosniff" } });
   } catch { return new Response("image unavailable", { status: 504 }); }
 }

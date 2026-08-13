@@ -8,7 +8,7 @@ import type { LostAnimal } from "../../lib/public-data";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { AnimalCard } from "./AnimalCard";
 import { AnimalFilterBar } from "./AnimalFilterBar";
-import { HOME_FEED_SNAPSHOT_KEY, useAnimalFeed } from "./useAnimalFeed";
+import { useAnimalFeed } from "./useAnimalFeed";
 
 function compactLostDate(value: string) {
   const match = value.match(/(\d{4})[-.](\d{1,2})[-.](\d{1,2})/);
@@ -50,18 +50,18 @@ function LostAnimalInsert({ animal }: { animal: LostAnimal }) {
 
 export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
   const feed = useAnimalFeed(initialPage), sentinel = useRef<HTMLDivElement>(null), autoLoading = useRef(false);
-  const scrollRestored = useRef(false);
   const [lostAnimals, setLostAnimals] = useState<LostAnimal[]>([]);
   const { cursor, loadMore } = feed;
   useEffect(() => {
-    if (scrollRestored.current || !feed.items.length) return;
-    try {
-      const snapshot = JSON.parse(window.sessionStorage.getItem(HOME_FEED_SNAPSHOT_KEY) || "null") as { url?: string; scrollY?: number } | null;
-      const url = `${window.location.pathname}${window.location.search}`;
-      if (snapshot?.url === url && Number(snapshot.scrollY) > 0) window.setTimeout(() => window.scrollTo({ top: Number(snapshot.scrollY), behavior: "auto" }), 0);
-      scrollRestored.current = true;
-    } catch { /* 세션 복원은 보조 기능이라 실패해도 피드 이용은 계속합니다. */ }
-  }, [feed.items.length]);
+    const previous = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    const frame = window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.history.scrollRestoration = previous;
+    };
+  }, []);
   const lostRegion = feed.location?.label || feed.region;
   useEffect(() => { let active = true; const controller = new AbortController(); const query = lostRegion ? `?region=${encodeURIComponent(lostRegion)}` : ""; fetch(`/api/lost-found${query}`, { signal: controller.signal }).then(response => response.ok ? response.json() as Promise<{ animals?: LostAnimal[] }> : Promise.reject(new Error("lost animals unavailable"))).then(body => { if (active) setLostAnimals(body.animals || []); }).catch(() => { if (active && !controller.signal.aborted) setLostAnimals([]); }); return () => { active = false; controller.abort(); }; }, [lostRegion]);
   useEffect(() => {

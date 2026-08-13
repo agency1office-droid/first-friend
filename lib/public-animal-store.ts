@@ -550,7 +550,7 @@ export async function syncPublicLostAnimals() {
   const supabase = getSupabaseServerClient(), syncedAt = new Date().toISOString(), syncId = crypto.randomUUID();
   const result = await fetchAllLostAnimals();
   if (!result.complete) throw new Error(`실종 동물 전체 수집이 완료되지 않았습니다. ${result.items.length}/${result.total}`);
-  const rows = result.items
+  const mappedRows = result.items
     .map((item, index) => mapLostAnimal(item, index, syncedAt))
     .filter((item): item is NonNullable<ReturnType<typeof mapLostAnimal>> => Boolean(item))
     .map(row => ({
@@ -571,6 +571,13 @@ export async function syncPublicLostAnimals() {
       last_seen_sync: syncId,
       synced_at: syncedAt,
     }));
+  // The public API can return the same report more than once across pages.
+  // Postgres rejects an upsert batch when two rows target the same conflict key.
+  // Keep the last representation of each report ID so one sync cannot fail
+  // because of upstream pagination duplicates.
+  const uniqueRows = new Map<string, (typeof mappedRows)[number]>();
+  for (const row of mappedRows) uniqueRows.set(row.id, row);
+  const rows = [...uniqueRows.values()];
   for (const group of chunks(rows, 500)) {
     const { error } = await supabase.from("public_lost_animals").upsert(group, { onConflict: "id" });
     if (error) throw error;

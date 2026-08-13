@@ -10,6 +10,7 @@ const SHELTER_ENDPOINT = "https://apis.data.go.kr/1543061/animalShelterSrvc_v2/s
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 50;
 const SYNC_INTERVAL_MS = 15 * 60 * 1000;
+const ARCHIVE_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 
 type Envelope<T> = { response?: { header?: { resultCode?: string; resultMsg?: string }; body?: { items?: { item?: T | T[] }; totalCount?: number | string } } };
 type AnimalItem = { desertionNo?: string; happenDt?: string; kindFullNm?: string; upKindCd?: string; upKindNm?: string; kindCd?: string; kindNm?: string; colorCd?: string; age?: string; weight?: string; noticeNo?: string; noticeSdt?: string; noticeEdt?: string; popfile1?: string; popfile2?: string; processState?: string; sexCd?: string; neuterYn?: string; specialMark?: string; careRegNo?: string; careNm?: string; careTel?: string; careAddr?: string; orgNm?: string; updTm?: string };
@@ -250,6 +251,68 @@ async function writeAnimals(rows: AnimalRecord[]) {
   activeAnimalsCache = null;
 }
 
+function storagePathFromUrl(value: string) {
+  if (!value) return "";
+  try {
+    const pathname = new URL(value).pathname;
+    const marker = `/storage/v1/object/public/${STORAGE_BUCKET}/`;
+    const index = pathname.indexOf(marker);
+    return index >= 0 ? decodeURIComponent(pathname.slice(index + marker.length)) : "";
+  } catch {
+    return "";
+  }
+}
+
+async function removeStoredAnimalImages(supabase: ReturnType<typeof getSupabaseServerClient>, rows: Array<Record<string, unknown>>) {
+  const paths = rows.flatMap(row => [row.image_1_storage, row.image_2_storage].map(value => storagePathFromUrl(String(value || "")))).filter(Boolean);
+  if (!paths.length) return;
+  for (const group of chunks(paths, 100)) {
+    const { error } = await supabase.storage.from(STORAGE_BUCKET).remove(group);
+    if (error) throw error;
+  }
+}
+
+async function compactExpiredAnimals(supabase: ReturnType<typeof getSupabaseServerClient>, now: string) {
+  const cutoff = new Date(Date.now() - ARCHIVE_RETENTION_MS).toISOString();
+  const { data: expired, error } = await supabase.from("public_animals")
+    .select("id,image_1_storage,image_2_storage")
+    .eq("active", false)
+    .lt("synced_at", cutoff)
+    .limit(1000);
+  if (error) throw error;
+  if (!expired?.length) return { deleted: 0, compacted: 0 };
+
+  const ids = expired.map(row => String(row.id));
+  const { data: favoriteRows, error: favoriteError } = await supabase.from("favorites").select("animal_id").in("animal_id", ids);
+  if (favoriteError) throw favoriteError;
+  const favoriteIds = new Set((favoriteRows || []).map(row => String(row.animal_id)));
+  const deletable = expired.filter(row => !favoriteIds.has(String(row.id)));
+  const retained = expired.filter(row => favoriteIds.has(String(row.id)));
+
+  await removeStoredAnimalImages(supabase, expired as Array<Record<string, unknown>>);
+  if (deletable.length) {
+    const { error: deleteError } = await supabase.from("public_animals").delete().in("id", deletable.map(row => String(row.id)));
+    if (deleteError) throw deleteError;
+  }
+  if (retained.length) {
+    const { error: compactError } = await supabase.from("public_animals").update({
+      image_1: "",
+      image_2: "",
+      image_1_storage: null,
+      image_2_storage: null,
+      summary: "공공데이터 공고가 종료된 친구예요.",
+      health_json: "[]",
+      life_json: "[\"공고가 종료되어 현재 입양 가능 여부를 확인할 수 없어요.\"]",
+      match_reason: "",
+      process_state: "종료 공고",
+      synced_at: now,
+    }).in("id", retained.map(row => String(row.id)));
+    if (compactError) throw compactError;
+  }
+  activeAnimalsCache = null;
+  return { deleted: deletable.length, compacted: retained.length };
+}
+
 async function mirrorAnimalImage(supabase: ReturnType<typeof getSupabaseServerClient>, id: string, slot: number, sourceUrl: string) {
   if (!sourceUrl) return "";
   const response = await fetch(sourceUrl, { cache: "no-store", signal: AbortSignal.timeout(15000) });
@@ -310,11 +373,13 @@ export async function syncPublicAnimals() {
     if (animalsResult.total > 0 && animalRows.length === 0) throw new Error("공공데이터는 수집됐지만 화면에 반영할 동물이 0건입니다. 매핑 조건을 확인해야 합니다.");
     await writeShelters(shelterRows);
     await writeAnimals(animalRows);
-    const { error: deactivateError } = await supabase.from("public_animals").update({ active: false }).neq("last_seen_sync", syncId);
+    const completedAt = new Date().toISOString();
+    const { error: deactivateError } = await supabase.from("public_animals").update({ active: false, synced_at: completedAt }).neq("last_seen_sync", syncId).eq("active", true);
     if (deactivateError) throw deactivateError;
-    const completedAt = new Date().toISOString(), pages = sheltersResult.pages + animalsResult.pages;
+    const archive = await compactExpiredAnimals(supabase, completedAt);
+    const pages = sheltersResult.pages + animalsResult.pages;
     await supabase.from("public_sync_state").update({ status: "complete", last_completed_at: completedAt, item_count: animalRows.length, page_count: pages, message: "" }).eq("id", "public-animals");
-    return { count: animalRows.length, pages, syncedAt: completedAt };
+    return { count: animalRows.length, pages, syncedAt: completedAt, archive };
   } catch (error) {
     await supabase.from("public_sync_state").update({ status: "failed", message: error instanceof Error ? error.message.slice(0, 500) : "동기화 실패" }).eq("id", "public-animals");
     throw error;

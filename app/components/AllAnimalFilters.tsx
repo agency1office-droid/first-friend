@@ -20,12 +20,12 @@ function SectionHeading({ title, action, count, icon }: { title: string; action?
   return <div className="ff-filter-section-heading">{icon && <span className="ff-filter-section-icon" aria-hidden>{icon}</span>}<h2>{title}</h2>{count && <span className="ff-filter-section-count">{count}</span>}{action}</div>;
 }
 
-function SnapRange({ label, value, max, step, unit, ticks, onChange, icon }: { label: string; value: [number, number]; max: number; step: number; unit: string; ticks: number[]; onChange: (value: [number, number]) => void; icon: React.ReactNode }) {
-  const [min, maxValue] = value;
-  return <div className="ff-filter-range ff-filter-range-dual">
-    <div className="ff-filter-range-value"><span>{icon}</span><strong>{min === 0 && maxValue === max ? `모든 ${label}` : `${min}~${maxValue}${unit}`}</strong></div>
-    <div className="ff-filter-range-inputs"><input aria-label={`${label} 최소`} type="range" min="0" max={max} step={step} value={min} onChange={event => onChange([Math.min(Number(event.target.value), maxValue), maxValue])} /><input aria-label={`${label} 최대`} type="range" min="0" max={max} step={step} value={maxValue} onChange={event => onChange([min, Math.max(Number(event.target.value), min)])} /></div>
-    <div className="ff-filter-range-ticks">{ticks.map(item => <span key={item} data-selected={item >= min && item <= maxValue || undefined}>{item}{unit}</span>)}</div>
+function SnapRange({ label, point, max, unit, ticks, onChange, icon }: { label: string; point: number; max: number; unit: string; ticks: number[]; onChange: (point: number) => void; icon: React.ReactNode }) {
+  const selected = point === 0 ? null : point - 1;
+  return <div className="ff-filter-range">
+    <div className="ff-filter-range-value"><span>{icon}</span><strong>{selected === null ? `모든 ${label}` : `${selected}${unit} 이하`}</strong></div>
+    <input aria-label={`${label} 선택`} type="range" min="0" max={max + 1} step="1" value={point} onChange={event => onChange(Number(event.target.value))} />
+    <div className="ff-filter-range-ticks"><span data-selected={point === 0 || undefined}>전체</span>{ticks.map(item => <span key={item} data-selected={selected === item || undefined}>{item}{unit}</span>)}</div>
   </div>;
 }
 
@@ -34,11 +34,13 @@ const sexIcon = (value: string) => value === "수컷" ? "♂" : value === "암�
 export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters }: Props) {
   const [open, setOpen] = useState(false), [loading, setLoading] = useState(false), [error, setError] = useState(""), [options, setOptions] = useState<Options | null>(null);
   const [species, setSpecies] = useState<AnimalFeedFilters["species"]>(filters.species), [breeds, setBreeds] = useState<string[]>(filters.breedKeys), [sex, setSex] = useState<string[]>([]), [neutered, setNeutered] = useState<string[]>([]);
-  const [ageRange, setAgeRange] = useState<[number, number]>([0, 20]), [weightRange, setWeightRange] = useState<[number, number]>([0, 50]), [breedQuery, setBreedQuery] = useState(""), [showBreeds, setShowBreeds] = useState(false);
+  const [ageRange, setAgeRange] = useState<[number, number]>([0, 20]), [weightRange, setWeightRange] = useState<[number, number]>([0, 50]), [agePoint, setAgePoint] = useState(0), [weightPoint, setWeightPoint] = useState(0), [breedQuery, setBreedQuery] = useState(""), [showBreeds, setShowBreeds] = useState(false);
   const toggle = (setter: React.Dispatch<React.SetStateAction<string[]>>) => (value: string) => setter(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value]);
   const openPanel = () => {
     setSpecies(filters.species); setBreeds(filters.breedKeys); setSex(filters.sex === "female" ? ["암컷"] : filters.sex === "male" ? ["수컷"] : []); setNeutered(filters.neutered === "all" ? [] : [filters.neutered === "yes" ? "중성화 완료" : "중성화 안 됨"]);
-    setAgeRange(filters.ageMin !== 0 || filters.ageMax !== 20 ? [filters.ageMin, filters.ageMax] : filters.ageGroup === "young" ? [0, 2] : filters.ageGroup === "adult" ? [3, 20] : [0, 20]); setWeightRange(filters.weightMin !== 0 || filters.weightMax !== 50 ? [filters.weightMin, filters.weightMax] : filters.sizeGroup === "small" ? [0, 10] : filters.sizeGroup === "large" ? [25, 50] : [0, 50]); setBreedQuery(""); setShowBreeds(Boolean(filters.species !== "all")); setError(""); setOpen(true);
+    const nextAge = filters.ageMin === 0 && filters.ageMax === 20 ? 0 : Math.min(21, filters.ageMax + 1);
+    const nextWeight = filters.weightMin === 0 && filters.weightMax === 50 ? 0 : Math.min(51, filters.weightMax + 1);
+    setAgeRange(nextAge === 0 ? [0, 20] : [0, nextAge - 1]); setWeightRange(nextWeight === 0 ? [0, 50] : [0, nextWeight - 1]); setAgePoint(nextAge); setWeightPoint(nextWeight); setBreedQuery(""); setShowBreeds(Boolean(filters.species !== "all")); setError(""); setOpen(true);
   };
   useEffect(() => {
     if (!open || options) return;
@@ -46,11 +48,11 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
   }, [open, options]);
   const visibleBreeds = useMemo(() => options?.breeds.filter(item => (species === "all" || item.species === species) && (!breedQuery.trim() || item.label.toLocaleLowerCase("ko-KR").includes(breedQuery.trim().toLocaleLowerCase("ko-KR")))) || [], [breedQuery, options, species]);
   const apply = () => {
-    const ageGroup = ageRange[0] === 0 && ageRange[1] === 20 ? "all" : ageRange[1] <= 2 ? "young" : ageRange[0] >= 3 ? "adult" : "all";
-    const sizeGroup = weightRange[0] === 0 && weightRange[1] === 50 ? "all" : weightRange[1] <= 10 ? "small" : weightRange[0] >= 25 ? "large" : "medium";
+    const ageGroup = "all";
+    const sizeGroup = "all";
     setFilter("species", species); setFilter("breedKeys", breeds.slice(0, 10)); setFilter("sex", sex[0] === "암컷" ? "female" : sex[0] === "수컷" ? "male" : "all"); setFilter("neutered", neutered[0] === "중성화 완료" ? "yes" : neutered[0] === "중성화 안 됨" ? "no" : "all"); setFilter("ageGroup", ageGroup); setFilter("sizeGroup", sizeGroup); setFilter("ageMin", ageRange[0]); setFilter("ageMax", ageRange[1]); setFilter("weightMin", weightRange[0]); setFilter("weightMax", weightRange[1]); setOpen(false);
   };
-  const clearDraft = () => { setSpecies("all"); setBreeds([]); setSex([]); setNeutered([]); setAgeRange([0, 20]); setWeightRange([0, 50]); resetFilters(); };
+  const clearDraft = () => { setSpecies("all"); setBreeds([]); setSex([]); setNeutered([]); setAgeRange([0, 20]); setWeightRange([0, 50]); setAgePoint(0); setWeightPoint(0); resetFilters(); };
   const applied = [
     ...(species !== "all" ? [{ key: "species", label: species === "cat" ? "고양이" : "강아지" }] : []),
     ...breeds.map(key => ({ key: `breed:${key}`, label: options?.breeds.find(item => item.key === key)?.label || "선택한 품종" })),
@@ -67,8 +69,8 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
         {loading && <div className="ff-all-filter-loading"><LoadingIndicator label="필터를 불러오는 중" /></div>}{error && <p className="ff-all-filter-error">{error}</p>}{options && <>
           <section className="ff-filter-applied"><SectionHeading title="선택한 조건" icon={<IconCheckmarkScaleLine />} />{applied.length ? <div className="ff-filter-applied-list">{applied.map(item => <button type="button" key={item.key} onClick={() => removeApplied(item.key)}>{item.label}<IconXmarkLine aria-hidden /></button>)}</div> : <p>아직 선택한 조건이 없어요.</p>}</section>
           <section className="ff-filter-reference-section"><SectionHeading title="동물 종류 · 품종" icon={<IconPawprintLine />} /><div className="ff-filter-species-grid">{(["dog", "cat"] as const).map(value => <button type="button" key={value} className="ff-filter-species-card" data-selected={species === value || undefined} onClick={() => { setSpecies(value); setShowBreeds(true); setBreeds(current => current.filter(key => key.startsWith(value === "cat" ? "422400:" : "417000:"))); }}><span className="ff-filter-species-illustration" aria-hidden>{value === "dog" ? "🐶" : "🐱"}</span><strong>{value === "dog" ? "강아지" : "고양이"}</strong><small>{options.breeds.filter(item => item.species === value).reduce((sum, item) => sum + item.count, 0).toLocaleString("ko-KR")}마리</small></button>)}</div>{showBreeds && <><div className="ff-filter-breed-toolbar"><strong>{species === "cat" ? "고양이" : "강아지"} 품종</strong><button type="button" onClick={() => setShowBreeds(false)} aria-label="품종 접기"><Icon svg={<IconChevronDownLine />} /></button></div><TextField className="ff-filter-search"><TextFieldInput value={breedQuery} onChange={event => setBreedQuery(event.target.value)} placeholder="품종을 검색해보세요" /></TextField><div className="ff-filter-breed-list">{visibleBreeds.slice(0, 100).map(item => <Checkbox key={item.key} checked={breeds.includes(item.key)} onCheckedChange={() => toggle(setBreeds)(item.key)} label={<span className="ff-breed-filter-label"><strong>{humanize(item.label)}</strong><small>{item.count.toLocaleString("ko-KR")}마리</small></span>} />)}</div></>}</section>
-          <section className="ff-filter-reference-section"><SectionHeading title="나이" icon={<IconCalendarLine />} /><SnapRange label="나이" value={ageRange} max={20} step={1} unit="살" ticks={[0, 5, 10, 15, 20]} onChange={setAgeRange} icon={<IconCalendarLine />} /></section>
-          <section className="ff-filter-reference-section"><SectionHeading title="체중" icon={<IconCheckmarkScaleLine />} /><SnapRange label="체중" value={weightRange} max={50} step={1} unit="kg" ticks={[0, 10, 20, 30, 40, 50]} onChange={setWeightRange} icon={<IconCheckmarkScaleLine />} /></section>
+          <section className="ff-filter-reference-section"><SectionHeading title="나이" icon={<IconCalendarLine />} /><SnapRange label="나이" point={agePoint} max={20} unit="살" ticks={[0, 5, 10, 15, 20]} onChange={point => { setAgePoint(point); setAgeRange(point === 0 ? [0, 20] : [0, point - 1]); }} icon={<IconCalendarLine />} /></section>
+          <section className="ff-filter-reference-section"><SectionHeading title="체중" icon={<IconCheckmarkScaleLine />} /><SnapRange label="체중" point={weightPoint} max={50} unit="kg" ticks={[0, 10, 20, 30, 40, 50]} onChange={point => { setWeightPoint(point); setWeightRange(point === 0 ? [0, 50] : [0, point - 1]); }} icon={<IconCheckmarkScaleLine />} /></section>
           <section className="ff-filter-reference-section"><SectionHeading title="성별" icon={<IconMalesymbolFemalesymbolLine />} /><div className="ff-filter-choice-grid">{options.sex.map(value => <button type="button" key={value} className="ff-filter-choice" data-selected={sex.includes(value) || undefined} onClick={() => { setSex(value === "미상" ? [] : [value]); }}><span className={`ff-filter-choice-icon ff-filter-sex-icon is-${value === "수컷" ? "male" : value === "암컷" ? "female" : "unknown"}`} aria-hidden>{sexIcon(value)}</span><span>{humanize(value)}</span></button>)}</div></section>
           <section className="ff-filter-reference-section"><SectionHeading title="중성화 여부" icon={<IconCheckmarkLine />} /><div className="ff-filter-choice-grid">{[["yes", "중성화 완료"], ["no", "중성화 안 됨"]].map(([value, label]) => <button type="button" key={value} className="ff-filter-choice" data-selected={neutered.includes(label) || undefined} onClick={() => setNeutered(neutered.includes(label) ? [] : [label])}><span className="ff-filter-choice-icon" aria-hidden>✓</span><span>{label}</span></button>)}</div></section>
         </>}

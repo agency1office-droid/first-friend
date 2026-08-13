@@ -83,7 +83,12 @@ with calculated as (
     and (p_size_group is null or a.size_group = p_size_group)
     and (not p_multiple_photos or a.has_multiple_photos)
     and (not p_exact_location or a.has_exact_location)
-    and (p_max_distance_meters is null or c.calculated_distance <= p_max_distance_meters)
+       and (p_max_distance_meters is null or
+            (6371000.0 * 2.0 * asin(sqrt(
+              power(sin(radians(a.shelter_lat - p_lat) / 2.0), 2)
+              + cos(radians(p_lat)) * cos(radians(a.shelter_lat))
+              * power(sin(radians(a.shelter_lng - p_lng) / 2.0), 2)
+            ))) <= p_max_distance_meters)
 ), filtered as (
   select *
   from calculated c

@@ -400,7 +400,8 @@ export async function syncAnimalImages(limit = 40) {
 export async function syncPublicAnimals() {
   await ensureTables();
   const supabase = getSupabaseServerClient(), startedAt = new Date().toISOString(), syncId = crypto.randomUUID();
-  await supabase.from("public_sync_state").upsert({ id: "public-animals", status: "running", last_started_at: startedAt, item_count: 0, page_count: 0, message: "" }, { onConflict: "id" });
+  const { error: startStateError } = await supabase.from("public_sync_state").upsert({ id: "public-animals", status: "running", last_started_at: startedAt, item_count: 0, page_count: 0, message: "" }, { onConflict: "id" });
+  if (startStateError) throw startStateError;
   try {
     const sheltersResult = await fetchAll<ShelterItem>(SHELTER_ENDPOINT);
     const animalsResult = await fetchAll<AnimalItem>(ANIMAL_ENDPOINT);
@@ -418,7 +419,8 @@ export async function syncPublicAnimals() {
     if (deactivateError) throw deactivateError;
     const archive = await compactExpiredAnimals(supabase, completedAt);
     const pages = sheltersResult.pages + animalsResult.pages;
-    await supabase.from("public_sync_state").update({ status: "complete", last_completed_at: completedAt, item_count: animalRows.length, page_count: pages, message: "" }).eq("id", "public-animals");
+    const { error: completeStateError } = await supabase.from("public_sync_state").update({ status: "complete", last_completed_at: completedAt, item_count: animalRows.length, page_count: pages, message: "" }).eq("id", "public-animals");
+    if (completeStateError) throw completeStateError;
     return { count: animalRows.length, pages, syncedAt: completedAt, archive };
   } catch (error) {
     await supabase.from("public_sync_state").update({ status: "failed", message: error instanceof Error ? error.message.slice(0, 500) : "동기화 실패" }).eq("id", "public-animals");

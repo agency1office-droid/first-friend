@@ -52,6 +52,8 @@ let runningSync: Promise<{ count: number; pages: number; syncedAt: string }> | n
 let activeAnimalsCache: { at: number; rows: StoredAnimal[] } | null = null;
 let activeAnimalsInFlight: Promise<StoredAnimal[]> | null = null;
 const ACTIVE_ANIMALS_CACHE_MS = 60 * 1000;
+const STORED_DETAIL_CACHE_MS = 60 * 1000;
+const storedAnimalDetailCache = new Map<string, { at: number; data?: Animal }>();
 const LIST_ANIMAL_COLUMNS = "id,name,species,breed,up_kind_cd,kind_cd,age,age_group,sex,region,shelter_id,shelter_name,shelter_address,shelter_phone,shelter_lat,shelter_lng,approximate_shelter_location,updated,updated_at,image_1,image_2,image_1_storage,image_2_storage,colors_json,traits_json,summary,health_json,life_json,match_reason,process_state,active,last_seen_sync,synced_at,size_group,has_multiple_photos,has_exact_location,color_search,public_phase";
 const STORAGE_BUCKET = "animal-images";
 type StoredAnimalWithImages = StoredAnimal & { image_1_storage?: string | null; image_2_storage?: string | null };
@@ -335,6 +337,7 @@ async function writeAnimals(rows: AnimalRecord[]) {
     if (error) throw error;
   }
   activeAnimalsCache = null;
+  for (const row of rows) storedAnimalDetailCache.delete(String(row.id));
 }
 
 function storagePathFromUrl(value: string) {
@@ -396,6 +399,7 @@ async function compactExpiredAnimals(supabase: ReturnType<typeof getSupabaseServ
     if (compactError) throw compactError;
   }
   activeAnimalsCache = null;
+  for (const row of expired) storedAnimalDetailCache.delete(String(row.id));
   return { deleted: deletable.length, compacted: retained.length };
 }
 
@@ -494,6 +498,7 @@ export async function syncAnimalImages(limit = 100) {
         const { error: updateError } = await supabase.from("public_animals").update(update).eq("id", row.row.id);
         if (updateError) throw updateError;
         if (row.storageUrl && row.storageUrl !== mirroredImage) await removeStoredImage(supabase, row.storageUrl);
+        storedAnimalDetailCache.delete(String(row.row.id));
         const { error: completeError } = await supabase.from("animal_image_jobs").update({
           status: "completed", storage_url: mirroredImage, updated_at: new Date().toISOString(), last_error: "",
         }).eq("animal_id", row.row.id).eq("slot", row.slot).eq("source_url", row.sourceUrl);
@@ -841,13 +846,20 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
 
 export async function getStoredAnimalById(id: string) {
   await ensureTables();
+  const cached = storedAnimalDetailCache.get(id);
+  if (cached && Date.now() - cached.at < STORED_DETAIL_CACHE_MS) return cached.data;
   // 상세페이지는 목록에 필요한 컬럼만 읽습니다. 이미지 검증은 동기화 시점에
   // 끝내고, 사용자가 상세페이지를 열 때 원본 이미지를 다시 다운로드하지 않습니다.
   const { data, error } = await getSupabaseServerClient().from("public_animals").select(LIST_ANIMAL_COLUMNS).eq("id", id).limit(1);
-  if (error || !data?.[0]) return undefined;
+  if (error || !data?.[0]) {
+    storedAnimalDetailCache.set(id, { at: Date.now() });
+    return undefined;
+  }
   const animal = fromStored(storedAnimal(data[0] as Record<string, unknown>));
   const images = Array.from(new Set(animal.images || [animal.image].filter(Boolean)));
-  return { ...animal, image: images[0] || animal.image, images, photoCount: images.length };
+  const result = { ...animal, image: images[0] || animal.image, images, photoCount: images.length };
+  storedAnimalDetailCache.set(id, { at: Date.now(), data: result });
+  return result;
 }
 
 export async function getAnimalsByShelterId(shelterId: string, limit = 200) {

@@ -136,29 +136,12 @@ export async function getAnimalById(id: string) {
   if (stored) return stored;
   const cached = animalDetailCache.get(id);
   if (cached && Date.now() - cached.at < CACHE_MS) return cached.data || undefined;
-  // This is only a migration fallback for records not yet present in Supabase.
-  // Search a bounded batch in parallel; normal production traffic is served by
-  // the single Supabase lookup above.
-  if (key()) {
-    try {
-      const pages = await Promise.all(Array.from({ length: 10 }, (_, index) => request<AbandonedItem>(ABANDONED_API, 1000, index + 1)));
-      const match = pages.flat().find(item => item.desertionNo === id);
-      if (match) {
-        const [shelters] = await Promise.all([getShelters(1000)]);
-        const animal = mapAnimal(match, shelters);
-        if (animal) {
-          const images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
-          const result = { ...animal, image: images[0] || animal.image, images };
-          animalDetailCache.set(id, { at: Date.now(), data: result });
-          return result;
-        }
-      }
-    } catch { /* show the friendly unavailable state below */ }
-  }
+  // 공공 API 전체 검색은 상세 요청에서 실행하지 않습니다. 동기화 작업이
+  // public_animals를 채우고, 상세페이지는 그 결과만 빠르게 읽어야 합니다.
   const animal = fallbackAnimals.find((item) => item.id === id);
   animalDetailCache.set(id, { at: Date.now(), data: animal || null });
   if (!animal) return undefined;
-  const images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
+  const images = Array.from(new Set(animal.images || [animal.image].filter(Boolean)));
   return { ...animal, image: images[0] || animal.image, images };
 }
 

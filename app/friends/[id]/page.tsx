@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { getAnimalById } from "../../../lib/public-data";
 import { getAnimalPublicStatus } from "../../../lib/animal-public-status";
 import { Callout } from "seed-design/ui/callout";
@@ -13,19 +12,9 @@ import { AnimalFundraiserPanel } from "../../components/AnimalFundraiserPanel";
 import { ShelterLocationCard } from "../../components/ShelterLocationCard";
 import { AnimalDetailChromeBridge } from "../../components/AnimalDetailChromeBridge";
 
-export const dynamic = "force-dynamic";
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
-  const { id } = await params;
-  const animal = await getAnimalById(id);
-  return animal
-    ? { title: `${animal.name} 만나기`, description: animal.summary }
-    : {};
-}
+// 공개 동물 정보는 초 단위로 바뀌지 않으므로 반복 방문은 짧게 캐시합니다.
+// 즐겨찾기 등 사용자 상태는 기존 클라이언트 브리지에서 별도로 처리합니다.
+export const revalidate = 60;
 
 export default async function AnimalPage({
   params,

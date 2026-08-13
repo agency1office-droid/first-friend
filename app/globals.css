@@ -251,6 +251,8 @@ img { display: block; max-width: 100%; }
 .ff-loading-indicator { display: inline-grid; place-items: center; width: 24px; height: 24px; color: var(--seed-color-fg-brand); }
 .ff-loading-indicator span { width: 18px; height: 18px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: ff-loading-spin .7s linear infinite; }
 @keyframes ff-loading-spin { to { transform: rotate(360deg); } }
+.ff-detail-loading { min-height: 60vh; display: grid; place-items: center; color: var(--seed-color-fg-brand); }
+.ff-detail-loading-spinner { width: 28px; height: 28px; border: 3px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: ff-loading-spin .7s linear infinite; }
 .ff-all-filter-trigger { flex:none; min-width:40px; min-height:40px; padding-inline:10px!important; }
 .ff-all-filter-trigger[data-checked] { background:var(--seed-color-bg-brand-weak)!important; box-shadow:inset 0 0 0 1px var(--seed-color-stroke-brand-solid)!important; --seed-icon-color:var(--seed-color-fg-brand); }
 .ff-all-filter-count { display:grid; place-items:center; min-width:18px; height:18px; padding-inline:4px; border-radius:999px; background:var(--seed-color-bg-brand-solid); color:#fff; font-size:11px; font-weight:700; line-height:18px; }

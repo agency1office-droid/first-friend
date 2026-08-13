@@ -497,9 +497,12 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
 
 export async function getStoredAnimalById(id: string) {
   await ensureTables();
-  const { data, error } = await getSupabaseServerClient().from("public_animals").select("*").eq("id", id).limit(1);
+  // 상세페이지는 목록에 필요한 컬럼만 읽습니다. 이미지 검증은 동기화 시점에
+  // 끝내고, 사용자가 상세페이지를 열 때 원본 이미지를 다시 다운로드하지 않습니다.
+  const { data, error } = await getSupabaseServerClient().from("public_animals").select(LIST_ANIMAL_COLUMNS).eq("id", id).limit(1);
   if (error || !data?.[0]) return undefined;
-  const animal = fromStored(storedAnimal(data[0] as Record<string, unknown>)), images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
+  const animal = fromStored(storedAnimal(data[0] as Record<string, unknown>));
+  const images = Array.from(new Set(animal.images || [animal.image].filter(Boolean)));
   return { ...animal, image: images[0] || animal.image, images, photoCount: images.length };
 }
 

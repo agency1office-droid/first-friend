@@ -676,7 +676,14 @@ export async function getBreedCounts(options: BreedCountOptions = {}) {
 
 export async function getPublicRawFilterOptions() {
   const { data: facetData, error: facetError } = await getSupabaseServerClient().rpc("get_public_animal_filter_options");
-  if (!facetError && facetData && typeof facetData === "object") return facetData as Record<string, unknown>;
+  if (!facetError && facetData && typeof facetData === "object") {
+    const data = facetData as Record<string, unknown>;
+    const breeds = Array.isArray(data.breeds) ? data.breeds.map(item => {
+      const breed = item as Record<string, unknown>;
+      return { ...breed, species: breed.species === "고양이" || breed.species === "cat" ? "cat" : "dog" };
+    }) : [];
+    return { ...data, breeds };
+  }
 
   // 마이그레이션이 아직 적용되지 않은 환경에서만 기존 호환 경로를 사용합니다.
   const { data, error } = await getSupabaseServerClient().from("public_animals")

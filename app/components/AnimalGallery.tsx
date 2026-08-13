@@ -11,15 +11,17 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
   const dialogRef = useRef<HTMLDialogElement>(null);
   const active = available[selected] || image;
   const displayActive = optimizedAnimalImageUrl(active);
+  const nextImage = available[1] ? optimizedAnimalImageUrl(available[1]) : "";
 
   return <div className="ff-gallery">
+    {nextImage && <link rel="preload" as="image" href={nextImage} />}
     <button type="button" className="ff-gallery-main" onClick={() => dialogRef.current?.showModal()} aria-label={`${name} 사진 원본 크기로 보기`}>
-      <img className="ff-detail-image" src={displayActive} alt={`${name}의 공공데이터 등록 사진 ${selected + 1}`}/>
+      <img className="ff-detail-image" src={displayActive} alt={`${name}의 공공데이터 등록 사진 ${selected + 1}`} fetchPriority="high" decoding="async" referrerPolicy="no-referrer"/>
       <span className="ff-gallery-expand"><IconArrowUpRightLine/>원본 보기</span>
       {available.length > 1 && <span className="ff-gallery-count"><IconPictureLine/>사진 {available.length}장 · {selected + 1}/{available.length}</span>}
     </button>
     {available.length > 1 && <div className="ff-gallery-thumbs" aria-label={`${name}의 다른 사진`}>
-      {available.map((src, index) => <button type="button" key={src} data-active={index === selected} onClick={() => setSelected(index)} aria-label={`${available.length}장 중 ${index + 1}번째 사진 보기`} aria-pressed={index === selected}><img src={optimizedAnimalImageUrl(src)} alt="" loading={index < 2 ? "eager" : "lazy"}/><span>{index + 1}/{available.length}</span></button>)}
+      {available.map((src, index) => <button type="button" key={src} data-active={index === selected} onClick={() => setSelected(index)} aria-label={`${available.length}장 중 ${index + 1}번째 사진 보기`} aria-pressed={index === selected}><img src={optimizedAnimalImageUrl(src)} alt="" loading={index < 2 ? "eager" : "lazy"} fetchPriority={index < 2 ? "high" : "auto"} decoding="async" referrerPolicy="no-referrer"/><span>{index + 1}/{available.length}</span></button>)}
     </div>}
     <dialog ref={dialogRef} className="ff-image-dialog">
       <div className="ff-image-dialog-inner">

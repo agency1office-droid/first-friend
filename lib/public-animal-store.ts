@@ -5,6 +5,7 @@ import { distanceMeters } from "./geo";
 import { distinctAnimalImages } from "./animal-images";
 import { matchesAnimalPublicStatus } from "./animal-public-status";
 import { getSupabaseServerClient } from "./supabase/server";
+import sharp from "sharp";
 
 const ANIMAL_ENDPOINT = "https://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2";
 const SHELTER_ENDPOINT = "https://apis.data.go.kr/1543061/animalShelterSrvc_v2/shelterInfo_v2";
@@ -372,26 +373,31 @@ async function mirrorAnimalImage(supabase: ReturnType<typeof getSupabaseServerCl
   if (!response.ok) throw new Error(`이미지 원본 응답 오류 ${response.status}`);
   const contentType = (response.headers.get("content-type") || "image/jpeg").split(";")[0].toLowerCase();
   if (!contentType.startsWith("image/")) throw new Error("이미지 형식이 아닙니다.");
-  const body = await response.arrayBuffer();
-  if (body.byteLength > 10 * 1024 * 1024) throw new Error("이미지 용량이 10MB를 초과합니다.");
+  const sourceBody = await response.arrayBuffer();
+  if (sourceBody.byteLength > 10 * 1024 * 1024) throw new Error("이미지 원본이 10MB를 초과합니다.");
+  const body = await sharp(Buffer.from(sourceBody), { failOn: "none" })
+    .rotate()
+    .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 80, effort: 4 })
+    .toBuffer();
   const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sourceUrl)))].map(value => value.toString(16).padStart(2, "0")).join("").slice(0, 16);
-  const extension = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
-  const path = `public/${id}/${slot}-${digest}.${extension}`;
-  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, body, { contentType, cacheControl: "31536000", upsert: false });
+  const path = `public/${id}/${slot}-${digest}.webp`;
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, body, { contentType: "image/webp", cacheControl: "31536000", upsert: false });
   if (error && !/already exists|duplicate/i.test(error.message)) throw error;
   return supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
-export async function syncAnimalImages(limit = 40) {
+export async function syncAnimalImages(limit = 100) {
   const supabase = getSupabaseServerClient();
   const { data: rows, error } = await supabase.from("public_animals")
     .select("id,image_1,image_2,image_1_storage,image_2_storage")
     .eq("active", true)
-    .or("image_1_storage.is.null,image_1_storage.eq.")
     .limit(Math.max(1, Math.min(limit, 100)));
   if (error) throw error;
   let mirrored = 0, failed = 0;
-  for (const row of rows || []) {
+  const pending = (rows || []).filter(row => (!row.image_1_storage && row.image_1) || (!row.image_2_storage && row.image_2));
+  for (const group of chunks(pending, 8)) {
+    await Promise.all(group.map(async row => {
     try {
       const image1 = row.image_1_storage || await mirrorAnimalImage(supabase, String(row.id), 1, String(row.image_1 || ""));
       const image2 = row.image_2 ? (row.image_2_storage || await mirrorAnimalImage(supabase, String(row.id), 2, String(row.image_2))) : "";
@@ -406,8 +412,9 @@ export async function syncAnimalImages(limit = 40) {
     } catch {
       failed += 1;
     }
+    }));
   }
-  return { scanned: rows?.length || 0, mirrored, failed };
+  return { scanned: rows?.length || 0, pending: pending.length, mirrored, failed };
 }
 
 export async function syncPublicAnimals() {

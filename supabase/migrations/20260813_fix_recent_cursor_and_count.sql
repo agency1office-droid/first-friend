@@ -60,7 +60,7 @@ with calculated as (
     p_cursor_updated_at is null
     or c.updated_at < p_cursor_updated_at
     or (c.updated_at = p_cursor_updated_at and c.id > coalesce(p_cursor_id, ''))
-  )))
+  ))
 ), counted as (
   select f.*, count(*) over () as result_count
   from filtered f

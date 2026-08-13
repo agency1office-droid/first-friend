@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IconChevronDownLine } from "@karrotmarket/react-monochrome-icon";
 import { Icon } from "@seed-design/react";
 import { ActionButton } from "seed-design/ui/action-button";
 import { BottomSheetBody, BottomSheetContent, BottomSheetFooter, BottomSheetRoot, BottomSheetTrigger } from "seed-design/ui/bottom-sheet";
 import { Chip } from "seed-design/ui/chip";
+import { LoadingIndicator } from "./LoadingIndicator";
 import type { AnimalFeedFilters } from "./useAnimalFeed";
 import { AllAnimalFilters } from "./AllAnimalFilters";
 
@@ -17,7 +18,17 @@ function SimpleOptionSheet({ title, description, value, options, active, onChang
   return <BottomSheetRoot open={open} onOpenChange={setOpen}><BottomSheetTrigger asChild><Chip.Button className="ff-animal-filter-chip" variant="outlineWeak" size="medium" data-checked={active || undefined}><Chip.Label>{title === "정렬 기준" ? value === "recent" ? "최근 등록순" : "가까운 순" : "보호 단계"}</Chip.Label><Chip.SuffixIcon><Icon svg={<IconChevronDownLine />} /></Chip.SuffixIcon></Chip.Button></BottomSheetTrigger><BottomSheetContent title={title} description={description}><BottomSheetBody className="ff-status-filter-body"><div className="ff-status-options" role="listbox" aria-label={title}>{options.map(([optionValue, label, optionDescription]) => <button className="ff-status-option" type="button" key={optionValue} role="option" aria-selected={value === optionValue} onClick={() => { onChange(optionValue); setOpen(false); }}><span><strong>{label}</strong><small>{optionDescription}</small></span>{value === optionValue && <b aria-hidden>✓</b>}</button>)}</div></BottomSheetBody>{active && <BottomSheetFooter><ActionButton variant="neutralWeak" onClick={() => { onReset(); setOpen(false); }}>선택 해제</ActionButton></BottomSheetFooter>}</BottomSheetContent></BottomSheetRoot>;
 }
 
+function ColorFilterSheet({ value, onChange, onReset }: { value: string; onChange: (value: string) => void; onReset: () => void }) {
+  const [open, setOpen] = useState(false), [colors, setColors] = useState<string[]>([]);
+  useEffect(() => {
+    if (!open || colors.length) return;
+    fetch("/api/animal-filter-options").then(response => response.json()).then(body => setColors(Array.isArray(body.colors) ? body.colors : []));
+  }, [colors.length, open]);
+  const loading = open && colors.length === 0;
+  return <BottomSheetRoot open={open} onOpenChange={setOpen}><BottomSheetTrigger asChild><Chip.Button className="ff-animal-filter-chip" variant="outlineWeak" size="medium" data-checked={value !== "all" || undefined}><Chip.Label>털색</Chip.Label><Chip.SuffixIcon><Icon svg={<IconChevronDownLine />} /></Chip.SuffixIcon></Chip.Button></BottomSheetTrigger><BottomSheetContent title="털색" description="공공데이터에 등록된 털색으로 찾아볼 수 있어요."><BottomSheetBody className="ff-status-filter-body">{loading ? <LoadingIndicator label="털색을 불러오는 중" /> : <div className="ff-status-options" role="listbox" aria-label="털색">{colors.map(color => <button className="ff-status-option" type="button" key={color} role="option" aria-selected={value === color} onClick={() => { onChange(color); setOpen(false); }}><span><strong>{color}</strong></span>{value === color && <b aria-hidden>✓</b>}</button>)}</div>}</BottomSheetBody>{value !== "all" && <BottomSheetFooter><ActionButton variant="neutralWeak" onClick={() => { onReset(); setOpen(false); }}>선택 해제</ActionButton></BottomSheetFooter>}</BottomSheetContent></BottomSheetRoot>;
+}
+
 export function AnimalFilterBar({ filters, hasLocation, activeCount, setFilter, resetFilters }: { filters: AnimalFeedFilters; location: { lat: number; lng: number } | null; hasLocation: boolean; activeCount: number; setFilter: <K extends keyof AnimalFeedFilters>(key: K, value: AnimalFeedFilters[K]) => void; resetFilters: () => void }) {
   const sortValue = hasLocation ? filters.sort : "recent";
-  return <div className="ff-animal-filter-wrap" aria-label="보호동물 목록 필터"><div className="ff-animal-filter-scroll"><AllAnimalFilters activeCount={activeCount} filters={filters} setFilter={setFilter} resetFilters={resetFilters}/><SimpleOptionSheet title="정렬 기준" description="가까운 보호소 또는 최근 등록된 순서로 볼 수 있어요." value={sortValue} options={sortOptions} active={sortValue === "recent"} onChange={value => setFilter("sort", value as AnimalFeedFilters["sort"])} onReset={() => setFilter("sort", "distance")}/><SimpleOptionSheet title="보호 단계" description="현재 보호 절차에 따라 친구를 골라볼 수 있어요." value={filters.publicStatus} options={statusOptions} active={filters.publicStatus !== "all"} onChange={value => setFilter("publicStatus", value as AnimalFeedFilters["publicStatus"])} onReset={() => setFilter("publicStatus", "all")}/>{activeCount > 0 && <Chip.Button className="ff-animal-filter-reset" variant="outlineWeak" size="medium" onClick={resetFilters}><Chip.Label>전체 초기화</Chip.Label></Chip.Button>}</div></div>;
+  return <div className="ff-animal-filter-wrap" aria-label="보호동물 목록 필터"><div className="ff-animal-filter-scroll"><AllAnimalFilters activeCount={activeCount} filters={filters} setFilter={setFilter} resetFilters={resetFilters}/><ColorFilterSheet value={filters.color} onChange={value => setFilter("color", value)} onReset={() => setFilter("color", "all")}/><SimpleOptionSheet title="정렬 기준" description="가까운 보호소 또는 최근 등록된 순서로 볼 수 있어요." value={sortValue} options={sortOptions} active={sortValue === "recent"} onChange={value => setFilter("sort", value as AnimalFeedFilters["sort"])} onReset={() => setFilter("sort", "distance")}/><SimpleOptionSheet title="보호 단계" description="현재 보호 절차에 따라 친구를 골라볼 수 있어요." value={filters.publicStatus} options={statusOptions} active={filters.publicStatus !== "all"} onChange={value => setFilter("publicStatus", value as AnimalFeedFilters["publicStatus"])} onReset={() => setFilter("publicStatus", "all")}/>{activeCount > 0 && <Chip.Button className="ff-animal-filter-reset" variant="outlineWeak" size="medium" onClick={resetFilters}><Chip.Label>전체 초기화</Chip.Label></Chip.Button>}</div></div>;
 }

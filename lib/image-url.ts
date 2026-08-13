@@ -21,3 +21,22 @@ export function optimizedAnimalDetailPreviewUrl(value: string) {
   // reserved for list thumbnails and must not sit in the detail-page path.
   return normalized;
 }
+
+/**
+ * Resolve the larger image served by the official animal information site.
+ * The public API image is intentionally a 400x300 preview; keep this URL out
+ * of the initial page load and use it only after the user opens the viewer.
+ */
+export function originalAnimalImageUrl(value: string) {
+  const normalized = value.trim().replace(/^http:\/\//i, "https://");
+  try {
+    const url = new URL(normalized);
+    const marker = "/files/";
+    const markerIndex = url.pathname.indexOf(marker);
+    if (url.hostname.toLowerCase() !== "openapi.animal.go.kr" || markerIndex < 0) return normalized;
+    const filePath = url.pathname.slice(markerIndex);
+    return "https://www.animal.go.kr/front/fileMng/imageView.do?f=" + encodeURIComponent(filePath);
+  } catch {
+    return normalized;
+  }
+}

@@ -14,7 +14,7 @@ const PAGE_SIZE = 1000;
 const MAX_PAGES = 50;
 const MAX_LOST_PAGES = 200;
 const API_RETRY_COUNT = 3;
-const SYNC_INTERVAL_MS = 15 * 60 * 1000;
+const STALE_DATA_MS = 48 * 60 * 60 * 1000;
 const STALE_SYNC_MS = 30 * 60 * 1000;
 const ARCHIVE_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -49,7 +49,6 @@ const regionCenters: Record<string, [number, number]> = {
   서울: [37.5665, 126.978], 부산: [35.1796, 129.0756], 대구: [35.8714, 128.6014], 인천: [37.4563, 126.7052], 광주: [35.1595, 126.8526], 대전: [36.3504, 127.3845], 울산: [35.5384, 129.3114], 세종: [36.4801, 127.289], 경기: [37.275, 127.009], 강원: [37.8854, 127.7298], 충북: [36.6357, 127.4917], 충남: [36.6588, 126.6728], 전북: [35.8202, 127.1089], 전남: [34.8161, 126.4629], 경북: [36.5759, 128.5056], 경남: [35.2383, 128.6924], 제주: [33.4996, 126.5312],
 };
 
-let runningSync: Promise<{ count: number; pages: number; syncedAt: string }> | null = null;
 let activeAnimalsCache: { at: number; rows: StoredAnimal[] } | null = null;
 let activeAnimalsInFlight: Promise<StoredAnimal[]> | null = null;
 const ACTIVE_ANIMALS_CACHE_MS = 60 * 1000;
@@ -418,24 +417,14 @@ async function syncPublicAnimalsUnlocked() {
   }
 }
 
-export async function ensurePublicAnimals(options: { allowSync?: boolean } = {}) {
-  const allowSync = options.allowSync !== false;
-  const schemaChanged = await ensureTables();
+export async function ensurePublicAnimals(_options: { allowSync?: boolean } = {}) {
+  await ensureTables();
   const supabase = getSupabaseServerClient();
   const { data: states } = await supabase.from("public_sync_state").select("*").eq("id", "public-animals").limit(1);
   const state = states?.[0] as ((typeof publicSyncState.$inferSelect) & SyncStateRow | undefined);
-  if (!allowSync) return state;
-  const { data: existingRows } = await supabase.from("public_animals").select("id").eq("active", true).limit(1);
-  const existing = existingRows?.[0];
-  const completed = state?.lastCompletedAt ? new Date(state.lastCompletedAt).getTime() : state?.last_completed_at ? new Date(state.last_completed_at).getTime() : 0;
-  if (existing && !schemaChanged && Date.now() - completed < SYNC_INTERVAL_MS) return state;
-  if (!runningSync) runningSync = syncPublicAnimals().finally(() => { runningSync = null; });
-  // 저장 데이터가 있으면 즉시 응답하고 뒤에서 갱신해 화면을 50초씩 막지 않습니다.
-  if (existing && !schemaChanged) { void runningSync.catch(() => undefined); return state; }
-  await runningSync;
-  const { data: nextRows } = await supabase.from("public_sync_state").select("*").eq("id", "public-animals").limit(1);
-  const next = nextRows?.[0] as (typeof publicSyncState.$inferSelect | undefined);
-  return next;
+  // 보호소 데이터 갱신은 Vercel Cron에서 하루 한 번만 수행합니다.
+  // 페이지 요청에서는 저장된 DB 상태만 읽고 공공 API를 호출하지 않습니다.
+  return state;
 }
 
 function fromStored(row: StoredAnimal): Animal {
@@ -695,7 +684,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
         ? { distanceMeters: Number.isFinite(Number(last.distance_meters)) ? Number(last.distance_meters) : 1e15, id: String(last.id) }
         : { updatedAt: String(last.updated_at || ""), id: String(last.id) }) : null;
       const completedAt = syncCompletedAt(state as SyncStateRow | undefined);
-      return { items, total, nextCursor, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= SYNC_INTERVAL_MS * 2 };
+      return { items, total, nextCursor, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= STALE_DATA_MS };
     }
     // 검색 RPC 장애 때 10,000건을 읽어 서버에서 다시 필터링하지 않습니다.
     // 대량 fallback은 장애 상황에서 메모리와 응답 시간을 폭증시킬 수 있습니다.
@@ -722,7 +711,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
   const items = pageItems;
   const nextOffset = offset + items.length;
   const completedAt = syncCompletedAt(state as SyncStateRow | undefined);
-  return { items, total: prepared.length, nextCursor: nextOffset < prepared.length ? nextOffset.toString(36) : null, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= SYNC_INTERVAL_MS * 2 };
+  return { items, total: prepared.length, nextCursor: nextOffset < prepared.length ? nextOffset.toString(36) : null, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= STALE_DATA_MS };
 }
 
 export async function getStoredAnimalById(id: string) {

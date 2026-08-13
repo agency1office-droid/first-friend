@@ -4,9 +4,8 @@ import { useState } from "react";
 import { IconPawprintLine } from "@karrotmarket/react-monochrome-icon";
 import { optimizedAnimalImageUrl, optimizedAnimalThumbnailUrl } from "../../lib/image-url";
 
-// 공공 API 주소는 동기화 전까지 호스트가 고정되지 않을 수 있어
-// next/image 대신 브라우저의 lazy loading을 사용합니다. 공공 API 이미지는
-// /api/media 프록시를 거쳐 CDN 캐시되고, Storage 이미지는 직접 캐시됩니다.
+// 공공 API 이미지 주소를 브라우저가 직접 로드하므로 next/image 대신
+// 브라우저의 lazy loading을 사용합니다.
 /* eslint-disable @next/next/no-img-element */
 
 export function AnimalThumbnail({ src, alt, priority = false, thumbnail = false }: { src: string; alt: string; priority?: boolean; thumbnail?: boolean }) {

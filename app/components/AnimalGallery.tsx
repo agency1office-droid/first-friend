@@ -91,6 +91,19 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
     }
   }
 
+  useEffect(() => {
+    function handlePageKeyDown(event: KeyboardEvent) {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select")) return;
+      event.preventDefault();
+      const direction = event.key === "ArrowLeft" ? -1 : 1;
+      setSelected((current) => Math.max(0, Math.min(current + direction, available.length - 1)));
+    }
+    window.addEventListener("keydown", handlePageKeyDown);
+    return () => window.removeEventListener("keydown", handlePageKeyDown);
+  }, [available.length]);
+
   function handleClick() {
     if (suppressClick.current) {
       suppressClick.current = false;

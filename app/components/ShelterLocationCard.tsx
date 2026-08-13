@@ -41,8 +41,10 @@ export function ShelterLocationCard({
 }: {
   jsKey: string; name: string; lat: number; lng: number; approximate?: boolean;
 }) {
+  const sectionRef = useRef<HTMLElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const [home, setHome] = useState<HomeLocation | null>(null);
+  const [visible, setVisible] = useState(false);
   const [mapFailed, setMapFailed] = useState(!jsKey);
   const [driveRoute, setDriveRoute] = useState<{ key: string; durationSeconds: number } | null>(null);
   const meters = useMemo(() => home ? distanceMeters(home, { lat, lng }) : null, [home, lat, lng]);
@@ -51,7 +53,25 @@ export function ShelterLocationCard({
 
   useEffect(() => { void Promise.resolve().then(() => setHome(readHomeLocation())); }, []);
   useEffect(() => {
-    if (!home) return;
+    const element = sectionRef.current;
+    if (!element || typeof IntersectionObserver === "undefined") {
+      setVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "600px" },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!visible || !home) return;
     const controller = new AbortController();
     const params = new URLSearchParams({
       originLat: String(home.lat),
@@ -68,9 +88,9 @@ export function ShelterLocationCard({
       })
       .catch(() => undefined);
     return () => controller.abort();
-  }, [driveRouteKey, home, lat, lng]);
+  }, [driveRouteKey, home, lat, lng, visible]);
   useEffect(() => {
-    if (!mapRef.current || !jsKey) return;
+    if (!visible || !mapRef.current || !jsKey) return;
     let active = true;
     void loadKakaoMaps(jsKey).then((maps) => {
       if (!active || !mapRef.current) return;
@@ -79,12 +99,12 @@ export function ShelterLocationCard({
       new maps.Marker({ map, position: shelterPoint, title: name });
     }).catch(() => { if (active) setMapFailed(true); });
     return () => { active = false; };
-  }, [jsKey, lat, lng, name]);
+  }, [jsKey, lat, lng, name, visible]);
 
   const mapHref = `https://map.kakao.com/link/map/${encodeURIComponent(name)},${lat},${lng}`;
   const routeHref = `https://map.kakao.com/link/to/${encodeURIComponent(name)},${lat},${lng}`;
   const staticMapHref = `/api/maps/static?lat=${lat}&lng=${lng}`;
-  return <section className="ff-shelter-location" id="shelter-contact">
+  return <section ref={sectionRef} className="ff-shelter-location" id="shelter-contact">
     <p className="ff-shelter-distance-summary" aria-live="polite">
       {meters !== null
         ? `우리 동네에서 약 ${formatDistance(meters)}${driveDurationSeconds !== null ? ` · 차로 약 ${formatDrivingDuration(driveDurationSeconds)}` : ""}`

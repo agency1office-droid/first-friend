@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { IconMetroFrontsideLine } from "@karrotmarket/react-monochrome-icon";
 import { formatDistance } from "../../lib/geo";
 
@@ -44,8 +44,30 @@ function stationPresentation(value: string) {
 
 export function NearbyTransitRow({ lat, lng }: { lat: number; lng: number }) {
   const [station, setStation] = useState<Station | null>(null);
+  const [visible, setVisible] = useState(false);
+  const anchorRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    const element = anchorRef.current;
+    if (!element || typeof IntersectionObserver === "undefined") {
+      setVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "600px" },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!visible) return;
     const controller = new AbortController();
     const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
     void fetch(`/api/maps/nearby-transit?${params}`, { signal: controller.signal })
@@ -53,9 +75,9 @@ export function NearbyTransitRow({ lat, lng }: { lat: number; lng: number }) {
       .then((result) => setStation(result?.station || null))
       .catch(() => undefined);
     return () => controller.abort();
-  }, [lat, lng]);
+  }, [lat, lng, visible]);
 
-  if (!station) return null;
+  if (!station) return <span ref={anchorRef} aria-hidden="true" />;
   const presentation = stationPresentation(station.name);
   const content = <strong className="ff-transit-station">
     <span>{presentation.stationName}</span>
@@ -63,11 +85,14 @@ export function NearbyTransitRow({ lat, lng }: { lat: number; lng: number }) {
     {station.distanceMeters !== null && <span className="ff-transit-distance">· {formatDistance(station.distanceMeters)}</span>}
   </strong>;
 
-  return <div className="ff-shelter-transit-row">
+  return <>
+    <span ref={anchorRef} aria-hidden="true" />
+    <div className="ff-shelter-transit-row">
     <IconMetroFrontsideLine aria-hidden="true"/>
     <span>대중교통</span>
     {station.url
       ? <a href={station.url} target="_blank" rel="noreferrer" aria-label={`${station.name} 카카오맵에서 보기, 새 창`}>{content}</a>
       : content}
-  </div>;
+    </div>
+  </>;
 }

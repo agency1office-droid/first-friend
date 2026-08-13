@@ -33,7 +33,6 @@ function FeedLoadingState() {
       <span className="ff-skeleton ff-skeleton-photo" />
       <span className="ff-feed-loading-copy"><span className="ff-skeleton ff-skeleton-line ff-skeleton-line-short" /><span className="ff-skeleton ff-skeleton-line" /><span className="ff-skeleton ff-skeleton-line ff-skeleton-line-medium" /></span>
     </div>)}
-    <span className="ff-feed-loading-label">가까운 보호동물을 불러오고 있어요…</span>
   </div>;
 }
 

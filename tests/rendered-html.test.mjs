@@ -204,6 +204,13 @@ test("keeps public sync jobs resumable and prevents duplicate lost-animal upsert
   assert.match(store, /Math\.max\(100, Math\.min\(workLimit \* 4, 400\)\)/);
 });
 
+test("keeps the nearby feed continuous without manual pagination copy", async () => {
+  const nearby = await readFile(new URL("../app/components/NearbyAnimalFeed.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(nearby, /친구 더 보기/);
+  assert.doesNotMatch(nearby, /현재 확인 가능한 친구를 모두 봤어요/);
+  assert.match(nearby, /IntersectionObserver/);
+});
+
 test("portals bottom sheets outside sticky navigation containers", async () => {
   const [source, css] = await Promise.all([
     readFile(new URL("../seed-design/ui/bottom-sheet.tsx", import.meta.url), "utf8"),

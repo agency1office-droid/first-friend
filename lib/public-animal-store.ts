@@ -447,12 +447,15 @@ export async function syncAnimalImages(limit = 100) {
   if (syncStates?.[0]?.status === "running") {
     return { scanned: 0, pending: 0, mirrored: 0, failed: 0, skipped: "보호소 동물 동기화가 아직 진행 중입니다." };
   }
+  const workLimit = Math.max(1, Math.min(limit, 100));
   const { data: rows, error } = await supabase.from("public_animals")
     .select("id,image_1,image_2,image_1_storage,image_2_storage")
     .eq("active", true)
     .or("image_1_storage.is.null,image_2_storage.is.null,image_1_storage.not.ilike.*.webp*,image_2_storage.not.ilike.*.webp*")
     .order("id", { ascending: true })
-    .limit(Math.max(1, Math.min(limit, 100)));
+    // 실패한 앞쪽 항목이 일시적으로 재시도 대기 중이어도
+    // 뒤쪽 이미지가 계속 진행되도록 후보를 넓게 읽습니다.
+    .limit(Math.max(100, Math.min(workLimit * 4, 400)));
   if (error) throw error;
   let mirrored = 0, failed = 0;
   const rawCandidates = (rows || []).flatMap(row => [
@@ -474,6 +477,7 @@ export async function syncAnimalImages(limit = 100) {
     const job = jobMap.get(`${item.row.id}:${item.slot}:${item.sourceUrl}`);
     return !job || !job.next_attempt_at || new Date(job.next_attempt_at).getTime() <= now;
   });
+  const work = pending.slice(0, workLimit);
   const newJobs = candidates.filter(item => !jobMap.has(`${item.row.id}:${item.slot}:${item.sourceUrl}`));
   if (newJobs.length) {
     const { error: queueError } = await supabase.from("animal_image_jobs").insert(newJobs.map(item => ({
@@ -482,7 +486,7 @@ export async function syncAnimalImages(limit = 100) {
     })));
     if (queueError) throw queueError;
   }
-  for (const group of chunks(pending, 8)) {
+  for (const group of chunks(work, 8)) {
     await Promise.all(group.map(async row => {
       const jobKey = `${row.row.id}:${row.slot}:${row.sourceUrl}`;
       const previousAttempts = Number(jobMap.get(jobKey)?.attempt_count || 0);
@@ -516,7 +520,7 @@ export async function syncAnimalImages(limit = 100) {
       }
     }));
   }
-  return { scanned: rows?.length || 0, pending: pending.length, mirrored, failed };
+  return { scanned: rows?.length || 0, pending: work.length, mirrored, failed };
   });
 }
 
@@ -686,6 +690,7 @@ async function syncPublicLostAnimalsUnlocked() {
   } catch { checkpoint = null; }
   const syncId = checkpoint?.syncId || crypto.randomUUID();
   let page = checkpoint?.nextPage || 1, count = checkpoint?.count || 0, total = checkpoint?.total || 0, pages = Math.max(0, page - 1);
+  const seenIds = new Set<string>();
   const dateParams = { bgnde: startDate, endde: endDate };
   const writeState = async (status: string, message: string) => {
     const { error } = await supabase.from("public_sync_state").upsert({ id: "public-lost-animals", status, last_started_at: syncedAt, item_count: count, page_count: pages, message }, { onConflict: "id" });
@@ -700,7 +705,10 @@ async function syncPublicLostAnimalsUnlocked() {
       const uniqueRows = new Map<string, ReturnType<typeof mapLostAnimal>>();
       current.forEach((item, index) => {
         const row = mapLostAnimal(item, (page - 1) * 100 + index, syncedAt);
-        if (row) uniqueRows.set(row.id, row);
+        if (row && !seenIds.has(row.id)) {
+          seenIds.add(row.id);
+          uniqueRows.set(row.id, row);
+        }
       });
       const rows = [...uniqueRows.values()].map(row => ({
         id: row!.id, legacy_id: row!.legacyId || "", species: row!.species, breed: row!.breed, sex: row!.sex, age: row!.age,

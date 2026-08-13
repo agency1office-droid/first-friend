@@ -193,6 +193,17 @@ test("uses the official public breed catalogue and stable breed codes", async ()
   assert.match(filter, /matchesPublicBreedSearch/);
 });
 
+test("keeps public sync jobs resumable and prevents duplicate lost-animal upserts", async () => {
+  const store = await readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8");
+  const lostSync = store.slice(store.indexOf("async function syncPublicLostAnimalsUnlocked"), store.indexOf("function storedLostAnimal"));
+  assert.match(lostSync, /nextPage/);
+  assert.match(lostSync, /JSON\.parse\(String\(state\?\.message/);
+  assert.match(lostSync, /const seenIds = new Set<string>\(\)/);
+  assert.match(lostSync, /!seenIds\.has\(row\.id\)/);
+  assert.match(store, /const workLimit = Math\.max\(1, Math\.min\(limit, 100\)\)/);
+  assert.match(store, /Math\.max\(100, Math\.min\(workLimit \* 4, 400\)\)/);
+});
+
 test("portals bottom sheets outside sticky navigation containers", async () => {
   const [source, css] = await Promise.all([
     readFile(new URL("../seed-design/ui/bottom-sheet.tsx", import.meta.url), "utf8"),

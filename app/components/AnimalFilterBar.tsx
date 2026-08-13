@@ -12,6 +12,7 @@ import { SegmentedControl, SegmentedControlItem } from "seed-design/ui/segmented
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
 import type { AnimalFeedFilters } from "./useAnimalFeed";
 import { AllAnimalFilters } from "./AllAnimalFilters";
+import { matchesPublicBreedSearch } from "../../lib/public-breed-search";
 
 type BreedOption = { key: string; kindNm: string; species: "dog" | "cat"; count: number };
 
@@ -108,8 +109,7 @@ function BreedFilterSheet({ filters, location, onApply }: {
     return () => controller.abort();
   }, [filters.publicStatus, filters.sex, location, open]);
   const shown = useMemo(() => {
-    const word = query.trim().toLocaleLowerCase("ko-KR");
-    return items.filter(item => (draftSpecies === "all" || item.species === draftSpecies) && (!word || item.kindNm.toLocaleLowerCase("ko-KR").includes(word)));
+    return items.filter(item => (draftSpecies === "all" || item.species === draftSpecies) && matchesPublicBreedSearch(item.kindNm, query));
   }, [draftSpecies, items, query]);
   const speciesCounts = useMemo(() => ({ cat: items.filter(item => item.species === "cat").length, dog: items.filter(item => item.species === "dog").length }), [items]);
   const shownAnimalCount = useMemo(() => shown.reduce((sum, item) => sum + item.count, 0), [shown]);

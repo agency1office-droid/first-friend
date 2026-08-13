@@ -172,10 +172,12 @@ test("replaces species tabs with actionable shelter-distance animal filters", as
 });
 
 test("uses the official public breed catalogue and stable breed codes", async () => {
-  const [catalogue, route, schema] = await Promise.all([
+  const [catalogue, route, schema, search, filter] = await Promise.all([
     readFile(new URL("../lib/public-breeds.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/breeds/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/public-breed-search.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/AnimalFilterBar.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(catalogue, /abandonmentPublicService_v2\/kind_v2/);
   assert.match(catalogue, /up_kind_cd/);
@@ -186,6 +188,9 @@ test("uses the official public breed catalogue and stable breed codes", async ()
   assert.match(route, /countCache/);
   assert.match(schema, /upKindCd: text\("up_kind_cd"\)/);
   assert.match(schema, /kindCd: text\("kind_cd"\)/);
+  assert.match(search, /진도개/);
+  assert.match(search, /진도견/);
+  assert.match(filter, /matchesPublicBreedSearch/);
 });
 
 test("portals bottom sheets outside sticky navigation containers", async () => {

@@ -395,12 +395,13 @@ export async function syncAnimalImages(limit = 100) {
     .limit(Math.max(1, Math.min(limit, 100)));
   if (error) throw error;
   let mirrored = 0, failed = 0;
-  const pending = (rows || []).filter(row => (!row.image_1_storage && row.image_1) || (!row.image_2_storage && row.image_2));
+  const optimized = (value: unknown) => typeof value === "string" && /\.webp(?:\?|$)/i.test(value);
+  const pending = (rows || []).filter(row => (!optimized(row.image_1_storage) && row.image_1) || (!optimized(row.image_2_storage) && row.image_2));
   for (const group of chunks(pending, 8)) {
     await Promise.all(group.map(async row => {
     try {
-      const image1 = row.image_1_storage || await mirrorAnimalImage(supabase, String(row.id), 1, String(row.image_1 || ""));
-      const image2 = row.image_2 ? (row.image_2_storage || await mirrorAnimalImage(supabase, String(row.id), 2, String(row.image_2))) : "";
+      const image1 = optimized(row.image_1_storage) ? row.image_1_storage : await mirrorAnimalImage(supabase, String(row.id), 1, String(row.image_1 || ""));
+      const image2 = row.image_2 ? (optimized(row.image_2_storage) ? row.image_2_storage : await mirrorAnimalImage(supabase, String(row.id), 2, String(row.image_2))) : "";
       const update: Record<string, string> = {};
       if (image1) update.image_1_storage = image1;
       if (image2) update.image_2_storage = image2;

@@ -70,7 +70,7 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
     <button type="button" className="ff-gallery-main" onClick={handleClick} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} aria-label={`${name} 사진 ${selected + 1}번째, 좌우로 움직여 다른 사진 보기`}>
       <span className="ff-gallery-viewport" aria-live="polite">
         <span className="ff-gallery-track" style={{ transform: `translate3d(calc(${selected * -100}% + ${dragOffset}px), 0, 0)`, transition: dragging ? "none" : "transform 220ms ease-out" }}>
-          {available.map((src, index) => <span className="ff-gallery-slide" key={src}><img className="ff-detail-image" src={imageSource(src)} onError={(event) => handleImageError(src, event.currentTarget.currentSrc)} alt={`${name}의 공공데이터 등록 사진 ${index + 1}`} fetchPriority={index < 2 ? "high" : "auto"} decoding="async" referrerPolicy="no-referrer" draggable="false"/></span>)}
+          {available.map((src, index) => <span className="ff-gallery-slide" key={src}><img className="ff-detail-image" src={imageSource(src)} onError={(event) => handleImageError(src, event.currentTarget.currentSrc)} alt={`${name}의 공공데이터 등록 사진 ${index + 1}`} fetchPriority={index < 2 ? "high" : "auto"} loading={index < 2 ? "eager" : "lazy"} decoding="async" referrerPolicy="no-referrer" draggable="false"/></span>)}
         </span>
       </span>
       {available.length > 1 && <span className="ff-gallery-count">{selected + 1}/{available.length}</span>}

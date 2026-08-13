@@ -14,6 +14,7 @@ const MAX_PAGES = 50;
 const MAX_LOST_PAGES = 200;
 const API_RETRY_COUNT = 3;
 const SYNC_INTERVAL_MS = 15 * 60 * 1000;
+const STALE_SYNC_MS = 30 * 60 * 1000;
 const ARCHIVE_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 
 type Envelope<T> = { response?: { header?: { resultCode?: string; resultMsg?: string }; body?: { items?: { item?: T | T[] }; totalCount?: number | string } } };
@@ -452,10 +453,26 @@ async function removeStoredImage(supabase: ReturnType<typeof getSupabaseServerCl
 export async function syncAnimalImages(limit = 100) {
   return withSyncLock("animal-images", async () => {
   const supabase = getSupabaseServerClient();
-  const { data: syncStates, error: syncStateError } = await supabase.from("public_sync_state").select("status").eq("id", "public-animals").limit(1);
+  const { data: syncStates, error: syncStateError } = await supabase.from("public_sync_state").select("status,item_count,last_started_at,last_completed_at").eq("id", "public-animals").limit(1);
   if (syncStateError) throw syncStateError;
-  if (syncStates?.[0]?.status === "running") {
+  const publicState = syncStates?.[0];
+  const startedAt = publicState?.last_started_at ? new Date(String(publicState.last_started_at)).getTime() : NaN;
+  const startedInFuture = Number.isFinite(startedAt) && startedAt - Date.now() > 5 * 60 * 1000;
+  const staleRunning = publicState?.status === "running" && (
+    !Number.isFinite(startedAt) ||
+    Date.now() - startedAt > STALE_SYNC_MS ||
+      (startedInFuture && Boolean(publicState?.last_completed_at) && Number(publicState.item_count || 0) === 0)
+  );
+  if (publicState?.status === "running" && !staleRunning) {
     return { scanned: 0, pending: 0, mirrored: 0, failed: 0, skipped: "보호소 동물 동기화가 아직 진행 중입니다." };
+  }
+  if (staleRunning) {
+    const recoveryStatus = publicState?.last_completed_at ? "complete" : "failed";
+    const { error: recoveryError } = await supabase.from("public_sync_state").update({
+      status: recoveryStatus,
+      message: "중단된 동기화 상태를 자동 복구했습니다.",
+    }).eq("id", "public-animals").eq("status", "running");
+    if (recoveryError) throw recoveryError;
   }
   const workLimit = Math.max(1, Math.min(limit, 100));
   const { data: rows, error } = await supabase.from("public_animals")

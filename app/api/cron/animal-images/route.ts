@@ -12,6 +12,12 @@ export async function GET(request: Request) {
   if (!authorized(request)) return Response.json({ error: "동기화 권한이 없습니다." }, { status: 403 });
   try {
     const result = await syncAnimalImages(100);
+    if ("skipped" in result) {
+      return Response.json({ ok: false, job: "animal-images", retryable: true, skipped: result.skipped }, {
+        status: 409,
+        headers: { "cache-control": "no-store", "x-sync-job": "animal-images", "x-sync-status": "skipped" },
+      });
+    }
     return Response.json({ ok: true, job: "animal-images", result, completedAt: new Date().toISOString() }, {
       headers: { "cache-control": "no-store", "x-sync-job": "animal-images", "x-sync-status": "complete" },
     });

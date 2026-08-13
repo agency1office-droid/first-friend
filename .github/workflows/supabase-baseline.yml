@@ -1,0 +1,28 @@
+name: Baseline existing Supabase schema
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Mark manually applied migrations as applied
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::Add the SUPABASE_DB_URL repository secret first."
+            exit 1
+          fi
+          for file in supabase/migrations/*.sql; do
+            version="$(basename "$file" | cut -d_ -f1)"
+            supabase migration repair "$version" --status applied --db-url "$SUPABASE_DB_URL"
+          done

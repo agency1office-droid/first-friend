@@ -163,12 +163,13 @@ img { display: block; max-width: 100%; }
 .ff-gallery-thumbs img, .ff-image-dialog-nav img { width: 100%; height: 100%; object-fit: cover; }
 .ff-image-dialog { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; padding: 0; border: 0; background: rgba(0,0,0,.94); }
 .ff-image-dialog::backdrop { background: rgba(0,0,0,.94); }
-.ff-image-dialog-inner { width: 100%; min-height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
-.ff-image-dialog-inner > img { width: 100%; height: calc(100dvh - 132px); object-fit: contain; }
-.ff-image-dialog-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 12px; color: #fff; }
+.ff-image-dialog-inner { position: relative; width: 100%; height: 100dvh; min-height: 0; overflow: hidden; overscroll-behavior: none; }
+.ff-image-dialog-inner > img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.ff-image-dialog-actions { position: absolute; z-index: 2; top: 12px; right: 12px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; color: #fff; }
 .ff-image-dialog-actions a, .ff-image-dialog-actions button { min-height: 42px; display: flex; align-items: center; gap: 5px; padding: 8px 11px; border: 0; border-radius: 999px; color: #fff; background: rgba(255,255,255,.14); font-size: 13px; }
 .ff-image-dialog-actions button { width: 42px; justify-content: center; }
-.ff-image-dialog-nav { display: flex; justify-content: center; gap: 8px; padding: 10px 12px 14px; overflow-x: auto; }
+.ff-image-dialog-nav { position: absolute; z-index: 2; right: 0; bottom: 22px; left: 0; display: flex; justify-content: center; gap: 8px; padding: 0 12px; overflow-x: auto; }
+html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-body { padding: 24px 16px 36px; }
 .ff-detail-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .ff-detail-name { margin: 4px 0 0; font-size: 28px; line-height: 36px; font-weight: 700; }

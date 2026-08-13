@@ -1,12 +1,13 @@
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { getSupabaseServerClient } from "../../../lib/supabase/server";
 import { clean, readJson } from "../_helpers";
-import { getLostAnimals, prioritizeLostAnimals } from "../../../lib/public-data";
+import { getStoredLostAnimals } from "../../../lib/public-animal-store";
+import { prioritizeLostAnimals } from "../../../lib/public-data";
 
 export async function GET(request: Request) {
   const homeRegion = new URL(request.url).searchParams.get("region") || "";
   try {
-    return Response.json({ animals: prioritizeLostAnimals(await getLostAnimals(1000), homeRegion) });
+    return Response.json({ animals: prioritizeLostAnimals(await getStoredLostAnimals(1000), homeRegion) });
   } catch {
     return Response.json({ error: "실종·발견 정보를 불러오지 못했어요.", animals: [] }, { status: 503 });
   }

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { getLostAnimals } from "../../../lib/public-data";
+import { getStoredLostAnimals } from "../../../lib/public-animal-store";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "실종 동물" };
 
 export default async function Page() {
-  const animals = await getLostAnimals(24);
+  const animals = await getStoredLostAnimals(24);
   return <div className="ff-page">
     <header className="ff-page-header">
       <div className="ff-kicker">공공 분실동물 정보 연동</div>

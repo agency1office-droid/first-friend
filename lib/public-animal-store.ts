@@ -1,5 +1,6 @@
 import type { publicAnimals, publicShelters, publicSyncState } from "../db/schema";
 import type { Animal } from "./data";
+import type { LostAnimal } from "./public-data";
 import { distanceMeters } from "./geo";
 import { distinctAnimalImages } from "./animal-images";
 import { matchesAnimalPublicStatus } from "./animal-public-status";
@@ -7,6 +8,7 @@ import { getSupabaseServerClient } from "./supabase/server";
 
 const ANIMAL_ENDPOINT = "https://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2";
 const SHELTER_ENDPOINT = "https://apis.data.go.kr/1543061/animalShelterSrvc_v2/shelterInfo_v2";
+const LOSS_ENDPOINT = "https://apis.data.go.kr/1543061/lossInfoService/lossInfo";
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 50;
 const SYNC_INTERVAL_MS = 15 * 60 * 1000;
@@ -14,6 +16,7 @@ const ARCHIVE_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 
 type Envelope<T> = { response?: { header?: { resultCode?: string; resultMsg?: string }; body?: { items?: { item?: T | T[] }; totalCount?: number | string } } };
 type AnimalItem = { desertionNo?: string; happenDt?: string; kindFullNm?: string; upKindCd?: string; upKindNm?: string; kindCd?: string; kindNm?: string; colorCd?: string; age?: string; weight?: string; noticeNo?: string; noticeSdt?: string; noticeEdt?: string; popfile1?: string; popfile2?: string; processState?: string; sexCd?: string; neuterYn?: string; specialMark?: string; careRegNo?: string; careNm?: string; careTel?: string; careAddr?: string; orgNm?: string; updTm?: string };
+type LossItem = { happenDt?: string; happenAddr?: string; happenPlace?: string; orgNm?: string; popfile?: string; kindCd?: string; sexCd?: string; age?: string; colorCd?: string; specialMark?: string; rfidCd?: string };
 type ShelterItem = { careRegNo?: string; careNm?: string; orgNm?: string; careAddr?: string; careTel?: string; weekOprStime?: string; weekOprEtime?: string; closeDay?: string; lat?: string; lng?: string };
 type ShelterRecord = typeof publicShelters.$inferInsert;
 type AnimalRecord = typeof publicAnimals.$inferInsert;
@@ -58,6 +61,15 @@ function sex(value = "") { return value === "M" ? "수컷" : value === "F" ? "�
 function species(item: AnimalItem) { return item.upKindNm || item.kindFullNm?.match(/^\[([^\]]+)/)?.[1] || "기타"; }
 function supported(value: string) { return /고양이|개|강아지/.test(value) && !/기타/.test(value); }
 function ageGroup(value = ""): Animal["ageGroup"] { if (value.includes("60일미만")) return "어린 친구"; const born = Number(value.match(/(19|20)\d{2}/)?.[0]); if (!born) return "나이 미상"; return new Date().getFullYear() - born <= 1 ? "어린 친구" : "어른 친구"; }
+function lostSpecies(value = "") { const text = value.trim().toLocaleLowerCase("ko-KR"); if (/고양이|묘|러시안\s*블루|랙돌|페르시안|샴|스코티시|메인쿤|먼치킨|스핑크스/.test(text)) return "고양이"; if (/견|강아지|^개$|말티즈|푸들|포메라니안|비숑|치와와|시츄|진돗개|리트리버|스피츠|테리어|불독|닥스훈트|비글|웰시코기/.test(text)) return "강아지"; return "기타"; }
+function lostSex(value = "") { return value === "M" ? "수컷" : value === "F" ? "암컷" : "미상"; }
+function lostDate(value = "") { return value.replace(/\.0$/, "") || "발생일 미상"; }
+function mapLostAnimal(item: LossItem, index: number, syncedAt: string) {
+  const id = item.rfidCd?.trim() || `${item.happenDt || "loss"}-${index}`;
+  const species = lostSpecies(item.kindCd);
+  if (!item.popfile || species === "기타") return null;
+  return { id, legacyId: `${item.happenDt || "loss"}-${index}`, species, breed: item.kindCd || "품종 미상", sex: lostSex(item.sexCd), age: item.age || "나이 미상", color: item.colorCd || "털색 미상", happenedAt: lostDate(item.happenDt), region: item.orgNm || "지역 미상", address: item.happenAddr || "", place: `${item.orgNm || item.happenAddr?.split(" ").slice(0, 2).join(" ") || "관할 지역"} 인근 · 상세 위치 비공개`, description: item.specialMark || "등록된 특징이 없습니다.", image: secureImage(item.popfile), active: true, synced_at: syncedAt };
+}
 function displayName(item: AnimalItem) { return [item.kindNm || species(item), item.noticeNo?.split("-").at(-1)].filter(Boolean).join(" · "); }
 function validPoint(lat: number, lng: number) { return Number.isFinite(lat) && Number.isFinite(lng) && lat > 30 && lat < 40 && lng > 120 && lng < 135; }
 function jsonArray(value: string) { try { const result = JSON.parse(value); return Array.isArray(result) ? result.map(String) : []; } catch { return []; } }
@@ -493,6 +505,38 @@ export async function getPublicRawFilterOptions() {
   const sorted = (set: Set<string>) => [...set].sort((a, b) => a.localeCompare(b, "ko-KR"));
   const breeds = [...sets.breeds.values()].map(item => ({ ...item, count: breedCounts[item.key]?.count || 0 })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "ko-KR"));
   return { species: sorted(sets.species), breeds, sex: sorted(sets.sex), colors: sorted(sets.colors), ages: sorted(sets.ages), weights: sorted(sets.weights), states: sorted(sets.states), regions: sorted(sets.regions) };
+}
+
+export async function syncPublicLostAnimals() {
+  const supabase = getSupabaseServerClient(), syncedAt = new Date().toISOString(), syncId = crypto.randomUUID();
+  const result = await fetchAll<LossItem>(LOSS_ENDPOINT);
+  if (!result.complete) throw new Error(`실종 동물 전체 수집이 완료되지 않았습니다. ${result.items.length}/${result.total}`);
+  const rows = result.items.map((item, index) => mapLostAnimal(item, index, syncedAt)).filter((item): item is NonNullable<ReturnType<typeof mapLostAnimal>> => Boolean(item)).map(row => ({ ...row, last_seen_sync: syncId }));
+  for (const group of chunks(rows, 500)) {
+    const { error } = await supabase.from("public_lost_animals").upsert(group, { onConflict: "id" });
+    if (error) throw error;
+  }
+  const { error: deactivateError } = await supabase.from("public_lost_animals").update({ active: false, synced_at: syncedAt }).neq("last_seen_sync", syncId).eq("active", true);
+  if (deactivateError) throw deactivateError;
+  const cutoff = new Date(Date.now() - ARCHIVE_RETENTION_MS).toISOString();
+  const { error: cleanupError } = await supabase.from("public_lost_animals").delete().eq("active", false).lt("synced_at", cutoff);
+  if (cleanupError) throw cleanupError;
+  return { count: rows.length, pages: result.pages, syncedAt };
+}
+
+export async function getStoredLostAnimals(limit = 12): Promise<LostAnimal[]> {
+  const safeLimit = Math.min(1000, Math.max(1, limit));
+  const { data, error } = await getSupabaseServerClient().from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image").eq("active", true).order("happened_at", { ascending: false }).limit(safeLimit);
+  if (error) throw error;
+  return (data || []).map(row => ({ id: String(row.id), legacyId: String(row.legacy_id || ""), species: String(row.species), breed: String(row.breed), sex: String(row.sex), age: String(row.age), color: String(row.color), happenedAt: String(row.happened_at), region: String(row.region), address: String(row.address || ""), place: String(row.place || ""), description: String(row.description || ""), image: String(row.image || "") }));
+}
+
+export async function getStoredLostAnimalById(id: string) {
+  const { data, error } = await getSupabaseServerClient().from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image").eq("active", true).eq("id", id).limit(1);
+  if (error) throw error;
+  const row = data?.[0];
+  if (!row) return undefined;
+  return { id: String(row.id), legacyId: String(row.legacy_id || ""), species: String(row.species), breed: String(row.breed), sex: String(row.sex), age: String(row.age), color: String(row.color), happenedAt: String(row.happened_at), region: String(row.region), address: String(row.address || ""), place: String(row.place || ""), description: String(row.description || ""), image: String(row.image || "") };
 }
 
 export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {

@@ -1,4 +1,4 @@
-import { syncPublicAnimals } from "../../../../lib/public-animal-store";
+import { syncPublicAnimals, syncPublicLostAnimals } from "../../../../lib/public-animal-store";
 
 function authorized(request: Request) {
   const expected = (process.env.CRON_SECRET || process.env.PUBLIC_DATA_SYNC_TOKEN)?.trim();
@@ -9,7 +9,8 @@ function authorized(request: Request) {
 export async function GET(request: Request) {
   if (!authorized(request)) return Response.json({ error: "동기화 권한이 없습니다." }, { status: 403 });
   try {
-    return Response.json(await syncPublicAnimals(), { headers: { "cache-control": "no-store" } });
+    const [animals, lostAnimals] = await Promise.all([syncPublicAnimals(), syncPublicLostAnimals()]);
+    return Response.json({ animals, lostAnimals }, { headers: { "cache-control": "no-store" } });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "동기화하지 못했어요." }, { status: 503 });
   }

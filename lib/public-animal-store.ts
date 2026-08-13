@@ -264,35 +264,6 @@ async function syncAnimalPages(shelterMap: Map<string, ShelterRecord>, syncId: s
   return { count, pages: Math.max(1, page - 1), total, complete: total === 0 || fetched >= total };
 }
 
-async function fetchAllLostAnimals(): Promise<FetchAllResult<LossItem>> {
-  const items: LossItem[] = [];
-  const seenPages = new Set<string>();
-  const pageSize = 100;
-  let page = 1;
-  let total = 0;
-  const now = new Date();
-  const endDate = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(now.getUTCDate()).padStart(2, "0")}`;
-  const start = new Date(now);
-  start.setUTCFullYear(start.getUTCFullYear() - 1);
-  const startDate = `${start.getUTCFullYear()}${String(start.getUTCMonth() + 1).padStart(2, "0")}${String(start.getUTCDate()).padStart(2, "0")}`;
-  const dateParams = { bgnde: startDate, endde: endDate };
-  let reachedEnd = false;
-  while (page <= MAX_LOST_PAGES) {
-    const result = await fetchPageWithRetry<LossItem>(LOSS_ENDPOINT, page, pageSize, dateParams);
-    const current = result.items.filter(Boolean);
-    const fingerprint = JSON.stringify(current);
-    if (!current.length || seenPages.has(fingerprint)) { reachedEnd = true; break; }
-    seenPages.add(fingerprint);
-    items.push(...current);
-    total = result.total;
-    if (items.length >= total) { reachedEnd = true; break; }
-    page += 1;
-    // 분실동물 API는 totalCount를 279로 반환하면서 실제 페이지는
-    // 176건에서 끝내는 경우가 있어, 빈 페이지를 실제 종료 신호로 사용합니다.
-  }
-  return { items, pages: Math.max(1, page - 1), total, complete: reachedEnd && items.length > 0 };
-}
-
 function mapShelter(item: ShelterItem, syncedAt: string): ShelterRecord | null {
   if (!item.careRegNo && !item.careNm) return null;
   const rawLat = Number(item.lat), rawLng = Number(item.lng), exact = validPoint(rawLat, rawLng);
@@ -677,47 +648,65 @@ export async function syncPublicLostAnimals() {
 }
 
 async function syncPublicLostAnimalsUnlocked() {
-  const supabase = getSupabaseServerClient(), syncedAt = new Date().toISOString(), syncId = crypto.randomUUID();
-  const result = await fetchAllLostAnimals();
-  if (!result.complete) throw new Error(`실종 동물 전체 수집이 완료되지 않았습니다. ${result.items.length}/${result.total}`);
-  const mappedRows = result.items
-    .map((item, index) => mapLostAnimal(item, index, syncedAt))
-    .filter((item): item is NonNullable<ReturnType<typeof mapLostAnimal>> => Boolean(item))
-    .map(row => ({
-      id: row.id,
-      legacy_id: row.legacyId || "",
-      species: row.species,
-      breed: row.breed,
-      sex: row.sex,
-      age: row.age,
-      color: row.color,
-      happened_at: row.happenedAt,
-      region: row.region,
-      address: row.address,
-      place: row.place,
-      description: row.description,
-      image: row.image,
-      active: true,
-      last_seen_sync: syncId,
-      synced_at: syncedAt,
-    }));
-  // The public API can return the same report more than once across pages.
-  // Postgres rejects an upsert batch when two rows target the same conflict key.
-  // Keep the last representation of each report ID so one sync cannot fail
-  // because of upstream pagination duplicates.
-  const uniqueRows = new Map<string, (typeof mappedRows)[number]>();
-  for (const row of mappedRows) uniqueRows.set(row.id, row);
-  const rows = [...uniqueRows.values()];
-  for (const group of chunks(rows, 500)) {
-    const { error } = await supabase.from("public_lost_animals").upsert(group, { onConflict: "id" });
+  const supabase = getSupabaseServerClient(), syncedAt = new Date().toISOString();
+  const now = new Date(), endDate = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(now.getUTCDate()).padStart(2, "0")}`;
+  const start = new Date(now); start.setUTCFullYear(start.getUTCFullYear() - 1);
+  const startDate = `${start.getUTCFullYear()}${String(start.getUTCMonth() + 1).padStart(2, "0")}${String(start.getUTCDate()).padStart(2, "0")}`;
+  type Checkpoint = { syncId: string; startDate: string; endDate: string; nextPage: number; count: number; total: number; updatedAt: string; error?: string };
+  const { data: state } = await supabase.from("public_sync_state").select("status,message,last_started_at").eq("id", "public-lost-animals").maybeSingle();
+  let checkpoint: Checkpoint | null = null;
+  try {
+    const parsed = JSON.parse(String(state?.message || "")) as Checkpoint;
+    if (parsed.syncId && parsed.startDate === startDate && parsed.endDate === endDate && parsed.nextPage > 0 && Date.now() - new Date(String(state?.last_started_at || 0)).getTime() < 24 * 60 * 60 * 1000) checkpoint = parsed;
+  } catch { checkpoint = null; }
+  const syncId = checkpoint?.syncId || crypto.randomUUID();
+  let page = checkpoint?.nextPage || 1, count = checkpoint?.count || 0, total = checkpoint?.total || 0, pages = Math.max(0, page - 1);
+  const dateParams = { bgnde: startDate, endde: endDate };
+  const writeState = async (status: string, message: string) => {
+    const { error } = await supabase.from("public_sync_state").upsert({ id: "public-lost-animals", status, last_started_at: syncedAt, item_count: count, page_count: pages, message }, { onConflict: "id" });
     if (error) throw error;
+  };
+  try {
+    await writeState("running", JSON.stringify({ syncId, startDate, endDate, nextPage: page, count, total, updatedAt: syncedAt } satisfies Checkpoint));
+    while (page <= MAX_LOST_PAGES) {
+      const result = await fetchPageWithRetry<LossItem>(LOSS_ENDPOINT, page, 100, dateParams);
+      const current = result.items.filter(Boolean);
+      total = result.total;
+      const uniqueRows = new Map<string, ReturnType<typeof mapLostAnimal>>();
+      current.forEach((item, index) => {
+        const row = mapLostAnimal(item, (page - 1) * 100 + index, syncedAt);
+        if (row) uniqueRows.set(row.id, row);
+      });
+      const rows = [...uniqueRows.values()].map(row => ({
+        id: row!.id, legacy_id: row!.legacyId || "", species: row!.species, breed: row!.breed, sex: row!.sex, age: row!.age,
+        color: row!.color, happened_at: row!.happenedAt, region: row!.region, address: row!.address, place: row!.place,
+        description: row!.description, image: row!.image, active: true, last_seen_sync: syncId, synced_at: syncedAt,
+      }));
+      if (rows.length) {
+        const { error } = await supabase.from("public_lost_animals").upsert(rows, { onConflict: "id" });
+        if (error) throw error;
+        count += rows.length;
+      }
+      pages = page;
+      page += 1;
+      const done = !current.length || (total === 0 && current.length < 100) || (total > 0 && (page - 1) * 100 >= total);
+      const nextPage = current.length ? page : Math.max(1, page - 1);
+      await writeState("running", JSON.stringify({ syncId, startDate, endDate, nextPage, count, total, updatedAt: new Date().toISOString() } satisfies Checkpoint));
+      if (done) break;
+    }
+    if (page > MAX_LOST_PAGES + 1 || (total > 0 && (page - 1) * 100 < total)) throw new Error(`실종 동물 전체 수집이 완료되지 않았습니다. ${count}/${total}`);
+    const { error: deactivateError } = await supabase.from("public_lost_animals").update({ active: false, synced_at: syncedAt }).neq("last_seen_sync", syncId).eq("active", true);
+    if (deactivateError) throw deactivateError;
+    const cutoff = new Date(Date.now() - ARCHIVE_RETENTION_MS).toISOString();
+    const { error: cleanupError } = await supabase.from("public_lost_animals").delete().eq("active", false).lt("synced_at", cutoff);
+    if (cleanupError) throw cleanupError;
+    await supabase.from("public_sync_state").update({ status: "complete", last_completed_at: syncedAt, item_count: count, page_count: pages, message: "" }).eq("id", "public-lost-animals");
+    return { count, pages, syncedAt };
+  } catch (error) {
+    const message = error instanceof Error ? error.message.slice(0, 500) : "실종 동물 동기화 실패";
+    await writeState("failed", JSON.stringify({ syncId, startDate, endDate, nextPage: page, count, total, updatedAt: new Date().toISOString(), error: message } satisfies Checkpoint));
+    throw error;
   }
-  const { error: deactivateError } = await supabase.from("public_lost_animals").update({ active: false, synced_at: syncedAt }).neq("last_seen_sync", syncId).eq("active", true);
-  if (deactivateError) throw deactivateError;
-  const cutoff = new Date(Date.now() - ARCHIVE_RETENTION_MS).toISOString();
-  const { error: cleanupError } = await supabase.from("public_lost_animals").delete().eq("active", false).lt("synced_at", cutoff);
-  if (cleanupError) throw cleanupError;
-  return { count: rows.length, pages: result.pages, syncedAt };
 }
 
 function storedLostAnimal(row: Record<string, unknown>): LostAnimal {

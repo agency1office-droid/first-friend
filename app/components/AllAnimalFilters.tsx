@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PUBLIC_ANIMAL_AGE_MAX } from "../../lib/animal-filter-ranges";
-import { IconCalendarLine, IconCheckmarkScaleLine, IconChevronLeftLine, IconChevronDownLine, IconCheckmarkLine, IconMalesymbolFemalesymbolLine, IconNeedleScaleLine, IconPawprintLine, IconPerson2Line, IconPerson2OpenarmsLine, IconPersonFlowerLine, IconPersonLine, IconQuestionmarkCircleLine, IconSlider2HorizontalLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
+import { IconCalendarLine, IconCheckmarkScaleLine, IconChevronLeftLine, IconChevronDownLine, IconCheckmarkLine, IconClockLine, IconHeartLine, IconMalesymbolFemalesymbolLine, IconNeedleScaleLine, IconPawprintLine, IconPersonLine, IconSlider2HorizontalLine, IconSunLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import { Icon } from "@seed-design/react";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Checkbox } from "seed-design/ui/checkbox";
@@ -41,14 +41,14 @@ function SectionHeading({ title, action, count, icon }: { title: string; action?
   return <div className="ff-filter-section-heading">{icon && <span className="ff-filter-section-icon" aria-hidden>{icon}</span>}<h2>{title}</h2>{count && <span className="ff-filter-section-count">{count}</span>}{action}</div>;
 }
 
-const sexIcon = (value: string) => value === "수컷" ? <IconPersonLine aria-hidden /> : value === "암컷" ? <IconPersonFlowerLine aria-hidden /> : <IconQuestionmarkCircleLine aria-hidden />;
+const sexIcon = (value: string) => value === "수컷" ? "♂" : value === "암컷" ? "♀" : "?";
 const ageOptions = [
   ["young", "아기", "1살 이하"],
   ["adult", "성장기", "2~5살"],
   ["mature", "어른", "6~10살"],
   ["senior", "노령", "11살 이상"],
 ] as const;
-const ageIcon = (value: string) => value === "young" ? <IconPersonLine aria-hidden /> : value === "adult" ? <IconPerson2Line aria-hidden /> : value === "mature" ? <IconPerson2OpenarmsLine aria-hidden /> : <IconPersonFlowerLine aria-hidden />;
+const ageIcon = (value: string) => value === "young" ? <IconHeartLine aria-hidden /> : value === "adult" ? <IconSunLine aria-hidden /> : value === "mature" ? <IconPersonLine aria-hidden /> : <IconClockLine aria-hidden />;
 const sizeOptions = (species: AnimalFeedFilters["species"]) => species === "dog"
   ? [["small", "소형견"], ["medium", "중형견"], ["large", "대형견"], ["xlarge", "초대형견"]] as const
   : species === "cat"

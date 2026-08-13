@@ -304,6 +304,11 @@ img { display: block; max-width: 100%; }
 .ff-filter-sex-icon.is-female { color:#e879a9; }
 .ff-filter-sex-icon.is-unknown { color:var(--seed-color-fg-neutral-muted); }
 .ff-filter-sex-choice[data-selected] .ff-filter-sex-icon { color:var(--seed-color-fg-brand); }
+.ff-filter-age-icon { width:24px; height:24px; }
+.ff-filter-age-icon svg { stroke-width:1.8; }
+.ff-filter-sex-icon { width:auto; min-width:24px; height:28px; font-size:24px; font-weight:500; line-height:28px; color:var(--seed-color-fg-neutral-muted); }
+.ff-filter-sex-icon.is-male, .ff-filter-sex-icon.is-female { color:var(--seed-color-fg-neutral-muted); }
+.ff-filter-sex-choice[data-selected] .ff-filter-sex-icon.is-male, .ff-filter-sex-choice[data-selected] .ff-filter-sex-icon.is-female { color:var(--seed-color-fg-brand); }
 .ff-filter-choice.is-size { min-height:76px; }
 .ff-filter-range { padding:8px 2px 0; }.ff-filter-range-value { display:flex; align-items:center; gap:8px; min-height:36px; margin-bottom:8px; color:var(--seed-color-fg-brand); }.ff-filter-range-value span { display:grid; place-items:center; width:28px; height:28px; border-radius:50%; background:var(--seed-color-bg-brand-weak); }.ff-filter-range-value svg { width:18px; height:18px; }.ff-filter-range-value strong { font-size:15px; }.ff-filter-range-inputs{position:relative;display:grid;height:28px;align-items:center}.ff-filter-range-inputs input{grid-area:1/1;width:100%;height:5px;margin:0;accent-color:var(--seed-color-bg-brand-solid);cursor:pointer;background:transparent}.ff-filter-range-inputs input:last-child{pointer-events:none}.ff-filter-range-inputs input:last-child::-webkit-slider-thumb{pointer-events:auto}.ff-filter-range-inputs input:last-child::-moz-range-thumb{pointer-events:auto}
 .ff-filter-range input { width:100%; height:5px; margin:8px 0 10px; accent-color:var(--seed-color-bg-brand-solid); cursor:pointer; }

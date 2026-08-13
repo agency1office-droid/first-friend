@@ -3,11 +3,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
-import { optimizedAnimalImageUrl } from "../../lib/image-url";
-import { optimizedAnimalThumbnailUrl } from "../../lib/image-url";
+import { optimizedAnimalDetailPreviewUrl, optimizedAnimalImageUrl } from "../../lib/image-url";
 
 function ProgressiveAnimalImage({ src, fullSrc, alt, priority, onFullError }: { src: string; fullSrc: string; alt: string; priority: boolean; onFullError: (currentSrc: string) => void }) {
-  const thumbnailSrc = optimizedAnimalThumbnailUrl(src);
+  const thumbnailSrc = optimizedAnimalDetailPreviewUrl(src);
   const [fullReady, setFullReady] = useState(thumbnailSrc === fullSrc);
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
 

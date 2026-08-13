@@ -25,3 +25,10 @@ export function optimizedAnimalThumbnailUrl(value: string) {
     ? `/api/media/animal-thumbnail?url=${encodeURIComponent(normalized)}`
     : normalized;
 }
+
+export function optimizedAnimalDetailPreviewUrl(value: string) {
+  const normalized = value.trim().replace(/^http:\/\//i, "https://");
+  return isPublicAnimalImage(normalized) || isSupabaseStorageImage(normalized)
+    ? `/api/media/animal-thumbnail?variant=detail&url=${encodeURIComponent(normalized)}`
+    : normalized;
+}

@@ -55,9 +55,7 @@ let activeAnimalsInFlight: Promise<StoredAnimal[]> | null = null;
 const ACTIVE_ANIMALS_CACHE_MS = 60 * 1000;
 const STORED_DETAIL_CACHE_MS = 60 * 1000;
 const storedAnimalDetailCache = new Map<string, { at: number; data?: Animal }>();
-const LIST_ANIMAL_COLUMNS = "id,name,species,breed,up_kind_cd,kind_cd,age,age_group,sex,region,shelter_id,shelter_name,shelter_address,shelter_phone,shelter_lat,shelter_lng,approximate_shelter_location,updated,updated_at,image_1,image_2,image_1_storage,image_2_storage,colors_json,traits_json,summary,health_json,life_json,match_reason,process_state,active,last_seen_sync,synced_at,size_group,has_multiple_photos,has_exact_location,color_search,public_phase";
-const STORAGE_BUCKET = "animal-images";
-type StoredAnimalWithImages = StoredAnimal & { image_1_storage?: string | null; image_2_storage?: string | null };
+const LIST_ANIMAL_COLUMNS = "id,name,species,breed,up_kind_cd,kind_cd,age,age_group,sex,region,shelter_id,shelter_name,shelter_address,shelter_phone,shelter_lat,shelter_lng,approximate_shelter_location,updated,updated_at,image_1,image_2,colors_json,traits_json,summary,health_json,life_json,match_reason,process_state,active,last_seen_sync,synced_at,size_group,has_multiple_photos,has_exact_location,color_search,public_phase";
 type SyncStateRow = { lastCompletedAt?: string | null; last_completed_at?: string | null };
 
 function apiKey() { return process.env.PUBLIC_DATA_API_KEY?.trim(); }
@@ -143,10 +141,8 @@ function storedAnimal(row: Record<string, unknown>) {
     shelterLat: row.shelter_lat ?? null,
     shelterLng: row.shelter_lng ?? null,
     approximateShelterLocation: row.approximate_shelter_location ?? true,
-    image1: row.image_1_storage || row.image_1 || "",
-    image2: row.image_2_storage || row.image_2 || "",
-    image_1_storage: row.image_1_storage ?? null,
-    image_2_storage: row.image_2_storage ?? null,
+    image1: row.image_1 || "",
+    image2: row.image_2 || "",
     colorsJson: row.colors_json ?? "[]",
     traitsJson: row.traits_json ?? "[]",
     healthJson: row.health_json ?? "[]",
@@ -350,31 +346,10 @@ async function writeAnimals(rows: AnimalRecord[]) {
   for (const row of rows) storedAnimalDetailCache.delete(String(row.id));
 }
 
-function storagePathFromUrl(value: string) {
-  if (!value) return "";
-  try {
-    const pathname = new URL(value).pathname;
-    const marker = `/storage/v1/object/public/${STORAGE_BUCKET}/`;
-    const index = pathname.indexOf(marker);
-    return index >= 0 ? decodeURIComponent(pathname.slice(index + marker.length)) : "";
-  } catch {
-    return "";
-  }
-}
-
-async function removeStoredAnimalImages(supabase: ReturnType<typeof getSupabaseServerClient>, rows: Array<Record<string, unknown>>) {
-  const paths = rows.flatMap(row => [row.image_1_storage, row.image_2_storage].map(value => storagePathFromUrl(String(value || "")))).filter(Boolean);
-  if (!paths.length) return;
-  for (const group of chunks(paths, 100)) {
-    const { error } = await supabase.storage.from(STORAGE_BUCKET).remove(group);
-    if (error) throw error;
-  }
-}
-
 async function compactExpiredAnimals(supabase: ReturnType<typeof getSupabaseServerClient>, now: string) {
   const cutoff = new Date(Date.now() - ARCHIVE_RETENTION_MS).toISOString();
   const { data: expired, error } = await supabase.from("public_animals")
-    .select("id,image_1_storage,image_2_storage")
+    .select("id")
     .eq("active", false)
     .lt("synced_at", cutoff)
     .limit(1000);
@@ -388,7 +363,6 @@ async function compactExpiredAnimals(supabase: ReturnType<typeof getSupabaseServ
   const deletable = expired.filter(row => !favoriteIds.has(String(row.id)));
   const retained = expired.filter(row => favoriteIds.has(String(row.id)));
 
-  await removeStoredAnimalImages(supabase, expired as Array<Record<string, unknown>>);
   if (deletable.length) {
     const { error: deleteError } = await supabase.from("public_animals").delete().in("id", deletable.map(row => String(row.id)));
     if (deleteError) throw deleteError;
@@ -397,8 +371,6 @@ async function compactExpiredAnimals(supabase: ReturnType<typeof getSupabaseServ
     const { error: compactError } = await supabase.from("public_animals").update({
       image_1: "",
       image_2: "",
-      image_1_storage: null,
-      image_2_storage: null,
       summary: "공공데이터 공고가 종료된 친구예요.",
       health_json: "[]",
       life_json: "[\"공고가 종료되어 현재 입양 가능 여부를 확인할 수 없어요.\"]",
@@ -411,154 +383,6 @@ async function compactExpiredAnimals(supabase: ReturnType<typeof getSupabaseServ
   activeAnimalsCache = null;
   for (const row of expired) storedAnimalDetailCache.delete(String(row.id));
   return { deleted: deletable.length, compacted: retained.length };
-}
-
-async function mirrorAnimalImage(supabase: ReturnType<typeof getSupabaseServerClient>, id: string, slot: number, sourceUrl: string) {
-  if (!sourceUrl) return "";
-  const response = await fetch(sourceUrl, { cache: "no-store", signal: AbortSignal.timeout(15000) });
-  if (!response.ok) throw new Error(`이미지 원본 응답 오류 ${response.status}`);
-  const contentType = (response.headers.get("content-type") || "image/jpeg").split(";")[0].toLowerCase();
-  // 공공 API 일부 이미지 서버는 실제 이미지인데도 content-type을
-  // application/octet-stream 또는 빈 값으로 응답합니다. 명시적으로
-  // HTML/JSON인 경우만 거부하고, 최종 형식 검증은 sharp가 담당합니다.
-  if (contentType.startsWith("text/") || contentType.includes("html") || contentType.includes("json")) {
-    throw new Error("이미지 형식이 아닙니다.");
-  }
-  const sourceBody = await response.arrayBuffer();
-  if (sourceBody.byteLength > 10 * 1024 * 1024) throw new Error("이미지 원본이 10MB를 초과합니다.");
-  const { default: sharp } = await import("sharp");
-  const sharpProcessor = sharp as unknown as (input: Buffer, options: { failOn: "none" }) => { rotate: () => { resize: (options: { width: number; height: number; fit: "inside"; withoutEnlargement: boolean }) => { webp: (options: { quality: number; effort: number }) => { toBuffer: () => Promise<Buffer> } } } };
-  let body: Buffer;
-  try {
-    body = await sharpProcessor(Buffer.from(sourceBody), { failOn: "none" })
-      .rotate()
-      .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
-      .webp({ quality: 80, effort: 4 })
-      .toBuffer();
-  } catch {
-    throw new Error("이미지 형식을 읽을 수 없습니다.");
-  }
-  const digest = await imageSourceDigest(sourceUrl);
-  const path = `public/${id}/${slot}-${digest}.webp`;
-  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, body, { contentType: "image/webp", cacheControl: "31536000", upsert: false });
-  if (error && !/already exists|duplicate/i.test(error.message)) throw error;
-  return supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;
-}
-
-async function imageSourceDigest(sourceUrl: string) {
-  return [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sourceUrl)))].map(value => value.toString(16).padStart(2, "0")).join("").slice(0, 16);
-}
-
-function isMirroredSource(storageUrl: unknown, sourceDigest: string) {
-  return typeof storageUrl === "string" && storageUrl.includes(`-${sourceDigest}.webp`);
-}
-
-async function removeStoredImage(supabase: ReturnType<typeof getSupabaseServerClient>, storageUrl: unknown) {
-  const path = storagePathFromUrl(String(storageUrl || ""));
-  if (!path) return;
-  const { error } = await supabase.storage.from(STORAGE_BUCKET).remove([path]);
-  if (error && !/not found|does not exist/i.test(error.message)) throw error;
-}
-
-export async function syncAnimalImages(limit = 100) {
-  return withSyncLock("animal-images", async () => {
-  const supabase = getSupabaseServerClient();
-  const { data: syncStates, error: syncStateError } = await supabase.from("public_sync_state").select("status,item_count,last_started_at,last_completed_at").eq("id", "public-animals").limit(1);
-  if (syncStateError) throw syncStateError;
-  const publicState = syncStates?.[0];
-  const startedAt = publicState?.last_started_at ? new Date(String(publicState.last_started_at)).getTime() : NaN;
-  const startedInFuture = Number.isFinite(startedAt) && startedAt - Date.now() > 5 * 60 * 1000;
-  const staleRunning = publicState?.status === "running" && (
-    !Number.isFinite(startedAt) ||
-    Date.now() - startedAt > STALE_SYNC_MS ||
-      (startedInFuture && Boolean(publicState?.last_completed_at) && Number(publicState.item_count || 0) === 0)
-  );
-  if (publicState?.status === "running" && !staleRunning) {
-    return { scanned: 0, pending: 0, mirrored: 0, failed: 0, skipped: "보호소 동물 동기화가 아직 진행 중입니다." };
-  }
-  if (staleRunning) {
-    const recoveryStatus = publicState?.last_completed_at ? "complete" : "failed";
-    const { error: recoveryError } = await supabase.from("public_sync_state").update({
-      status: recoveryStatus,
-      message: "중단된 동기화 상태를 자동 복구했습니다.",
-    }).eq("id", "public-animals").eq("status", "running");
-    if (recoveryError) throw recoveryError;
-  }
-  const workLimit = Math.max(1, Math.min(limit, 100));
-  const { data: rows, error } = await supabase.from("public_animals")
-    .select("id,image_1,image_2,image_1_storage,image_2_storage")
-    .eq("active", true)
-    .or("image_1_storage.is.null,image_2_storage.is.null,image_1_storage.not.ilike.*.webp*,image_2_storage.not.ilike.*.webp*")
-    .order("id", { ascending: true })
-    // 실패한 앞쪽 항목이 일시적으로 재시도 대기 중이어도
-    // 뒤쪽 이미지가 계속 진행되도록 후보를 넓게 읽습니다.
-    .limit(Math.max(100, Math.min(workLimit * 4, 400)));
-  if (error) throw error;
-  let mirrored = 0, failed = 0;
-  const rawCandidates = (rows || []).flatMap(row => [
-    { row, slot: 1, sourceUrl: String(row.image_1 || ""), storageUrl: row.image_1_storage },
-    { row, slot: 2, sourceUrl: String(row.image_2 || ""), storageUrl: row.image_2_storage },
-  ]).filter(item => item.sourceUrl);
-  const candidates = (await Promise.all(rawCandidates.map(async item => {
-    if (!item.storageUrl) return item;
-    const digest = await imageSourceDigest(item.sourceUrl);
-    return isMirroredSource(item.storageUrl, digest) ? null : item;
-  }))).filter((item): item is (typeof rawCandidates)[number] => Boolean(item));
-  const ids = Array.from(new Set(candidates.map(item => String(item.row.id))));
-  const { data: existingJobs } = ids.length
-    ? await supabase.from("animal_image_jobs").select("animal_id,slot,source_url,attempt_count,next_attempt_at").in("animal_id", ids)
-    : { data: [] };
-  const jobMap = new Map((existingJobs || []).map(job => [`${job.animal_id}:${job.slot}:${job.source_url}`, job]));
-  const now = Date.now();
-  const pending = candidates.filter(item => {
-    const job = jobMap.get(`${item.row.id}:${item.slot}:${item.sourceUrl}`);
-    return !job || !job.next_attempt_at || new Date(job.next_attempt_at).getTime() <= now;
-  });
-  const work = pending.slice(0, workLimit);
-  const newJobs = candidates.filter(item => !jobMap.has(`${item.row.id}:${item.slot}:${item.sourceUrl}`));
-  if (newJobs.length) {
-    const { error: queueError } = await supabase.from("animal_image_jobs").insert(newJobs.map(item => ({
-      animal_id: String(item.row.id), slot: item.slot, source_url: item.sourceUrl,
-      status: "pending", updated_at: new Date().toISOString(),
-    })));
-    if (queueError) throw queueError;
-  }
-  for (const group of chunks(work, 8)) {
-    await Promise.all(group.map(async row => {
-      const jobKey = `${row.row.id}:${row.slot}:${row.sourceUrl}`;
-      const previousAttempts = Number(jobMap.get(jobKey)?.attempt_count || 0);
-      const attemptCount = previousAttempts + 1;
-      const jobFilter = supabase.from("animal_image_jobs").update({
-        status: "processing", attempt_count: attemptCount, updated_at: new Date().toISOString(), last_error: "",
-      }).eq("animal_id", row.row.id).eq("slot", row.slot).eq("source_url", row.sourceUrl);
-      const { error: processingError } = await jobFilter;
-      if (processingError) throw processingError;
-      try {
-        const mirroredImage = await mirrorAnimalImage(supabase, String(row.row.id), row.slot, row.sourceUrl);
-        const update: Record<string, string> = row.slot === 1 ? { image_1_storage: mirroredImage } : { image_2_storage: mirroredImage };
-        const { error: updateError } = await supabase.from("public_animals").update(update).eq("id", row.row.id);
-        if (updateError) throw updateError;
-        if (row.storageUrl && row.storageUrl !== mirroredImage) await removeStoredImage(supabase, row.storageUrl);
-        storedAnimalDetailCache.delete(String(row.row.id));
-        const { error: completeError } = await supabase.from("animal_image_jobs").update({
-          status: "completed", storage_url: mirroredImage, updated_at: new Date().toISOString(), last_error: "",
-        }).eq("animal_id", row.row.id).eq("slot", row.slot).eq("source_url", row.sourceUrl);
-        if (completeError) throw completeError;
-        mirrored += 1;
-      } catch (error) {
-        const delayHours = Math.min(24, Math.max(1, 2 ** Math.min(attemptCount - 1, 4)));
-        await supabase.from("animal_image_jobs").update({
-          status: "failed", attempt_count: attemptCount,
-          next_attempt_at: new Date(Date.now() + delayHours * 60 * 60 * 1000).toISOString(),
-          last_error: error instanceof Error ? error.message.slice(0, 500) : "이미지 처리 실패",
-          updated_at: new Date().toISOString(),
-        }).eq("animal_id", row.row.id).eq("slot", row.slot).eq("source_url", row.sourceUrl);
-        failed += 1;
-      }
-    }));
-  }
-  return { scanned: rows?.length || 0, pending: work.length, mirrored, failed };
-  });
 }
 
 export async function syncPublicAnimals() {
@@ -615,8 +439,7 @@ export async function ensurePublicAnimals(options: { allowSync?: boolean } = {})
 }
 
 function fromStored(row: StoredAnimal): Animal {
-  const storageRow = row as StoredAnimalWithImages;
-  const images = [storageRow.image_1_storage || row.image1, storageRow.image_2_storage || row.image2].filter(Boolean);
+  const images = [row.image1, row.image2].filter(Boolean);
   return {
     id: row.id, name: row.name, species: row.species, breed: row.breed, upKindCd: row.upKindCd, kindCd: row.kindCd, age: row.age, ageGroup: ageGroup(row.age), sex: row.sex,
     region: row.region, shelter: row.shelterName, shelterId: row.shelterId || undefined, shelterAddress: row.shelterAddress || undefined,
@@ -841,7 +664,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
     const cursor = decodeSearchCursor(options.cursor);
     const sort = options.sort === "distance" && hasHome ? "distance" : "recent";
     const kindCodes = (options.breedKeys || []).map(value => value.split(":")[1]).filter(value => /^\d{6}$/.test(value));
-    const { data, error } = await getSupabaseServerClient().rpc("search_public_animals_with_storage", {
+    const { data, error } = await getSupabaseServerClient().rpc("search_public_animals", {
       p_limit: limit,
       p_cursor_updated_at: cursor?.updatedAt || null,
       p_cursor_id: cursor?.id || null,

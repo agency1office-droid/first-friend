@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   const { data, error } = await getSupabaseServerClient()
     .from("public_sync_state")
     .select("id,status,item_count,page_count,last_started_at,last_completed_at,message")
-    .in("id", ["public-animals", "public-lost-animals", "animal-images"])
+    .in("id", ["public-animals", "public-lost-animals"])
     .order("id");
   if (error) {
     console.error("[sync-status]", error.message);

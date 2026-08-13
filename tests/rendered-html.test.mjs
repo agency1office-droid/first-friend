@@ -197,15 +197,16 @@ test("uses the official public breed catalogue and stable breed codes", async ()
   assert.match(filter, /toLocaleLowerCase/);
 });
 
-test("keeps public sync jobs resumable and prevents duplicate lost-animal upserts", async () => {
+test("keeps public sync jobs resumable and uses direct public API image URLs", async () => {
   const store = await readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8");
   const lostSync = store.slice(store.indexOf("async function syncPublicLostAnimalsUnlocked"), store.indexOf("function storedLostAnimal"));
   assert.match(lostSync, /nextPage/);
   assert.match(lostSync, /JSON\.parse\(String\(state\?\.message/);
   assert.match(lostSync, /const seenIds = new Set<string>\(\)/);
   assert.match(lostSync, /!seenIds\.has\(row\.id\)/);
-  assert.match(store, /const workLimit = Math\.max\(1, Math\.min\(limit, 100\)\)/);
-  assert.match(store, /Math\.max\(100, Math\.min\(workLimit \* 4, 400\)\)/);
+  assert.doesNotMatch(store, /syncAnimalImages/);
+  assert.doesNotMatch(store, /animal_image_jobs/);
+  assert.doesNotMatch(store, /image_1_storage/);
 });
 
 test("keeps the nearby feed continuous without manual pagination copy", async () => {
@@ -527,14 +528,13 @@ test("shows verified multi-photo counts on discovery thumbnails", async () => {
   assert.match(card, /formatDistance\(animal\.distanceMeters\)/);
   assert.match(card, /layout === "row"/);
   assert.match(publicData, /getAnimalsWithPhotoCounts/);
-  assert.match(publicData, /distinctAnimalImages/);
+  assert.doesNotMatch(publicData, /distinctAnimalImages/);
   assert.match(publicStore, /photoCount: new Set\(images\)\.size/);
 });
 
 test("preserves additional public animal photos and provides an original-size gallery", async () => {
-  const [publicData, imageVerifier, gallery, detail] = await Promise.all([
+  const [publicData, gallery, detail] = await Promise.all([
     readFile(new URL("../lib/public-data.ts", import.meta.url), "utf8"),
-    readFile(new URL("../lib/animal-images.ts", import.meta.url), "utf8"),
     readFile(
       new URL("../app/components/AnimalGallery.tsx", import.meta.url),
       "utf8",
@@ -543,8 +543,7 @@ test("preserves additional public animal photos and provides an original-size ga
   ]);
   assert.match(publicData, /popfile2/);
   assert.match(publicData, /images/);
-  assert.match(imageVerifier, /crypto\.subtle\.digest\("SHA-256"/);
-  assert.match(imageVerifier, /distinctAnimalImages/);
+  assert.doesNotMatch(publicData, /distinctAnimalImages/);
   assert.match(gallery, /showModal\(\)/);
   assert.match(gallery, /onPointerDown/);
   assert.match(gallery, /onPointerMove/);

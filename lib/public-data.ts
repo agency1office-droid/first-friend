@@ -1,5 +1,4 @@
 import { animals as fallbackAnimals, type Animal } from "./data";
-import { distinctAnimalImages } from "./animal-images";
 import { getSupabaseServerClient } from "./supabase/server";
 
 const ABANDONED_API = "https://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2";
@@ -87,10 +86,6 @@ async function mergeDirectAnimals(base: Animal[], limit: number) {
   } catch { return base.slice(0, limit); }
 }
 
-export async function countDistinctAnimalImages(id: string, candidates: string[]) {
-  return (await distinctAnimalImages(id, candidates)).length;
-}
-
 function mapAnimal(item: AbandonedItem, shelters: Shelter[] = []): Animal | null {
   if (!item.desertionNo || !item.popfile1) return null;
   // 입양 탐색에는 반환·입양·방사·자연사 등 이미 종료된 공고를 노출하지 않습니다.
@@ -125,10 +120,7 @@ export async function getAnimals(limit = 24): Promise<Animal[]> {
 
 export async function getAnimalsWithPhotoCounts(limit = 24): Promise<Animal[]> {
   const items = await getAnimals(limit);
-  return Promise.all(items.map(async animal => {
-    const images = await distinctAnimalImages(animal.id, animal.images || [animal.image]);
-    return { ...animal, photoCount: images.length };
-  }));
+  return items.map(animal => ({ ...animal, photoCount: new Set(animal.images || [animal.image].filter(Boolean)).size }));
 }
 
 export async function getAnimalById(id: string) {

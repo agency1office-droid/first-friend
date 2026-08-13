@@ -6,6 +6,7 @@ import type { HomeLocation } from "../../lib/geo";
 import { readHomeLocation } from "../../lib/geo";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
+import { PUBLIC_ANIMAL_AGE_MAX, PUBLIC_ANIMAL_WEIGHT_MAX } from "../../lib/animal-filter-ranges";
 
 export type AnimalFeedFilters = {
   sort: "distance" | "recent";
@@ -23,7 +24,7 @@ export type AnimalFeedFilters = {
   weightMax: number;
 };
 
-const defaultFilters: AnimalFeedFilters = { sort: "distance", species: "all", publicStatus: "all", breedKeys: [], sex: "all", neutered: "all", color: "all", ageGroup: "all", sizeGroup: "all", ageMin: 0, ageMax: 20, weightMin: 0, weightMax: 50 };
+const defaultFilters: AnimalFeedFilters = { sort: "distance", species: "all", publicStatus: "all", breedKeys: [], sex: "all", neutered: "all", color: "all", ageGroup: "all", sizeGroup: "all", ageMin: 0, ageMax: PUBLIC_ANIMAL_AGE_MAX, weightMin: 0, weightMax: PUBLIC_ANIMAL_WEIGHT_MAX };
 export const HOME_FEED_SNAPSHOT_KEY = "ff-home-feed-snapshot-v2";
 
 type FeedSnapshot = { url: string; items: Animal[]; total: number; cursor: string | null; syncedAt: string | null; stale: boolean; scrollY: number };
@@ -68,8 +69,8 @@ function filtersFromUrl() {
     color: color?.trim() || "all",
     ageGroup: ageGroup === "young" || ageGroup === "adult" || ageGroup === "unknown" ? ageGroup : "all",
     sizeGroup: sizeGroup === "small" || sizeGroup === "medium" || sizeGroup === "large" || sizeGroup === "unknown" ? sizeGroup : "all",
-    ageMin: Math.max(0, Math.min(20, Number(params.get("ageMin")) || 0)), ageMax: Math.max(0, Math.min(20, Number(params.get("ageMax")) || 20)),
-    weightMin: Math.max(0, Math.min(50, Number(params.get("weightMin")) || 0)), weightMax: Math.max(0, Math.min(50, Number(params.get("weightMax")) || 50)),
+    ageMin: Math.max(0, Math.min(PUBLIC_ANIMAL_AGE_MAX, Number(params.get("ageMin")) || 0)), ageMax: Math.max(0, Math.min(PUBLIC_ANIMAL_AGE_MAX, Number(params.get("ageMax")) || PUBLIC_ANIMAL_AGE_MAX)),
+    weightMin: Math.max(0, Math.min(PUBLIC_ANIMAL_WEIGHT_MAX, Number(params.get("weightMin")) || 0)), weightMax: Math.max(0, Math.min(PUBLIC_ANIMAL_WEIGHT_MAX, Number(params.get("weightMax")) || PUBLIC_ANIMAL_WEIGHT_MAX)),
   } satisfies AnimalFeedFilters;
 }
 
@@ -114,8 +115,8 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     if (filters.breedKeys.length) params.set("breeds", filters.breedKeys.join(","));
     if (filters.sex !== "all") params.set("sex", filters.sex);
     if (filters.neutered !== "all") params.set("neutered", filters.neutered);
-    if (filters.ageMin !== 0) params.set("ageMin", String(filters.ageMin)); if (filters.ageMax !== 20) params.set("ageMax", String(filters.ageMax));
-    if (filters.weightMin !== 0) params.set("weightMin", String(filters.weightMin)); if (filters.weightMax !== 50) params.set("weightMax", String(filters.weightMax));
+    if (filters.ageMin !== 0) params.set("ageMin", String(filters.ageMin)); if (filters.ageMax !== PUBLIC_ANIMAL_AGE_MAX) params.set("ageMax", String(filters.ageMax));
+    if (filters.weightMin !== 0) params.set("weightMin", String(filters.weightMin)); if (filters.weightMax !== PUBLIC_ANIMAL_WEIGHT_MAX) params.set("weightMax", String(filters.weightMax));
     if (filters.color !== "all") params.set("color", filters.color);
     if (filters.ageGroup !== "all") params.set("age", filters.ageGroup);
     if (filters.sizeGroup !== "all") params.set("size", filters.sizeGroup);
@@ -138,8 +139,8 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     if (filters.breedKeys.length) url.searchParams.set("breeds", filters.breedKeys.join(","));
     if (filters.sex !== "all") url.searchParams.set("sex", filters.sex);
     if (filters.neutered !== "all") url.searchParams.set("neutered", filters.neutered);
-    if (filters.ageMin !== 0) url.searchParams.set("ageMin", String(filters.ageMin)); if (filters.ageMax !== 20) url.searchParams.set("ageMax", String(filters.ageMax));
-    if (filters.weightMin !== 0) url.searchParams.set("weightMin", String(filters.weightMin)); if (filters.weightMax !== 50) url.searchParams.set("weightMax", String(filters.weightMax));
+    if (filters.ageMin !== 0) url.searchParams.set("ageMin", String(filters.ageMin)); if (filters.ageMax !== PUBLIC_ANIMAL_AGE_MAX) url.searchParams.set("ageMax", String(filters.ageMax));
+    if (filters.weightMin !== 0) url.searchParams.set("weightMin", String(filters.weightMin)); if (filters.weightMax !== PUBLIC_ANIMAL_WEIGHT_MAX) url.searchParams.set("weightMax", String(filters.weightMax));
     if (filters.color !== "all") url.searchParams.set("color", filters.color);
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }, [filters, filtersReady]);
@@ -298,6 +299,6 @@ export function useAnimalFeed(initialPage: AnimalPage) {
 
   const setFilter = useCallback(<K extends keyof AnimalFeedFilters>(key: K, value: AnimalFeedFilters[K]) => setFilters(current => ({ ...current, [key]: value })), []);
   const resetFilters = useCallback(() => setFilters(defaultFilters), []);
-  const activeCount = Number(filters.sort === "recent") + Number(filters.species !== "all") + Number(filters.publicStatus !== "all") + Number(filters.breedKeys.length > 0) + Number(filters.sex !== "all") + Number(filters.neutered !== "all") + Number(filters.color !== "all") + Number(filters.ageGroup !== "all") + Number(filters.sizeGroup !== "all") + Number(filters.ageMin !== 0 || filters.ageMax !== 20) + Number(filters.weightMin !== 0 || filters.weightMax !== 50);
+  const activeCount = Number(filters.sort === "recent") + Number(filters.species !== "all") + Number(filters.publicStatus !== "all") + Number(filters.breedKeys.length > 0) + Number(filters.sex !== "all") + Number(filters.neutered !== "all") + Number(filters.color !== "all") + Number(filters.ageGroup !== "all") + Number(filters.sizeGroup !== "all") + Number(filters.ageMin !== 0 || filters.ageMax !== PUBLIC_ANIMAL_AGE_MAX) + Number(filters.weightMin !== 0 || filters.weightMax !== PUBLIC_ANIMAL_WEIGHT_MAX);
   return { items, total, cursor, syncedAt, stale, location, region, filters, setFilter, resetFilters, activeCount, loading, error, loadMore };
 }

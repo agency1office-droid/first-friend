@@ -5,6 +5,7 @@ import { cache } from "react";
 import { distanceMeters } from "./geo";
 import { matchesAnimalPublicStatus } from "./animal-public-status";
 import { getSupabaseServerClient } from "./supabase/server";
+import { PUBLIC_ANIMAL_AGE_MAX, PUBLIC_ANIMAL_WEIGHT_MAX } from "./animal-filter-ranges";
 
 const ANIMAL_ENDPOINT = "https://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2";
 const SHELTER_ENDPOINT = "https://apis.data.go.kr/1543061/animalShelterSrvc_v2/shelterInfo_v2";
@@ -826,7 +827,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
   // 중성화 여부는 현재 RPC의 인자에 없는 보조 필터입니다. 이 필터를 쓸 때만
   // 전체 활성 목록 fallback으로 정확하게 적용하고, 일반 검색은 기존 RPC를 유지합니다.
-  const canUseDatabaseSearch = !["yes", "no"].includes(options.neutered || "") && (options.ageMin ?? 0) === 0 && (options.ageMax ?? 20) === 20 && (options.weightMin ?? 0) === 0 && (options.weightMax ?? 50) === 50;
+  const canUseDatabaseSearch = !["yes", "no"].includes(options.neutered || "") && (options.ageMin ?? 0) === 0 && (options.ageMax ?? PUBLIC_ANIMAL_AGE_MAX) === PUBLIC_ANIMAL_AGE_MAX && (options.weightMin ?? 0) === 0 && (options.weightMax ?? PUBLIC_ANIMAL_WEIGHT_MAX) === PUBLIC_ANIMAL_WEIGHT_MAX;
   if (canUseDatabaseSearch) {
     const cursor = decodeSearchCursor(options.cursor);
     const sort = options.sort === "distance" && hasHome ? "distance" : "recent";
@@ -876,7 +877,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
   const sexFilter = options.sex === "female" ? "암컷" : options.sex === "male" ? "수컷" : "";
   const colorFilter = options.color?.trim().toLocaleLowerCase("ko-KR") || "";
   const neuteredFilter = options.neutered === "yes" ? "중성화 완료로 등록됨" : options.neutered === "no" ? "중성화되지 않은 것으로 등록됨" : "";
-  const ageMin = options.ageMin ?? 0, ageMax = options.ageMax ?? 20, weightMin = options.weightMin ?? 0, weightMax = options.weightMax ?? 50;
+  const ageMin = options.ageMin ?? 0, ageMax = options.ageMax ?? PUBLIC_ANIMAL_AGE_MAX, weightMin = options.weightMin ?? 0, weightMax = options.weightMax ?? PUBLIC_ANIMAL_WEIGHT_MAX;
   const prepared = rows.filter(row => { const age = ageYears(row.age), weight = weightKg(row); return (!speciesFilter || row.species === speciesFilter) && (!breedFilters.size || breedFilters.has(storedBreedKey(row))) && (!ageFilter || ageGroup(row.age) === ageFilter) && (age === undefined || (age >= ageMin && age <= ageMax)) && (weight === undefined || (weight >= weightMin && weight <= weightMax)) && (!sizeFilter || sizeGroup(row) === sizeFilter) && (!sexFilter || row.sex === sexFilter) && (!neuteredFilter || jsonArray(row.healthJson || "[]").some(value => value.includes(neuteredFilter))) && (!colorFilter || matchesColorGroup(row.colorsJson, colorFilter)) && (!options.multiplePhotos || Boolean(row.image2 && row.image2 !== row.image1)) && (!options.exactLocation || (!row.approximateShelterLocation && validPoint(Number(row.shelterLat), Number(row.shelterLng)))); }).map(row => {
     const animal = fromStored(row);
     if (!matchesAnimalPublicStatus(animal, options.publicStatus)) return null;

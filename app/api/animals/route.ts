@@ -1,4 +1,5 @@
 import { getNearbyAnimalsPage, syncPublicAnimals } from "../../../lib/public-animal-store";
+import { PUBLIC_ANIMAL_AGE_MAX, PUBLIC_ANIMAL_WEIGHT_MAX } from "../../../lib/animal-filter-ranges";
 
 function coordinate(value: string | null, min: number, max: number) {
   const parsed = Number(value);
@@ -18,8 +19,8 @@ export async function GET(request: Request) {
       sizeGroup: params.get("size") || "",
       sex: params.get("sex") || "",
       neutered: params.get("neutered") || "",
-      ageMin: Number(params.get("ageMin")) || 0, ageMax: Number(params.get("ageMax")) || 20,
-      weightMin: Number(params.get("weightMin")) || 0, weightMax: Number(params.get("weightMax")) || 50,
+      ageMin: Math.max(0, Math.min(PUBLIC_ANIMAL_AGE_MAX, Number(params.get("ageMin")) || 0)), ageMax: Math.max(0, Math.min(PUBLIC_ANIMAL_AGE_MAX, Number(params.get("ageMax")) || PUBLIC_ANIMAL_AGE_MAX)),
+      weightMin: Math.max(0, Math.min(PUBLIC_ANIMAL_WEIGHT_MAX, Number(params.get("weightMin")) || 0)), weightMax: Math.max(0, Math.min(PUBLIC_ANIMAL_WEIGHT_MAX, Number(params.get("weightMax")) || PUBLIC_ANIMAL_WEIGHT_MAX)),
       color: params.get("color") || "",
       sort: params.get("sort") || "",
       maxDistance: Math.max(0, Number(params.get("maxDistance")) || 0),

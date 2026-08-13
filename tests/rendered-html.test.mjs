@@ -136,39 +136,40 @@ test("replaces species tabs with actionable shelter-distance animal filters", as
   assert.match(filters, /<Chip\.Button/);
   assert.match(filters, /<Chip\.Label/);
   assert.match(filters, /<Chip\.SuffixIcon/);
-  assert.match(filters, /<Icon svg=\{<IconChevronDownLine\/>\}/);
+  assert.match(filters, /<Icon svg=\{<IconChevronDownLine \/>\}/);
   assert.match(filters, /data-checked=\{active \|\| undefined\}/);
   assert.match(filters, /variant="outlineWeak"/);
   assert.doesNotMatch(filters, /<button[^>]+className="ff-animal-filter-chip"/);
   assert.doesNotMatch(filters, /ff-filter-options/);
-  for (const label of ["가까운 순", "보호 단계", "품종"]) assert.match(filters, new RegExp(label));
-  assert.match(filters, /BreedFilterSheet/);
+  const allFilters = await readFile(new URL("../app/components/AllAnimalFilters.tsx", import.meta.url), "utf8");
+  for (const label of ["가까운 순", "보호 단계"]) assert.match(filters, new RegExp(label));
+  assert.match(allFilters, /동물 종류 · 품종/);
+  assert.match(allFilters, /ff-filter-species-card/);
   assert.doesNotMatch(filters, /UnifiedFilterSheet|previewTotal/);
-  assert.match(filters, /<SortFilterSheet[\s\S]*<StatusFilterSheet[\s\S]*<BreedFilterSheet/);
+  assert.match(filters, /SimpleOptionSheet/);
   assert.doesNotMatch(filters, /distanceLabel|title="보호소까지 거리"/);
   assert.doesNotMatch(filters, /sizeLabel|title="크기"/);
   assert.doesNotMatch(filters, /ageLabel|title="나이"/);
-  assert.match(filters, /title="품종으로 찾기"/);
+  assert.match(allFilters, /품종을 검색해보세요/);
   assert.doesNotMatch(filters, /상세 조건|multiplePhotos|exactLocation/);
   for (const parameter of ["maxDistance", "breedKeys", "sizeGroup"]) { assert.match(api, new RegExp(parameter === "sizeGroup" ? "size" : parameter === "breedKeys" ? "breeds" : parameter)); assert.match(store, new RegExp(parameter)); }
-  assert.match(filters, /seed-design\/ui\/checkbox/);
-  assert.match(filters, /seed-design\/ui\/segmented-control/);
-  assert.match(filters, /품종 동물 분류/);
-  for (const category of ["모두", "고양이", "강아지"]) assert.match(filters, new RegExp(`<span>${category}<\\/span>`));
-  assert.match(filters, /ff-breed-species-label/);
-  for (const allLabel of ["모든 품종", "모든 고양이", "모든 강아지"]) assert.match(filters, new RegExp(allLabel));
-  assert.doesNotMatch(filters, /ff-breed-all-option/);
-  assert.match(filters, /shownAnimalCount/);
-  assert.match(filters, /\/api\/breeds\?\$\{params\}/);
-  assert.match(filters, /item\.count\.toLocaleString\("ko-KR"\)/);
-  assert.match(filters, /마리<\/small>/);
+  assert.match(allFilters, /seed-design\/ui\/checkbox/);
+  assert.doesNotMatch(allFilters, /seed-design\/ui\/segmented-control/);
+  for (const category of ["고양이", "강아지"]) assert.match(allFilters, new RegExp(category));
+  assert.match(allFilters, /ff-filter-breed-toolbar/);
+  assert.doesNotMatch(allFilters, /털색/);
+  assert.match(allFilters, /중성화 완료/);
+  assert.match(allFilters, /ageRange/);
+  assert.match(allFilters, /weightRange/);
+  assert.match(allFilters, /item\.count\.toLocaleString\("ko-KR"\)/);
+  assert.match(allFilters, /마리<\/small>/);
   assert.match(store, /breedFilters\.has\(storedBreedKey\(row\)\)/);
   assert.match(store, /export async function getBreedCounts/);
   assert.doesNotMatch(store, /row\.breed\.toLocaleLowerCase/);
   assert.match(store, /return "나이 미상"/);
   assert.match(store, /function weightKg/);
   assert.match(store, /function sizeGroup/);
-  assert.match(homeFeed, /조건 모두 지우기/);
+  assert.doesNotMatch(homeFeed, /현재 조건에 맞는 친구가 없어요/);
 });
 
 test("uses the official public breed catalogue and stable breed codes", async () => {
@@ -177,7 +178,7 @@ test("uses the official public breed catalogue and stable breed codes", async ()
     readFile(new URL("../app/api/breeds/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/public-breed-search.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/components/AnimalFilterBar.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/AllAnimalFilters.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(catalogue, /abandonmentPublicService_v2\/kind_v2/);
   assert.match(catalogue, /up_kind_cd/);
@@ -190,7 +191,7 @@ test("uses the official public breed catalogue and stable breed codes", async ()
   assert.match(schema, /kindCd: text\("kind_cd"\)/);
   assert.match(search, /진도개/);
   assert.match(search, /진도견/);
-  assert.match(filter, /matchesPublicBreedSearch/);
+  assert.match(filter, /toLocaleLowerCase/);
 });
 
 test("keeps public sync jobs resumable and prevents duplicate lost-animal upserts", async () => {

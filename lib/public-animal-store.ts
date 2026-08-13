@@ -811,11 +811,15 @@ export async function getStoredLostAnimalById(id: string) {
 
 export const getCachedStoredLostAnimalById = cache(getStoredLostAnimalById);
 
-export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {
+function ageYears(value: string) { const text = String(value || ""); const birth = text.match(/(\d{4})\s*\(년생\)/); if (birth) return Math.max(0, new Date().getFullYear() - Number(birth[1])); const months = text.match(/(\d+(?:\.\d+)?)\s*개월/); if (months) return Number(months[1]) / 12; const days = text.match(/(\d+(?:\.\d+)?)\s*일/); if (days) return Number(days[1]) / 365; const years = text.match(/(\d+(?:\.\d+)?)\s*살/); return years ? Number(years[1]) : undefined; }
+
+export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; neutered?: string; ageMin?: number; ageMax?: number; weightMin?: number; weightMax?: number; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {
   const state = await ensurePublicAnimals({ allowSync: false });
   const limit = Math.min(50, Math.max(1, options.limit || 20));
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
-  const canUseDatabaseSearch = true;
+  // 중성화 여부는 현재 RPC의 인자에 없는 보조 필터입니다. 이 필터를 쓸 때만
+  // 전체 활성 목록 fallback으로 정확하게 적용하고, 일반 검색은 기존 RPC를 유지합니다.
+  const canUseDatabaseSearch = !["yes", "no"].includes(options.neutered || "") && (options.ageMin ?? 0) === 0 && (options.ageMax ?? 20) === 20 && (options.weightMin ?? 0) === 0 && (options.weightMax ?? 50) === 50;
   if (canUseDatabaseSearch) {
     const cursor = decodeSearchCursor(options.cursor);
     const sort = options.sort === "distance" && hasHome ? "distance" : "recent";
@@ -864,7 +868,9 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
   const sizeFilter = ["small", "medium", "large", "unknown"].includes(options.sizeGroup || "") ? options.sizeGroup : "";
   const sexFilter = options.sex === "female" ? "암컷" : options.sex === "male" ? "수컷" : "";
   const colorFilter = options.color?.trim().toLocaleLowerCase("ko-KR") || "";
-  const prepared = rows.filter(row => (!speciesFilter || row.species === speciesFilter) && (!breedFilters.size || breedFilters.has(storedBreedKey(row))) && (!ageFilter || ageGroup(row.age) === ageFilter) && (!sizeFilter || sizeGroup(row) === sizeFilter) && (!sexFilter || row.sex === sexFilter) && (!colorFilter || matchesColorGroup(row.colorsJson, colorFilter)) && (!options.multiplePhotos || Boolean(row.image2 && row.image2 !== row.image1)) && (!options.exactLocation || (!row.approximateShelterLocation && validPoint(Number(row.shelterLat), Number(row.shelterLng))))).map(row => {
+  const neuteredFilter = options.neutered === "yes" ? "중성화 완료로 등록됨" : options.neutered === "no" ? "중성화되지 않은 것으로 등록됨" : "";
+  const ageMin = options.ageMin ?? 0, ageMax = options.ageMax ?? 20, weightMin = options.weightMin ?? 0, weightMax = options.weightMax ?? 50;
+  const prepared = rows.filter(row => { const age = ageYears(row.age), weight = weightKg(row); return (!speciesFilter || row.species === speciesFilter) && (!breedFilters.size || breedFilters.has(storedBreedKey(row))) && (!ageFilter || ageGroup(row.age) === ageFilter) && (age === undefined || (age >= ageMin && age <= ageMax)) && (weight === undefined || (weight >= weightMin && weight <= weightMax)) && (!sizeFilter || sizeGroup(row) === sizeFilter) && (!sexFilter || row.sex === sexFilter) && (!neuteredFilter || jsonArray(row.healthJson || "[]").some(value => value.includes(neuteredFilter))) && (!colorFilter || matchesColorGroup(row.colorsJson, colorFilter)) && (!options.multiplePhotos || Boolean(row.image2 && row.image2 !== row.image1)) && (!options.exactLocation || (!row.approximateShelterLocation && validPoint(Number(row.shelterLat), Number(row.shelterLng)))); }).map(row => {
     const animal = fromStored(row);
     if (!matchesAnimalPublicStatus(animal, options.publicStatus)) return null;
     const hasExactPoint = hasHome && !row.approximateShelterLocation && validPoint(Number(row.shelterLat), Number(row.shelterLng));

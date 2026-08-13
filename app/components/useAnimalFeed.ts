@@ -13,12 +13,17 @@ export type AnimalFeedFilters = {
   publicStatus: "all" | "notice" | "checking";
   breedKeys: string[];
   sex: "all" | "female" | "male";
+  neutered: "all" | "yes" | "no";
   color: string;
   ageGroup: "all" | "young" | "adult" | "unknown";
   sizeGroup: "all" | "small" | "medium" | "large" | "unknown";
+  ageMin: number;
+  ageMax: number;
+  weightMin: number;
+  weightMax: number;
 };
 
-const defaultFilters: AnimalFeedFilters = { sort: "distance", species: "all", publicStatus: "all", breedKeys: [], sex: "all", color: "all", ageGroup: "all", sizeGroup: "all" };
+const defaultFilters: AnimalFeedFilters = { sort: "distance", species: "all", publicStatus: "all", breedKeys: [], sex: "all", neutered: "all", color: "all", ageGroup: "all", sizeGroup: "all", ageMin: 0, ageMax: 20, weightMin: 0, weightMax: 50 };
 export const HOME_FEED_SNAPSHOT_KEY = "ff-home-feed-snapshot-v2";
 
 type FeedSnapshot = { url: string; items: Animal[]; total: number; cursor: string | null; syncedAt: string | null; stale: boolean; scrollY: number };
@@ -52,16 +57,19 @@ function preloadAnimalImages(items: Animal[]) {
 
 function filtersFromUrl() {
   const params = new URLSearchParams(window.location.search);
-  const sort = params.get("sort"), species = params.get("species"), publicStatus = params.get("status"), sex = params.get("sex"), color = params.get("color"), ageGroup = params.get("age"), sizeGroup = params.get("size");
+  const sort = params.get("sort"), species = params.get("species"), publicStatus = params.get("status"), sex = params.get("sex"), neutered = params.get("neutered"), color = params.get("color"), ageGroup = params.get("age"), sizeGroup = params.get("size");
   return {
     sort: sort === "recent" ? "recent" : "distance",
     species: species === "cat" || species === "dog" ? species : "all",
     publicStatus: publicStatus === "notice" || publicStatus === "checking" ? publicStatus : "all",
     breedKeys: (params.get("breeds") || "").split(",").filter(value => /^(417000|422400):\d{6}$/.test(value)).slice(0, 10),
     sex: sex === "female" || sex === "male" ? sex : "all",
+    neutered: neutered === "yes" || neutered === "no" ? neutered : "all",
     color: color?.trim() || "all",
     ageGroup: ageGroup === "young" || ageGroup === "adult" || ageGroup === "unknown" ? ageGroup : "all",
     sizeGroup: sizeGroup === "small" || sizeGroup === "medium" || sizeGroup === "large" || sizeGroup === "unknown" ? sizeGroup : "all",
+    ageMin: Math.max(0, Math.min(20, Number(params.get("ageMin")) || 0)), ageMax: Math.max(0, Math.min(20, Number(params.get("ageMax")) || 20)),
+    weightMin: Math.max(0, Math.min(50, Number(params.get("weightMin")) || 0)), weightMax: Math.max(0, Math.min(50, Number(params.get("weightMax")) || 50)),
   } satisfies AnimalFeedFilters;
 }
 
@@ -105,6 +113,9 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     if (filters.publicStatus !== "all") params.set("status", filters.publicStatus);
     if (filters.breedKeys.length) params.set("breeds", filters.breedKeys.join(","));
     if (filters.sex !== "all") params.set("sex", filters.sex);
+    if (filters.neutered !== "all") params.set("neutered", filters.neutered);
+    if (filters.ageMin !== 0) params.set("ageMin", String(filters.ageMin)); if (filters.ageMax !== 20) params.set("ageMax", String(filters.ageMax));
+    if (filters.weightMin !== 0) params.set("weightMin", String(filters.weightMin)); if (filters.weightMax !== 50) params.set("weightMax", String(filters.weightMax));
     if (filters.color !== "all") params.set("color", filters.color);
     if (filters.ageGroup !== "all") params.set("age", filters.ageGroup);
     if (filters.sizeGroup !== "all") params.set("size", filters.sizeGroup);
@@ -120,12 +131,15 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   useEffect(() => {
     if (!filtersReady) return;
     const url = new URL(window.location.href);
-    for (const key of ["sort", "distance", "species", "status", "breed", "breeds", "age", "size", "sex", "color"]) url.searchParams.delete(key);
+    for (const key of ["sort", "distance", "species", "status", "breed", "breeds", "age", "size", "sex", "neutered", "ageMin", "ageMax", "weightMin", "weightMax", "color"]) url.searchParams.delete(key);
     if (filters.sort === "recent") url.searchParams.set("sort", "recent");
     if (filters.species !== "all") url.searchParams.set("species", filters.species);
     if (filters.publicStatus !== "all") url.searchParams.set("status", filters.publicStatus);
     if (filters.breedKeys.length) url.searchParams.set("breeds", filters.breedKeys.join(","));
     if (filters.sex !== "all") url.searchParams.set("sex", filters.sex);
+    if (filters.neutered !== "all") url.searchParams.set("neutered", filters.neutered);
+    if (filters.ageMin !== 0) url.searchParams.set("ageMin", String(filters.ageMin)); if (filters.ageMax !== 20) url.searchParams.set("ageMax", String(filters.ageMax));
+    if (filters.weightMin !== 0) url.searchParams.set("weightMin", String(filters.weightMin)); if (filters.weightMax !== 50) url.searchParams.set("weightMax", String(filters.weightMax));
     if (filters.color !== "all") url.searchParams.set("color", filters.color);
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }, [filters, filtersReady]);
@@ -284,6 +298,6 @@ export function useAnimalFeed(initialPage: AnimalPage) {
 
   const setFilter = useCallback(<K extends keyof AnimalFeedFilters>(key: K, value: AnimalFeedFilters[K]) => setFilters(current => ({ ...current, [key]: value })), []);
   const resetFilters = useCallback(() => setFilters(defaultFilters), []);
-  const activeCount = Number(filters.sort === "recent") + Number(filters.species !== "all") + Number(filters.publicStatus !== "all") + Number(filters.breedKeys.length > 0) + Number(filters.sex !== "all") + Number(filters.color !== "all") + Number(filters.ageGroup !== "all") + Number(filters.sizeGroup !== "all");
+  const activeCount = Number(filters.sort === "recent") + Number(filters.species !== "all") + Number(filters.publicStatus !== "all") + Number(filters.breedKeys.length > 0) + Number(filters.sex !== "all") + Number(filters.neutered !== "all") + Number(filters.color !== "all") + Number(filters.ageGroup !== "all") + Number(filters.sizeGroup !== "all") + Number(filters.ageMin !== 0 || filters.ageMax !== 20) + Number(filters.weightMin !== 0 || filters.weightMax !== 50);
   return { items, total, cursor, syncedAt, stale, location, region, filters, setFilter, resetFilters, activeCount, loading, error, loadMore };
 }

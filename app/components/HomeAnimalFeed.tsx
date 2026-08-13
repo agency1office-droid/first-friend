@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { IconArrowUpRightLine } from "@karrotmarket/react-monochrome-icon";
-import { ActionButton } from "seed-design/ui/action-button";
 import type { LostAnimal } from "../../lib/public-data";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { AnimalCard } from "./AnimalCard";
@@ -85,7 +84,7 @@ export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
     <header className="ff-home-feed-head"><div><div className="ff-kicker">{kicker}</div><h1 id="nearby-title">{title}</h1></div><a href="/find">전체 {count}마리</a></header>
     <AnimalFilterBar filters={feed.filters} location={feed.location} hasLocation={Boolean(feed.location)} activeCount={feed.activeCount} setFilter={feed.setFilter} resetFilters={feed.resetFilters}/>
     {feed.loading && !feed.items.length ? <FeedLoadingState/> : <div className="ff-animal-list">{feed.items.map((animal, index) => <Fragment key={animal.id}><AnimalCard animal={animal} layout="row" priority={index < 4}/>{(index + 1) % 25 === 0 && lostAnimals[(index + 1) / 25 - 1] && <LostAnimalInsert animal={lostAnimals[(index + 1) / 25 - 1]}/>}</Fragment>)}</div>}
-    {!feed.items.length && !feed.loading && !feed.error && <div className="ff-filter-empty"><strong>현재 조건에 맞는 친구가 없어요</strong><p>조건을 모두 지우면 가까운 친구부터 다시 볼 수 있어요. 전국으로 넓혀보거나 새 친구 알림을 켜도 좋아요.</p><ActionButton variant="neutralWeak" onClick={feed.resetFilters}>조건 모두 지우기</ActionButton></div>}
+    {!feed.items.length && !feed.loading && !feed.error && <div className="ff-feed-empty-spacer" aria-hidden="true" />}
     {feed.error && <div className="ff-feed-error" role="alert"><span>{feed.error}</span><button type="button" onClick={() => window.location.reload()}>{feed.items.length ? "다시 불러오기" : "다시 시도"}</button></div>}
     <div className="ff-feed-sentinel" ref={sentinel} aria-hidden="true" />
   </section>;

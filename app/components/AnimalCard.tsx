@@ -1,5 +1,4 @@
 import type { Animal } from "../../lib/data";
-import Link from "next/link";
 import { FavoriteButton } from "./FavoriteButton";
 import { IconPicture2StackedLine } from "@karrotmarket/react-monochrome-icon";
 import { formatDistance } from "../../lib/geo";
@@ -25,22 +24,22 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
   const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}` : "/shelters";
   return <article className={`ff-animal-card${layout==="row"?" ff-animal-card-row":""}`}>
     {layout === "row" ? <div className="ff-animal-card-row-main">
-      <Link className="ff-animal-row-image-link" href={animalHref} aria-label={`${animal.name} 상세 보기`}>
+      <a className="ff-animal-row-image-link" href={animalHref} aria-label={`${animal.name} 상세 보기`}>
         <div className="ff-animal-image-wrap"><AnimalThumbnail src={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority}/>{(animal.photoCount || 1) > 1 && <span className="ff-card-photo-count" role="img" aria-label={`사진 ${animal.photoCount}장`}><IconPicture2StackedLine aria-hidden="true"/></span>}</div>
-      </Link>
+      </a>
       <div className="ff-animal-info ff-animal-row-info">
         {showShelter && <a className="ff-animal-row-shelter" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>{animal.shelter}</a>}
-        <Link className="ff-animal-row-animal-link" href={animalHref}>
+        <a className="ff-animal-row-animal-link" href={animalHref}>
           <div className="ff-animal-name">{animal.name}</div>
           <div className="ff-animal-row-location"><span>{compactRegion(animal.region)}</span>{animal.distanceMeters !== undefined&&<div className="ff-animal-distance ff-animal-row-distance">{formatDistance(animal.distanceMeters)}</div>}</div>
           <div className="ff-meta">{displayAge(animal.age)} · {animal.sex}</div>
           {publicStatus.cardLabel&&<Badge className="ff-animal-row-public-status" tone={publicStatus.tone} variant="weak">{publicStatus.cardLabel}</Badge>}
-        </Link>
+        </a>
       </div>
-    </div> : <Link href={animalHref}>
+    </div> : <a href={animalHref}>
       <div className="ff-animal-image-wrap"><AnimalThumbnail src={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority}/>{(animal.photoCount || 1) > 1 && <span className="ff-card-photo-count" role="img" aria-label={`사진 ${animal.photoCount}장`}><IconPicture2StackedLine aria-hidden="true"/></span>}</div>
       <div className="ff-animal-info"><div className="ff-meta">{animal.region} · {animal.source}</div><div className="ff-animal-name">{animal.name}</div><div className="ff-meta">{animal.age} · {animal.sex}</div>{animal.distanceMeters !== undefined&&<div className="ff-animal-distance">우리 동네에서 보호소까지 약 {formatDistance(animal.distanceMeters)}</div>}<div className="ff-tags">{animal.traits.slice(0, 2).map((trait) => <span className="ff-tag" key={trait}>{trait}</span>)}</div></div>
-    </Link>}
+    </a>}
     <FavoriteButton animalId={animal.id} animalName={animal.name} initialSaved={initialSaved} onFavoriteChange={onFavoriteChange}/>
   </article>;
 }

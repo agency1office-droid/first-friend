@@ -627,7 +627,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-region-results > button strong,.ff-region-results > button small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ff-region-results > button small { color: var(--seed-color-fg-neutral-subtle); }
 .ff-region-searching { padding: 18px 8px; color: var(--seed-color-fg-neutral-subtle); text-align: center; }
-.ff-animal-distance { width: fit-content; margin-top: 7px; padding: 5px 8px; border-radius: 8px; background: var(--seed-color-bg-brand-weak); color: var(--seed-color-fg-brand); font-size: 13px; font-weight: 700; }
+.ff-animal-distance { width: fit-content; max-width: 100%; margin-top: 7px; padding: 5px 8px; border-radius: 8px; background: var(--seed-color-bg-brand-weak); color: var(--seed-color-fg-brand); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .ff-shelter-location { display: grid; gap: 12px; margin: 16px 0 20px; padding: 0; background: var(--seed-color-bg-layer-default); border: 0; }
 .ff-shelter-location h2,.ff-shelter-location p { margin: 0; }
 .ff-shelter-distance-summary { color: var(--seed-color-fg-neutral); font-size: var(--seed-font-size-t6); line-height: var(--seed-line-height-t6); font-weight: var(--seed-font-weight-bold); }

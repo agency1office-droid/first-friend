@@ -12,8 +12,10 @@ export function distanceMeters(a: GeoPoint, b: GeoPoint) {
 
 export function formatDistance(meters: number) {
   if (meters < 1000) return `${Math.max(10, Math.round(meters / 10) * 10).toLocaleString("ko-KR")}m`;
-  if (meters < 10000) return `${(meters / 1000).toFixed(1)}km`;
-  return `${Math.round(meters / 1000).toLocaleString("ko-KR")}km`;
+  // 해외 접속처럼 거리가 길어져도 카드와 칩의 한 줄 레이아웃을 유지합니다.
+  if (meters >= 10000000) return `${(meters / 10000000).toFixed(1).replace(/\.0$/, "")}만km`;
+  if (meters >= 10000) return `${Math.round(meters / 1000).toLocaleString("ko-KR")}km`;
+  return `${(meters / 1000).toFixed(1)}km`;
 }
 
 export function formatDrivingDuration(seconds: number) {

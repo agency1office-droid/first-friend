@@ -550,7 +550,27 @@ export async function syncPublicLostAnimals() {
   const supabase = getSupabaseServerClient(), syncedAt = new Date().toISOString(), syncId = crypto.randomUUID();
   const result = await fetchAllLostAnimals();
   if (!result.complete) throw new Error(`실종 동물 전체 수집이 완료되지 않았습니다. ${result.items.length}/${result.total}`);
-  const rows = result.items.map((item, index) => mapLostAnimal(item, index, syncedAt)).filter((item): item is NonNullable<ReturnType<typeof mapLostAnimal>> => Boolean(item)).map(row => ({ ...row, last_seen_sync: syncId }));
+  const rows = result.items
+    .map((item, index) => mapLostAnimal(item, index, syncedAt))
+    .filter((item): item is NonNullable<ReturnType<typeof mapLostAnimal>> => Boolean(item))
+    .map(row => ({
+      id: row.id,
+      legacy_id: row.legacyId || "",
+      species: row.species,
+      breed: row.breed,
+      sex: row.sex,
+      age: row.age,
+      color: row.color,
+      happened_at: row.happenedAt,
+      region: row.region,
+      address: row.address,
+      place: row.place,
+      description: row.description,
+      image: row.image,
+      active: true,
+      last_seen_sync: syncId,
+      synced_at: syncedAt,
+    }));
   for (const group of chunks(rows, 500)) {
     const { error } = await supabase.from("public_lost_animals").upsert(group, { onConflict: "id" });
     if (error) throw error;

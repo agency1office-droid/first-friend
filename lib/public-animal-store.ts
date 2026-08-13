@@ -197,6 +197,27 @@ async function fetchAll<T>(endpoint: string): Promise<FetchAllResult<T>> {
   return { items, pages: page, total, complete: total === 0 || items.length >= total };
 }
 
+async function fetchAllLostAnimals(): Promise<FetchAllResult<LossItem>> {
+  const items: LossItem[] = [];
+  const seenPages = new Set<string>();
+  const pageSize = 100;
+  let page = 1;
+  let total = 0;
+  while (page <= MAX_PAGES) {
+    const result = await fetchPage<LossItem>(LOSS_ENDPOINT, page, pageSize);
+    const current = result.items.filter(Boolean);
+    const fingerprint = JSON.stringify(current);
+    if (!current.length || seenPages.has(fingerprint)) break;
+    seenPages.add(fingerprint);
+    items.push(...current);
+    total = result.total;
+    page += 1;
+    // 분실동물 API는 totalCount를 279로 반환하면서 실제 페이지는
+    // 176건에서 끝내는 경우가 있어, 빈 페이지를 실제 종료 신호로 사용합니다.
+  }
+  return { items, pages: Math.max(1, page - 1), total, complete: items.length > 0 };
+}
+
 function mapShelter(item: ShelterItem, syncedAt: string): ShelterRecord | null {
   if (!item.careRegNo && !item.careNm) return null;
   const rawLat = Number(item.lat), rawLng = Number(item.lng), exact = validPoint(rawLat, rawLng);
@@ -516,7 +537,7 @@ export async function getPublicRawFilterOptions() {
 
 export async function syncPublicLostAnimals() {
   const supabase = getSupabaseServerClient(), syncedAt = new Date().toISOString(), syncId = crypto.randomUUID();
-  const result = await fetchAll<LossItem>(LOSS_ENDPOINT);
+  const result = await fetchAllLostAnimals();
   if (!result.complete) throw new Error(`실종 동물 전체 수집이 완료되지 않았습니다. ${result.items.length}/${result.total}`);
   const rows = result.items.map((item, index) => mapLostAnimal(item, index, syncedAt)).filter((item): item is NonNullable<ReturnType<typeof mapLostAnimal>> => Boolean(item)).map(row => ({ ...row, last_seen_sync: syncId }));
   for (const group of chunks(rows, 500)) {

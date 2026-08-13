@@ -12,6 +12,7 @@ export async function GET(request: Request) {
     const lostAnimals = await syncPublicLostAnimals();
     return Response.json({ lostAnimals }, { headers: { "cache-control": "no-store" } });
   } catch (error) {
+    console.error("[public-lost-animals-sync]", error instanceof Error ? error.message : error);
     return Response.json({ error: error instanceof Error ? error.message : "실종 동물을 동기화하지 못했어요." }, { status: 503 });
   }
 }

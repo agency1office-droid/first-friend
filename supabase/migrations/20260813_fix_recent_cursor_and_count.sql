@@ -49,8 +49,7 @@ with calculated as (
     and (p_size_group is null or a.size_group = p_size_group)
     and (not p_multiple_photos or a.has_multiple_photos)
     and (not p_exact_location or a.has_exact_location)
-    and (p_max_distance_meters is null or (a.shelter_geo is not null and ST_DWithin(a.shelter_geo, ST_SetSRID(ST_MakePoint(p_lng, p_lat), 4326)::geography, p_max_distance_meters))
-  )
+    and (p_max_distance_meters is null or (a.shelter_geo is not null and ST_DWithin(a.shelter_geo, ST_SetSRID(ST_MakePoint(p_lng, p_lat), 4326)::geography, p_max_distance_meters)))
 ), filtered as (
   select * from calculated c
   where (p_sort = 'distance' and (

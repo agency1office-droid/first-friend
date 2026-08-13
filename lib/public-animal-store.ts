@@ -51,6 +51,7 @@ const ACTIVE_ANIMALS_CACHE_MS = 60 * 1000;
 const LIST_ANIMAL_COLUMNS = "id,name,species,breed,up_kind_cd,kind_cd,age,age_group,sex,region,shelter_id,shelter_name,shelter_address,shelter_phone,shelter_lat,shelter_lng,approximate_shelter_location,updated,updated_at,image_1,image_2,image_1_storage,image_2_storage,colors_json,traits_json,summary,health_json,life_json,match_reason,process_state,active,last_seen_sync,synced_at,size_group,has_multiple_photos,has_exact_location,color_search,public_phase";
 const STORAGE_BUCKET = "animal-images";
 type StoredAnimalWithImages = StoredAnimal & { image_1_storage?: string | null; image_2_storage?: string | null };
+type SyncStateRow = { lastCompletedAt?: string | null; last_completed_at?: string | null };
 
 function apiKey() { return process.env.PUBLIC_DATA_API_KEY?.trim(); }
 function array<T>(value: T | T[] | undefined) { return !value ? [] : Array.isArray(value) ? value : [value]; }
@@ -95,6 +96,7 @@ function matchesColorGroup(colorsJsonValue: string, color: string) {
 }
 function storedBreedKey(row: StoredAnimal) { const upKindCd = /^(417000|422400)$/.test(row.upKindCd) ? row.upKindCd : row.species === "고양이" ? "422400" : "417000"; const kindCd = /^\d{6}$/.test(row.kindCd) ? row.kindCd : "000000"; return `${upKindCd}:${kindCd}`; }
 function chunks<T>(items: T[], size: number) { const result: T[][] = []; for (let index = 0; index < items.length; index += size) result.push(items.slice(index, index + size)); return result; }
+function syncCompletedAt(state: SyncStateRow | undefined) { return state?.lastCompletedAt || state?.last_completed_at || null; }
 
 async function ensureTables() {
   return false;
@@ -648,7 +650,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
       const nextCursor = data.length === limit && last ? encodeSearchCursor(sort === "distance"
         ? { distanceMeters: Number.isFinite(Number(last.distance_meters)) ? Number(last.distance_meters) : 1e15, id: String(last.id) }
         : { updatedAt: String(last.updated_at || ""), id: String(last.id) }) : null;
-      const completedAt = state?.lastCompletedAt || null;
+      const completedAt = syncCompletedAt(state as SyncStateRow | undefined);
       return { items, total, nextCursor, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= SYNC_INTERVAL_MS * 2 };
     }
   }
@@ -670,7 +672,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
   // 스크롤마다 카드 수만큼 별도 DB 요청이 발생하지 않도록 합니다.
   const items = pageItems;
   const nextOffset = offset + items.length;
-  const completedAt = state?.lastCompletedAt || null;
+  const completedAt = syncCompletedAt(state as SyncStateRow | undefined);
   return { items, total: prepared.length, nextCursor: nextOffset < prepared.length ? nextOffset.toString(36) : null, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= SYNC_INTERVAL_MS * 2 };
 }
 

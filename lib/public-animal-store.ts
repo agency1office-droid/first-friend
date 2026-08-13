@@ -5,7 +5,6 @@ import { cache } from "react";
 import { distanceMeters } from "./geo";
 import { matchesAnimalPublicStatus } from "./animal-public-status";
 import { getSupabaseServerClient } from "./supabase/server";
-import sharp from "sharp";
 
 const ANIMAL_ENDPOINT = "https://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2";
 const SHELTER_ENDPOINT = "https://apis.data.go.kr/1543061/animalShelterSrvc_v2/shelterInfo_v2";
@@ -411,6 +410,7 @@ async function mirrorAnimalImage(supabase: ReturnType<typeof getSupabaseServerCl
   if (!contentType.startsWith("image/")) throw new Error("이미지 형식이 아닙니다.");
   const sourceBody = await response.arrayBuffer();
   if (sourceBody.byteLength > 10 * 1024 * 1024) throw new Error("이미지 원본이 10MB를 초과합니다.");
+  const { default: sharp } = await import("sharp");
   const sharpProcessor = sharp as unknown as (input: Buffer, options: { failOn: "none" }) => { rotate: () => { resize: (options: { width: number; height: number; fit: "inside"; withoutEnlargement: boolean }) => { webp: (options: { quality: number; effort: number }) => { toBuffer: () => Promise<Buffer> } } } };
   const body = await sharpProcessor(Buffer.from(sourceBody), { failOn: "none" })
     .rotate()

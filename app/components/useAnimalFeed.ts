@@ -5,6 +5,7 @@ import type { Animal } from "../../lib/data";
 import type { HomeLocation } from "../../lib/geo";
 import { readHomeLocation } from "../../lib/geo";
 import type { AnimalPage } from "../../lib/public-animal-store";
+import { optimizedAnimalImageUrl } from "../../lib/image-url";
 
 export type AnimalFeedFilters = {
   sort: "distance" | "recent";
@@ -38,7 +39,7 @@ function preloadAnimalImages(items: Animal[]) {
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
   if (connection?.saveData || connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g") return;
   const limit = connection?.effectiveType === "3g" ? 2 : 4;
-  const sources = [...new Set(items.map(item => item.image).filter(Boolean))]
+  const sources = [...new Set(items.map(item => optimizedAnimalImageUrl(item.image)).filter(Boolean))]
     .filter(src => !preloadedAnimalImages.has(src))
     .slice(0, limit);
   if (!sources.length) return;
@@ -82,6 +83,9 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   const requestId = useRef(0);
   const prefetchedPage = useRef<Promise<Record<string, unknown>> | null>(null);
   const prefetchedUrl = useRef<string | null>(null);
+  const loadMoreController = useRef<AbortController | null>(null);
+
+  useEffect(() => () => loadMoreController.current?.abort(), []);
 
   useEffect(() => {
     const snapshot = readFeedSnapshot();
@@ -248,16 +252,21 @@ export function useAnimalFeed(initialPage: AnimalPage) {
 
   const loadMore = useCallback(async () => {
     if (!cursor || loading) return;
+    const requestVersion = requestId.current;
+    loadMoreController.current?.abort();
+    const controller = new AbortController();
+    loadMoreController.current = controller;
     setLoading(true); setError("");
     try {
       const url = endpoint(cursor);
       const body = prefetchedUrl.current === url && prefetchedPage.current
         ? await prefetchedPage.current
-        : await fetch(url).then(async response => {
+        : await fetch(url, { signal: controller.signal }).then(async response => {
           const result = await response.json() as Record<string, unknown>;
           if (!response.ok) throw new Error(typeof result.error === "string" ? result.error : "다음 친구를 불러오지 못했어요.");
           return result;
         });
+      if (requestVersion !== requestId.current || controller.signal.aborted) return;
       prefetchedPage.current = null; prefetchedUrl.current = null;
       setItems(current => {
         const ids = new Set(current.map(item => item.id));
@@ -266,8 +275,11 @@ export function useAnimalFeed(initialPage: AnimalPage) {
       setCursor(typeof body.nextCursor === "string" ? body.nextCursor : null); setTotal(Number(body.total) || total);
       setSyncedAt(typeof body.syncedAt === "string" ? body.syncedAt : syncedAt); setStale(Boolean(body.stale));
     } catch (errorValue) {
-      setError(errorValue instanceof Error ? errorValue.message : "다음 친구를 불러오지 못했어요.");
-    } finally { setLoading(false); }
+      if (!controller.signal.aborted && requestVersion === requestId.current) setError(errorValue instanceof Error ? errorValue.message : "다음 친구를 불러오지 못했어요.");
+    } finally {
+      if (loadMoreController.current === controller) loadMoreController.current = null;
+      if (!controller.signal.aborted && requestVersion === requestId.current) setLoading(false);
+    }
   }, [cursor, endpoint, loading, syncedAt, total]);
 
   const setFilter = useCallback(<K extends keyof AnimalFeedFilters>(key: K, value: AnimalFeedFilters[K]) => setFilters(current => ({ ...current, [key]: value })), []);

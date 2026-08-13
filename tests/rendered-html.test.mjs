@@ -159,8 +159,11 @@ test("replaces species tabs with actionable shelter-distance animal filters", as
   assert.match(allFilters, /ff-filter-breed-toolbar/);
   assert.doesNotMatch(allFilters, /털색/);
   assert.match(allFilters, /중성화 완료/);
-  assert.match(allFilters, /ageRange/);
-  assert.match(allFilters, /weightRange/);
+  assert.match(allFilters, /\["mature", "6~10살"\]/);
+  assert.match(allFilters, /\["senior", "11살 이상"\]/);
+  assert.match(allFilters, /\["xlarge", "초대형견"\]/);
+  assert.match(allFilters, /\["xlarge", "초대형묘"\]/);
+  assert.doesNotMatch(allFilters, /SnapRange|weightRange|<SectionHeading title="체중"/);
   assert.match(allFilters, /item\.count\.toLocaleString\("ko-KR"\)/);
   assert.match(allFilters, /마리<\/small>/);
   assert.match(store, /breedFilters\.has\(storedBreedKey\(row\)\)/);

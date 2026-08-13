@@ -68,7 +68,16 @@ function isoDate(value = "") { const match = value.match(/(\d{4})\D+(\d{1,2})\D+
 function sex(value = "") { return value === "M" ? "수컷" : value === "F" ? "암컷" : "미상"; }
 function species(item: AnimalItem) { return item.upKindNm || item.kindFullNm?.match(/^\[([^\]]+)/)?.[1] || "기타"; }
 function supported(value: string) { return /고양이|개|강아지/.test(value) && !/기타/.test(value); }
-function ageGroup(value = ""): Animal["ageGroup"] { if (value.includes("60일미만")) return "어린 친구"; const born = Number(value.match(/(19|20)\d{2}/)?.[0]); if (!born) return "나이 미상"; return new Date().getFullYear() - born <= 1 ? "어린 친구" : "어른 친구"; }
+function ageGroup(value = ""): Animal["ageGroup"] {
+  if (value.includes("60일미만")) return "어린 친구";
+  const months = Number(value.match(/(\d+(?:\.\d+)?)\s*개월/)?.[1]);
+  if (Number.isFinite(months)) return months < 12 ? "어린 친구" : months < 72 ? "청년 친구" : months < 132 ? "어른 친구" : "나이 많은 친구";
+  const born = Number(value.match(/(19|20)\d{2}/)?.[0]);
+  const years = Number(value.match(/(\d+(?:\.\d+)?)\s*살/)?.[1]);
+  const age = Number.isFinite(years) ? years : born ? new Date().getFullYear() - born : undefined;
+  if (age === undefined || age < 0) return "나이 미상";
+  return age <= 1 ? "어린 친구" : age <= 5 ? "청년 친구" : age <= 10 ? "어른 친구" : "나이 많은 친구";
+}
 function lostSpecies(value = "") { const text = value.trim().toLocaleLowerCase("ko-KR"); if (/고양이|묘|러시안\s*블루|랙돌|페르시안|샴|스코티시|메인쿤|먼치킨|스핑크스/.test(text)) return "고양이"; if (/견|강아지|^개$|말티즈|푸들|포메라니안|비숑|치와와|시츄|진돗개|리트리버|스피츠|테리어|불독|닥스훈트|비글|웰시코기/.test(text)) return "강아지"; return "기타"; }
 function lostSex(value = "") { return value === "M" ? "수컷" : value === "F" ? "암컷" : "미상"; }
 function lostDate(value = "") { return value.replace(/\.0$/, "") || "발생일 미상"; }
@@ -82,7 +91,7 @@ function displayName(item: AnimalItem) { return [item.kindNm || species(item), i
 function validPoint(lat: number, lng: number) { return Number.isFinite(lat) && Number.isFinite(lng) && lat > 30 && lat < 40 && lng > 120 && lng < 135; }
 function jsonArray(value: string) { try { const result = JSON.parse(value); return Array.isArray(result) ? result.map(String) : []; } catch { return []; } }
 function weightKg(row: { traitsJson?: string | null }) { const value = jsonArray(row.traitsJson || "[]").find(item => /kg/i.test(item)); if (!value) return undefined; const values = [...value.matchAll(/\d+(?:\.\d+)?/g)].map(match => Number(match[0])).filter(number => number > 0 && number <= 150); return values.length ? values.reduce((sum, number) => sum + number, 0) / values.length : undefined; }
-function sizeGroup(row: { traitsJson?: string | null; species: string }) { const weight = weightKg(row); if (weight === undefined) return "unknown"; if (row.species === "고양이") return weight < 3 ? "small" : weight < 6 ? "medium" : "large"; return weight < 10 ? "small" : weight < 25 ? "medium" : "large"; }
+function sizeGroup(row: { traitsJson?: string | null; species: string }) { const weight = weightKg(row); if (weight === undefined) return "unknown"; if (row.species === "고양이") return weight < 3 ? "small" : weight < 6 ? "medium" : weight < 10 ? "large" : "xlarge"; return weight < 5 ? "small" : weight < 15 ? "medium" : weight < 30 ? "large" : "xlarge"; }
 
 const colorAliases: Record<string, string[]> = {
   // 공공 API의 colorCd는 보호소 자유입력값이라, 단일 색상뿐 아니라
@@ -645,9 +654,9 @@ async function activeAnimals() {
 export async function getBreedCounts(options: BreedCountOptions = {}) {
   const { data: databaseCounts, error: databaseError } = await getSupabaseServerClient().rpc("count_public_animal_breeds", {
     p_species: options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : null,
-    p_age_group: options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "어른 친구" : options.ageGroup === "unknown" ? "나이 미상" : null,
+    p_age_group: options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "청년 친구" : options.ageGroup === "mature" ? "어른 친구" : options.ageGroup === "senior" ? "나이 많은 친구" : options.ageGroup === "unknown" ? "나이 미상" : null,
     p_sex: options.sex === "female" ? "암컷" : options.sex === "male" ? "수컷" : null,
-    p_size_group: options.sizeGroup && ["small", "medium", "large", "unknown"].includes(options.sizeGroup) ? options.sizeGroup : null,
+    p_size_group: options.sizeGroup && ["small", "medium", "large", "xlarge", "unknown"].includes(options.sizeGroup) ? options.sizeGroup : null,
     p_public_phase: options.publicStatus === "notice" ? "notice" : options.publicStatus === "checking" ? "checking" : null,
     p_lat: validPoint(Number(options.lat), Number(options.lng)) ? options.lat : null,
     p_lng: validPoint(Number(options.lat), Number(options.lng)) ? options.lng : null,
@@ -657,8 +666,8 @@ export async function getBreedCounts(options: BreedCountOptions = {}) {
   await ensurePublicAnimals();
   const rows = await activeAnimals();
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
-  const ageFilter = options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "어른 친구" : options.ageGroup === "unknown" ? "나이 미상" : "";
-  const sizeFilter = ["small", "medium", "large", "unknown"].includes(options.sizeGroup || "") ? options.sizeGroup : "";
+  const ageFilter = options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "청년 친구" : options.ageGroup === "mature" ? "어른 친구" : options.ageGroup === "senior" ? "나이 많은 친구" : options.ageGroup === "unknown" ? "나이 미상" : "";
+  const sizeFilter = ["small", "medium", "large", "xlarge", "unknown"].includes(options.sizeGroup || "") ? options.sizeGroup : "";
   const sexFilter = options.sex === "female" ? "암컷" : options.sex === "male" ? "수컷" : "";
   const counts: Record<string, { count: number; kindNm: string; species: "dog" | "cat" }> = {};
   for (const row of rows) {
@@ -841,7 +850,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
       p_lng: hasHome ? options.lng : null,
       p_sort: sort,
       p_species: options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : null,
-      p_age_group: options.ageGroup || null,
+      p_age_group: options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "청년 친구" : options.ageGroup === "mature" ? "어른 친구" : options.ageGroup === "senior" ? "나이 많은 친구" : options.ageGroup === "unknown" ? "나이 미상" : null,
       p_sex: options.sex === "female" ? "암컷" : options.sex === "male" ? "수컷" : null,
       p_kind_codes: kindCodes.length ? kindCodes : null,
       p_color: options.color || null,
@@ -871,9 +880,9 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
   }
   const rows = await activeAnimals();
   const speciesFilter = options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : "";
-  const ageFilter = options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "어른 친구" : options.ageGroup === "unknown" ? "나이 미상" : "";
+  const ageFilter = options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "청년 친구" : options.ageGroup === "mature" ? "어른 친구" : options.ageGroup === "senior" ? "나이 많은 친구" : options.ageGroup === "unknown" ? "나이 미상" : "";
   const breedFilters = new Set((options.breedKeys || []).filter(value => /^(417000|422400):\d{6}$/.test(value)).slice(0, 10));
-  const sizeFilter = ["small", "medium", "large", "unknown"].includes(options.sizeGroup || "") ? options.sizeGroup : "";
+  const sizeFilter = ["small", "medium", "large", "xlarge", "unknown"].includes(options.sizeGroup || "") ? options.sizeGroup : "";
   const sexFilter = options.sex === "female" ? "암컷" : options.sex === "male" ? "수컷" : "";
   const colorFilter = options.color?.trim().toLocaleLowerCase("ko-KR") || "";
   const neuteredFilter = options.neutered === "yes" ? "중성화 완료로 등록됨" : options.neutered === "no" ? "중성화되지 않은 것으로 등록됨" : "";

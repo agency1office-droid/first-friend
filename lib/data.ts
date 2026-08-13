@@ -6,7 +6,7 @@ export type Animal = {
   upKindCd?: string;
   kindCd?: string;
   age: string;
-  ageGroup: "어린 친구" | "어른 친구" | "나이 미상";
+  ageGroup: "어린 친구" | "청년 친구" | "어른 친구" | "나이 많은 친구" | "나이 미상";
   sex: string;
   region: string;
   shelter: string;

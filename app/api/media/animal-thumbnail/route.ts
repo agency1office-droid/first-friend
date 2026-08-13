@@ -9,7 +9,8 @@ export async function GET(request: Request) {
   try {
     const response = await fetch(source, { cache: "force-cache", signal: AbortSignal.timeout(15000) });
     if (!response.ok) return new Response("image unavailable", { status: 404 });
-    const contentType = source.pathname.toLowerCase().endsWith(".png") ? "image/png" : source.pathname.toLowerCase().endsWith(".webp") ? "image/webp" : "image/jpeg";
+    const pathname = String(source.pathname || "").toLowerCase();
+    const contentType = pathname.endsWith(".png") ? "image/png" : pathname.endsWith(".webp") ? "image/webp" : "image/jpeg";
     return new Response(response.body, { headers: { "content-type": contentType, "cache-control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400" } });
   } catch { return new Response("image unavailable", { status: 504 }); }
 }

@@ -620,8 +620,8 @@ export async function getBreedCounts(options: BreedCountOptions = {}) {
       const distance = distanceMeters({ lat: Number(options.lat), lng: Number(options.lng) }, { lat: Number(row.shelterLat), lng: Number(row.shelterLng) });
       if (distance > options.maxDistance) continue;
     }
-    const key = storedBreedKey(row), current = counts[key];
-    counts[key] = { count: (current?.count || 0) + 1, kindNm: key.endsWith(":000000") ? "품종 미상" : row.breed, species: key.startsWith("422400:") ? "cat" : "dog" };
+    const key = storedBreedKey(row), safeKey = String(key || ""), current = counts[safeKey];
+    counts[safeKey] = { count: (current?.count || 0) + 1, kindNm: safeKey.endsWith(":000000") ? "품종 미상" : row.breed, species: safeKey.startsWith("422400:") ? "cat" : "dog" };
   }
   return counts;
 }

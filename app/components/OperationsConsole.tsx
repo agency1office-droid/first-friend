@@ -67,13 +67,18 @@ type Data = {
 
 export function OperationsConsole() {
   const [data, setData] = useState<Data | null>(null),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [section, setSection] = useState("applications");
   const feedback = useAppFeedback();
   const load = () =>
-    fetch("/api/operations")
+    fetch(`/api/operations?section=${encodeURIComponent(section)}`)
       .then((response) => response.json())
       .then((body) => (body.error ? setError(body.error) : setData(body)));
-  useEffect(load, []);
+  useEffect(() => {
+    load();
+    // The selected tab is the only part of the request that changes here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section]);
   async function act(payload: Record<string, unknown>) {
     const response = await fetch("/api/operations", {
       method: "POST",
@@ -117,7 +122,7 @@ export function OperationsConsole() {
         </div>
       </div>
       {error && <Callout tone="critical" description={error} />}
-      <TabsRoot defaultValue="applications">
+      <TabsRoot value={section} onValueChange={setSection}>
         <TabsList>
           <TabsTrigger value="applications">입양 신청</TabsTrigger>
           <TabsTrigger value="registrations">등록·인증</TabsTrigger>

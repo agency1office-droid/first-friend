@@ -16,23 +16,37 @@ async function audit(client: ReturnType<typeof getSupabaseServerClient>, actorId
   await client.from("admin_audit_logs").insert({ actor_id: actorId, action, target_type: targetType, target_id: targetId, before_json: JSON.stringify(before || {}), after_json: JSON.stringify(after || {}) });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const auth = await context(); if (!auth) return Response.json({ error: "본인 확인이 필요합니다." }, { status: 401 });
   if (!operator(auth.member.role)) return Response.json({ error: "인증된 보호소 또는 운영자만 이용할 수 있습니다." }, { status: 403 });
   const admin = auth.member.role === "admin", c = auth.client;
-  const [applications, registrations, verifications, reports, audits, certifications, appeals, fundraisers, returns] = await Promise.all([
-    c.from("applications").select("*").order("readiness_score", { ascending: false }).order("created_at", { ascending: false }).limit(50),
-    admin ? c.from("direct_animals").select("*").order("created_at", { ascending: false }).limit(50) : c.from("direct_animals").select("*").eq("member_id", auth.user.userId).order("created_at", { ascending: false }).limit(50),
-    admin ? c.from("verification_requests").select("*").order("created_at", { ascending: false }).limit(30) : Promise.resolve({ data: [] }),
-    admin ? c.from("reports").select("*").order("created_at", { ascending: false }).limit(50) : Promise.resolve({ data: [] }),
-    admin ? c.from("admin_audit_logs").select("*").order("created_at", { ascending: false }).limit(50) : Promise.resolve({ data: [] }),
-    admin ? c.from("adoption_certifications").select("*").order("created_at", { ascending: false }).limit(30) : Promise.resolve({ data: [] }),
-    admin ? c.from("sanction_appeals").select("*").order("created_at", { ascending: false }).limit(30) : Promise.resolve({ data: [] }),
-    admin ? c.from("fundraisers").select("*").order("created_at", { ascending: false }).limit(50) : Promise.resolve({ data: [] }),
-    c.from("return_requests").select("*").order("created_at", { ascending: false }).limit(50),
+  const section = new URL(request.url).searchParams.get("section") || "applications";
+  const empty = { data: [] as Row[] };
+  const applicationsQuery = c.from("applications").select("id,animal_id,status,readiness_score,suitability_score,suitability_json,guardian_id").order("readiness_score", { ascending: false }).order("created_at", { ascending: false }).limit(50);
+  const registrationsQuery = (admin ? c.from("direct_animals").select("id,name,region,status,member_id") : c.from("direct_animals").select("id,name,region,status,member_id").eq("member_id", auth.user.userId)).order("created_at", { ascending: false }).limit(50);
+  const returnsQuery = c.from("return_requests").select("id,application_id,reason,urgency,safe_until,status,member_id").order("created_at", { ascending: false }).limit(50);
+  const [applicationCount, reviewCount, reportCount, returnCount, sectionRows] = await Promise.all([
+    (admin ? c.from("applications") : c.from("applications").select("id", { count: "exact", head: true }).eq("guardian_id", auth.user.userId)).select("id", { count: "exact", head: true }),
+    admin ? c.from("direct_animals").select("id", { count: "exact", head: true }).eq("status", "review") : Promise.resolve({ count: 0 }),
+    admin ? c.from("reports").select("id", { count: "exact", head: true }) : Promise.resolve({ count: 0 }),
+    admin ? c.from("return_requests").select("id", { count: "exact", head: true }).neq("status", "resolved") : Promise.resolve({ count: 0 }),
+    section === "applications"
+      ? Promise.all([applicationsQuery, returnsQuery]).then(([applications, returns]) => ({ applications, returns }))
+      : section === "registrations"
+        ? Promise.all([registrationsQuery, admin ? c.from("verification_requests").select("id,requested_role,organization,status,evidence_key") .order("created_at", { ascending: false }).limit(30) : Promise.resolve(empty)]).then(([registrations, verifications]) => ({ registrations, verifications }))
+        : Promise.all([
+          admin ? c.from("reports").select("id,target_type,target_id,reason,severity").order("created_at", { ascending: false }).limit(50) : Promise.resolve(empty),
+          admin ? c.from("admin_audit_logs").select("id,action,target_type,target_id,created_at").order("created_at", { ascending: false }).limit(50) : Promise.resolve(empty),
+          admin ? c.from("adoption_certifications").select("id,animal_name,shelter_name,status").order("created_at", { ascending: false }).limit(30) : Promise.resolve(empty),
+          admin ? c.from("sanction_appeals").select("id,reason,status").order("created_at", { ascending: false }).limit(30) : Promise.resolve(empty),
+          admin ? c.from("fundraisers").select("id,title,animal_id,purpose,target_amount,status").order("created_at", { ascending: false }).limit(50) : Promise.resolve(empty),
+          returnsQuery,
+        ]).then(([reports, audits, certifications, appeals, fundraisers, returns]) => ({ reports, audits, certifications, appeals, fundraisers, returns })),
   ]);
-  const applicationRows = (applications.data || []).filter(row => admin || row.guardian_id === auth.user.userId), registrationRows = registrations.data || [], returnRows = (returns.data || []).filter(row => admin || applicationRows.some(application => application.id === row.application_id));
-  return Response.json({ summary: { applications: applicationRows.length, reviews: registrationRows.filter(row => row.status === "review").length, reports: reports.data?.length || 0, returns: returnRows.filter(row => row.status !== "resolved").length }, applications: applicationRows.map(map), registrations: registrationRows.map(map), verifications: (verifications.data || []).map(map), reports: (reports.data || []).map(map), returns: returnRows.map(map), audits: (audits.data || []).map(map), certifications: (certifications.data || []).map(map), appeals: (appeals.data || []).map(map), fundraisers: (fundraisers.data || []).map(map) });
+  const applicationRows = (sectionRows.applications?.data || []).filter(row => admin || row.guardian_id === auth.user.userId);
+  const registrationRows = sectionRows.registrations?.data || [];
+  const returnRows = (sectionRows.returns?.data || []).filter(row => admin || applicationRows.some(application => application.id === row.application_id));
+  return Response.json({ summary: { applications: applicationCount.count || 0, reviews: reviewCount.count || 0, reports: reportCount.count || 0, returns: returnCount.count || 0 }, applications: applicationRows.map(map), registrations: registrationRows.map(map), verifications: (sectionRows.verifications?.data || []).map(map), reports: (sectionRows.reports?.data || []).map(map), returns: returnRows.map(map), audits: (sectionRows.audits?.data || []).map(map), certifications: (sectionRows.certifications?.data || []).map(map), appeals: (sectionRows.appeals?.data || []).map(map), fundraisers: (sectionRows.fundraisers?.data || []).map(map) });
 }
 
 export async function POST(request: Request) {

@@ -114,6 +114,7 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
       return;
     }
     dialogRef.current?.showModal();
+    requestAnimationFrame(() => dialogRef.current?.focus());
   }
 
   return <div className="ff-gallery">
@@ -126,7 +127,7 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
       </span>
       {available.length > 1 && <span className="ff-gallery-count">{selected + 1}/{available.length}</span>}
     </button>
-    <dialog ref={dialogRef} className="ff-image-dialog" onKeyDown={handleKeyDown}>
+    <dialog ref={dialogRef} className="ff-image-dialog" tabIndex={-1} onKeyDown={handleKeyDown}>
       <div className="ff-image-dialog-inner">
         <div className="ff-image-dialog-actions"><button type="button" onClick={() => dialogRef.current?.close()} aria-label="원본 사진 닫기"><IconXmarkLine/></button></div>
         <img src={originalSource} onError={() => handleOriginalError(active)} alt={name + "의 원본 등록 사진 " + (selected + 1)}/>

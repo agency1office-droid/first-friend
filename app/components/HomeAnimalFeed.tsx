@@ -52,16 +52,6 @@ export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
   const feed = useAnimalFeed(initialPage), sentinel = useRef<HTMLDivElement>(null), autoLoading = useRef(false);
   const [lostAnimals, setLostAnimals] = useState<LostAnimal[]>([]);
   const { cursor, loadMore } = feed;
-  useEffect(() => {
-    const previous = window.history.scrollRestoration;
-    window.history.scrollRestoration = "manual";
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    const frame = window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.history.scrollRestoration = previous;
-    };
-  }, []);
   const lostRegion = feed.location?.label || feed.region;
   useEffect(() => { let active = true; const controller = new AbortController(); const query = lostRegion ? `?region=${encodeURIComponent(lostRegion)}` : ""; fetch(`/api/lost-found${query}`, { signal: controller.signal }).then(response => response.ok ? response.json() as Promise<{ animals?: LostAnimal[] }> : Promise.reject(new Error("lost animals unavailable"))).then(body => { if (active) setLostAnimals(body.animals || []); }).catch(() => { if (active && !controller.signal.aborted) setLostAnimals([]); }); return () => { active = false; controller.abort(); }; }, [lostRegion]);
   useEffect(() => {

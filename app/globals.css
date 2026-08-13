@@ -149,7 +149,8 @@ img { display: block; max-width: 100%; }
 .ff-gallery { background: #111; }
 .ff-gallery-main { position: relative; width: 100%; display: block; padding: 0; border: 0; background: transparent; cursor: grab; touch-action: pan-y; user-select: none; }
 .ff-gallery-main:active { cursor: grabbing; }
-.ff-gallery-main:focus:not(:focus-visible), .ff-image-dialog button:focus:not(:focus-visible) { outline: none; }
+.ff-gallery-main:focus, .ff-image-dialog:focus, .ff-image-dialog button:focus { outline: none; box-shadow: none; }
+.ff-gallery-main, .ff-image-dialog button { -webkit-tap-highlight-color: transparent; }
 .ff-gallery-viewport { display: block; width: 100%; overflow: hidden; }
 .ff-gallery-track { display: flex; width: 100%; will-change: transform; }
 .ff-gallery-slide { display: block; flex: 0 0 100%; width: 100%; }

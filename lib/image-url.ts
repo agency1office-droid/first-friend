@@ -16,7 +16,10 @@ export function isPublicAnimalImage(value: string) {
 
 export function optimizedAnimalImageUrl(value: string) {
   const normalized = value.trim().replace(/^http:\/\//i, "https://");
-  return isPublicAnimalImage(normalized) ? `/api/media?url=${encodeURIComponent(normalized)}` : normalized;
+  // Full/detail images should come directly from the public API. Routing them
+  // through a server-side image proxy adds another request and can make the
+  // second gallery image appear late. Thumbnail generation remains separate.
+  return normalized;
 }
 
 export function optimizedAnimalThumbnailUrl(value: string) {
@@ -28,7 +31,7 @@ export function optimizedAnimalThumbnailUrl(value: string) {
 
 export function optimizedAnimalDetailPreviewUrl(value: string) {
   const normalized = value.trim().replace(/^http:\/\//i, "https://");
-  return isPublicAnimalImage(normalized) || isSupabaseStorageImage(normalized)
-    ? `/api/media/animal-thumbnail?variant=detail&url=${encodeURIComponent(normalized)}`
-    : normalized;
+  // The detail gallery uses the source image directly. Image conversion is
+  // reserved for list thumbnails and must not sit in the detail-page path.
+  return normalized;
 }

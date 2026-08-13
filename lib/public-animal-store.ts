@@ -407,16 +407,26 @@ async function mirrorAnimalImage(supabase: ReturnType<typeof getSupabaseServerCl
   const response = await fetch(sourceUrl, { cache: "no-store", signal: AbortSignal.timeout(15000) });
   if (!response.ok) throw new Error(`이미지 원본 응답 오류 ${response.status}`);
   const contentType = (response.headers.get("content-type") || "image/jpeg").split(";")[0].toLowerCase();
-  if (!contentType.startsWith("image/")) throw new Error("이미지 형식이 아닙니다.");
+  // 공공 API 일부 이미지 서버는 실제 이미지인데도 content-type을
+  // application/octet-stream 또는 빈 값으로 응답합니다. 명시적으로
+  // HTML/JSON인 경우만 거부하고, 최종 형식 검증은 sharp가 담당합니다.
+  if (contentType.startsWith("text/") || contentType.includes("html") || contentType.includes("json")) {
+    throw new Error("이미지 형식이 아닙니다.");
+  }
   const sourceBody = await response.arrayBuffer();
   if (sourceBody.byteLength > 10 * 1024 * 1024) throw new Error("이미지 원본이 10MB를 초과합니다.");
   const { default: sharp } = await import("sharp");
   const sharpProcessor = sharp as unknown as (input: Buffer, options: { failOn: "none" }) => { rotate: () => { resize: (options: { width: number; height: number; fit: "inside"; withoutEnlargement: boolean }) => { webp: (options: { quality: number; effort: number }) => { toBuffer: () => Promise<Buffer> } } } };
-  const body = await sharpProcessor(Buffer.from(sourceBody), { failOn: "none" })
-    .rotate()
-    .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
-    .webp({ quality: 80, effort: 4 })
-    .toBuffer();
+  let body: Buffer;
+  try {
+    body = await sharpProcessor(Buffer.from(sourceBody), { failOn: "none" })
+      .rotate()
+      .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 80, effort: 4 })
+      .toBuffer();
+  } catch {
+    throw new Error("이미지 형식을 읽을 수 없습니다.");
+  }
   const digest = await imageSourceDigest(sourceUrl);
   const path = `public/${id}/${slot}-${digest}.webp`;
   const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, body, { contentType: "image/webp", cacheControl: "31536000", upsert: false });

@@ -12,6 +12,8 @@ const SHELTER_ENDPOINT = "https://apis.data.go.kr/1543061/animalShelterSrvc_v2/s
 const LOSS_ENDPOINT = "https://apis.data.go.kr/1543061/lossInfoService/lossInfo";
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 50;
+const MAX_LOST_PAGES = 200;
+const API_RETRY_COUNT = 3;
 const SYNC_INTERVAL_MS = 15 * 60 * 1000;
 const ARCHIVE_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -192,6 +194,25 @@ async function fetchPage<T>(endpoint: string, pageNo: number, numOfRows: number,
   return { items: array(payload.response.body?.items?.item), total: Number(payload.response.body?.totalCount || 0) };
 }
 
+function retryableApiError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /timeout|응답 오류 (429|5\d\d)|temporar|network|fetch failed/i.test(message);
+}
+
+async function fetchPageWithRetry<T>(endpoint: string, pageNo: number, numOfRows: number, extraParams: Record<string, string> = {}) {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < API_RETRY_COUNT; attempt += 1) {
+    try {
+      return await fetchPage<T>(endpoint, pageNo, numOfRows, extraParams);
+    } catch (error) {
+      lastError = error;
+      if (!retryableApiError(error) || attempt === API_RETRY_COUNT - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 250 * (2 ** attempt) + Math.floor(Math.random() * 150)));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("공공데이터 API 요청에 실패했습니다.");
+}
+
 type FetchAllResult<T> = { items: T[]; pages: number; total: number; complete: boolean };
 
 async function fetchAll<T>(endpoint: string, options: { stopOnShortPage?: boolean } = {}): Promise<FetchAllResult<T>> {
@@ -200,7 +221,7 @@ async function fetchAll<T>(endpoint: string, options: { stopOnShortPage?: boolea
   let page = 1, total = 0;
   let endedByShortPage = false;
   while (page <= MAX_PAGES) {
-    const result = await fetchPage<T>(endpoint, page, PAGE_SIZE);
+    const result = await fetchPageWithRetry<T>(endpoint, page, PAGE_SIZE);
     const fingerprint = JSON.stringify(result.items);
     if (seenPages.has(fingerprint)) break;
     seenPages.add(fingerprint);
@@ -222,7 +243,7 @@ async function syncAnimalPages(shelterMap: Map<string, ShelterRecord>, syncId: s
   const seenPages = new Set<string>();
   let page = 1, total = 0, fetched = 0, count = 0;
   while (page <= MAX_PAGES) {
-    const result = await fetchPage<AnimalItem>(ANIMAL_ENDPOINT, page, PAGE_SIZE);
+    const result = await fetchPageWithRetry<AnimalItem>(ANIMAL_ENDPOINT, page, PAGE_SIZE);
     const fingerprint = JSON.stringify(result.items);
     if (seenPages.has(fingerprint)) break;
     seenPages.add(fingerprint);
@@ -256,8 +277,8 @@ async function fetchAllLostAnimals(): Promise<FetchAllResult<LossItem>> {
   const startDate = `${start.getUTCFullYear()}${String(start.getUTCMonth() + 1).padStart(2, "0")}${String(start.getUTCDate()).padStart(2, "0")}`;
   const dateParams = { bgnde: startDate, endde: endDate };
   let reachedEnd = false;
-  while (page <= MAX_PAGES) {
-    const result = await fetchPage<LossItem>(LOSS_ENDPOINT, page, pageSize, dateParams);
+  while (page <= MAX_LOST_PAGES) {
+    const result = await fetchPageWithRetry<LossItem>(LOSS_ENDPOINT, page, pageSize, dateParams);
     const current = result.items.filter(Boolean);
     const fingerprint = JSON.stringify(current);
     if (!current.length || seenPages.has(fingerprint)) { reachedEnd = true; break; }
@@ -699,13 +720,36 @@ async function syncPublicLostAnimalsUnlocked() {
   return { count: rows.length, pages: result.pages, syncedAt };
 }
 
+function storedLostAnimal(row: Record<string, unknown>): LostAnimal {
+  return { id: String(row.id), legacyId: String(row.legacy_id || ""), species: String(row.species), breed: String(row.breed), sex: String(row.sex), age: String(row.age), color: String(row.color), happenedAt: String(row.happened_at), region: String(row.region), address: String(row.address || ""), place: String(row.place || ""), description: String(row.description || ""), image: String(row.image || "") };
+}
+
+function lostRegionParts(value: string) {
+  const parts = value.replace(/특별자치도|특별자치시|특별시|광역시|자치시/g, "").replaceAll(",", " ").split(/\s+/).filter(Boolean);
+  return {
+    province: parts[0] || null,
+    district: parts.find(part => /[시군구]$/.test(part)) || null,
+    neighborhood: parts.find(part => /[읍면동리]$/.test(part)) || null,
+  };
+}
+
+export async function getNearbyStoredLostAnimals(homeRegion: string, limit = 8): Promise<LostAnimal[]> {
+  const parts = lostRegionParts(homeRegion);
+  const { data, error } = await getSupabaseServerClient().rpc("search_public_lost_animals_nearby", {
+    p_province: parts.province,
+    p_district: parts.district,
+    p_neighborhood: parts.neighborhood,
+    p_limit: Math.min(20, Math.max(1, limit)),
+  });
+  if (error) throw error;
+  return ((data || []) as Array<Record<string, unknown>>).map(storedLostAnimal);
+}
+
 export async function getStoredLostAnimals(limit = 12): Promise<LostAnimal[]> {
-  // 홈의 지역 우선순위를 적용하려면 먼저 전체 활성 후보를 확인해야 합니다.
-  // 일부 최신 데이터만 읽고 정렬하면 가까운 지역의 오래된 신고가 누락될 수 있습니다.
-  const safeLimit = Math.min(2000, Math.max(1, limit));
+  const safeLimit = Math.min(100, Math.max(1, limit));
   const { data, error } = await getSupabaseServerClient().from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image").eq("active", true).order("happened_at", { ascending: false }).limit(safeLimit);
   if (error) throw error;
-  return (data || []).map(row => ({ id: String(row.id), legacyId: String(row.legacy_id || ""), species: String(row.species), breed: String(row.breed), sex: String(row.sex), age: String(row.age), color: String(row.color), happenedAt: String(row.happened_at), region: String(row.region), address: String(row.address || ""), place: String(row.place || ""), description: String(row.description || ""), image: String(row.image || "") }));
+  return (data || []).map(row => storedLostAnimal(row as Record<string, unknown>));
 }
 
 export async function getStoredLostAnimalById(id: string) {
@@ -760,6 +804,9 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
       const completedAt = syncCompletedAt(state as SyncStateRow | undefined);
       return { items, total, nextCursor, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= SYNC_INTERVAL_MS * 2 };
     }
+    // 검색 RPC 장애 때 10,000건을 읽어 서버에서 다시 필터링하지 않습니다.
+    // 대량 fallback은 장애 상황에서 메모리와 응답 시간을 폭증시킬 수 있습니다.
+    throw new Error(error?.message || "보호동물 검색을 잠시 사용할 수 없습니다.");
   }
   const rows = await activeAnimals();
   const speciesFilter = options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : "";

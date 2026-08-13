@@ -1,16 +1,13 @@
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { getSupabaseServerClient } from "../../../lib/supabase/server";
 import { clean, readJson } from "../_helpers";
-import { getStoredLostAnimals } from "../../../lib/public-animal-store";
-import { prioritizeLostAnimals } from "../../../lib/public-data";
+import { getNearbyStoredLostAnimals } from "../../../lib/public-animal-store";
 
 export async function GET(request: Request) {
   const homeRegion = new URL(request.url).searchParams.get("region") || "";
   try {
-    // 지역 우선순위를 정확히 계산하려면 일부 최신 데이터가 아니라
-    // 전체 활성 후보를 먼저 읽어야 합니다. 응답에는 우선순위 상위 8개만 보냅니다.
-    const prioritized = prioritizeLostAnimals(await getStoredLostAnimals(2000), homeRegion);
-    return Response.json({ animals: prioritized.slice(0, 8) }, {
+    // 지역 우선순위와 상위 8개 선별을 DB에서 처리합니다.
+    return Response.json({ animals: await getNearbyStoredLostAnimals(homeRegion, 8) }, {
       headers: { "cache-control": "public, s-maxage=60, stale-while-revalidate=300" },
     });
   } catch {

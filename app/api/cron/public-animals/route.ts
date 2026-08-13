@@ -14,6 +14,7 @@ export async function GET(request: Request) {
     const animals = await syncPublicAnimals();
     return Response.json({ animals }, { headers: { "cache-control": "no-store" } });
   } catch (error) {
+    console.error("[public-animals-sync]", error instanceof Error ? error.message : error);
     return Response.json({ error: error instanceof Error ? error.message : "동기화하지 못했어요." }, { status: 503 });
   }
 }

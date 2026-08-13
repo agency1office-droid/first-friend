@@ -293,7 +293,7 @@ async function writeShelters(rows: ShelterRecord[]) {
 }
 
 async function writeAnimals(rows: AnimalRecord[]) {
-  for (const group of chunks(rows.map(storedAnimalRow), 500)) {
+  for (const group of chunks(rows.map(storedAnimalRow), 1000)) {
     const { error } = await getSupabaseServerClient().from("public_animals").upsert(group, { onConflict: "id" });
     if (error) throw error;
   }
@@ -412,8 +412,10 @@ export async function syncPublicAnimals() {
   const { error: startStateError } = await supabase.from("public_sync_state").upsert({ id: "public-animals", status: "running", last_started_at: startedAt, item_count: 0, page_count: 0, message: "" }, { onConflict: "id" });
   if (startStateError) throw startStateError;
   try {
-    const sheltersResult = await fetchAll<ShelterItem>(SHELTER_ENDPOINT);
-    const animalsResult = await fetchAll<AnimalItem>(ANIMAL_ENDPOINT);
+    const [sheltersResult, animalsResult] = await Promise.all([
+      fetchAll<ShelterItem>(SHELTER_ENDPOINT),
+      fetchAll<AnimalItem>(ANIMAL_ENDPOINT),
+    ]);
     if (!sheltersResult.complete || !animalsResult.complete) {
       throw new Error(`공공데이터 전체 수집이 완료되지 않았습니다. 보호소 ${sheltersResult.items.length}/${sheltersResult.total}, 동물 ${animalsResult.items.length}/${animalsResult.total}`);
     }
@@ -421,8 +423,7 @@ export async function syncPublicAnimals() {
     const shelterMap = new Map(shelterRows.map(item => [item.id, item]));
     const animalRows = animalsResult.items.map(item => mapAnimal(item, shelterMap, syncId, startedAt)).filter((item): item is AnimalRecord => Boolean(item));
     if (animalsResult.total > 0 && animalRows.length === 0) throw new Error("공공데이터는 수집됐지만 화면에 반영할 동물이 0건입니다. 매핑 조건을 확인해야 합니다.");
-    await writeShelters(shelterRows);
-    await writeAnimals(animalRows);
+    await Promise.all([writeShelters(shelterRows), writeAnimals(animalRows)]);
     const completedAt = new Date().toISOString();
     const { error: deactivateError } = await supabase.from("public_animals").update({ active: false, synced_at: completedAt }).neq("last_seen_sync", syncId).eq("active", true);
     if (deactivateError) throw deactivateError;

@@ -700,7 +700,9 @@ async function syncPublicLostAnimalsUnlocked() {
 }
 
 export async function getStoredLostAnimals(limit = 12): Promise<LostAnimal[]> {
-  const safeLimit = Math.min(1000, Math.max(1, limit));
+  // 홈의 지역 우선순위를 적용하려면 먼저 전체 활성 후보를 확인해야 합니다.
+  // 일부 최신 데이터만 읽고 정렬하면 가까운 지역의 오래된 신고가 누락될 수 있습니다.
+  const safeLimit = Math.min(2000, Math.max(1, limit));
   const { data, error } = await getSupabaseServerClient().from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image").eq("active", true).order("happened_at", { ascending: false }).limit(safeLimit);
   if (error) throw error;
   return (data || []).map(row => ({ id: String(row.id), legacyId: String(row.legacy_id || ""), species: String(row.species), breed: String(row.breed), sex: String(row.sex), age: String(row.age), color: String(row.color), happenedAt: String(row.happened_at), region: String(row.region), address: String(row.address || ""), place: String(row.place || ""), description: String(row.description || ""), image: String(row.image || "") }));

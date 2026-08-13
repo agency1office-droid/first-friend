@@ -188,9 +188,12 @@ export function prioritizeLostAnimals(animals: LostAnimal[], homeRegion = "") {
   const neighborhood = homeParts.find(part => /[읍면동리]$/.test(part));
   const score = (animal: LostAnimal) => {
     const text = normalizeRegion(`${animal.address} ${animal.region}`);
-    if (neighborhood && text.includes(neighborhood)) return 3;
-    if (cityDistrict && text.includes(cityDistrict)) return 2;
-    if (text.includes(province)) return 1;
+    // 실종 API에는 보호동물처럼 좌표가 제공되지 않으므로,
+    // 주소 행정구역을 이용해 실제 거리에 가장 가까운 순서를 근사합니다.
+    if (neighborhood && text.includes(neighborhood)) return 4;
+    if (cityDistrict && text.includes(cityDistrict)) return 3;
+    if (province && text.includes(province)) return 2;
+    if (homeParts.length && text.some(part => homeParts.includes(part))) return 1;
     return 0;
   };
   const today = new Date().toISOString().slice(0, 10);

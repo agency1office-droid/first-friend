@@ -7,8 +7,10 @@ import { prioritizeLostAnimals } from "../../../lib/public-data";
 export async function GET(request: Request) {
   const homeRegion = new URL(request.url).searchParams.get("region") || "";
   try {
-    // 홈에는 25개 구간에 삽입할 후보만 필요합니다. 전체 목록은 별도 페이지에서 조회합니다.
-    return Response.json({ animals: prioritizeLostAnimals(await getStoredLostAnimals(8), homeRegion) }, {
+    // 지역 우선순위를 정확히 계산하려면 일부 최신 데이터가 아니라
+    // 전체 활성 후보를 먼저 읽어야 합니다. 응답에는 우선순위 상위 8개만 보냅니다.
+    const prioritized = prioritizeLostAnimals(await getStoredLostAnimals(2000), homeRegion);
+    return Response.json({ animals: prioritized.slice(0, 8) }, {
       headers: { "cache-control": "public, s-maxage=60, stale-while-revalidate=300" },
     });
   } catch {

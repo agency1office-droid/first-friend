@@ -160,7 +160,7 @@ function storedAnimalRow(row: AnimalRecord) {
   };
 }
 
-async function fetchPage<T>(endpoint: string, pageNo: number, numOfRows: number) {
+async function fetchPage<T>(endpoint: string, pageNo: number, numOfRows: number, extraParams: Record<string, string> = {}) {
   const key = apiKey();
   if (!key) throw new Error("PUBLIC_DATA_API_KEY가 설정되지 않았습니다.");
   const url = new URL(endpoint);
@@ -168,6 +168,7 @@ async function fetchPage<T>(endpoint: string, pageNo: number, numOfRows: number)
   url.searchParams.set("pageNo", String(pageNo));
   url.searchParams.set("numOfRows", String(numOfRows));
   url.searchParams.set("_type", "json");
+  for (const [name, value] of Object.entries(extraParams)) url.searchParams.set(name, value);
   const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15000) });
   if (!response.ok) throw new Error(`공공데이터 API 응답 오류 ${response.status}`);
   const payload = await response.json() as Envelope<T>;
@@ -203,19 +204,27 @@ async function fetchAllLostAnimals(): Promise<FetchAllResult<LossItem>> {
   const pageSize = 100;
   let page = 1;
   let total = 0;
+  const now = new Date();
+  const endDate = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(now.getUTCDate()).padStart(2, "0")}`;
+  const start = new Date(now);
+  start.setUTCFullYear(start.getUTCFullYear() - 1);
+  const startDate = `${start.getUTCFullYear()}${String(start.getUTCMonth() + 1).padStart(2, "0")}${String(start.getUTCDate()).padStart(2, "0")}`;
+  const dateParams = { bgnde: startDate, endde: endDate };
+  let reachedEnd = false;
   while (page <= MAX_PAGES) {
-    const result = await fetchPage<LossItem>(LOSS_ENDPOINT, page, pageSize);
+    const result = await fetchPage<LossItem>(LOSS_ENDPOINT, page, pageSize, dateParams);
     const current = result.items.filter(Boolean);
     const fingerprint = JSON.stringify(current);
-    if (!current.length || seenPages.has(fingerprint)) break;
+    if (!current.length || seenPages.has(fingerprint)) { reachedEnd = true; break; }
     seenPages.add(fingerprint);
     items.push(...current);
     total = result.total;
+    if (items.length >= total) { reachedEnd = true; break; }
     page += 1;
     // 분실동물 API는 totalCount를 279로 반환하면서 실제 페이지는
     // 176건에서 끝내는 경우가 있어, 빈 페이지를 실제 종료 신호로 사용합니다.
   }
-  return { items, pages: Math.max(1, page - 1), total, complete: items.length > 0 };
+  return { items, pages: Math.max(1, page - 1), total, complete: reachedEnd && items.length > 0 };
 }
 
 function mapShelter(item: ShelterItem, syncedAt: string): ShelterRecord | null {

@@ -19,7 +19,7 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
       {available.length > 1 && <span className="ff-gallery-count"><IconPictureLine/>사진 {available.length}장 · {selected + 1}/{available.length}</span>}
     </button>
     {available.length > 1 && <div className="ff-gallery-thumbs" aria-label={`${name}의 다른 사진`}>
-      {available.map((src, index) => <button type="button" key={src} data-active={index === selected} onClick={() => setSelected(index)} aria-label={`${available.length}장 중 ${index + 1}번째 사진 보기`} aria-pressed={index === selected}><img src={optimizedAnimalImageUrl(src)} alt="" loading="lazy"/><span>{index + 1}/{available.length}</span></button>)}
+      {available.map((src, index) => <button type="button" key={src} data-active={index === selected} onClick={() => setSelected(index)} aria-label={`${available.length}장 중 ${index + 1}번째 사진 보기`} aria-pressed={index === selected}><img src={optimizedAnimalImageUrl(src)} alt="" loading={index < 2 ? "eager" : "lazy"}/><span>{index + 1}/{available.length}</span></button>)}
     </div>}
     <dialog ref={dialogRef} className="ff-image-dialog">
       <div className="ff-image-dialog-inner">

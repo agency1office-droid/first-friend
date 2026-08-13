@@ -48,6 +48,12 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
     if (!open || options) return;
     setLoading(true); fetch("/api/animal-filter-options").then(async response => { const body = await response.json(); if (!response.ok) throw new Error(body.error || "필터를 불러오지 못했어요."); setOptions(body); }).catch(value => setError(value instanceof Error ? value.message : "필터를 불러오지 못했어요.")).finally(() => setLoading(false));
   }, [open, options]);
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [open]);
   const visibleBreeds = useMemo(() => options?.breeds.filter(item => (species === "all" || normalizedSpecies(item.species) === species) && (!breedQuery.trim() || item.label.toLocaleLowerCase("ko-KR").includes(breedQuery.trim().toLocaleLowerCase("ko-KR")))) || [], [breedQuery, options, species]);
   const apply = () => {
     const ageGroup = "all";

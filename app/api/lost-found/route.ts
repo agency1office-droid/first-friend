@@ -7,7 +7,10 @@ import { prioritizeLostAnimals } from "../../../lib/public-data";
 export async function GET(request: Request) {
   const homeRegion = new URL(request.url).searchParams.get("region") || "";
   try {
-    return Response.json({ animals: prioritizeLostAnimals(await getStoredLostAnimals(1000), homeRegion) });
+    // 홈에는 25개 구간에 삽입할 후보만 필요합니다. 전체 목록은 별도 페이지에서 조회합니다.
+    return Response.json({ animals: prioritizeLostAnimals(await getStoredLostAnimals(8), homeRegion) }, {
+      headers: { "cache-control": "public, s-maxage=60, stale-while-revalidate=300" },
+    });
   } catch {
     return Response.json({ error: "실종·발견 정보를 불러오지 못했어요.", animals: [] }, { status: 503 });
   }

@@ -3,7 +3,7 @@ import { syncPublicAnimals } from "../../../../lib/public-animal-store";
 export const maxDuration = 300;
 
 function authorized(request: Request) {
-  const expected = (process.env.CRON_SECRET || process.env.PUBLIC_DATA_SYNC_TOKEN)?.trim();
+  const expected = process.env.CRON_SECRET?.trim();
   const supplied = request.headers.get("x-sync-token")?.trim() || request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
   return Boolean(expected && supplied && supplied === expected);
 }

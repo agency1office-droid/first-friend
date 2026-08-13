@@ -13,7 +13,11 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "실종·발견" };
 
 export default async function LostFound() {
-  const [lostAnimals, shelters,user] = await Promise.all([getStoredLostAnimals(12), getShelters(8),getChatGPTUser()]);
+  const [lostAnimals, shelters,user] = await Promise.all([
+    getStoredLostAnimals(12).catch(() => []),
+    getShelters(8),
+    getChatGPTUser(),
+  ]);
   let mine: Record<string, unknown>[] = []; if (user) { const { data } = await getSupabaseServerClient().from("lost_reports").select("*").eq("member_id", user.userId).order("created_at", { ascending: false }); mine = (data || []).map(row => ({ ...row, memberId: row.member_id, occurredAt: row.occurred_at })); }
   return <div className="ff-page">
     <header className="ff-page-header"><div className="ff-kicker">공공 분실동물 정보 연동</div><h1 className="ff-title">다시 집으로<br/>돌아갈 수 있도록</h1><p className="ff-description">농림축산검역본부 분실동물 정보와 퍼스트 프렌드 제보를 함께 확인해요.</p></header>

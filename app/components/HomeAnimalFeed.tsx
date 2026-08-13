@@ -26,6 +26,24 @@ function compactLostDescription(value: string) {
   return text.length > 25 ? `${text.slice(0, 25)}...` : text;
 }
 
+function formatSyncTime(value: string | null) {
+  if (!value) return "보호동물 정보를 확인하는 중이에요";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "보호동물 정보";
+  return `마지막 확인 ${new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" }).format(date)}`;
+}
+
+function FeedLoadingState() {
+  return <div className="ff-feed-loading" role="status" aria-live="polite">
+    <div className="ff-feed-loading-title"><span className="ff-skeleton ff-skeleton-title" /><span className="ff-skeleton ff-skeleton-count" /></div>
+    {[1, 2, 3].map(index => <div className="ff-feed-loading-row" key={index}>
+      <span className="ff-skeleton ff-skeleton-photo" />
+      <span className="ff-feed-loading-copy"><span className="ff-skeleton ff-skeleton-line ff-skeleton-line-short" /><span className="ff-skeleton ff-skeleton-line" /><span className="ff-skeleton ff-skeleton-line ff-skeleton-line-medium" /></span>
+    </div>)}
+    <span className="ff-feed-loading-label">가까운 보호동물을 불러오고 있어요…</span>
+  </div>;
+}
+
 function LostAnimalInsert({ animal }: { animal: LostAnimal }) {
   const detailHref = `/lost-found/animals/${encodeURIComponent(animal.id)}`;
   return <section className="ff-home-lost-insert" aria-label="실종 동물 안내">
@@ -74,9 +92,10 @@ export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
   return <section className="ff-home-feed" id="nearby-animals" aria-label="새 가족을 기다리는 보호동물">
     <header className="ff-home-feed-head"><div><div className="ff-kicker">{kicker}</div><h1 id="nearby-title">{title}</h1></div><a href="/find">전체 {count}마리</a></header>
     <AnimalFilterBar filters={feed.filters} location={feed.location} hasLocation={Boolean(feed.location)} activeCount={feed.activeCount} setFilter={feed.setFilter} resetFilters={feed.resetFilters}/>
-    <div className="ff-animal-list">{feed.items.map((animal, index) => <Fragment key={animal.id}><AnimalCard animal={animal} layout="row" priority={index < 4}/>{(index + 1) % 25 === 0 && lostAnimals[(index + 1) / 25 - 1] && <LostAnimalInsert animal={lostAnimals[(index + 1) / 25 - 1]}/>}</Fragment>)}</div>
-    {!feed.items.length && !feed.loading && <div className="ff-filter-empty"><strong>현재 조건에 맞는 친구가 없어요</strong><p>조건을 모두 지우면 가까운 친구부터 다시 볼 수 있어요.</p><ActionButton variant="neutralWeak" onClick={feed.resetFilters}>조건 모두 지우기</ActionButton></div>}
-    {feed.error && <div className="ff-feed-error">{feed.error}<button type="button" onClick={() => void feed.loadMore()}>다시 시도</button></div>}
+    <p className={`ff-feed-freshness${feed.stale ? " is-stale" : ""}`} role="status">{feed.stale ? "공공데이터가 잠시 늦게 갱신되고 있어요 · " : ""}{formatSyncTime(feed.syncedAt)}</p>
+    {feed.loading && !feed.items.length ? <FeedLoadingState/> : <div className="ff-animal-list">{feed.items.map((animal, index) => <Fragment key={animal.id}><AnimalCard animal={animal} layout="row" priority={index < 4}/>{(index + 1) % 25 === 0 && lostAnimals[(index + 1) / 25 - 1] && <LostAnimalInsert animal={lostAnimals[(index + 1) / 25 - 1]}/>}</Fragment>)}</div>}
+    {!feed.items.length && !feed.loading && !feed.error && <div className="ff-filter-empty"><strong>현재 조건에 맞는 친구가 없어요</strong><p>조건을 모두 지우면 가까운 친구부터 다시 볼 수 있어요. 전국으로 넓혀보거나 새 친구 알림을 켜도 좋아요.</p><ActionButton variant="neutralWeak" onClick={feed.resetFilters}>조건 모두 지우기</ActionButton></div>}
+    {feed.error && <div className="ff-feed-error" role="alert"><span>{feed.error}</span><button type="button" onClick={() => window.location.reload()}>{feed.items.length ? "다시 불러오기" : "다시 시도"}</button></div>}
     <div className="ff-feed-sentinel" ref={sentinel} aria-hidden="true" />
   </section>;
 }

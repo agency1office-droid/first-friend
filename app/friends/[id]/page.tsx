@@ -9,6 +9,7 @@ import { InfoBoard } from "../../components/InfoBoard";
 import { LifetimeCarePlanner } from "../../components/LifetimeCarePlanner";
 import { NameSuggestionBox } from "../../components/NameSuggestionBox";
 import { AnimalFundraiserPanel } from "../../components/AnimalFundraiserPanel";
+import { DeferredSection } from "../../components/DeferredSection";
 import { ShelterLocationCard } from "../../components/ShelterLocationCard";
 import { AnimalDetailChromeBridge } from "../../components/AnimalDetailChromeBridge";
 
@@ -130,11 +131,15 @@ export default async function AnimalPage({
           title="건강카드는 공개 정보의 요약입니다"
           description="표시되지 않은 검사·접종·치료 여부는 보호처 상담과 실제 만남에서 반드시 다시 확인하세요. 개인 연락처와 정확한 주소는 공개하지 않습니다."
         />
-        <NameSuggestionBox animalId={animal.id} currentName={animal.name} />
-        <AnimalFundraiserPanel
-          animalId={animal.id}
-          shelterName={animal.shelter}
-        />
+        <DeferredSection>
+          <NameSuggestionBox animalId={animal.id} currentName={animal.name} />
+        </DeferredSection>
+        <DeferredSection>
+          <AnimalFundraiserPanel
+            animalId={animal.id}
+            shelterName={animal.shelter}
+          />
+        </DeferredSection>
         <section className="ff-info-block">
           <h2>만나기 전 확인할 내용</h2>
           <InfoBoard

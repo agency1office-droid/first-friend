@@ -87,6 +87,21 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
     }
   }
 
+  function movePhoto(direction: -1 | 1) {
+    if (available.length < 2) return;
+    setSelected((current) => Math.max(0, Math.min(current + direction, available.length - 1)));
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLElement>) {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      movePhoto(-1);
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      movePhoto(1);
+    }
+  }
+
   function handleClick() {
     if (suppressClick.current) {
       suppressClick.current = false;
@@ -97,7 +112,7 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
 
   return <div className="ff-gallery">
     {nextImage && <link rel="preload" as="image" href={nextImage} />}
-    <button type="button" className="ff-gallery-main" onClick={handleClick} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} aria-label={`${name} 사진 ${selected + 1}번째, 좌우로 움직여 다른 사진 보기`}>
+    <button type="button" className="ff-gallery-main" onClick={handleClick} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} aria-keyshortcuts="ArrowLeft ArrowRight" aria-label={`${name} 사진 ${selected + 1}번째, 좌우로 움직여 다른 사진 보기`}>
       <span className="ff-gallery-viewport" aria-live="polite">
         <span className="ff-gallery-track" style={{ transform: `translate3d(calc(${selected * -100}% + ${dragOffset}px), 0, 0)`, transition: dragging ? "none" : "transform 220ms ease-out" }}>
           {available.map((src, index) => <span className="ff-gallery-slide" key={src}><ProgressiveAnimalImage src={src} fullSrc={imageSource(src)} onFullError={(currentSrc) => handleImageError(src, currentSrc)} alt={`${name}의 공공데이터 등록 사진 ${index + 1}`} priority={index < 2}/></span>)}
@@ -105,7 +120,7 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
       </span>
       {available.length > 1 && <span className="ff-gallery-count">{selected + 1}/{available.length}</span>}
     </button>
-    <dialog ref={dialogRef} className="ff-image-dialog">
+    <dialog ref={dialogRef} className="ff-image-dialog" onKeyDown={handleKeyDown}>
       <div className="ff-image-dialog-inner">
         <div className="ff-image-dialog-actions"><button type="button" onClick={() => dialogRef.current?.close()} aria-label="원본 사진 닫기"><IconXmarkLine/></button></div>
         <img src={imageSource(active)} onError={(event) => handleImageError(active, event.currentTarget.currentSrc)} alt={`${name}의 원본 등록 사진 ${selected + 1}`}/>

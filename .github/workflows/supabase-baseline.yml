@@ -22,6 +22,11 @@ jobs:
             echo "::error::Add the SUPABASE_DB_URL repository secret first."
             exit 1
           fi
+          # The first baseline used date-only IDs. Remove those three legacy
+          # markers before recording the now-unique migration versions.
+          for version in 0001 20260812 20260813; do
+            supabase migration repair "$version" --status reverted --db-url "$SUPABASE_DB_URL" || true
+          done
           for file in supabase/migrations/*.sql; do
             version="$(basename "$file" | cut -d_ -f1)"
             supabase migration repair "$version" --status applied --db-url "$SUPABASE_DB_URL"

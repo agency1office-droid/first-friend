@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { getShelterById } from "../../../lib/public-data";
 import { getSupabaseServerClient } from "../../../lib/supabase/server";
@@ -29,6 +30,7 @@ import {
 export const dynamic = "force-dynamic";
 const updateCategoryLabels: Record<string, string> = { daily: "일상", urgent: "긴급", result: "지원 결과", notice: "공지" };
 const volunteerCategoryLabels: Record<string, string> = { cleaning: "환경 정리", photography: "사진 촬영", transport: "이동 지원", medical: "의료 봉사", care: "돌봄", event: "행사 지원" };
+const getCachedShelterById = cache(getShelterById);
 type UpdateRow = { id: number; category: string; createdAt: string; title: string; body: string; reactions: number; hidden: boolean };
 type VolunteerRow = { id: number; category: string; scheduledAt: string; shelterId: number; createdAt: string; region: string; title: string; description: string; capacity: number; status: string };
 type NeedRow = { id: number; itemName: string; targetQuantity: number; receivedQuantity: number; unitPrice: number; status: string };
@@ -42,7 +44,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params,
-    shelter = await getShelterById(decodeURIComponent(id));
+    shelter = await getCachedShelterById(decodeURIComponent(id));
   return shelter
     ? {
         title: shelter.name,
@@ -61,7 +63,7 @@ export default async function Page({
   const { id } = await params,
     { tab } = await searchParams,
     publicId = decodeURIComponent(id),
-    shelter = await getShelterById(publicId);
+    shelter = await getCachedShelterById(publicId);
   if (!shelter) notFound();
   const shelterAnimals = await getAnimalsByShelterId(publicId),
     animals = shelterAnimals.items,

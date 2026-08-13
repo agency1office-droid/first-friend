@@ -20,17 +20,17 @@ export default async function MyPage() {
     try {
       const client = getSupabaseServerClient();
       await client.from("members").upsert({ id: user.userId, email: user.email, display_name: user.displayName }, { onConflict: "id" });
-      const [readiness, applicationRows, favoriteRows, postRows, reportRows, registrationRows, searchRows, notificationRows] = await Promise.all([
+      const [readiness, applicationRows, favoriteCount, postCount, reportCount, registrationCount, searchCount, unreadCount] = await Promise.all([
         client.from("readiness_assessments").select("*").eq("member_id", user.userId).order("completed_at", { ascending: false }).limit(1),
         client.from("applications").select("*").eq("member_id", user.userId).order("created_at", { ascending: false }),
-        client.from("favorites").select("id").eq("member_id", user.userId),
-        client.from("posts").select("id").eq("member_id", user.userId),
-        client.from("lost_reports").select("id").eq("member_id", user.userId),
-        client.from("direct_animals").select("id").eq("member_id", user.userId),
-        client.from("saved_searches").select("id").eq("member_id", user.userId),
-        client.from("notifications").select("id").eq("member_id", user.userId).eq("read", false),
+        client.from("favorites").select("id", { count: "exact", head: true }).eq("member_id", user.userId),
+        client.from("posts").select("id", { count: "exact", head: true }).eq("member_id", user.userId),
+        client.from("lost_reports").select("id", { count: "exact", head: true }).eq("member_id", user.userId),
+        client.from("direct_animals").select("id", { count: "exact", head: true }).eq("member_id", user.userId),
+        client.from("saved_searches").select("id", { count: "exact", head: true }).eq("member_id", user.userId),
+        client.from("notifications").select("id", { count: "exact", head: true }).eq("member_id", user.userId).eq("read", false),
       ]);
-      dashboard = { readiness: readiness.data?.[0], applications: (applicationRows.data || []).map(row => ({ ...row, animalId: row.animal_id, readinessScore: row.readiness_score })), favorites: favoriteRows.data?.length || 0, posts: postRows.data?.length || 0, reports: reportRows.data?.length || 0, registrations: registrationRows.data?.length || 0, searches: searchRows.data?.length || 0, unread: notificationRows.data?.length || 0 };
+      dashboard = { readiness: readiness.data?.[0], applications: (applicationRows.data || []).map(row => ({ ...row, animalId: row.animal_id, readinessScore: row.readiness_score })), favorites: favoriteCount.count || 0, posts: postCount.count || 0, reports: reportCount.count || 0, registrations: registrationCount.count || 0, searches: searchCount.count || 0, unread: unreadCount.count || 0 };
     } catch { dashboard = null; }
   }
 

@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
-import { optimizedAnimalDetailPreviewUrl, optimizedAnimalImageUrl, originalAnimalImageUrl } from "../../lib/image-url";
+import { optimizedAnimalDetailPreviewUrl, optimizedAnimalImageUrl } from "../../lib/image-url";
 
 function ProgressiveAnimalImage({ src, fullSrc, alt, priority, onFullError }: { src: string; fullSrc: string; alt: string; priority: boolean; onFullError: (currentSrc: string) => void }) {
   const thumbnailSrc = optimizedAnimalDetailPreviewUrl(src);
@@ -39,7 +39,6 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
   const available = useMemo(() => Array.from(new Set([image, ...images].filter(Boolean))), [image, images]);
   const [selected, setSelected] = useState(0);
   const [fallbackSources, setFallbackSources] = useState<Record<string, string>>({});
-  const [originalFallbackSources, setOriginalFallbackSources] = useState<Record<string, string>>({});
   const [dragOffset, setDragOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -47,7 +46,6 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
   const suppressClick = useRef(false);
   const active = available[selected] || image;
   const nextImage = available[1] ? optimizedAnimalImageUrl(available[1]) : "";
-  const originalSource = originalFallbackSources[active] || originalAnimalImageUrl(active);
 
   function imageSource(src: string) {
     return fallbackSources[src] || optimizedAnimalImageUrl(src);
@@ -62,10 +60,6 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
     }
   }
 
-  function handleOriginalError(src: string) {
-    if (originalFallbackSources[src]) return;
-    setOriginalFallbackSources((current) => ({ ...current, [src]: imageSource(src) }));
-  }
   function handlePointerDown(event: React.PointerEvent<HTMLButtonElement>) {
     pointerStart.current = event.clientX;
     suppressClick.current = false;
@@ -130,7 +124,7 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
     <dialog ref={dialogRef} className="ff-image-dialog" tabIndex={-1} onKeyDown={handleKeyDown}>
       <div className="ff-image-dialog-inner">
         <div className="ff-image-dialog-actions"><button type="button" onClick={() => dialogRef.current?.close()} aria-label="원본 사진 닫기"><IconXmarkLine/></button></div>
-        <img src={originalSource} onError={() => handleOriginalError(active)} alt={name + "의 원본 등록 사진 " + (selected + 1)}/>
+        <img src={imageSource(active)} onError={(event) => handleImageError(active, event.currentTarget.currentSrc)} alt={name + "의 원본 등록 사진 " + (selected + 1)}/>
         {available.length > 1 && <div className="ff-image-dialog-nav">{available.map((src, index) => <button type="button" key={src} data-active={index === selected} onClick={() => setSelected(index)} aria-label={`${available.length}장 중 ${index + 1}번째 원본 사진 보기`}><img src={imageSource(src)} onError={(event) => handleImageError(src, event.currentTarget.currentSrc)} alt=""/><span>{index + 1}/{available.length}</span></button>)}</div>}
       </div>
     </dialog>

@@ -424,8 +424,10 @@ export async function getPublicRawFilterOptions() {
     for (const color of jsonArray(String(item.colors_json || "[]"))) sets.colors.add(color);
     for (const trait of jsonArray(String(item.traits_json || "[]"))) if (/kg/i.test(trait)) sets.weights.add(trait);
   }
+  const breedCounts = await getBreedCounts();
   const sorted = (set: Set<string>) => [...set].sort((a, b) => a.localeCompare(b, "ko-KR"));
-  return { species: sorted(sets.species), breeds: [...sets.breeds.values()].sort((a, b) => a.label.localeCompare(b.label, "ko-KR")), sex: sorted(sets.sex), colors: sorted(sets.colors), ages: sorted(sets.ages), weights: sorted(sets.weights), states: sorted(sets.states), regions: sorted(sets.regions) };
+  const breeds = [...sets.breeds.values()].map(item => ({ ...item, count: breedCounts[item.key]?.count || 0 })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "ko-KR"));
+  return { species: sorted(sets.species), breeds, sex: sorted(sets.sex), colors: sorted(sets.colors), ages: sorted(sets.ages), weights: sorted(sets.weights), states: sorted(sets.states), regions: sorted(sets.regions) };
 }
 
 export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {

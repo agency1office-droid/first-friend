@@ -13,9 +13,11 @@ export type AnimalFeedFilters = {
   breedKeys: string[];
   sex: "all" | "female" | "male";
   color: string;
+  ageGroup: "all" | "young" | "adult" | "unknown";
+  sizeGroup: "all" | "small" | "medium" | "large" | "unknown";
 };
 
-const defaultFilters: AnimalFeedFilters = { sort: "distance", species: "all", publicStatus: "all", breedKeys: [], sex: "all", color: "all" };
+const defaultFilters: AnimalFeedFilters = { sort: "distance", species: "all", publicStatus: "all", breedKeys: [], sex: "all", color: "all", ageGroup: "all", sizeGroup: "all" };
 export const HOME_FEED_SNAPSHOT_KEY = "ff-home-feed-snapshot-v2";
 
 type FeedSnapshot = { url: string; items: Animal[]; total: number; cursor: string | null; syncedAt: string | null; stale: boolean; scrollY: number };
@@ -49,7 +51,7 @@ function preloadAnimalImages(items: Animal[]) {
 
 function filtersFromUrl() {
   const params = new URLSearchParams(window.location.search);
-  const sort = params.get("sort"), species = params.get("species"), publicStatus = params.get("status"), sex = params.get("sex"), color = params.get("color");
+  const sort = params.get("sort"), species = params.get("species"), publicStatus = params.get("status"), sex = params.get("sex"), color = params.get("color"), ageGroup = params.get("age"), sizeGroup = params.get("size");
   return {
     sort: sort === "recent" ? "recent" : "distance",
     species: species === "cat" || species === "dog" ? species : "all",
@@ -57,6 +59,8 @@ function filtersFromUrl() {
     breedKeys: (params.get("breeds") || "").split(",").filter(value => /^(417000|422400):\d{6}$/.test(value)).slice(0, 10),
     sex: sex === "female" || sex === "male" ? sex : "all",
     color: color?.trim() || "all",
+    ageGroup: ageGroup === "young" || ageGroup === "adult" || ageGroup === "unknown" ? ageGroup : "all",
+    sizeGroup: sizeGroup === "small" || sizeGroup === "medium" || sizeGroup === "large" || sizeGroup === "unknown" ? sizeGroup : "all",
   } satisfies AnimalFeedFilters;
 }
 
@@ -98,6 +102,8 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     if (filters.breedKeys.length) params.set("breeds", filters.breedKeys.join(","));
     if (filters.sex !== "all") params.set("sex", filters.sex);
     if (filters.color !== "all") params.set("color", filters.color);
+    if (filters.ageGroup !== "all") params.set("age", filters.ageGroup);
+    if (filters.sizeGroup !== "all") params.set("size", filters.sizeGroup);
     // 정렬값을 생략하면 서버 기본값이 최신순이 되므로,
     // 홈 기본 정렬인 가까운 순도 요청에 명시적으로 전달합니다.
     params.set("sort", filters.sort);
@@ -266,6 +272,6 @@ export function useAnimalFeed(initialPage: AnimalPage) {
 
   const setFilter = useCallback(<K extends keyof AnimalFeedFilters>(key: K, value: AnimalFeedFilters[K]) => setFilters(current => ({ ...current, [key]: value })), []);
   const resetFilters = useCallback(() => setFilters(defaultFilters), []);
-  const activeCount = Number(filters.sort === "recent") + Number(filters.species !== "all") + Number(filters.publicStatus !== "all") + Number(filters.breedKeys.length > 0) + Number(filters.sex !== "all") + Number(filters.color !== "all");
+  const activeCount = Number(filters.sort === "recent") + Number(filters.species !== "all") + Number(filters.publicStatus !== "all") + Number(filters.breedKeys.length > 0) + Number(filters.sex !== "all") + Number(filters.color !== "all") + Number(filters.ageGroup !== "all") + Number(filters.sizeGroup !== "all");
   return { items, total, cursor, syncedAt, stale, location, region, filters, setFilter, resetFilters, activeCount, loading, error, loadMore };
 }

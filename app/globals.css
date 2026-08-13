@@ -149,6 +149,10 @@ img { display: block; max-width: 100%; }
 .ff-gallery { background: #111; }
 .ff-gallery-main { position: relative; width: 100%; display: block; padding: 0; border: 0; background: transparent; cursor: grab; touch-action: pan-y; user-select: none; }
 .ff-gallery-main:active { cursor: grabbing; }
+.ff-gallery-viewport { display: block; width: 100%; overflow: hidden; }
+.ff-gallery-track { display: flex; width: 100%; will-change: transform; }
+.ff-gallery-slide { display: block; flex: 0 0 100%; width: 100%; }
+.ff-gallery-slide .ff-detail-image { display: block; }
 .ff-gallery-expand, .ff-gallery-count { position: absolute; display: flex; align-items: center; gap: 5px; padding: 7px 10px; border-radius: 999px; color: #fff; background: rgba(0,0,0,.62); backdrop-filter: blur(8px); font-size: 12px; font-weight: 700; }
 .ff-gallery-count { right: 12px; bottom: 12px; min-width: 42px; justify-content: center; }
 .ff-gallery-thumbs { display: flex; gap: 8px; padding: 10px 12px 12px; overflow-x: auto; }

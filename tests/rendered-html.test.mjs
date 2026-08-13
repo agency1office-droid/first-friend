@@ -547,7 +547,9 @@ test("preserves additional public animal photos and provides an original-size ga
   assert.match(imageVerifier, /distinctAnimalImages/);
   assert.match(gallery, /showModal\(\)/);
   assert.match(gallery, /onPointerDown/);
+  assert.match(gallery, /onPointerMove/);
   assert.match(gallery, /onPointerUp/);
+  assert.match(gallery, /translate3d/);
   assert.match(gallery, /좌우로 움직여/);
   assert.doesNotMatch(gallery, /새 탭에서 원본 열기/);
   assert.doesNotMatch(gallery, /사진 \{available\.length\}장/);

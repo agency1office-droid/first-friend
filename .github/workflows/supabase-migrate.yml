@@ -2,6 +2,10 @@ name: Supabase migrations
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
 
 permissions:
   contents: read

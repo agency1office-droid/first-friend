@@ -18,6 +18,24 @@ type Props = { activeCount: number; filters: AnimalFeedFilters; setFilter: <K ex
 const humanize = (value: string) => value.replace(/\s+/g, " ").trim();
 const normalizedSpecies = (value: string) => value === "cat" || value === "고양이" ? "cat" : "dog";
 const orderedSex = (values: string[]) => ["수컷", "암컷", "미상", ...values.filter(value => !["수컷", "암컷", "미상"].includes(value))].filter((value, index, items) => items.indexOf(value) === index);
+const normalizeBreedSearch = (value: string) => value.toLocaleLowerCase("ko-KR").replace(/[\s._-]+/g, "");
+const breedAliasGroups = [
+  ["진돗개", "진도개", "진도견"],
+  ["말티즈", "몰티즈"],
+  ["시츄", "시추"],
+  ["요크셔테리어", "요크셔 테리어"],
+  ["웰시코기", "웰시 코기"],
+  ["닥스훈트", "닥스훈드"],
+  ["러시안블루", "러시안 블루"],
+  ["스코티시폴드", "스코티시 폴드"],
+  ["아메리칸숏헤어", "아메리칸 숏헤어"],
+  ["브리티시숏헤어", "브리티시 숏헤어"],
+] as const;
+const breedSearchTerms = (label: string) => {
+  const normalized = normalizeBreedSearch(label);
+  const group = breedAliasGroups.find(aliases => aliases.some(alias => normalizeBreedSearch(alias) === normalized));
+  return group ? [...group, label] : [label];
+};
 
 function SectionHeading({ title, action, count, icon }: { title: string; action?: React.ReactNode; count?: string; icon?: React.ReactNode }) {
   return <div className="ff-filter-section-heading">{icon && <span className="ff-filter-section-icon" aria-hidden>{icon}</span>}<h2>{title}</h2>{count && <span className="ff-filter-section-count">{count}</span>}{action}</div>;
@@ -56,7 +74,10 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = previousOverflow; };
   }, [open]);
-  const visibleBreeds = useMemo(() => options?.breeds.filter(item => (species === "all" || normalizedSpecies(item.species) === species) && (!breedQuery.trim() || item.label.toLocaleLowerCase("ko-KR").includes(breedQuery.trim().toLocaleLowerCase("ko-KR")))) || [], [breedQuery, options, species]);
+  const visibleBreeds = useMemo(() => {
+    const query = normalizeBreedSearch(breedQuery.trim());
+    return options?.breeds.filter(item => (species === "all" || normalizedSpecies(item.species) === species) && (!query || breedSearchTerms(item.label).some(term => normalizeBreedSearch(term).includes(query)))) || [];
+  }, [breedQuery, options, species]);
   const apply = () => {
     setFilter("species", species); setFilter("breedKeys", breeds.slice(0, 10)); setFilter("sex", sex[0] === "암컷" ? "female" : sex[0] === "수컷" ? "male" : "all"); setFilter("neutered", neutered[0] === "중성화 완료" ? "yes" : neutered[0] === "중성화 안 됨" ? "no" : "all"); setFilter("ageGroup", ageGroup); setFilter("sizeGroup", sizeGroup); setFilter("ageMin", 0); setFilter("ageMax", PUBLIC_ANIMAL_AGE_MAX); setOpen(false);
   };

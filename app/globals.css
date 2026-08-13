@@ -147,12 +147,10 @@ img { display: block; max-width: 100%; }
 
 .ff-detail-image { width: 100%; height: 390px; object-fit: cover; }
 .ff-gallery { background: #111; }
-.ff-gallery-main { position: relative; width: 100%; display: block; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
+.ff-gallery-main { position: relative; width: 100%; display: block; padding: 0; border: 0; background: transparent; cursor: grab; touch-action: pan-y; user-select: none; }
+.ff-gallery-main:active { cursor: grabbing; }
 .ff-gallery-expand, .ff-gallery-count { position: absolute; display: flex; align-items: center; gap: 5px; padding: 7px 10px; border-radius: 999px; color: #fff; background: rgba(0,0,0,.62); backdrop-filter: blur(8px); font-size: 12px; font-weight: 700; }
-.ff-gallery-expand { right: 12px; bottom: 12px; }
-.ff-gallery-expand svg { width: 15px; height: 15px; }
-.ff-gallery-count { left: 12px; bottom: 12px; }
-.ff-gallery-count svg { width: 15px; height: 15px; }
+.ff-gallery-count { right: 12px; bottom: 12px; min-width: 42px; justify-content: center; }
 .ff-gallery-thumbs { display: flex; gap: 8px; padding: 10px 12px 12px; overflow-x: auto; }
 .ff-gallery-thumbs button, .ff-image-dialog-nav button { flex: none; width: 66px; height: 66px; padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: 9px; background: #222; opacity: .62; }
 .ff-gallery-thumbs button, .ff-image-dialog-nav button { position: relative; }

@@ -179,12 +179,19 @@ type FetchAllResult<T> = { items: T[]; pages: number; total: number; complete: b
 
 async function fetchAll<T>(endpoint: string): Promise<FetchAllResult<T>> {
   const items: T[] = [];
+  const seenPages = new Set<string>();
   let page = 1, total = 0;
   while (page <= MAX_PAGES) {
     const result = await fetchPage<T>(endpoint, page, PAGE_SIZE);
+    const fingerprint = JSON.stringify(result.items);
+    if (seenPages.has(fingerprint)) break;
+    seenPages.add(fingerprint);
     items.push(...result.items);
     total = result.total;
-    if (!result.items.length || items.length >= total || result.items.length < PAGE_SIZE) break;
+    // 공공데이터 API는 요청한 PAGE_SIZE보다 적게 반환하면서도
+    // totalCount보다 남은 데이터가 있을 수 있습니다(실종 API가 대표적).
+    // 짧은 페이지를 종료 신호로 사용하지 말고 다음 페이지를 확인합니다.
+    if (!result.items.length || items.length >= total) break;
     page += 1;
   }
   return { items, pages: page, total, complete: total === 0 || items.length >= total };

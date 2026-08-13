@@ -1,9 +1,40 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
+import { optimizedAnimalThumbnailUrl } from "../../lib/image-url";
+
+function ProgressiveAnimalImage({ src, fullSrc, alt, priority, onFullError }: { src: string; fullSrc: string; alt: string; priority: boolean; onFullError: (currentSrc: string) => void }) {
+  const thumbnailSrc = optimizedAnimalThumbnailUrl(src);
+  const [fullReady, setFullReady] = useState(thumbnailSrc === fullSrc);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+
+  useEffect(() => {
+    if (thumbnailSrc === fullSrc) return;
+    const preload = new Image();
+    preload.decoding = "async";
+    preload.onload = () => setFullReady(true);
+    preload.src = fullSrc;
+  }, [fullSrc, thumbnailSrc]);
+
+  const displayedSrc = thumbnailFailed ? fullSrc : fullReady ? fullSrc : thumbnailSrc;
+  return <img
+    className="ff-detail-image"
+    src={displayedSrc}
+    onError={(event) => {
+      if (!thumbnailFailed && displayedSrc === thumbnailSrc) setThumbnailFailed(true);
+      else onFullError(event.currentTarget.currentSrc);
+    }}
+    alt={alt}
+    fetchPriority={priority ? "high" : "auto"}
+    loading={priority ? "eager" : "lazy"}
+    decoding="async"
+    referrerPolicy="no-referrer"
+    draggable="false"
+  />;
+}
 
 export function AnimalGallery({ name, image, images = [] }: { name:string; image:string; images?:string[] }) {
   const available = useMemo(() => Array.from(new Set([image, ...images].filter(Boolean))), [image, images]);
@@ -70,7 +101,7 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
     <button type="button" className="ff-gallery-main" onClick={handleClick} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} aria-label={`${name} 사진 ${selected + 1}번째, 좌우로 움직여 다른 사진 보기`}>
       <span className="ff-gallery-viewport" aria-live="polite">
         <span className="ff-gallery-track" style={{ transform: `translate3d(calc(${selected * -100}% + ${dragOffset}px), 0, 0)`, transition: dragging ? "none" : "transform 220ms ease-out" }}>
-          {available.map((src, index) => <span className="ff-gallery-slide" key={src}><img className="ff-detail-image" src={imageSource(src)} onError={(event) => handleImageError(src, event.currentTarget.currentSrc)} alt={`${name}의 공공데이터 등록 사진 ${index + 1}`} fetchPriority={index < 2 ? "high" : "auto"} loading={index < 2 ? "eager" : "lazy"} decoding="async" referrerPolicy="no-referrer" draggable="false"/></span>)}
+          {available.map((src, index) => <span className="ff-gallery-slide" key={src}><ProgressiveAnimalImage src={src} fullSrc={imageSource(src)} onFullError={(currentSrc) => handleImageError(src, currentSrc)} alt={`${name}의 공공데이터 등록 사진 ${index + 1}`} priority={index < 2}/></span>)}
         </span>
       </span>
       {available.length > 1 && <span className="ff-gallery-count">{selected + 1}/{available.length}</span>}

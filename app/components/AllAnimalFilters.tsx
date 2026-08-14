@@ -68,9 +68,20 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
   }, [open, options]);
   useEffect(() => {
     if (!open) return;
-    const previousOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverscroll = document.documentElement.style.overscrollBehavior;
+    const previousBodyOverscroll = document.body.style.overscrollBehavior;
+    document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previousOverflow; };
+    document.documentElement.style.overscrollBehavior = "none";
+    document.body.style.overscrollBehavior = "none";
+    return () => {
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overscrollBehavior = previousHtmlOverscroll;
+      document.body.style.overscrollBehavior = previousBodyOverscroll;
+    };
   }, [open]);
   useEffect(() => {
     if (!open) return;
@@ -110,7 +121,7 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
 
   return <>
     <Chip.Button className="ff-all-filter-trigger" variant="outlineWeak" size="medium" onClick={openPanel} aria-label="전체 필터 열기" data-checked={activeCount > 0 || undefined}><Chip.PrefixIcon><Icon svg={<IconSlider2HorizontalLine />} /></Chip.PrefixIcon>{activeCount > 0 && <span className="ff-all-filter-count">{activeCount}</span>}</Chip.Button>
-    {open && <div className="ff-all-filter-overlay" role="dialog" aria-modal="true" aria-label="전체 필터">
+    {open && <div className="ff-all-filter-overlay" role="dialog" aria-modal="true" aria-label="전체 필터" onWheelCapture={event => event.stopPropagation()} onTouchMoveCapture={event => event.stopPropagation()}>
       <header className="ff-filter-reference-header"><button type="button" onClick={() => setOpen(false)} aria-label="필터 닫기"><IconChevronLeftLine aria-hidden /></button><h1>친구 찾기</h1><button type="button" onClick={clearDraft}>전체 초기화</button></header>
       <div className="ff-all-filter-content ff-filter-reference-content">
         {loading && <div className="ff-all-filter-loading"><LoadingIndicator label="필터를 불러오는 중" /></div>}{error && <p className="ff-all-filter-error">{error}</p>}{options && <>

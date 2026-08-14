@@ -6,6 +6,7 @@ import { Badge } from "seed-design/ui/badge";
 import {
   IconCheckmarkCircleFill,
   IconChevronRightLine,
+  IconHospitalcrossBuildingLine,
   IconMapLocationpinLine,
 } from "@karrotmarket/react-monochrome-icon";
 import { AnimalGallery } from "../../components/AnimalGallery";
@@ -109,12 +110,12 @@ export default async function AnimalPage({
         <strong>보호 단계 · {publicStatus.statusLabel}</strong>
       </section>
       <section className="ff-detail-shelter" aria-label="보호소 정보">
+        <div className="ff-detail-shelter-icon" aria-hidden><IconHospitalcrossBuildingLine /></div>
         <div className="ff-detail-shelter-copy">
           <strong>{animal.shelter}</strong>
           <p>{shelterAddress}</p>
         </div>
         <a className="ff-detail-location-link" href={shelterMapHref} target="_blank" rel="noreferrer" aria-label={`${animal.shelter} 위치를 카카오맵에서 보기`}>
-          <span>위치</span>
           <IconMapLocationpinLine aria-hidden />
         </a>
       </section>

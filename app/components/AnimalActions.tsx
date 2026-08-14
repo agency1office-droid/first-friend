@@ -12,9 +12,8 @@ import {
 import { Callout } from "seed-design/ui/callout";
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
 import {
-  IconQUppercaseChatbubbleRightLine,
+  IconAndroidshareLine,
 } from "@karrotmarket/react-monochrome-icon";
-import { PrefixIcon } from "@seed-design/react";
 import { useAppFeedback } from "./AppFeedback";
 import { FavoriteButton } from "./FavoriteButton";
 
@@ -78,9 +77,10 @@ export function AnimalActions({
 
   return <div className="ff-sticky-actions">
     <FavoriteButton animalId={animalId} animalName={name} className="ff-sticky-scrap" />
+    <button className="ff-sticky-share" type="button" onClick={share} aria-label="공유하기"><IconAndroidshareLine aria-hidden /></button>
     <BottomSheetRoot>
       <BottomSheetTrigger asChild>
-        <ActionButton variant="neutralWeak"><PrefixIcon svg={<IconQUppercaseChatbubbleRightLine />} />질문하기</ActionButton>
+        <ActionButton variant="neutralWeak">질문하기</ActionButton>
       </BottomSheetTrigger>
       <BottomSheetContent title={`${name}에 대해 함께 상의해요`} description="가족 카톡방에 링크 하나만 보내면 로그인 없이 각자 의견을 남길 수 있어요.">
         <BottomSheetBody>

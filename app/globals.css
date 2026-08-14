@@ -293,7 +293,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-filter-reference-header button { min-height:40px; padding:0; border:0; background:transparent; color:var(--seed-color-fg-neutral-muted); font:inherit; font-size:13px; text-align:left; }
 .ff-filter-reference-header button:first-child { display:grid; place-items:center; width:40px; font-size:22px; color:var(--seed-color-fg-neutral); }
 .ff-filter-reference-header button:last-child { text-align:right; }
-.ff-filter-reference-content { padding:0 20px 96px; }
+.ff-filter-reference-content { padding:0 20px 148px; }
 .ff-filter-applied { padding:20px 0 18px; border-bottom:1px solid var(--seed-color-stroke-neutral-muted); }
 .ff-filter-applied p { margin:10px 0 0; color:var(--seed-color-fg-neutral-muted); font-size:14px; }
 .ff-filter-section-heading { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
@@ -305,6 +305,9 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-filter-applied-list { display:flex; flex-wrap:wrap; gap:6px; }
 .ff-filter-applied-list button { display:inline-flex; align-items:center; gap:4px; min-height:30px; padding:0 9px; border:0; border-radius:999px; background:var(--seed-color-bg-brand-weak); color:var(--seed-color-fg-brand); font:inherit; font-size:12px; }
 .ff-filter-applied-list svg { width:14px; height:14px; }
+.ff-filter-applied-footer { max-height:72px; overflow-y:auto; padding:0 0 8px; border:0; }
+.ff-filter-applied-footer button { display:inline-flex; align-items:center; gap:4px; min-height:30px; margin:0 4px 4px 0; padding:0 9px; border:0; border-radius:999px; background:var(--seed-color-bg-brand-weak); color:var(--seed-color-fg-brand); font:inherit; font-size:12px; }
+.ff-filter-applied-footer button svg { width:14px; height:14px; }
 .ff-filter-choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
 .ff-filter-choice { display:grid; place-items:center; min-height:48px; padding:10px 8px; border:1px solid var(--seed-color-stroke-neutral-muted); border-radius:8px; background:var(--seed-color-bg-layer-default); color:var(--seed-color-fg-neutral-muted); font:inherit; font-size:13px; text-align:center; }
 .ff-filter-age-choice { min-height:68px; gap:4px; }

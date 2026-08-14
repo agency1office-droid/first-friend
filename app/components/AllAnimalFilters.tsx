@@ -50,7 +50,7 @@ const ageOptions = [
 const sizeOptions = (_species: AnimalFeedFilters["species"]) => [["small", "소형"], ["medium", "중형"], ["large", "대형"], ["xlarge", "초대형"]] as const;
 
 export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters }: Props) {
-  const [open, setOpen] = useState(false), [loading, setLoading] = useState(false), [error, setError] = useState(""), [options, setOptions] = useState<Options | null>(null);
+  const [open, setOpen] = useState(false), [loading, setLoading] = useState(false), [countLoading, setCountLoading] = useState(false), [draftCount, setDraftCount] = useState<number | null>(null), [error, setError] = useState(""), [options, setOptions] = useState<Options | null>(null);
   const [species, setSpecies] = useState<AnimalFeedFilters["species"]>(filters.species), [breeds, setBreeds] = useState<string[]>(filters.breedKeys), [sex, setSex] = useState<string[]>([]), [neutered, setNeutered] = useState<string[]>([]);
   const [ageGroup, setAgeGroup] = useState(filters.ageGroup), [sizeGroup, setSizeGroup] = useState(filters.sizeGroup), [breedQuery, setBreedQuery] = useState(""), [showBreeds, setShowBreeds] = useState(false);
   const toggle = (setter: React.Dispatch<React.SetStateAction<string[]>>) => (value: string) => setter(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value]);
@@ -68,6 +68,24 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = previousOverflow; };
   }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const params = new URLSearchParams({ species, breedKeys: breeds.join(","), sex: sex.map(value => value === "암컷" ? "female" : value === "미상" ? "unknown" : "male").join(","), neutered: neutered.map(value => value === "중성화 완료" ? "yes" : "no").join(","), ageGroup, sizeGroup });
+    const timer = window.setTimeout(async () => {
+      setCountLoading(true);
+      try {
+        const response = await fetch(`/api/animal-filter-count?${params}`);
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error || "개체 수를 계산하지 못했어요.");
+        setDraftCount(Number(body.count) || 0);
+      } catch {
+        setDraftCount(null);
+      } finally {
+        setCountLoading(false);
+      }
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [ageGroup, breeds, neutered, open, sex, sizeGroup, species]);
   const visibleBreeds = useMemo(() => {
     const query = normalizeBreedSearch(breedQuery.trim());
     return options?.breeds.filter(item => (species === "all" || normalizedSpecies(item.species) === species) && (!query || breedSearchTerms(item.label).some(term => normalizeBreedSearch(term).includes(query)))) || [];
@@ -91,14 +109,14 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
       <header className="ff-filter-reference-header"><button type="button" onClick={() => setOpen(false)} aria-label="필터 닫기"><IconChevronLeftLine aria-hidden /></button><h1>친구 찾기</h1><button type="button" onClick={clearDraft}>전체 초기화</button></header>
       <div className="ff-all-filter-content ff-filter-reference-content">
         {loading && <div className="ff-all-filter-loading"><LoadingIndicator label="필터를 불러오는 중" /></div>}{error && <p className="ff-all-filter-error">{error}</p>}{options && <>
-          <section className="ff-filter-applied"><SectionHeading title="선택한 조건" icon={<IconCheckmarkScaleLine />} />{applied.length ? <div className="ff-filter-applied-list">{applied.map(item => <button type="button" key={item.key} onClick={() => removeApplied(item.key)}>{item.label}<IconXmarkLine aria-hidden /></button>)}</div> : <p>아직 선택한 조건이 없어요.</p>}</section>
+          <section className="ff-filter-applied"><SectionHeading title="선택한 조건" count={countLoading ? "계산 중" : draftCount === null ? undefined : `${draftCount.toLocaleString("ko-KR")}마리`} icon={<IconCheckmarkScaleLine />} />{applied.length ? <div className="ff-filter-applied-list">{applied.map(item => <button type="button" key={item.key} onClick={() => removeApplied(item.key)}>{item.label}<IconXmarkLine aria-hidden /></button>)}</div> : <p>아직 선택한 조건이 없어요.</p>}</section>
           <section className="ff-filter-reference-section"><SectionHeading title="동물 종류 · 품종" icon={<IconPawprintLine />} /><div className="ff-filter-species-grid">{(["dog", "cat"] as const).map(value => <button type="button" key={value} className="ff-filter-species-card" data-selected={species === value || undefined} onClick={() => { if (species === value) { setSpecies("all"); setBreeds([]); setShowBreeds(false); return; } setSpecies(value); setShowBreeds(true); setBreeds(current => current.filter(key => { const breed = options.breeds.find(item => item.key === key); return !breed || normalizedSpecies(breed.species) === value; })); }}><span className="ff-filter-species-illustration" aria-hidden>{value === "dog" ? "🐶" : "🐱"}</span><strong>{value === "dog" ? "강아지" : "고양이"}</strong><small>{options.breeds.filter(item => normalizedSpecies(item.species) === value).reduce((sum, item) => sum + item.count, 0).toLocaleString("ko-KR")}마리</small></button>)}</div>{species !== "all" && <div className="ff-filter-breed-toolbar"><strong>{species === "cat" ? "고양이" : "강아지"} 품종</strong><button type="button" data-expanded={showBreeds || undefined} aria-expanded={showBreeds} onClick={() => setShowBreeds(current => !current)} aria-label={showBreeds ? "품종 접기" : "품종 펼치기"}><Icon svg={<IconChevronDownLine />} /></button></div>}{showBreeds && <><TextField className="ff-filter-search"><TextFieldInput value={breedQuery} onChange={event => setBreedQuery(event.target.value)} placeholder="품종을 검색해보세요" /></TextField><div className="ff-filter-breed-list">{visibleBreeds.slice(0, 100).map(item => <Checkbox key={item.key} checked={breeds.includes(item.key)} onCheckedChange={() => toggle(setBreeds)(item.key)} label={<span className="ff-breed-filter-label"><strong>{humanize(item.label)}</strong><small>{item.count.toLocaleString("ko-KR")}마리</small></span>} />)}</div></>}</section>
           <section className="ff-filter-reference-section"><SectionHeading title="나이" /><div className="ff-filter-choice-grid">{ageOptions.map(([value, title, range]) => <button type="button" key={value} className="ff-filter-choice ff-filter-age-choice" data-selected={ageGroup.split(",").includes(value) || undefined} onClick={() => setAgeGroup(current => { const values = current === "all" ? [] : current.split(","); const next = values.includes(value) ? values.filter(item => item !== value) : [...values, value]; return next.join(",") || "all"; })}><strong>{title}</strong><small>{range}</small></button>)}</div></section>
           <section className="ff-filter-reference-section"><SectionHeading title="크기" /><div className="ff-filter-choice-grid">{sizeOptions(species).map(([value, label]) => <button type="button" key={value} className={`ff-filter-choice ff-filter-size-choice is-${value}`} data-selected={sizeGroup.split(",").includes(value) || undefined} onClick={() => setSizeGroup(current => { const values = current === "all" ? [] : current.split(","); const next = values.includes(value) ? values.filter(item => item !== value) : [...values, value]; return next.join(",") || "all"; })}><strong>{label}</strong></button>)}</div></section>
           <section className="ff-filter-reference-section"><SectionHeading title="성별" /><div className="ff-filter-choice-grid">{orderedSex(options.sex).map(value => <button type="button" key={value} className="ff-filter-choice ff-filter-sex-choice" data-selected={sex.includes(value) || undefined} onClick={() => setSex(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value])}><strong>{humanize(value)}</strong></button>)}</div></section>
           <section className="ff-filter-reference-section"><SectionHeading title="중성화 여부" /><div className="ff-filter-choice-grid">{[["yes", "중성화 완료"], ["no", "중성화 안 됨"]].map(([value, label]) => <button type="button" key={value} className="ff-filter-choice ff-filter-neuter-choice" data-selected={neutered.includes(label) || undefined} onClick={() => setNeutered(current => current.includes(label) ? current.filter(item => item !== label) : [...current, label])}><strong>{label}</strong></button>)}</div></section>
         </>}
-      </div><footer className="ff-filter-reference-footer"><ActionButton onClick={apply}>선택 조건 적용{applied.length ? ` · ${applied.length}개` : ""}</ActionButton></footer>
+      </div><footer className="ff-filter-reference-footer"><ActionButton onClick={apply}>선택 조건 적용{countLoading ? " · 계산 중" : draftCount === null ? "" : ` · ${draftCount.toLocaleString("ko-KR")}마리`}</ActionButton></footer>
     </div>}
   </>;
 }

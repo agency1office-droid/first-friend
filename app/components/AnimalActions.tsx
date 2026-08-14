@@ -12,23 +12,18 @@ import {
 import { Callout } from "seed-design/ui/callout";
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
 import {
-  IconAndroidshareLine,
   IconQUppercaseChatbubbleRightLine,
 } from "@karrotmarket/react-monochrome-icon";
 import { PrefixIcon } from "@seed-design/react";
 import { useAppFeedback } from "./AppFeedback";
 
-type PublicActionPhase = "notice" | "protected" | "unknown" | "ended";
-
 export function AnimalActions({
   animalId,
   name,
-  phase,
   shelterPhone,
 }: {
   animalId: string;
   name: string;
-  phase: PublicActionPhase;
   shelterPhone?: string;
 }) {
   const [shareUrl, setShareUrl] = useState("");
@@ -76,18 +71,14 @@ export function AnimalActions({
     }
   }
 
-  const inquiryLabel = phase === "notice"
-    ? "이 동물을 아시나요?"
-    : "입양 상담하기";
   const inquiryHref = shelterPhone
     ? `tel:${shelterPhone.replace(/[^0-9+]/g, "")}`
     : "#shelter-contact";
 
   return <div className="ff-sticky-actions">
-    <button className="ff-share-icon" onClick={share} aria-label="공유"><IconAndroidshareLine /></button>
     <BottomSheetRoot>
       <BottomSheetTrigger asChild>
-        <ActionButton variant="neutralWeak"><PrefixIcon svg={<IconQUppercaseChatbubbleRightLine />} />질문·가족 상의</ActionButton>
+        <ActionButton variant="neutralWeak"><PrefixIcon svg={<IconQUppercaseChatbubbleRightLine />} />질문하기</ActionButton>
       </BottomSheetTrigger>
       <BottomSheetContent title={`${name}에 대해 함께 상의해요`} description="가족 카톡방에 링크 하나만 보내면 로그인 없이 각자 의견을 남길 수 있어요.">
         <BottomSheetBody>
@@ -100,6 +91,6 @@ export function AnimalActions({
         <BottomSheetFooter><ActionButton variant="neutralWeak" onClick={share}>일반 공유</ActionButton></BottomSheetFooter>
       </BottomSheetContent>
     </BottomSheetRoot>
-    {phase !== "ended" && <ActionButton asChild><a href={inquiryHref}>{inquiryLabel}</a></ActionButton>}
+    <ActionButton asChild><a href={inquiryHref}>연락하기</a></ActionButton>
   </div>;
 }

@@ -3,7 +3,12 @@ import type { Animal } from "../../../lib/data";
 import { getAnimalPublicStatus } from "../../../lib/animal-public-status";
 import { Callout } from "seed-design/ui/callout";
 import { Badge } from "seed-design/ui/badge";
-import { IconCheckmarkCircleFill, IconChevronRightLine } from "@karrotmarket/react-monochrome-icon";
+import {
+  IconCheckmarkCircleFill,
+  IconChevronRightLine,
+  IconHospitalcrossBuildingLine,
+  IconLocationpinLine,
+} from "@karrotmarket/react-monochrome-icon";
 import { AnimalGallery } from "../../components/AnimalGallery";
 import { AnimalActions } from "../../components/AnimalActions";
 import { InfoBoard } from "../../components/InfoBoard";
@@ -98,6 +103,23 @@ export default async function AnimalPage({
           images={animal.images}
         />
       </div>
+      <section className="ff-detail-status-banner" aria-label="보호 단계">
+        <IconCheckmarkCircleFill aria-hidden />
+        <div>
+          <span>보호 단계</span>
+          <strong>{publicStatus.statusLabel}</strong>
+        </div>
+        <IconChevronRightLine aria-hidden />
+      </section>
+      <section className="ff-detail-shelter" aria-label="보호소 정보">
+        <div className="ff-detail-shelter-icon" aria-hidden><IconHospitalcrossBuildingLine /></div>
+        <div className="ff-detail-shelter-copy">
+          <span>보호소 정보</span>
+          <strong>{animal.shelter}</strong>
+          <p><IconLocationpinLine aria-hidden />{animal.shelterAddress || animal.region}</p>
+        </div>
+        {animal.shelterId && <a href={`/shelters/${encodeURIComponent(animal.shelterId)}`} aria-label={`${animal.shelter} 보호소 채널 보기`}><IconChevronRightLine aria-hidden /></a>}
+      </section>
       <article className="ff-detail-body">
         <nav className="ff-detail-taxonomy" aria-label="동물 분류">
           <span>{animal.species}</span>
@@ -240,7 +262,7 @@ export default async function AnimalPage({
           />
         </section>
       </article>
-      <AnimalActions animalId={animal.id} name={animal.name} phase={publicStatus.phase} shelterPhone={animal.shelterPhone} />
+      <AnimalActions animalId={animal.id} name={animal.name} shelterPhone={animal.shelterPhone} />
     </>
   );
 }

@@ -585,8 +585,8 @@ test("explains public notice deadlines without presenting them as adoption deadl
   assert.match(status, /publicOutcomeLabel/);
   assert.match(status, /현재 처리 상태/);
   assert.match(status, /상담 이후 실제 입양 가능 여부와 절차는 보호소가 확인합니다/);
-  assert.match(actions, /이 동물을 아시나요\?/);
-  assert.match(actions, /입양 상담하기/);
+  assert.match(actions, /질문하기/);
+  assert.match(actions, /연락하기/);
   assert.doesNotMatch(actions, /입양 신청/);
   assert.match(apply, /공공데이터만으로 입양 가능 여부를 확정할 수 없어요/);
   assert.doesNotMatch(apply, /ApplicationForm/);

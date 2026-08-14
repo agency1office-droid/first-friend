@@ -19,6 +19,12 @@ function noticeEndDate(notice: string | undefined) {
   return new Date(Number(last[1]), Number(last[2]) - 1, Number(last[3]), 23, 59, 59);
 }
 
+export function getNoticeDaysRemaining(notice: string | undefined) {
+  const endDate = noticeEndDate(notice);
+  if (!endDate) return null;
+  return Math.max(0, Math.ceil((endDate.getTime() - currentServerTimestamp()) / 86_400_000));
+}
+
 export function getAnimalPublicStatus(animal: Animal) {
   const notice = animal.life.find((item) => item.startsWith("공고 "));
   const publicState = animal.health.find((item) => item.startsWith("현재 상태:"))?.replace("현재 상태:", "").trim() || "";

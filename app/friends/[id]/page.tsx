@@ -1,6 +1,6 @@
 import { getAnimalById } from "../../../lib/public-data";
 import type { Animal } from "../../../lib/data";
-import { getAnimalPublicStatus } from "../../../lib/animal-public-status";
+import { getAnimalPublicStatus, getNoticeDaysRemaining } from "../../../lib/animal-public-status";
 import { Callout } from "seed-design/ui/callout";
 import { Badge } from "seed-design/ui/badge";
 import {
@@ -92,6 +92,7 @@ export default async function AnimalPage({
     />
   </div>;
   const publicStatus = getAnimalPublicStatus(animal);
+  const noticeDaysRemaining = getNoticeDaysRemaining(publicStatus.notice);
   const colors = detailColors(animal.colors);
   const shelterAddress = animal.shelterAddress || animal.region;
   const shelterMapHref = `https://map.kakao.com/link/search/${encodeURIComponent(`${animal.shelter} ${shelterAddress}`)}`;
@@ -106,7 +107,7 @@ export default async function AnimalPage({
         />
       </div>
       <section className={`ff-detail-status-banner ff-public-status-${publicStatus.phase}`} aria-label="보호 단계">
-        <IconCheckmarkCircleFill aria-hidden />
+        {publicStatus.phase === "notice" && noticeDaysRemaining !== null && <span className="ff-detail-status-day">D-{noticeDaysRemaining}</span>}
         <strong>보호 단계 · {publicStatus.statusLabel}</strong>
       </section>
       <section className="ff-detail-shelter" aria-label="보호소 정보">

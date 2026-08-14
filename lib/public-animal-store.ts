@@ -15,7 +15,6 @@ const MAX_PAGES = 50;
 const MAX_LOST_PAGES = 200;
 const API_RETRY_COUNT = 3;
 const STALE_DATA_MS = 48 * 60 * 60 * 1000;
-const STALE_SYNC_MS = 30 * 60 * 1000;
 const ARCHIVE_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 
 type Envelope<T> = { response?: { header?: { resultCode?: string; resultMsg?: string }; body?: { items?: { item?: T | T[] }; totalCount?: number | string } } };
@@ -427,7 +426,8 @@ async function syncPublicAnimalsUnlocked() {
   }
 }
 
-export async function ensurePublicAnimals(_options: { allowSync?: boolean } = {}) {
+export async function ensurePublicAnimals(options: { allowSync?: boolean } = {}) {
+  void options;
   await ensureTables();
   const supabase = getSupabaseServerClient();
   const { data: states } = await supabase.from("public_sync_state").select("*").eq("id", "public-animals").limit(1);

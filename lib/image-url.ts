@@ -1,5 +1,3 @@
-const PUBLIC_ANIMAL_IMAGE_HOST = "openapi.animal.go.kr";
-
 export function optimizedAnimalImageUrl(value: string) {
   const normalized = value.trim().replace(/^http:\/\//i, "https://");
   // Full/detail images should come directly from the public API. Routing them

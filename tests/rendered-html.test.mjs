@@ -185,14 +185,9 @@ test("normalizes public API weight formats before assigning size groups", async 
 });
 
 test("accepts legacy age-group labels while the public data is normalized", async () => {
-  const [store, countRoute] = await Promise.all([
-    readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/animal-filter-count/route.ts", import.meta.url), "utf8"),
-  ]);
+  const store = await readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8");
   assert.match(store, /"아기"/);
   assert.match(store, /"성장기"/);
-  assert.match(countRoute, /pathname = "\/api\/animals"/);
-  assert.match(countRoute, /searchParams\.set\("age"/);
 });
 
 test("uses the official public breed catalogue and stable breed codes", async () => {

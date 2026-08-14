@@ -174,6 +174,15 @@ test("replaces species tabs with actionable shelter-distance animal filters", as
   assert.doesNotMatch(homeFeed, /현재 조건에 맞는 친구가 없어요/);
 });
 
+test("normalizes public API weight formats before assigning size groups", async () => {
+  const migration = await readFile(new URL("../supabase/migrations/20260814000300_fix_public_animal_size_groups.sql", import.meta.url), "utf8");
+  assert.match(migration, /regexp_replace\(coalesce\(traits_json, ''\)/);
+  assert.match(migration, /regexp_replace\(coalesce\(traits_json, ''\),/);
+  assert.match(migration, /parsed\.weight_kg < 3/);
+  assert.match(migration, /parsed\.weight_kg < 5/);
+  assert.match(migration, /unknown/);
+});
+
 test("uses the official public breed catalogue and stable breed codes", async () => {
   const [catalogue, route, schema, search, filter] = await Promise.all([
     readFile(new URL("../lib/public-breeds.ts", import.meta.url), "utf8"),

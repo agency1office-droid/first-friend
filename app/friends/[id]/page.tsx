@@ -108,7 +108,7 @@ export default async function AnimalPage({
       </div>
       <section className={`ff-detail-status-banner ff-public-status-${publicStatus.phase}`} aria-label="보호 단계">
         {publicStatus.phase === "notice" && noticeDaysRemaining !== null && <span className="ff-detail-status-day">D-{noticeDaysRemaining}</span>}
-        <strong>보호 단계 · {publicStatus.statusLabel}</strong>
+        <strong>{publicStatus.statusLabel}</strong>
       </section>
       <section className="ff-detail-shelter" aria-label="보호소 정보">
         <div className="ff-detail-shelter-icon" aria-hidden><IconHospitalcrossBuildingLine /></div>

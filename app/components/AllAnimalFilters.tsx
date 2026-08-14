@@ -49,8 +49,8 @@ const ageOptions = [
 ] as const;
 const sizeOptions = () => [["small", "소형"], ["medium", "중형"], ["large", "대형"], ["xlarge", "초대형"]] as const;
 const coatColors = ["흰색", "검정", "갈색", "황색", "회색", "삼색", "고등어", "치즈"] as const;
-const dogCoatColors = ["흰색", "검정", "갈색", "황색", "회색"] as const;
-const catCoatColors = ["흰색", "검정", "갈색", "회색", "삼색", "고등어", "치즈"] as const;
+const dogCoatColors = ["흰색", "검정", "갈색", "황색", "회색", "기타·복합색"] as const;
+const catCoatColors = ["흰색", "검정", "갈색", "황색", "회색", "삼색", "고등어", "치즈", "기타·복합색"] as const;
 const colorsForSpecies = (species: AnimalFeedFilters["species"]) => species === "dog" ? dogCoatColors : species === "cat" ? catCoatColors : coatColors;
 
 export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters }: Props) {

@@ -105,7 +105,7 @@ export default async function AnimalPage({
           images={animal.images}
         />
       </div>
-      <section className="ff-detail-status-banner" aria-label="보호 단계">
+      <section className={`ff-detail-status-banner ff-public-status-${publicStatus.phase}`} aria-label="보호 단계">
         <IconCheckmarkCircleFill aria-hidden />
         <strong>보호 단계 · {publicStatus.statusLabel}</strong>
       </section>

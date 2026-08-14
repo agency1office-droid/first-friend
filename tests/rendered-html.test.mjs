@@ -191,8 +191,8 @@ test("accepts legacy age-group labels while the public data is normalized", asyn
   ]);
   assert.match(store, /"아기"/);
   assert.match(store, /"성장기"/);
-  assert.match(countRoute, /getNearbyAnimalsPage/);
-  assert.doesNotMatch(countRoute, /from\("public_animals"\)/);
+  assert.match(countRoute, /pathname = "\/api\/animals"/);
+  assert.match(countRoute, /searchParams\.set\("age"/);
 });
 
 test("uses the official public breed catalogue and stable breed codes", async () => {

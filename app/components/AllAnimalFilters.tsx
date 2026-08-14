@@ -59,7 +59,7 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
   const [ageGroup, setAgeGroup] = useState(filters.ageGroup), [sizeGroup, setSizeGroup] = useState(filters.sizeGroup), [breedQuery, setBreedQuery] = useState(""), [showBreeds, setShowBreeds] = useState(false);
   const toggle = (setter: React.Dispatch<React.SetStateAction<string[]>>) => (value: string) => setter(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value]);
   const openPanel = () => {
-    setSpecies(filters.species); setBreeds(filters.breedKeys); setSex(filters.sex.split(",").filter(Boolean).map(value => value === "female" ? "암컷" : value === "unknown" ? "미상" : "수컷")); setNeutered(filters.neutered === "all" ? [] : filters.neutered.split(",").map(value => value === "yes" ? "중성화 완료" : "중성화 안 됨"));
+    setSpecies(filters.species); setBreeds(filters.breedKeys); setSex(filters.sex === "all" ? [] : filters.sex.split(",").filter(Boolean).map(value => value === "female" ? "암컷" : value === "unknown" ? "미상" : "수컷")); setNeutered(filters.neutered === "all" ? [] : filters.neutered.split(",").map(value => value === "yes" ? "중성화 완료" : "중성화 안 됨"));
     setAgeGroup(filters.ageGroup); setSizeGroup(filters.sizeGroup); setBreedQuery(""); setShowBreeds(Boolean(filters.species !== "all")); setError(""); setOpen(true);
   };
   useEffect(() => {

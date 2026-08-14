@@ -21,10 +21,6 @@ img { display: block; max-width: 100%; }
 .ff-topbar-side { display: flex; align-items: center; min-width: 0; }
 .ff-topbar-side-end { justify-content: flex-end; }
 .ff-topbar-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-size: var(--seed-font-size-t5); line-height: var(--seed-line-height-t5); font-weight: var(--seed-font-weight-bold); }
-.ff-detail-topbar-actions { display: flex; align-items: center; justify-content: flex-end; }
-.ff-detail-topbar-actions .ff-icon-link, .ff-detail-topbar-actions .ff-card-scrap { position: static; width: 44px; height: 44px; color: var(--seed-color-fg-neutral-muted); background: transparent; box-shadow: none; }
-.ff-detail-topbar-actions .ff-icon-link svg, .ff-detail-topbar-actions .ff-card-scrap svg { width: 22px; height: 22px; }
-.ff-detail-topbar-actions .ff-card-scrap[aria-pressed="true"] { color: var(--seed-color-fg-brand); background: transparent; box-shadow: none; }
 .ff-icon-link { width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 999px; color: var(--seed-color-fg-neutral); background: transparent; }
 .ff-icon-link:hover { background: var(--seed-color-bg-neutral-weak); }
 .ff-notification-bell { position: relative; overflow: visible; }
@@ -370,7 +366,10 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-section-head .ff-section-title { text-wrap: balance; }
 .ff-cta-section { display: grid; gap: 12px; }
 .ff-detail-gallery { position: relative; }
-.ff-detail-gallery > .ff-card-scrap { z-index: 2; top: 12px; right: 12px; }
+.ff-detail-under-gallery-actions { display: flex; align-items: center; justify-content: flex-end; gap: 2px; min-height: 52px; padding: 4px 12px 0; background: var(--seed-color-bg-layer-default); }
+.ff-detail-under-gallery-actions .ff-icon-link, .ff-detail-under-gallery-actions .ff-card-scrap { position: static; width: 44px; height: 44px; color: var(--seed-color-fg-neutral-muted); background: transparent; box-shadow: none; }
+.ff-detail-under-gallery-actions .ff-icon-link svg, .ff-detail-under-gallery-actions .ff-card-scrap svg { width: 22px; height: 22px; }
+.ff-detail-under-gallery-actions .ff-card-scrap[aria-pressed="true"] { color: var(--seed-color-fg-brand); background: transparent; box-shadow: none; }
 .ff-detail-body > * { min-width: 0; }
 .ff-info-cell strong { min-height: 38px; display: grid; place-items: center; word-break: keep-all; overflow-wrap: anywhere; line-height: 19px; }
 .ff-info-board { margin-top: 10px; overflow: hidden; border-top: 1px solid var(--seed-color-stroke-neutral-muted); border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }

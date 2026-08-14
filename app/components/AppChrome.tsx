@@ -8,11 +8,11 @@ import { HomeTopbar } from "./HomeTopbar";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalMenuButton } from "./GlobalMenuButton";
 
-type RouteChrome={rule:RegExp;title:string;topbarTitle?:string;back?:string;mode?:"detail"|"form"|"main"|"stack"};
+type RouteChrome={rule:RegExp;title:string;topbarTitle?:string;back?:string;mode?:"detail"|"form"|"main"|"stack";homeActions?:boolean};
 const routes:RouteChrome[]=[
   {rule:/^\/participate\/?$/,title:"함께하기",mode:"main"},
   {rule:/^\/mypage\/favorites\/?$/,title:"관심 친구",mode:"main"},
-  {rule:/^\/friends\//,title:"친구 정보",topbarTitle:"",back:"/find",mode:"detail"},
+  {rule:/^\/friends\//,title:"친구 정보",topbarTitle:"",back:"/find",mode:"detail",homeActions:true},
   {rule:/^\/apply\//,title:"입양 신청",back:"/find",mode:"form"},
   {rule:/^\/applications\//,title:"입양 진행",back:"/mypage",mode:"detail"},
   {rule:/^\/family\//,title:"가족과 상의하기",back:"/find",mode:"detail"},
@@ -82,7 +82,7 @@ function StackTopbar({route}:{route:RouteChrome}){
   return <header className="ff-topbar ff-stack-topbar">
     <div className="ff-topbar-side">{route.back&&<AppBackButton fallback={route.back} title={route.title}/>}</div>
     <strong className="ff-topbar-title">{route.topbarTitle ?? route.title}</strong>
-    <div className="ff-topbar-side ff-topbar-side-end"/>
+    <div className="ff-topbar-side ff-topbar-side-end">{route.homeActions&&<div className="ff-top-actions"><NotificationBell/><GlobalMenuButton/></div>}</div>
   </header>;
 }
 

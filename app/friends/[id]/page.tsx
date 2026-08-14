@@ -35,7 +35,6 @@ export default async function AnimalPage({
   const publicStatus = getAnimalPublicStatus(animal);
   return (
     <>
-      <AnimalDetailChromeBridge animalId={animal.id} name={animal.name}/>
       <div className="ff-detail-gallery">
         <AnimalGallery
           name={animal.name}
@@ -43,6 +42,7 @@ export default async function AnimalPage({
           images={animal.images}
         />
       </div>
+      <AnimalDetailChromeBridge animalId={animal.id} name={animal.name}/>
       <article className="ff-detail-body">
         <div className="ff-detail-top">
           <div>

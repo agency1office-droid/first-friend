@@ -48,15 +48,19 @@ const ageOptions = [
   ["senior", "노령", "11살 이상"],
 ] as const;
 const sizeOptions = (_species: AnimalFeedFilters["species"]) => [["small", "소형"], ["medium", "중형"], ["large", "대형"], ["xlarge", "초대형"]] as const;
+const coatColors = ["흰색", "검정", "갈색", "황색", "회색", "삼색", "고등어", "치즈"] as const;
+const dogCoatColors = ["흰색", "검정", "갈색", "황색", "회색"] as const;
+const catCoatColors = ["흰색", "검정", "갈색", "회색", "삼색", "고등어", "치즈"] as const;
+const colorsForSpecies = (species: AnimalFeedFilters["species"]) => species === "dog" ? dogCoatColors : species === "cat" ? catCoatColors : coatColors;
 
 export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters }: Props) {
   const [open, setOpen] = useState(false), [loading, setLoading] = useState(false), [countLoading, setCountLoading] = useState(false), [draftCount, setDraftCount] = useState<number | null>(null), [error, setError] = useState(""), [options, setOptions] = useState<Options | null>(null);
-  const [species, setSpecies] = useState<AnimalFeedFilters["species"]>(filters.species), [breeds, setBreeds] = useState<string[]>(filters.breedKeys), [sex, setSex] = useState<string[]>([]), [neutered, setNeutered] = useState<string[]>([]);
+  const [species, setSpecies] = useState<AnimalFeedFilters["species"]>(filters.species), [breeds, setBreeds] = useState<string[]>(filters.breedKeys), [sex, setSex] = useState<string[]>([]), [neutered, setNeutered] = useState<string[]>([]), [color, setColor] = useState(filters.color);
   const [ageGroup, setAgeGroup] = useState(filters.ageGroup), [sizeGroup, setSizeGroup] = useState(filters.sizeGroup), [breedQuery, setBreedQuery] = useState(""), [showBreeds, setShowBreeds] = useState(false);
   const toggle = (setter: React.Dispatch<React.SetStateAction<string[]>>) => (value: string) => setter(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value]);
   const openPanel = () => {
     setSpecies(filters.species); setBreeds(filters.breedKeys); setSex(filters.sex === "all" ? [] : filters.sex.split(",").filter(Boolean).map(value => value === "female" ? "암컷" : value === "unknown" ? "미상" : "수컷")); setNeutered(filters.neutered === "all" ? [] : filters.neutered.split(",").map(value => value === "yes" ? "중성화 완료" : "중성화 안 됨"));
-    setAgeGroup(filters.ageGroup); setSizeGroup(filters.sizeGroup); setBreedQuery(""); setShowBreeds(Boolean(filters.species !== "all")); setError(""); setOpen(true);
+    setAgeGroup(filters.ageGroup); setSizeGroup(filters.sizeGroup); setColor(filters.color); setBreedQuery(""); setShowBreeds(Boolean(filters.species !== "all")); setError(""); setOpen(true);
   };
   useEffect(() => {
     if (!open || options) return;
@@ -70,7 +74,7 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
   }, [open]);
   useEffect(() => {
     if (!open) return;
-    const params = new URLSearchParams({ species, breedKeys: breeds.join(","), sex: sex.map(value => value === "암컷" ? "female" : value === "미상" ? "unknown" : "male").join(","), neutered: neutered.map(value => value === "중성화 완료" ? "yes" : "no").join(","), ageGroup, sizeGroup });
+    const params = new URLSearchParams({ species, breedKeys: breeds.join(","), sex: sex.map(value => value === "암컷" ? "female" : value === "미상" ? "unknown" : "male").join(","), neutered: neutered.map(value => value === "중성화 완료" ? "yes" : "no").join(","), ageGroup, sizeGroup, color });
     const timer = window.setTimeout(async () => {
       setCountLoading(true);
       try {
@@ -85,23 +89,24 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
       }
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [ageGroup, breeds, neutered, open, sex, sizeGroup, species]);
+  }, [ageGroup, breeds, color, neutered, open, sex, sizeGroup, species]);
   const visibleBreeds = useMemo(() => {
     const query = normalizeBreedSearch(breedQuery.trim());
     return options?.breeds.filter(item => (species === "all" || normalizedSpecies(item.species) === species) && (!query || breedSearchTerms(item.label).some(term => normalizeBreedSearch(term).includes(query)))) || [];
   }, [breedQuery, options, species]);
   const apply = () => {
-    setFilter("species", species); setFilter("breedKeys", breeds.slice(0, 10)); setFilter("sex", sex.map(value => value === "암컷" ? "female" : value === "미상" ? "unknown" : "male").join(",") || "all"); setFilter("neutered", neutered.map(value => value === "중성화 완료" ? "yes" : "no").join(",") || "all"); setFilter("ageGroup", ageGroup); setFilter("sizeGroup", sizeGroup); setFilter("ageMin", 0); setFilter("ageMax", PUBLIC_ANIMAL_AGE_MAX); setOpen(false);
+    setFilter("species", species); setFilter("breedKeys", breeds.slice(0, 10)); setFilter("sex", sex.map(value => value === "암컷" ? "female" : value === "미상" ? "unknown" : "male").join(",") || "all"); setFilter("neutered", neutered.map(value => value === "중성화 완료" ? "yes" : "no").join(",") || "all"); setFilter("ageGroup", ageGroup); setFilter("sizeGroup", sizeGroup); setFilter("color", color); setFilter("ageMin", 0); setFilter("ageMax", PUBLIC_ANIMAL_AGE_MAX); setOpen(false);
   };
-  const clearDraft = () => { setSpecies("all"); setBreeds([]); setSex([]); setNeutered([]); setAgeGroup("all"); setSizeGroup("all"); resetFilters(); };
+  const clearDraft = () => { setSpecies("all"); setBreeds([]); setSex([]); setNeutered([]); setAgeGroup("all"); setSizeGroup("all"); setColor("all"); resetFilters(); };
   const applied = [
     ...(species !== "all" ? [{ key: "species", label: species === "cat" ? "고양이" : "강아지" }] : []),
     ...breeds.map(key => ({ key: `breed:${key}`, label: options?.breeds.find(item => item.key === key)?.label || "선택한 품종" })),
     ...(sex.map(value => ({ key: `sex:${value}`, label: value }))), ...(neutered.map(value => ({ key: `neutered:${value}`, label: value }))),
     ...(ageGroup !== "all" ? ageGroup.split(",").map(value => ({ key: `age:${value}`, label: ageOptions.find(([option]) => option === value)?.[1] || "나이" })) : []),
     ...(sizeGroup !== "all" ? sizeGroup.split(",").map(value => ({ key: `size:${value}`, label: sizeOptions(species).find(([option]) => option === value)?.[1] || "크기" })) : []),
+    ...(color !== "all" ? [{ key: "color", label: color }] : []),
   ];
-  const removeApplied = (key: string) => { if (key === "species") { setSpecies("all"); setBreeds([]); } else if (key.startsWith("breed:")) setBreeds(current => current.filter(item => `breed:${item}` !== key)); else if (key.startsWith("sex:")) setSex(current => current.filter(value => `sex:${value}` !== key)); else if (key.startsWith("neutered:")) setNeutered(current => current.filter(value => `neutered:${value}` !== key)); else if (key.startsWith("age:")) setAgeGroup(current => current.split(",").filter(value => `age:${value}` !== key).join(",") || "all"); else if (key.startsWith("size:")) setSizeGroup(current => current.split(",").filter(value => `size:${value}` !== key).join(",") || "all"); };
+  const removeApplied = (key: string) => { if (key === "species") { setSpecies("all"); setBreeds([]); } else if (key === "color") setColor("all"); else if (key.startsWith("breed:")) setBreeds(current => current.filter(item => `breed:${item}` !== key)); else if (key.startsWith("sex:")) setSex(current => current.filter(value => `sex:${value}` !== key)); else if (key.startsWith("neutered:")) setNeutered(current => current.filter(value => `neutered:${value}` !== key)); else if (key.startsWith("age:")) setAgeGroup(current => current.split(",").filter(value => `age:${value}` !== key).join(",") || "all"); else if (key.startsWith("size:")) setSizeGroup(current => current.split(",").filter(value => `size:${value}` !== key).join(",") || "all"); };
 
   return <>
     <Chip.Button className="ff-all-filter-trigger" variant="outlineWeak" size="medium" onClick={openPanel} aria-label="전체 필터 열기" data-checked={activeCount > 0 || undefined}><Chip.PrefixIcon><Icon svg={<IconSlider2HorizontalLine />} /></Chip.PrefixIcon>{activeCount > 0 && <span className="ff-all-filter-count">{activeCount}</span>}</Chip.Button>
@@ -115,6 +120,7 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
           <section className="ff-filter-reference-section"><SectionHeading title="크기" /><div className="ff-filter-choice-grid">{sizeOptions(species).map(([value, label]) => <button type="button" key={value} className={`ff-filter-choice ff-filter-size-choice is-${value}`} data-selected={sizeGroup.split(",").includes(value) || undefined} onClick={() => setSizeGroup(current => { const values = current === "all" ? [] : current.split(","); const next = values.includes(value) ? values.filter(item => item !== value) : [...values, value]; return next.join(",") || "all"; })}><strong>{label}</strong></button>)}</div></section>
           <section className="ff-filter-reference-section"><SectionHeading title="성별" /><div className="ff-filter-choice-grid">{orderedSex(options.sex).map(value => <button type="button" key={value} className="ff-filter-choice ff-filter-sex-choice" data-selected={sex.includes(value) || undefined} onClick={() => setSex(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value])}><strong>{humanize(value)}</strong></button>)}</div></section>
           <section className="ff-filter-reference-section"><SectionHeading title="중성화 여부" /><div className="ff-filter-choice-grid">{[["yes", "중성화 완료"], ["no", "중성화 안 됨"]].map(([value, label]) => <button type="button" key={value} className="ff-filter-choice ff-filter-neuter-choice" data-selected={neutered.includes(label) || undefined} onClick={() => setNeutered(current => current.includes(label) ? current.filter(item => item !== label) : [...current, label])}><strong>{label}</strong></button>)}</div></section>
+          <section className="ff-filter-reference-section"><SectionHeading title="털색" /><div className="ff-color-palette" role="listbox" aria-label="털색"><button className="ff-color-option" type="button" data-color="all" role="option" aria-selected={color === "all"} onClick={() => setColor("all")}><span className="ff-color-swatch" aria-hidden /><strong>모든 털색</strong>{color === "all" && <b aria-hidden>✓</b>}</button>{colorsForSpecies(species).map(value => <button className="ff-color-option" type="button" key={value} data-color={value} role="option" aria-selected={color === value} onClick={() => setColor(value)}><span className="ff-color-swatch" aria-hidden /><strong>{value}</strong>{color === value && <b aria-hidden>✓</b>}</button>)}</div></section>
         </>}
       </div><footer className="ff-filter-reference-footer"><ActionButton onClick={apply}>선택 조건 적용{countLoading ? " · 계산 중" : draftCount === null ? "" : ` · ${draftCount.toLocaleString("ko-KR")}마리`}</ActionButton></footer>
     </div>}

@@ -157,7 +157,7 @@ test("replaces species tabs with actionable shelter-distance animal filters", as
   assert.doesNotMatch(allFilters, /seed-design\/ui\/segmented-control/);
   for (const category of ["고양이", "강아지"]) assert.match(allFilters, new RegExp(category));
   assert.match(allFilters, /ff-filter-breed-toolbar/);
-  assert.doesNotMatch(allFilters, /털색/);
+  assert.match(allFilters, /털색/);
   assert.match(allFilters, /중성화 완료/);
   assert.match(allFilters, /\["mature", "어른", "6~10살"\]/);
   assert.match(allFilters, /\["senior", "노령", "11살 이상"\]/);

@@ -7,7 +7,7 @@ import { FavoriteButton } from "./FavoriteButton";
 import { useAppFeedback } from "./AppFeedback";
 
 export function AnimalDetailChromeBridge({ animalId, name }: { animalId: string; name: string }) {
-  const [titleSlot, setTitleSlot] = useState<Element | null>(null);
+  const [slots, setSlots] = useState<{ title: Element; actions: Element } | null>(null);
   const [showTitle, setShowTitle] = useState(false);
   const feedback = useAppFeedback();
 
@@ -18,7 +18,8 @@ export function AnimalDetailChromeBridge({ animalId, name }: { animalId: string;
     };
     const frame = window.requestAnimationFrame(() => {
       const title = document.querySelector(".ff-stack-topbar .ff-topbar-title");
-      if (title) setTitleSlot(title);
+      const actions = document.querySelector(".ff-stack-topbar .ff-topbar-side-end");
+      if (title && actions) setSlots({ title, actions });
       update();
     });
     window.addEventListener("scroll", update, { passive: true });
@@ -35,11 +36,12 @@ export function AnimalDetailChromeBridge({ animalId, name }: { animalId: string;
     }
   }
 
+  if (!slots) return null;
   return <>
-    {titleSlot && createPortal(showTitle ? name : "", titleSlot)}
-    <div className="ff-detail-under-gallery-actions">
+    {createPortal(showTitle ? name : "", slots.title)}
+    {createPortal(<div className="ff-detail-topbar-actions">
       <button className="ff-icon-link" type="button" onClick={share} aria-label={`${name} 공유`}><IconAndroidshareLine aria-hidden /></button>
       <FavoriteButton animalId={animalId} animalName={name}/>
-    </div>
+    </div>, slots.actions)}
   </>;
 }

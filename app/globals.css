@@ -348,9 +348,6 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-filter-disabled-copy { margin:4px 0 8px; padding:12px; border-radius:10px; background:var(--seed-color-bg-neutral-weak); color:var(--seed-color-fg-neutral-muted); font-size:13px; }
 .ff-filter-breed-list { display:grid; gap:0; }
 .ff-filter-breed-list>[data-part="root"] { min-height:42px; padding-block:4px; border-bottom:1px solid var(--seed-color-stroke-neutral-muted); }
-.ff-filter-breed-any { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:42px; padding:4px 0; border:0; border-bottom:1px solid var(--seed-color-stroke-neutral-muted); border-radius:0; background:transparent; color:var(--seed-color-fg-neutral); font:inherit; text-align:left; }
-.ff-filter-breed-any small { color:var(--seed-color-fg-neutral-muted); font-size:12px; }
-.ff-filter-breed-any[data-selected] { color:var(--seed-color-fg-neutral); font-weight:400; }
 .ff-filter-breed-list small { display:block; color:var(--seed-color-fg-neutral-muted); font-size:11px; }
 .ff-filter-search { margin:0 0 8px; }
 .ff-filter-more { margin-top:18px; border-top:1px solid var(--seed-color-stroke-neutral-muted); border-bottom:1px solid var(--seed-color-stroke-neutral-muted); }

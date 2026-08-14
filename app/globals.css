@@ -436,7 +436,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
   .ff-inline-form { grid-template-columns: 1fr; }
   .ff-inline-form button { width: 100%; }
   .ff-info-board-content { padding-left: 12px; }
-  .ff-sticky-actions { grid-template-columns: 44px minmax(0, 1.1fr) minmax(0, 1fr); padding-inline: 12px; }
+  .ff-sticky-actions { grid-template-columns: 48px minmax(0, 1.1fr) minmax(0, 1fr); padding-inline: 12px; }
 }
 
 @media (min-width: 521px) {
@@ -500,7 +500,11 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-empty { min-height: 148px; display: grid; place-items: center; line-height: 1.6; word-break: keep-all; }
 .ff-result, .ff-play-card, .ff-lifetime-card, .ff-fund-panel, .ff-auth-card { box-shadow: 0 1px 2px rgba(0,0,0,.025); }
 .ff-sticky-actions { bottom: env(safe-area-inset-bottom); box-shadow: 0 -10px 30px rgba(0,0,0,.05); }
-.ff-sticky-actions { position: fixed; z-index: 40; right: max(0px, calc((100vw - 520px) / 2)); bottom: env(safe-area-inset-bottom); left: max(0px, calc((100vw - 520px) / 2)); grid-template-columns: 1fr 1fr; box-shadow: 0 -10px 30px rgba(0,0,0,.05); }
+.ff-sticky-actions { position: fixed; z-index: 40; right: max(0px, calc((100vw - 520px) / 2)); bottom: env(safe-area-inset-bottom); left: max(0px, calc((100vw - 520px) / 2)); grid-template-columns: 52px minmax(0, 1.1fr) minmax(0, 1fr); box-shadow: 0 -10px 30px rgba(0,0,0,.05); }
+.ff-sticky-actions > a, .ff-sticky-actions > button:not(.ff-sticky-scrap) { min-height: 64px; border-radius: 16px; font-size: 18px; font-weight: 700; }
+.ff-sticky-actions .ff-sticky-scrap { position: static; width: 52px; height: 64px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 16px; color: var(--seed-color-fg-neutral-muted); background: transparent; box-shadow: none; }
+.ff-sticky-actions .ff-sticky-scrap svg { width: 30px; height: 30px; }
+.ff-sticky-actions .ff-sticky-scrap[aria-pressed="true"] { color: var(--seed-color-fg-brand); background: transparent; box-shadow: none; }
 .ff-worldcup { display: grid; gap: 14px; }
 .ff-worldcup-progress { height: 6px; overflow: hidden; border-radius: 99px; background: var(--seed-color-bg-neutral-weak); }
 .ff-worldcup-progress > span { display: block; height: 100%; border-radius: inherit; background: var(--seed-color-bg-brand-solid); transition: width .2s ease; }

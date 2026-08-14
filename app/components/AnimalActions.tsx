@@ -16,6 +16,7 @@ import {
 } from "@karrotmarket/react-monochrome-icon";
 import { PrefixIcon } from "@seed-design/react";
 import { useAppFeedback } from "./AppFeedback";
+import { FavoriteButton } from "./FavoriteButton";
 
 export function AnimalActions({
   animalId,
@@ -76,6 +77,7 @@ export function AnimalActions({
     : "#shelter-contact";
 
   return <div className="ff-sticky-actions">
+    <FavoriteButton animalId={animalId} animalName={name} className="ff-sticky-scrap" />
     <BottomSheetRoot>
       <BottomSheetTrigger asChild>
         <ActionButton variant="neutralWeak"><PrefixIcon svg={<IconQUppercaseChatbubbleRightLine />} />질문하기</ActionButton>

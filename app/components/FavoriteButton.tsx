@@ -20,7 +20,7 @@ function loadFavoriteIds() {
   return favoriteIdsRequest;
 }
 
-export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteChange }: { animalId: string; animalName: string; initialSaved?: boolean; onFavoriteChange?: (saved: boolean) => void }) {
+export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteChange, className }: { animalId: string; animalName: string; initialSaved?: boolean; onFavoriteChange?: (saved: boolean) => void; className?: string }) {
   const [saved, setSaved] = useState(initialSaved ?? false);
   const [known, setKnown] = useState(initialSaved !== undefined);
   const [hydrating, setHydrating] = useState(initialSaved === undefined);
@@ -76,5 +76,5 @@ export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteC
     } else feedback.error("스크랩을 변경하지 못했어요");
     setBusy(false);
   }
-  return <button type="button" className="ff-card-scrap" aria-pressed={saved} aria-busy={hydrating || busy} aria-label={`${animalName} ${hydrating ? "스크랩 상태 확인 중" : saved ? "스크랩에서 삭제" : "스크랩하기"}`} onClick={toggle} disabled={hydrating || busy}><Bookmark aria-hidden="true" strokeWidth={1.8} fill={saved ? "currentColor" : "none"}/></button>;
+  return <button type="button" className={className ? `ff-card-scrap ${className}` : "ff-card-scrap"} aria-pressed={saved} aria-busy={hydrating || busy} aria-label={`${animalName} ${hydrating ? "스크랩 상태 확인 중" : saved ? "스크랩에서 삭제" : "스크랩하기"}`} onClick={toggle} disabled={hydrating || busy}><Bookmark aria-hidden="true" strokeWidth={1.8} fill={saved ? "currentColor" : "none"}/></button>;
 }

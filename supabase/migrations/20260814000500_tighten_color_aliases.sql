@@ -4,7 +4,10 @@ do $$
 declare
   definition text;
 begin
-  select pg_get_functiondef(to_regprocedure('public.search_public_animals(integer,timestamptz,text,double precision,double precision,double precision,text,text,text,text[],text,text,text,boolean,boolean,double precision)'))
+  select pg_get_functiondef(p.oid)
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'search_public_animals' and p.pronargs = 17
     into definition;
   definition := replace(definition, '''%흰색%'',''%흰%'',''%백색%'',''%백%'',''%화이트%'',''%하얀%'',''%아이보리%''', '''%흰색%'',''%백색%'',''%화이트%'',''%하얀%'',''%하양%'',''%아이보리%''');
   definition := replace(definition, '''%검정%'',''%검은색%'',''%검은%'',''%검%'',''%흑색%'',''%흑%'',''%블랙%'',''%까만색%''', '''%검정%'',''%검은색%'',''%검은%'',''%흑색%'',''%블랙%'',''%까만색%''');

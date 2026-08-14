@@ -85,21 +85,23 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
   }, [open]);
   useEffect(() => {
     if (!open) return;
+    const controller = new AbortController();
+    let current = true;
     const params = new URLSearchParams({ species, breeds: breeds.join(","), sex: sex.map(value => value === "암컷" ? "female" : value === "미상" ? "unknown" : "male").join(","), neutered: neutered.map(value => value === "중성화 완료" ? "yes" : "no").join(","), age: ageGroup === "all" ? "" : ageGroup, size: sizeGroup === "all" ? "" : sizeGroup, color, limit: "1", sort: "recent" });
     const timer = window.setTimeout(async () => {
       setCountLoading(true);
       try {
-        const response = await fetch(`/api/animals?${params}`);
+        const response = await fetch(`/api/animals?${params}`, { signal: controller.signal });
         const body = await response.json();
         if (!response.ok) throw new Error(body.error || "개체 수를 계산하지 못했어요.");
-        setDraftCount(Number(body.total) || 0);
-      } catch {
-        setDraftCount(null);
+        if (current) setDraftCount(Number(body.total) || 0);
+      } catch (error) {
+        if (current && !(error instanceof DOMException && error.name === "AbortError")) setDraftCount(null);
       } finally {
-        setCountLoading(false);
+        if (current) setCountLoading(false);
       }
     }, 250);
-    return () => window.clearTimeout(timer);
+    return () => { current = false; controller.abort(); window.clearTimeout(timer); };
   }, [ageGroup, breeds, color, neutered, open, sex, sizeGroup, species]);
   const visibleBreeds = useMemo(() => {
     const query = normalizeBreedSearch(breedQuery.trim());

@@ -87,7 +87,25 @@ function displayName(item: AnimalItem) { return [item.kindNm || species(item), i
 function validPoint(lat: number, lng: number) { return Number.isFinite(lat) && Number.isFinite(lng) && lat > 30 && lat < 40 && lng > 120 && lng < 135; }
 function jsonArray(value: string) { try { const result = JSON.parse(value); return Array.isArray(result) ? result.map(String) : []; } catch { return []; } }
 function weightKg(row: { traitsJson?: string | null }) { const value = jsonArray(row.traitsJson || "[]").find(item => /kg/i.test(item)); if (!value) return undefined; const values = [...value.matchAll(/\d+(?:\.\d+)?/g)].map(match => Number(match[0])).filter(number => number > 0 && number <= 150); return values.length ? values.reduce((sum, number) => sum + number, 0) / values.length : undefined; }
-function sizeGroup(row: { traitsJson?: string | null; species: string }) { const weight = weightKg(row); if (weight === undefined) return "unknown"; if (row.species === "고양이") return weight < 3 ? "small" : weight < 6 ? "medium" : weight < 10 ? "large" : "xlarge"; return weight < 5 ? "small" : weight < 15 ? "medium" : weight < 30 ? "large" : "xlarge"; }
+const breedSizeHints: Record<string, string[]> = {
+  small: ["치와와", "말티즈", "포메라니안", "요크셔", "토이 푸들", "미니어쳐 푸들", "미니어쳐 핀셔", "빠삐용", "파피용", "이탈리안 그레이 하운드", "페키니즈", "시츄", "싱가푸라"],
+  medium: ["비숑", "프렌치 불독", "보스턴 테리어", "시바", "코카 스파니엘", "아메리칸 코카", "스탠다드 닥스훈트", "웰시 코기", "진도견", "진돗개", "샴", "먼치킨", "스코티시폴드", "러시안 블루", "아메리칸 쇼트헤어", "브리티시 쇼트헤어", "페르시안", "터키시 앙고라"],
+  large: ["보더 콜리", "푸들", "스피츠", "골든 리트리버", "라브라도", "래브라도", "셰퍼드", "도베르만", "포인터", "사모예드", "시베리안 허스키", "허스키", "마리노이즈", "콜리", "플랫 코티드 리트리버", "비즐라", "샤페이", "벵갈"],
+  xlarge: ["말라뮤트", "알래스칸 맬러뮤트", "도사", "그레이트 데인", "마스티프", "세인트 버나드", "뉴펀들랜드", "로트와일러", "버니즈", "메인쿤", "랙돌", "노르웨이숲", "사바나"],
+};
+function hintedSizeGroup(breed: string) {
+  const normalized = String(breed || "").replace(/[\s·()_-]/g, "").toLocaleLowerCase("ko-KR");
+  for (const [group, hints] of Object.entries(breedSizeHints)) if (hints.some(hint => normalized.includes(hint.replace(/[\s·()_-]/g, "").toLocaleLowerCase("ko-KR")))) return group;
+  return undefined;
+}
+function sizeGroup(row: { traitsJson?: string | null; species: string; breed?: string | null }) {
+  const hinted = hintedSizeGroup(row.breed || "");
+  if (hinted) return hinted;
+  const weight = weightKg(row);
+  if (weight === undefined) return "unknown";
+  if (row.species === "고양이") return weight < 3 ? "small" : weight < 6 ? "medium" : weight < 10 ? "large" : "xlarge";
+  return weight < 5 ? "small" : weight < 15 ? "medium" : weight < 30 ? "large" : "xlarge";
+}
 
 const colorAliases: Record<string, string[]> = {
   // 공공 API의 colorCd는 보호소 자유입력값이라, 단일 색상뿐 아니라

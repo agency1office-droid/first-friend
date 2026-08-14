@@ -175,9 +175,9 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-body { padding: 24px 16px 36px; }
 .ff-detail-status-banner { display: flex; align-items: center; gap: 10px; padding: 14px 16px; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
 .ff-detail-status-banner.ff-public-status-protected { color: var(--seed-color-fg-warning); background: var(--seed-color-bg-warning-weak); }
-.ff-detail-status-banner.ff-public-status-notice { color: var(--seed-color-fg-brand); background: var(--seed-color-bg-critical-weak); }
+.ff-detail-status-banner.ff-public-status-notice { color: var(--seed-color-fg-informative); background: var(--seed-color-bg-informative-weak); }
 .ff-detail-status-banner > svg:first-child { flex: none; width: 24px; height: 24px; }
-.ff-detail-status-banner strong { overflow-wrap: anywhere; color: var(--seed-color-fg-neutral); font-size: 15px; line-height: 21px; }
+.ff-detail-status-banner strong { overflow-wrap: anywhere; color: inherit; font-size: 15px; line-height: 21px; }
 .ff-detail-shelter { display: flex; align-items: center; gap: 10px; padding: 16px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
 .ff-detail-shelter-icon { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 12px; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
 .ff-detail-shelter-icon svg { width: 22px; height: 22px; }

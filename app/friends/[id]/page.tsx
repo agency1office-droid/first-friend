@@ -6,8 +6,7 @@ import { Badge } from "seed-design/ui/badge";
 import {
   IconCheckmarkCircleFill,
   IconChevronRightLine,
-  IconHospitalcrossBuildingLine,
-  IconLocationpinLine,
+  IconMapLocationpinLine,
 } from "@karrotmarket/react-monochrome-icon";
 import { AnimalGallery } from "../../components/AnimalGallery";
 import { AnimalActions } from "../../components/AnimalActions";
@@ -93,6 +92,8 @@ export default async function AnimalPage({
   </div>;
   const publicStatus = getAnimalPublicStatus(animal);
   const colors = detailColors(animal.colors);
+  const shelterAddress = animal.shelterAddress || animal.region;
+  const shelterMapHref = `https://map.kakao.com/link/search/${encodeURIComponent(`${animal.shelter} ${shelterAddress}`)}`;
   return (
     <>
       <AnimalDetailChromeBridge animalId={animal.id} name={animal.name}/>
@@ -105,20 +106,17 @@ export default async function AnimalPage({
       </div>
       <section className="ff-detail-status-banner" aria-label="보호 단계">
         <IconCheckmarkCircleFill aria-hidden />
-        <div>
-          <span>보호 단계</span>
-          <strong>{publicStatus.statusLabel}</strong>
-        </div>
-        <IconChevronRightLine aria-hidden />
+        <strong>보호 단계 · {publicStatus.statusLabel}</strong>
       </section>
       <section className="ff-detail-shelter" aria-label="보호소 정보">
-        <div className="ff-detail-shelter-icon" aria-hidden><IconHospitalcrossBuildingLine /></div>
         <div className="ff-detail-shelter-copy">
-          <span>보호소 정보</span>
           <strong>{animal.shelter}</strong>
-          <p><IconLocationpinLine aria-hidden />{animal.shelterAddress || animal.region}</p>
+          <p>{shelterAddress}</p>
         </div>
-        {animal.shelterId && <a href={`/shelters/${encodeURIComponent(animal.shelterId)}`} aria-label={`${animal.shelter} 보호소 채널 보기`}><IconChevronRightLine aria-hidden /></a>}
+        <a className="ff-detail-location-link" href={shelterMapHref} target="_blank" rel="noreferrer" aria-label={`${animal.shelter} 위치를 카카오맵에서 보기`}>
+          <span>위치</span>
+          <IconMapLocationpinLine aria-hidden />
+        </a>
       </section>
       <article className="ff-detail-body">
         <nav className="ff-detail-taxonomy" aria-label="동물 분류">

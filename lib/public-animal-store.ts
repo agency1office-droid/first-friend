@@ -679,7 +679,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
       p_age_group: ageRpcFilter(options.ageGroup),
       p_sex: sexRpcFilter(options.sex),
       p_kind_codes: kindCodes.length ? kindCodes : null,
-      p_color: options.color || null,
+      p_color: options.color && options.color !== "all" ? options.color : null,
       p_public_phase: options.publicStatus === "notice" ? "notice" : options.publicStatus === "checking" ? "checking" : null,
       p_size_group: csvValues(options.sizeGroup).filter(value => ["small", "medium", "large", "xlarge", "unknown"].includes(value)).join(",") || null,
       p_multiple_photos: Boolean(options.multiplePhotos),

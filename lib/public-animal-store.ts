@@ -686,23 +686,28 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
       p_exact_location: Boolean(options.exactLocation),
       p_max_distance_meters: options.maxDistance && hasHome ? options.maxDistance : null,
     });
-    if (!error && data) {
+    if (!error && data?.length) {
       const items = (data as Array<Record<string, unknown>>).map(row => {
         const animal = fromStored(storedAnimal(row));
         const distance = Number(row.distance_meters);
         return Number.isFinite(distance) ? { ...animal, distanceMeters: distance } : animal;
       });
       const last = data.at(-1) as Record<string, unknown> | undefined;
-      const total = Number((data[0] as Record<string, unknown> | undefined)?.total_count || (state as Record<string, unknown> | undefined)?.item_count || 0);
+      // Never replace a filtered zero-result with the global feed count. The
+      // absence of the first RPC row means there is no matching animal.
+      const total = Number((data[0] as Record<string, unknown> | undefined)?.total_count ?? 0);
       const nextCursor = data.length === limit && last ? encodeSearchCursor(sort === "distance"
         ? { distanceMeters: Number.isFinite(Number(last.distance_meters)) ? Number(last.distance_meters) : 1e15, id: String(last.id) }
         : { updatedAt: String(last.updated_at || ""), id: String(last.id) }) : null;
       const completedAt = syncCompletedAt(state as SyncStateRow | undefined);
       return { items, total, nextCursor, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= STALE_DATA_MS };
     }
-    // 검색 RPC 장애 때 10,000건을 읽어 서버에서 다시 필터링하지 않습니다.
-    // 대량 fallback은 장애 상황에서 메모리와 응답 시간을 폭증시킬 수 있습니다.
-    throw new Error(error?.message || "보호동물 검색을 잠시 사용할 수 없습니다.");
+    if (error) {
+      // RPC errors remain explicit; an empty, successful response is handled
+      // by the exact local filter path below so a stale RPC cannot fabricate
+      // the global count or hide valid matches.
+      throw new Error(error.message || "보호동물 검색을 잠시 사용할 수 없습니다.");
+    }
   }
   const rows = await activeAnimals();
   const speciesFilter = options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : "";
@@ -710,7 +715,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
   const breedFilters = new Set((options.breedKeys || []).filter(value => /^(417000|422400):\d{6}$/.test(value)).slice(0, 10));
   const sizeFilter = new Set(csvValues(options.sizeGroup).filter(value => ["small", "medium", "large", "xlarge", "unknown"].includes(value)));
   const sexFilter = new Set(csvValues(options.sex).map(value => value === "female" ? "암컷" : value === "male" ? "수컷" : value === "unknown" ? "미상" : "").filter(Boolean));
-  const colorFilter = options.color?.trim().toLocaleLowerCase("ko-KR") || "";
+  const colorFilter = options.color && options.color !== "all" ? options.color.trim().toLocaleLowerCase("ko-KR") : "";
   const neuteredFilter = new Set(csvValues(options.neutered).map(value => value === "yes" ? "중성화 완료로 등록됨" : value === "no" ? "중성화되지 않은 것으로 등록됨" : "").filter(Boolean));
   const ageMin = options.ageMin ?? 0, ageMax = options.ageMax ?? PUBLIC_ANIMAL_AGE_MAX, weightMin = options.weightMin ?? 0, weightMax = options.weightMax ?? PUBLIC_ANIMAL_WEIGHT_MAX;
   const prepared = rows.filter(row => { const age = ageYears(row.age), weight = weightKg(row); return (!speciesFilter || row.species === speciesFilter) && (!breedFilters.size || breedFilters.has(storedBreedKey(row))) && (!ageFilter.size || ageFilter.has(ageGroup(row.age))) && (age === undefined || (age >= ageMin && age <= ageMax)) && (weight === undefined || (weight >= weightMin && weight <= weightMax)) && (!sizeFilter.size || sizeFilter.has(sizeGroup(row))) && (!sexFilter.size || sexFilter.has(row.sex)) && (!neuteredFilter.size || jsonArray(row.healthJson || "[]").some(value => [...neuteredFilter].some(filter => value.includes(filter)))) && (!colorFilter || matchesColorGroup(row.colorsJson, colorFilter)) && (!options.multiplePhotos || Boolean(row.image2 && row.image2 !== row.image1)) && (!options.exactLocation || (!row.approximateShelterLocation && validPoint(Number(row.shelterLat), Number(row.shelterLng)))); }).map(row => {

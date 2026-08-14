@@ -87,7 +87,7 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
     if (!open) return;
     const controller = new AbortController();
     let current = true;
-    const params = new URLSearchParams({ species, breeds: breeds.join(","), sex: sex.map(value => value === "암컷" ? "female" : value === "미상" ? "unknown" : "male").join(","), neutered: neutered.map(value => value === "중성화 완료" ? "yes" : "no").join(","), age: ageGroup === "all" ? "" : ageGroup, size: sizeGroup === "all" ? "" : sizeGroup, color, limit: "1", sort: "recent" });
+    const params = new URLSearchParams({ species, breeds: breeds.join(","), sex: sex.map(value => value === "암컷" ? "female" : value === "미상" ? "unknown" : "male").join(","), neutered: neutered.map(value => value === "중성화 완료" ? "yes" : "no").join(","), age: ageGroup === "all" ? "" : ageGroup, size: sizeGroup === "all" ? "" : sizeGroup, color: color === "all" ? "" : color, limit: "1", sort: "recent" });
     const timer = window.setTimeout(async () => {
       setCountLoading(true);
       try {

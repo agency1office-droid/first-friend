@@ -59,6 +59,9 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
   const [ageGroup, setAgeGroup] = useState(filters.ageGroup), [sizeGroup, setSizeGroup] = useState(filters.sizeGroup), [breedQuery, setBreedQuery] = useState(""), [showBreeds, setShowBreeds] = useState(false);
   const toggle = (setter: React.Dispatch<React.SetStateAction<string[]>>) => (value: string) => setter(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value]);
   const openPanel = () => {
+    // 필터 창을 여는 순간 검색 함수를 미리 깨워 첫 조건 선택 때의
+    // Vercel cold start를 사용자 대기시간에 포함시키지 않습니다.
+    void fetch("/api/animals?limit=1&sort=recent", { cache: "force-cache", keepalive: true }).catch(() => undefined);
     setSpecies(filters.species); setBreeds(filters.breedKeys); setSex(filters.sex === "all" ? [] : filters.sex.split(",").filter(Boolean).map(value => value === "female" ? "암컷" : value === "unknown" ? "미상" : "수컷")); setNeutered(filters.neutered === "all" ? [] : filters.neutered.split(",").map(value => value === "yes" ? "중성화 완료" : "중성화 안 됨"));
     setAgeGroup(filters.ageGroup); setSizeGroup(filters.species === "all" ? "all" : filters.sizeGroup); setColor(filters.color); setBreedQuery(""); setShowBreeds(Boolean(filters.species !== "all")); setError(""); setOpen(true);
   };
@@ -100,7 +103,7 @@ export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters
       } finally {
         if (current) setCountLoading(false);
       }
-    }, 250);
+    }, 100);
     return () => { current = false; controller.abort(); window.clearTimeout(timer); };
   }, [ageGroup, breeds, color, neutered, open, sex, sizeGroup, species]);
   const visibleBreeds = useMemo(() => {

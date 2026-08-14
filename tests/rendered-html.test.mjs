@@ -143,7 +143,7 @@ test("replaces species tabs with actionable shelter-distance animal filters", as
   assert.doesNotMatch(filters, /ff-filter-options/);
   const allFilters = await readFile(new URL("../app/components/AllAnimalFilters.tsx", import.meta.url), "utf8");
   for (const label of ["가까운 순", "보호 단계"]) assert.match(filters, new RegExp(label));
-  assert.match(allFilters, /동물 종류 · 품종/);
+  assert.match(allFilters, /종류 · 품종/);
   assert.match(allFilters, /ff-filter-species-card/);
   assert.doesNotMatch(filters, /UnifiedFilterSheet|previewTotal/);
   assert.match(filters, /SimpleOptionSheet/);

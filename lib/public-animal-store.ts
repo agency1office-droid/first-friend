@@ -111,7 +111,14 @@ function storedBreedKey(row: StoredAnimal) { const upKindCd = /^(417000|422400)$
 function chunks<T>(items: T[], size: number) { const result: T[][] = []; for (let index = 0; index < items.length; index += size) result.push(items.slice(index, index + size)); return result; }
 function syncCompletedAt(state: SyncStateRow | undefined) { return state?.lastCompletedAt || state?.last_completed_at || null; }
 function csvValues(value = "") { return value === "all" ? [] : value.split(",").map(item => item.trim()).filter(Boolean); }
-function ageRpcFilter(value = "") { const labels: Record<string, string> = { young: "어린 친구", adult: "청년 친구", mature: "어른 친구", senior: "나이 많은 친구", unknown: "나이 미상" }; return csvValues(value).map(item => labels[item]).filter(Boolean).join(",") || null; }
+const ageGroupAliases: Record<string, string[]> = {
+  young: ["어린 친구", "아기"],
+  adult: ["청년 친구", "성장기"],
+  mature: ["어른 친구", "어른"],
+  senior: ["나이 많은 친구", "노령"],
+  unknown: ["나이 미상", "미상"],
+};
+function ageRpcFilter(value = "") { return [...new Set(csvValues(value).flatMap(item => ageGroupAliases[item] || []))].join(",") || null; }
 function sexRpcFilter(value = "") { const labels: Record<string, string> = { female: "암컷", male: "수컷", unknown: "미상" }; return csvValues(value).map(item => labels[item]).filter(Boolean).join(",") || null; }
 
 async function ensureTables() {

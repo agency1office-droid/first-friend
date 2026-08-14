@@ -171,6 +171,7 @@ test("replaces species tabs with actionable shelter-distance animal filters", as
   assert.match(store, /return "나이 미상"/);
   assert.match(store, /function weightKg/);
   assert.match(store, /function sizeGroup/);
+  assert.match(store, /ageGroupAliases/);
   assert.doesNotMatch(homeFeed, /현재 조건에 맞는 친구가 없어요/);
 });
 
@@ -181,6 +182,16 @@ test("normalizes public API weight formats before assigning size groups", async 
   assert.match(migration, /parsed\.weight_kg < 3/);
   assert.match(migration, /parsed\.weight_kg < 5/);
   assert.match(migration, /unknown/);
+});
+
+test("accepts legacy age-group labels while the public data is normalized", async () => {
+  const [store, countRoute] = await Promise.all([
+    readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/animal-filter-count/route.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(store, /"아기"/);
+  assert.match(store, /"성장기"/);
+  assert.match(countRoute, /flatMap\(value => ageLabels\[value\]/);
 });
 
 test("uses the official public breed catalogue and stable breed codes", async () => {

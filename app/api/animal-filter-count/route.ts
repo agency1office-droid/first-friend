@@ -2,7 +2,7 @@ import { getNearbyAnimalsPage } from "../../../lib/public-animal-store";
 import { getSupabaseServerClient } from "../../../lib/supabase/server";
 
 const list = (value: string | null) => value ? value.split(",").map(item => item.trim()).filter(Boolean) : [];
-const ageLabels: Record<string, string> = { young: "어린 친구", adult: "청년 친구", mature: "어른", senior: "나이 많은 친구", unknown: "나이 미상" };
+const ageLabels: Record<string, string[]> = { young: ["어린 친구", "아기"], adult: ["청년 친구", "성장기"], mature: ["어른 친구", "어른"], senior: ["나이 많은 친구", "노령"], unknown: ["나이 미상", "미상"] };
 
 export async function GET(request: Request) {
   try {
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
       if (sizes.length) query = query.in("size_group", sizes);
       if (breedCodes.length) query = query.in("kind_cd", breedCodes);
       if (color && color !== "all") query = query.ilike("color_search", `%${color}%`);
-      query = query.in("age_group", ageGroups.map(value => ageLabels[value]).filter(Boolean));
+      query = query.in("age_group", [...new Set(ageGroups.flatMap(value => ageLabels[value] || []))]);
       const { count, error } = await query;
       if (error) throw error;
       return Response.json({ count: count || 0 }, { headers: { "cache-control": "no-store" } });

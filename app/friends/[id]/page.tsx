@@ -1,8 +1,9 @@
 import { getAnimalById } from "../../../lib/public-data";
+import type { Animal } from "../../../lib/data";
 import { getAnimalPublicStatus } from "../../../lib/animal-public-status";
 import { Callout } from "seed-design/ui/callout";
 import { Badge } from "seed-design/ui/badge";
-import { IconCheckmarkCircleFill } from "@karrotmarket/react-monochrome-icon";
+import { IconCheckmarkCircleFill, IconChevronRightLine } from "@karrotmarket/react-monochrome-icon";
 import { AnimalGallery } from "../../components/AnimalGallery";
 import { AnimalActions } from "../../components/AnimalActions";
 import { InfoBoard } from "../../components/InfoBoard";
@@ -16,6 +17,59 @@ import { AnimalDetailChromeBridge } from "../../components/AnimalDetailChromeBri
 // 공개 동물 정보는 초 단위로 바뀌지 않으므로 반복 방문은 짧게 캐시합니다.
 // 즐겨찾기 등 사용자 상태는 기존 클라이언트 브리지에서 별도로 처리합니다.
 export const revalidate = 60;
+
+const ageLabels: Record<Animal["ageGroup"], string> = {
+  "어린 친구": "아기",
+  "청년 친구": "성장기",
+  "어른 친구": "어른",
+  "나이 많은 친구": "노령",
+  "나이 미상": "확인 필요",
+};
+
+const colorGroups = [
+  ["흰색", ["흰", "백색", "화이트", "아이보리"]],
+  ["검정", ["검정", "검은", "검", "흑색", "블랙"]],
+  ["갈색", ["갈색", "갈", "밤색", "브라운", "초콜릿"]],
+  ["황색", ["황색", "황토", "노랑", "옐로우", "크림", "금색"]],
+  ["회색", ["회색", "회", "그레이", "잿빛", "은색", "실버"]],
+  ["삼색", ["삼색", "세가지색", "칼리코", "캘리코"]],
+  ["고등어", ["고등어", "태비", "줄무늬", "호랑이무늬"]],
+  ["치즈", ["치즈"]],
+] as const;
+
+function detailColors(colors: string[]) {
+  const source = colors.join(" ").toLocaleLowerCase("ko-KR");
+  const grouped = colorGroups.filter(([, aliases]) => aliases.some(alias => source.includes(alias))).map(([label]) => label);
+  return grouped.length ? grouped : colors.filter(Boolean);
+}
+
+function detailWeight(animal: Animal) {
+  const text = [...animal.traits, ...animal.health].find(value => /\d+(?:\.\d+)?\s*\(?kg\)?/i.test(value));
+  const match = text?.match(/(\d+(?:\.\d+)?)\s*\(?kg\)?/i);
+  return match ? Number(match[1]) : undefined;
+}
+
+function detailSize(animal: Animal) {
+  const weight = detailWeight(animal);
+  if (weight === undefined) return "확인 필요";
+  if (/고양이/.test(animal.species)) return weight < 3 ? "소형" : weight < 6 ? "중형" : weight < 10 ? "대형" : "초대형";
+  return weight < 5 ? "소형" : weight < 15 ? "중형" : weight < 30 ? "대형" : "초대형";
+}
+
+function detailNeutered(animal: Animal) {
+  const value = animal.health.find(item => item.includes("중성화"));
+  if (!value) return "확인 필요";
+  if (value.includes("완료")) return "중성화 완료";
+  if (value.includes("않은") || value.includes("안 됨")) return "중성화 안 됨";
+  return "확인 필요";
+}
+
+function DetailFacet({ label, value }: { label: string; value: string }) {
+  return <div className="ff-detail-facet" data-muted={value === "확인 필요" || undefined}>
+    <span>{label}</span>
+    <strong>{value}</strong>
+  </div>;
+}
 
 export default async function AnimalPage({
   params,
@@ -33,6 +87,7 @@ export default async function AnimalPage({
     />
   </div>;
   const publicStatus = getAnimalPublicStatus(animal);
+  const colors = detailColors(animal.colors);
   return (
     <>
       <AnimalDetailChromeBridge animalId={animal.id} name={animal.name}/>
@@ -44,6 +99,19 @@ export default async function AnimalPage({
         />
       </div>
       <article className="ff-detail-body">
+        <nav className="ff-detail-taxonomy" aria-label="동물 분류">
+          <span>{animal.species}</span>
+          <IconChevronRightLine aria-hidden />
+          <strong>{animal.breed}</strong>
+        </nav>
+        <section className="ff-detail-facets" aria-label="친구 조건 정보">
+          <DetailFacet label="크기" value={detailSize(animal)} />
+          <DetailFacet label="털색" value={colors.length ? colors.join(" · ") : "확인 필요"} />
+          <DetailFacet label="나이" value={`${ageLabels[animal.ageGroup]} · ${animal.age}`} />
+          <DetailFacet label="성별" value={animal.sex || "확인 필요"} />
+          <DetailFacet label="중성화" value={detailNeutered(animal)} />
+          <DetailFacet label="보호 단계" value={publicStatus.statusLabel} />
+        </section>
         <div className="ff-detail-top">
           <div>
             <div className="ff-kicker">{animal.source}</div>
@@ -61,17 +129,6 @@ export default async function AnimalPage({
           title={publicStatus.detailTitle}
           description={publicStatus.description}
         />}
-        <div className="ff-info-grid">
-          <div className="ff-info-cell">
-            <strong>{animal.breed}</strong>품종
-          </div>
-          <div className="ff-info-cell">
-            <strong>{animal.age}</strong>나이
-          </div>
-          <div className="ff-info-cell">
-            <strong>{animal.sex}</strong>성별
-          </div>
-        </div>
         <LifetimeCarePlanner
           species={animal.species}
           animalAge={Number(animal.age.match(/\d+/)?.[0]) || null}

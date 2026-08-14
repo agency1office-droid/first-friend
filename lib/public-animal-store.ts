@@ -110,6 +110,9 @@ function matchesColorGroup(colorsJsonValue: string, color: string) {
 function storedBreedKey(row: StoredAnimal) { const upKindCd = /^(417000|422400)$/.test(row.upKindCd) ? row.upKindCd : row.species === "고양이" ? "422400" : "417000"; const kindCd = /^\d{6}$/.test(row.kindCd) ? row.kindCd : "000000"; return `${upKindCd}:${kindCd}`; }
 function chunks<T>(items: T[], size: number) { const result: T[][] = []; for (let index = 0; index < items.length; index += size) result.push(items.slice(index, index + size)); return result; }
 function syncCompletedAt(state: SyncStateRow | undefined) { return state?.lastCompletedAt || state?.last_completed_at || null; }
+function csvValues(value = "") { return value === "all" ? [] : value.split(",").map(item => item.trim()).filter(Boolean); }
+function ageRpcFilter(value = "") { const labels: Record<string, string> = { young: "어린 친구", adult: "청년 친구", mature: "어른 친구", senior: "나이 많은 친구", unknown: "나이 미상" }; return csvValues(value).map(item => labels[item]).filter(Boolean).join(",") || null; }
+function sexRpcFilter(value = "") { const labels: Record<string, string> = { female: "암컷", male: "수컷", unknown: "미상" }; return csvValues(value).map(item => labels[item]).filter(Boolean).join(",") || null; }
 
 async function ensureTables() {
   return false;
@@ -464,26 +467,27 @@ async function activeAnimals() {
 }
 
 export async function getBreedCounts(options: BreedCountOptions = {}) {
-  const { data: databaseCounts, error: databaseError } = await getSupabaseServerClient().rpc("count_public_animal_breeds", {
+  const canUseFacetRpc = csvValues(options.ageGroup).length <= 1 && csvValues(options.sizeGroup).length <= 1 && csvValues(options.sex).length <= 1;
+  const { data: databaseCounts, error: databaseError } = canUseFacetRpc ? await getSupabaseServerClient().rpc("count_public_animal_breeds", {
     p_species: options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : null,
-    p_age_group: options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "청년 친구" : options.ageGroup === "mature" ? "어른 친구" : options.ageGroup === "senior" ? "나이 많은 친구" : options.ageGroup === "unknown" ? "나이 미상" : null,
-    p_sex: options.sex === "female" ? "암컷" : options.sex === "male" ? "수컷" : null,
-    p_size_group: options.sizeGroup && ["small", "medium", "large", "xlarge", "unknown"].includes(options.sizeGroup) ? options.sizeGroup : null,
+    p_age_group: ageRpcFilter(options.ageGroup),
+    p_sex: sexRpcFilter(options.sex),
+    p_size_group: csvValues(options.sizeGroup).filter(value => ["small", "medium", "large", "xlarge", "unknown"].includes(value)).join(",") || null,
     p_public_phase: options.publicStatus === "notice" ? "notice" : options.publicStatus === "checking" ? "checking" : null,
     p_lat: validPoint(Number(options.lat), Number(options.lng)) ? options.lat : null,
     p_lng: validPoint(Number(options.lat), Number(options.lng)) ? options.lng : null,
     p_max_distance_meters: options.maxDistance || null,
-  });
+  }) : { data: null, error: new Error("multi-value filters use local facet counting") };
   if (!databaseError && databaseCounts) return Object.fromEntries((databaseCounts as Array<Record<string, unknown>>).map(row => [`${row.up_kind_cd}:${row.kind_cd}`, { count: Number(row.animal_count) || 0, kindNm: String(row.kind_name || "품종 미상"), species: row.species === "고양이" ? "cat" : "dog" }])) as Record<string, { count: number; kindNm: string; species: "dog" | "cat" }>;
   await ensurePublicAnimals();
   const rows = await activeAnimals();
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
-  const ageFilter = options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "청년 친구" : options.ageGroup === "mature" ? "어른 친구" : options.ageGroup === "senior" ? "나이 많은 친구" : options.ageGroup === "unknown" ? "나이 미상" : "";
-  const sizeFilter = ["small", "medium", "large", "xlarge", "unknown"].includes(options.sizeGroup || "") ? options.sizeGroup : "";
-  const sexFilter = options.sex === "female" ? "암컷" : options.sex === "male" ? "수컷" : "";
+  const ageFilter = new Set(csvValues(options.ageGroup).map(value => ({ young: "어린 친구", adult: "청년 친구", mature: "어른 친구", senior: "나이 많은 친구", unknown: "나이 미상" } as Record<string, string>)[value]).filter(Boolean));
+  const sizeFilter = new Set(csvValues(options.sizeGroup).filter(value => ["small", "medium", "large", "xlarge", "unknown"].includes(value)));
+  const sexFilter = new Set(csvValues(options.sex).map(value => value === "female" ? "암컷" : value === "male" ? "수컷" : value === "unknown" ? "미상" : "").filter(Boolean));
   const counts: Record<string, { count: number; kindNm: string; species: "dog" | "cat" }> = {};
   for (const row of rows) {
-    if ((ageFilter && ageGroup(row.age) !== ageFilter) || (sizeFilter && sizeGroup(row) !== sizeFilter) || (sexFilter && row.sex !== sexFilter)) continue;
+    if ((ageFilter.size && !ageFilter.has(ageGroup(row.age))) || (sizeFilter.size && !sizeFilter.has(sizeGroup(row))) || (sexFilter.size && !sexFilter.has(row.sex))) continue;
     if (!matchesAnimalPublicStatus(fromStored(row), options.publicStatus)) continue;
     if (options.maxDistance && hasHome) {
       if (row.approximateShelterLocation || !validPoint(Number(row.shelterLat), Number(row.shelterLng))) continue;
@@ -648,7 +652,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
   // 중성화 여부는 현재 RPC의 인자에 없는 보조 필터입니다. 이 필터를 쓸 때만
   // 전체 활성 목록 fallback으로 정확하게 적용하고, 일반 검색은 기존 RPC를 유지합니다.
-  const canUseDatabaseSearch = !["yes", "no"].includes(options.neutered || "") && (options.ageMin ?? 0) === 0 && (options.ageMax ?? PUBLIC_ANIMAL_AGE_MAX) === PUBLIC_ANIMAL_AGE_MAX && (options.weightMin ?? 0) === 0 && (options.weightMax ?? PUBLIC_ANIMAL_WEIGHT_MAX) === PUBLIC_ANIMAL_WEIGHT_MAX;
+  const canUseDatabaseSearch = !csvValues(options.neutered).length && (options.ageMin ?? 0) === 0 && (options.ageMax ?? PUBLIC_ANIMAL_AGE_MAX) === PUBLIC_ANIMAL_AGE_MAX && (options.weightMin ?? 0) === 0 && (options.weightMax ?? PUBLIC_ANIMAL_WEIGHT_MAX) === PUBLIC_ANIMAL_WEIGHT_MAX;
   if (canUseDatabaseSearch) {
     const cursor = decodeSearchCursor(options.cursor);
     const sort = options.sort === "distance" && hasHome ? "distance" : "recent";
@@ -662,12 +666,12 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
       p_lng: hasHome ? options.lng : null,
       p_sort: sort,
       p_species: options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : null,
-      p_age_group: options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "청년 친구" : options.ageGroup === "mature" ? "어른 친구" : options.ageGroup === "senior" ? "나이 많은 친구" : options.ageGroup === "unknown" ? "나이 미상" : null,
-      p_sex: options.sex === "female" ? "암컷" : options.sex === "male" ? "수컷" : null,
+      p_age_group: ageRpcFilter(options.ageGroup),
+      p_sex: sexRpcFilter(options.sex),
       p_kind_codes: kindCodes.length ? kindCodes : null,
       p_color: options.color || null,
       p_public_phase: options.publicStatus === "notice" ? "notice" : options.publicStatus === "checking" ? "checking" : null,
-      p_size_group: options.sizeGroup || null,
+      p_size_group: csvValues(options.sizeGroup).filter(value => ["small", "medium", "large", "xlarge", "unknown"].includes(value)).join(",") || null,
       p_multiple_photos: Boolean(options.multiplePhotos),
       p_exact_location: Boolean(options.exactLocation),
       p_max_distance_meters: options.maxDistance && hasHome ? options.maxDistance : null,
@@ -692,14 +696,14 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
   }
   const rows = await activeAnimals();
   const speciesFilter = options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : "";
-  const ageFilter = options.ageGroup === "young" ? "어린 친구" : options.ageGroup === "adult" ? "청년 친구" : options.ageGroup === "mature" ? "어른 친구" : options.ageGroup === "senior" ? "나이 많은 친구" : options.ageGroup === "unknown" ? "나이 미상" : "";
+  const ageFilter = new Set(csvValues(options.ageGroup).map(value => ({ young: "어린 친구", adult: "청년 친구", mature: "어른 친구", senior: "나이 많은 친구", unknown: "나이 미상" } as Record<string, string>)[value]).filter(Boolean));
   const breedFilters = new Set((options.breedKeys || []).filter(value => /^(417000|422400):\d{6}$/.test(value)).slice(0, 10));
-  const sizeFilter = ["small", "medium", "large", "xlarge", "unknown"].includes(options.sizeGroup || "") ? options.sizeGroup : "";
-  const sexFilter = options.sex === "female" ? "암컷" : options.sex === "male" ? "수컷" : "";
+  const sizeFilter = new Set(csvValues(options.sizeGroup).filter(value => ["small", "medium", "large", "xlarge", "unknown"].includes(value)));
+  const sexFilter = new Set(csvValues(options.sex).map(value => value === "female" ? "암컷" : value === "male" ? "수컷" : value === "unknown" ? "미상" : "").filter(Boolean));
   const colorFilter = options.color?.trim().toLocaleLowerCase("ko-KR") || "";
   const neuteredFilter = options.neutered === "yes" ? "중성화 완료로 등록됨" : options.neutered === "no" ? "중성화되지 않은 것으로 등록됨" : "";
   const ageMin = options.ageMin ?? 0, ageMax = options.ageMax ?? PUBLIC_ANIMAL_AGE_MAX, weightMin = options.weightMin ?? 0, weightMax = options.weightMax ?? PUBLIC_ANIMAL_WEIGHT_MAX;
-  const prepared = rows.filter(row => { const age = ageYears(row.age), weight = weightKg(row); return (!speciesFilter || row.species === speciesFilter) && (!breedFilters.size || breedFilters.has(storedBreedKey(row))) && (!ageFilter || ageGroup(row.age) === ageFilter) && (age === undefined || (age >= ageMin && age <= ageMax)) && (weight === undefined || (weight >= weightMin && weight <= weightMax)) && (!sizeFilter || sizeGroup(row) === sizeFilter) && (!sexFilter || row.sex === sexFilter) && (!neuteredFilter || jsonArray(row.healthJson || "[]").some(value => value.includes(neuteredFilter))) && (!colorFilter || matchesColorGroup(row.colorsJson, colorFilter)) && (!options.multiplePhotos || Boolean(row.image2 && row.image2 !== row.image1)) && (!options.exactLocation || (!row.approximateShelterLocation && validPoint(Number(row.shelterLat), Number(row.shelterLng)))); }).map(row => {
+  const prepared = rows.filter(row => { const age = ageYears(row.age), weight = weightKg(row); return (!speciesFilter || row.species === speciesFilter) && (!breedFilters.size || breedFilters.has(storedBreedKey(row))) && (!ageFilter.size || ageFilter.has(ageGroup(row.age))) && (age === undefined || (age >= ageMin && age <= ageMax)) && (weight === undefined || (weight >= weightMin && weight <= weightMax)) && (!sizeFilter.size || sizeFilter.has(sizeGroup(row))) && (!sexFilter.size || sexFilter.has(row.sex)) && (!neuteredFilter || jsonArray(row.healthJson || "[]").some(value => value.includes(neuteredFilter))) && (!colorFilter || matchesColorGroup(row.colorsJson, colorFilter)) && (!options.multiplePhotos || Boolean(row.image2 && row.image2 !== row.image1)) && (!options.exactLocation || (!row.approximateShelterLocation && validPoint(Number(row.shelterLat), Number(row.shelterLng)))); }).map(row => {
     const animal = fromStored(row);
     if (!matchesAnimalPublicStatus(animal, options.publicStatus)) return null;
     const hasExactPoint = hasHome && !row.approximateShelterLocation && validPoint(Number(row.shelterLat), Number(row.shelterLng));

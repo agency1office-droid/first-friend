@@ -13,11 +13,11 @@ export type AnimalFeedFilters = {
   species: "all" | "cat" | "dog";
   publicStatus: "all" | "notice" | "checking";
   breedKeys: string[];
-  sex: "all" | "female" | "male";
-  neutered: "all" | "yes" | "no";
+  sex: string;
+  neutered: string;
   color: string;
-  ageGroup: "all" | "young" | "adult" | "mature" | "senior" | "unknown";
-  sizeGroup: "all" | "small" | "medium" | "large" | "xlarge" | "unknown";
+  ageGroup: string;
+  sizeGroup: string;
   ageMin: number;
   ageMax: number;
 };
@@ -62,11 +62,11 @@ function filtersFromUrl() {
     species: species === "cat" || species === "dog" ? species : "all",
     publicStatus: publicStatus === "notice" || publicStatus === "checking" ? publicStatus : "all",
     breedKeys: (params.get("breeds") || "").split(",").filter(value => /^(417000|422400):\d{6}$/.test(value)).slice(0, 10),
-    sex: sex === "female" || sex === "male" ? sex : "all",
-    neutered: neutered === "yes" || neutered === "no" ? neutered : "all",
+    sex: sex?.split(",").filter(value => value === "female" || value === "male" || value === "unknown").join(",") || "all",
+    neutered: neutered?.split(",").filter(value => value === "yes" || value === "no").join(",") || "all",
     color: color?.trim() || "all",
-    ageGroup: ageGroup === "young" || ageGroup === "adult" || ageGroup === "mature" || ageGroup === "senior" || ageGroup === "unknown" ? ageGroup : "all",
-    sizeGroup: sizeGroup === "small" || sizeGroup === "medium" || sizeGroup === "large" || sizeGroup === "xlarge" || sizeGroup === "unknown" ? sizeGroup : "all",
+    ageGroup: ageGroup?.split(",").filter(value => ["young", "adult", "mature", "senior", "unknown"].includes(value)).join(",") || "all",
+    sizeGroup: sizeGroup?.split(",").filter(value => ["small", "medium", "large", "xlarge", "unknown"].includes(value)).join(",") || "all",
     ageMin: Math.max(0, Math.min(PUBLIC_ANIMAL_AGE_MAX, Number(params.get("ageMin")) || 0)), ageMax: Math.max(0, Math.min(PUBLIC_ANIMAL_AGE_MAX, Number(params.get("ageMax")) || PUBLIC_ANIMAL_AGE_MAX)),
   } satisfies AnimalFeedFilters;
 }
@@ -137,6 +137,8 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     if (filters.neutered !== "all") url.searchParams.set("neutered", filters.neutered);
     if (filters.ageMin !== 0) url.searchParams.set("ageMin", String(filters.ageMin)); if (filters.ageMax !== PUBLIC_ANIMAL_AGE_MAX) url.searchParams.set("ageMax", String(filters.ageMax));
     if (filters.color !== "all") url.searchParams.set("color", filters.color);
+    if (filters.ageGroup !== "all") url.searchParams.set("age", filters.ageGroup);
+    if (filters.sizeGroup !== "all") url.searchParams.set("size", filters.sizeGroup);
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }, [filters, filtersReady]);
 

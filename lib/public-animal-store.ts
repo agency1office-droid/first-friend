@@ -659,7 +659,10 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
   // 중성화 여부는 현재 RPC의 인자에 없는 보조 필터입니다. 이 필터를 쓸 때만
   // 전체 활성 목록 fallback으로 정확하게 적용하고, 일반 검색은 기존 RPC를 유지합니다.
-  const canUseDatabaseSearch = !csvValues(options.neutered).length && (options.ageMin ?? 0) === 0 && (options.ageMax ?? PUBLIC_ANIMAL_AGE_MAX) === PUBLIC_ANIMAL_AGE_MAX && (options.weightMin ?? 0) === 0 && (options.weightMax ?? PUBLIC_ANIMAL_WEIGHT_MAX) === PUBLIC_ANIMAL_WEIGHT_MAX;
+  // 크기 그룹은 공공 API의 체중 원문에서 계산합니다. 운영 DB의 size_group
+  // 보정이 아직 진행 중이어도 크기 필터가 전체 결과로 되돌아가지 않도록
+  // 크기 선택 시에는 동일한 계산을 수행하는 fallback 경로를 사용합니다.
+  const canUseDatabaseSearch = !csvValues(options.neutered).length && !csvValues(options.sizeGroup).length && (options.ageMin ?? 0) === 0 && (options.ageMax ?? PUBLIC_ANIMAL_AGE_MAX) === PUBLIC_ANIMAL_AGE_MAX && (options.weightMin ?? 0) === 0 && (options.weightMax ?? PUBLIC_ANIMAL_WEIGHT_MAX) === PUBLIC_ANIMAL_WEIGHT_MAX;
   if (canUseDatabaseSearch) {
     const cursor = decodeSearchCursor(options.cursor);
     const sort = options.sort === "distance" && hasHome ? "distance" : "recent";

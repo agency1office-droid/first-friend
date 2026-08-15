@@ -212,6 +212,7 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(styles, /\.ff-detail-info-row strong \{ min-width: 0;.*word-break: break-word; white-space: normal;/);
   assert.match(page, /function animalKnowledge/);
   assert.match(page, /function formatDetailHelper/);
+  assert.match(page, /const sentenceIndex = value\.search/);
   assert.match(page, /value\.slice\(0, commaIndex \+ 1\)[\s\S]*<br \/>/);
   assert.match(breedKnowledge, /pattern\.test\(breed\) \|\| pattern\.test\(normalized\)/);
   assert.match(page, /helper=\{knowledge\.species\}/);

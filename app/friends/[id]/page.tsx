@@ -88,6 +88,10 @@ function isDuplicateTrait(trait: string, animal: Animal, colors: string[], publi
 
 function formatDetailHelper(value: string): ReactNode {
   if (value.length < 42) return value;
+  const sentenceIndex = value.search(/[.!?。！？](?=\s|$)/);
+  if (sentenceIndex >= 16 && sentenceIndex <= 64 && sentenceIndex < value.length - 8) {
+    return <>{value.slice(0, sentenceIndex + 1)}<br />{value.slice(sentenceIndex + 1).trim()}</>;
+  }
   const commaIndex = value.indexOf(",");
   if (commaIndex < 16 || commaIndex > 48 || commaIndex >= value.length - 8) return value;
   return <>{value.slice(0, commaIndex + 1)}<br />{value.slice(commaIndex + 1).trim()}</>;

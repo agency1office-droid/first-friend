@@ -17,6 +17,7 @@ import { NameSuggestionBox } from "../../components/NameSuggestionBox";
 import { AnimalFundraiserPanel } from "../../components/AnimalFundraiserPanel";
 import { DeferredSection } from "../../components/DeferredSection";
 import { ShelterLocationCard } from "../../components/ShelterLocationCard";
+import { ShelterTravelMeta } from "../../components/ShelterTravelMeta";
 import { AnimalDetailChromeBridge } from "../../components/AnimalDetailChromeBridge";
 
 // 공개 동물 정보는 초 단위로 바뀌지 않으므로 반복 방문은 짧게 캐시합니다.
@@ -116,9 +117,11 @@ export default async function AnimalPage({
         {shelterHref ? <a className="ff-detail-shelter-copy ff-detail-shelter-link" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>
           <strong>{animal.shelter}</strong>
           <p>{shelterAddress}</p>
+          <ShelterTravelMeta distance={animal.distanceMeters} lat={animal.shelterLat} lng={animal.shelterLng} />
         </a> : <div className="ff-detail-shelter-copy">
           <strong>{animal.shelter}</strong>
           <p>{shelterAddress}</p>
+          <ShelterTravelMeta distance={animal.distanceMeters} lat={animal.shelterLat} lng={animal.shelterLng} />
         </div>}
         <a className="ff-detail-location-link" href={shelterMapHref} target="_blank" rel="noreferrer" aria-label={`${animal.shelter} 위치를 카카오맵에서 보기`}>
           <IconMapLocationpinLine aria-hidden />

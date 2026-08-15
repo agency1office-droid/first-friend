@@ -12,8 +12,9 @@ import { Chip } from "seed-design/ui/chip";
 import { Callout } from "seed-design/ui/callout";
 import { PrefixIcon } from "@seed-design/react";
 import { BottomSheetBody, BottomSheetContent, BottomSheetRoot } from "seed-design/ui/bottom-sheet";
-import { IconCameraLine, IconArrowDownHorizlineLine, IconEraserHorizlineLine, IconMagnifyingglassLine, IconMagnifyingglassSparkleLine, IconPictureLine, IconArrowCounterclockwiseCircularLine, IconSlider2HorizontalLine, IconPaletteLine, IconPencilLine, IconAndroidshareLine } from "@karrotmarket/react-monochrome-icon";
+import { IconCameraLine, IconMagnifyingglassLine, IconMagnifyingglassSparkleLine, IconPictureLine, IconArrowCounterclockwiseCircularLine, IconSlider2HorizontalLine, IconEraserHorizlineLine } from "@karrotmarket/react-monochrome-icon";
 import { ChevronLeft, Download, Eraser, Palette, Pencil, Share2 } from "lucide-react";
+import { HexColorPicker } from "react-colorful";
 import { useAppFeedback } from "./AppFeedback";
 
 const palette = [
@@ -26,14 +27,11 @@ const brushTypes = [
   { id: "pastel", label: "파스텔", description: "옅고 포근한 표현" },
 ] as const;
 
-function hslToHex(hue: number) {
-  const saturation = 82;
-  const lightness = 52;
-  const chroma = (1 - Math.abs((2 * lightness) / 100 - 1)) * saturation / 100;
-  const x = chroma * (1 - Math.abs((hue / 60) % 2 - 1));
-  const m = lightness / 100 - chroma / 2;
-  const [red, green, blue] = hue < 60 ? [chroma, x, 0] : hue < 120 ? [x, chroma, 0] : hue < 180 ? [0, chroma, x] : hue < 240 ? [0, x, chroma] : hue < 300 ? [x, 0, chroma] : [chroma, 0, x];
-  return `#${[red, green, blue].map((value) => Math.round((value + m) * 255).toString(16).padStart(2, "0")).join("")}`;
+function normalizeHex(value: string) {
+  const normalized = value.trim().replace(/^#/, "");
+  if (/^[0-9a-fA-F]{3}$/.test(normalized)) return `#${normalized.split("").map((character) => character + character).join("").toUpperCase()}`;
+  if (/^[0-9a-fA-F]{6}$/.test(normalized)) return `#${normalized.toUpperCase()}`;
+  return null;
 }
 
 type Mode = "draw" | "photo" | "conditions";
@@ -48,8 +46,9 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const undoStack = useRef<ImageData[]>([]);
   const mode = modeOnly || "draw";
   const [brushColor, setBrushColor] = useState(palette[0]);
-  const [brushSize, setBrushSize] = useState(1);
-  const [eraserSize, setEraserSize] = useState(1);
+  const [colorInput, setColorInput] = useState(palette[0].hex);
+  const [brushSize, setBrushSize] = useState(5);
+  const [eraserSize, setEraserSize] = useState(5);
   const [brushType, setBrushType] = useState<(typeof brushTypes)[number]["id"]>("pencil");
   const [thinning, setThinning] = useState(0.35);
   const [smoothing, setSmoothing] = useState(0.65);
@@ -62,10 +61,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const [strokeWidth, setStrokeWidth] = useState(0);
   const [easing, setEasing] = useState("Linear");
   const [settingsOpen, setSettingsOpen] = useState(true);
-  const [paletteOpen, setPaletteOpen] = useState(false);
   const [isErasing, setIsErasing] = useState(false);
-  const [sizePicker, setSizePicker] = useState<"brush" | "eraser" | null>(null);
-  const [saveOpen, setSaveOpen] = useState(false);
   const [toolSheet, setToolSheet] = useState<"brush" | "eraser" | "color" | "save" | null>(null);
   const [uploaded, setUploaded] = useState("");
   const [preview, setPreview] = useState("");
@@ -84,6 +80,14 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
 
   const breeds = useMemo(() => ["상관 없음", ...Array.from(new Set(animals.map((animal) => animal.breed))).slice(0, 30)], [animals]);
   const regions = useMemo(() => ["전국", ...Array.from(new Set(animals.map((animal) => animal.region.split(" ")[0]))).filter(Boolean)], [animals]);
+
+  function chooseColor(value: string) {
+    const hex = normalizeHex(value);
+    if (!hex) return;
+    setBrushColor({ name: "사용자 색상", hex });
+    setColorInput(hex);
+    setIsErasing(false);
+  }
 
   useEffect(() => {
     if (mode === "draw" || mode === "photo") preloadVisualModel();
@@ -115,17 +119,6 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     observer.observe(canvas);
     return () => observer.disconnect();
   }, []);
-
-  useEffect(() => {
-    const previews = document.querySelectorAll<HTMLElement>('.ff-modern-drawing-topbar .ff-tool-preview');
-    const labels = [`${brushSize}pt`, `${eraserSize}pt`];
-    previews.forEach((preview, index) => {
-      preview.textContent = labels[index] || '';
-      preview.style.width = 'auto';
-      preview.style.height = 'auto';
-    });
-
-  }, [brushSize, eraserSize, toolSheet]);
 
   function point(event: React.PointerEvent<HTMLCanvasElement>): [number, number, number] { const canvas = event.currentTarget; const rect = canvas.getBoundingClientRect(); const ratio = window.devicePixelRatio || 1; const logicalWidth = canvas.width / ratio; const logicalHeight = canvas.height / ratio; return [(event.clientX - rect.left) * (logicalWidth / rect.width), (event.clientY - rect.top) * (logicalHeight / rect.height), event.pressure || 0.5]; }
   function drawBrushTexture(context: CanvasRenderingContext2D, points: [number, number, number][], outline: [number, number][]) {
@@ -236,8 +229,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const visible = (matched ? ranked : animals).filter((animal) => !query || `${animal.name} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
 
   return <div className={mode === "draw" ? "ff-drawing-workspace" : undefined}>
-    {mode === "draw" && <><div className="ff-drawing-topbar ff-modern-drawing-topbar"><a href="/find" aria-label="그림 찾기 닫기"><ChevronLeft size={28} strokeWidth={2} aria-hidden="true" /></a><div className="ff-drawing-toolbar" aria-label="그림 도구"><button type="button" className="ff-toolbar-tool" data-active={toolSheet === "brush"} aria-label="브러시 크기 선택" onClick={() => { setIsErasing(false); setToolSheet("brush"); }}><Pencil size={20} strokeWidth={2.1} /><span className="ff-tool-preview" style={{ width: 8 + brushSize * 2, height: 8 + brushSize * 2 }}/></button><button type="button" className="ff-toolbar-tool" data-active={toolSheet === "eraser" || isErasing} aria-label="지우개 크기 선택" onClick={() => { setIsErasing(true); setToolSheet("eraser"); }}><Eraser size={20} strokeWidth={2.1} /><span className="ff-tool-preview ff-tool-preview-eraser" style={{ width: 8 + eraserSize * 2, height: 8 + eraserSize * 2 }}/></button><button type="button" className="ff-toolbar-tool ff-toolbar-color" data-active={toolSheet === "color"} aria-label="색상환 열기" onClick={() => setToolSheet("color")}><Palette size={20} strokeWidth={2.1} /><span className="ff-toolbar-swatch" style={{ background: brushColor.hex }} /></button><button type="button" className="ff-toolbar-tool" data-active={toolSheet === "save"} aria-label="그림 저장 형식 선택" onClick={() => setToolSheet("save")}><Download size={20} strokeWidth={2.1} /></button><button type="button" className="ff-toolbar-tool" aria-label="그림 공유" onClick={shareDrawing}><Share2 size={20} strokeWidth={2.1} /></button></div></div><BottomSheetRoot open={toolSheet !== null} onOpenChange={(open) => { if (!open) setToolSheet(null); }}><BottomSheetContent title={toolSheet === "brush" ? "브러시" : toolSheet === "eraser" ? "지우개 크기" : toolSheet === "color" ? "색상환" : "그림 저장"} showHandle className="ff-drawing-tool-sheet"><BottomSheetBody>{(toolSheet === "brush" || toolSheet === "eraser") && (() => { const eraser = toolSheet === "eraser"; const value = eraser ? eraserSize : brushSize; return <div className="ff-drawing-size-slider">{!eraser && <div className="ff-drawing-brush-types" role="group" aria-label="브러시 종류">{brushTypes.map((type) => <button type="button" key={type.id} data-active={brushType === type.id} onClick={() => setBrushType(type.id)}><span>{type.label}</span><small>{type.description}</small></button>)}</div>}<div className="ff-drawing-size-slider-heading"><span>{eraser ? "지우개 크기" : "브러시 크기"}</span><strong>{value}pt</strong></div><div className="ff-drawing-size-preview"><span className={eraser ? "ff-size-dot ff-size-dot-eraser" : "ff-size-dot"} style={{ width: 14 + value * 4, height: 14 + value * 4 }} /></div><input aria-label={`${eraser ? "지우개" : "브러시"} 크기`} type="range" min="1" max="10" step="1" value={value} style={{ "--brush-thumb-size": `${10 + value * 1.4}px` } as React.CSSProperties} onChange={(event) => { const next = Number(event.target.value); if (eraser) { setEraserSize(next); setIsErasing(true); } else { setBrushSize(next); setIsErasing(false); } }} /><div className="ff-drawing-size-slider-labels"><span>1pt</span><span>5pt</span><span>10pt</span></div></div>; })()}{toolSheet === "color" && <div className="ff-drawing-color-wheel-panel"><div className="ff-drawing-color-wheel" role="button" tabIndex={0} aria-label="색상환에서 색상 선택" onClick={(event) => { const rect = event.currentTarget.getBoundingClientRect(); const hue = (Math.atan2(event.clientY - (rect.top + rect.height / 2), event.clientX - (rect.left + rect.width / 2)) * 180 / Math.PI + 360) % 360; setBrushColor({ name: "사용자 색상", hex: hslToHex(hue) }); setIsErasing(false); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setBrushColor({ name: "사용자 색상", hex: hslToHex(0) }); setIsErasing(false); } }}><span style={{ background: brushColor.hex }} /></div><div className="ff-drawing-color-presets" role="group" aria-label="추천 색상">{palette.map((color) => <button type="button" key={color.name} data-active={!isErasing && brushColor.name === color.name} style={{ background: color.hex }} aria-label={`${color.name} 색상`} onClick={() => { setBrushColor(color); setIsErasing(false); }}/>)}</div></div>}{toolSheet === "save" && <div className="ff-drawing-save-options" role="menu"><button type="button" onClick={() => saveDrawing("png")}>PNG 이미지</button><button type="button" onClick={() => saveDrawing("jpeg")}>JPG 이미지</button><button type="button" onClick={() => saveDrawing("webp")}>WEBP 이미지</button></div>}</BottomSheetBody></BottomSheetContent></BottomSheetRoot></>}
-    {mode === "draw" && <div className="ff-drawing-topbar"><a href="/find" aria-label="그림 찾기 닫기">‹</a><div className="ff-drawing-toolbar" aria-label="그림 도구"><div className="ff-tool-popover"><button type="button" className="ff-toolbar-tool" data-active={!isErasing && sizePicker === "brush"} aria-label="브러시 크기 선택" onClick={() => { setIsErasing(false); setPaletteOpen(false); setSaveOpen(false); setSizePicker((value) => value === "brush" ? null : "brush"); }}><PrefixIcon svg={<IconPencilLine/>}/><span className="ff-tool-preview" style={{ width: 8 + brushSize * 3, height: 8 + brushSize * 3 }}/></button>{sizePicker === "brush" && <div className="ff-size-picker" role="group" aria-label="브러시 크기"><strong>브러시 크기</strong>{[1,2,3,4,5].map((size) => <button type="button" key={size} data-active={brushSize === size} onClick={() => { setBrushSize(size); setIsErasing(false); setSizePicker(null); }}><span className="ff-size-dot" style={{ width: 8 + size * 3, height: 8 + size * 3 }}/><small>{size}pt</small></button>)}</div>}</div><div className="ff-tool-popover"><button type="button" className="ff-toolbar-tool" data-active={isErasing && sizePicker === "eraser"} aria-label="지우개 크기 선택" onClick={() => { setIsErasing(true); setPaletteOpen(false); setSaveOpen(false); setSizePicker((value) => value === "eraser" ? null : "eraser"); }}><PrefixIcon svg={<IconEraserHorizlineLine/>}/><span className="ff-tool-preview ff-tool-preview-eraser" style={{ width: 8 + eraserSize * 3, height: 8 + eraserSize * 3 }}/></button>{sizePicker === "eraser" && <div className="ff-size-picker" role="group" aria-label="지우개 크기"><strong>지우개 크기</strong>{[1,2,3,4,5].map((size) => <button type="button" key={size} data-active={eraserSize === size} onClick={() => { setEraserSize(size); setIsErasing(true); setSizePicker(null); }}><span className="ff-size-dot ff-size-dot-eraser" style={{ width: 8 + size * 3, height: 8 + size * 3 }}/><small>{size}pt</small></button>)}</div>}</div><div className="ff-tool-popover"><button type="button" className="ff-toolbar-color" style={{ background: brushColor.hex }} data-active={paletteOpen} aria-label="색상 팔레트 열기" aria-expanded={paletteOpen} onClick={() => { setPaletteOpen((value) => !value); setSizePicker(null); setSaveOpen(false); }}><PrefixIcon svg={<IconPaletteLine/>}/></button>{paletteOpen && <div className="ff-toolbar-palette" role="group" aria-label="색상 선택">{palette.map((color) => <button type="button" key={color.name} className="ff-color-button" data-active={!isErasing && brushColor.name === color.name} style={{ background: color.hex }} aria-label={`${color.name} 색상`} onClick={() => { setBrushColor(color); setIsErasing(false); setPaletteOpen(false); }}/>)}</div>}</div><div className="ff-tool-popover"><button type="button" className="ff-toolbar-tool" data-active={saveOpen} aria-label="그림 저장 형식 선택" onClick={() => { setSaveOpen((value) => !value); setPaletteOpen(false); setSizePicker(null); }}><PrefixIcon svg={<IconArrowDownHorizlineLine/>}/></button>{saveOpen && <div className="ff-save-picker" role="menu"><strong>저장 형식</strong><button type="button" onClick={() => saveDrawing("png")}>PNG</button><button type="button" onClick={() => saveDrawing("jpeg")}>JPG</button><button type="button" onClick={() => saveDrawing("webp")}>WEBP</button></div>}</div><button type="button" className="ff-toolbar-tool" aria-label="그림 공유" onClick={shareDrawing}><PrefixIcon svg={<IconAndroidshareLine/>}/></button></div><span>기기 안에서 분석</span></div>}
+    {mode === "draw" && <><div className="ff-drawing-topbar ff-modern-drawing-topbar"><a href="/find" aria-label="그림 찾기 닫기"><ChevronLeft size={28} strokeWidth={2} aria-hidden="true" /></a><div className="ff-drawing-toolbar" aria-label="그림 도구"><button type="button" className="ff-toolbar-tool" data-active={toolSheet === "brush"} aria-label="브러시 크기 선택" onClick={() => { setIsErasing(false); setToolSheet("brush"); }}><Pencil size={24} strokeWidth={2.1} /><span className="ff-tool-preview">{brushSize}pt</span></button><button type="button" className="ff-toolbar-tool" data-active={toolSheet === "eraser" || isErasing} aria-label="지우개 크기 선택" onClick={() => { setIsErasing(true); setToolSheet("eraser"); }}><Eraser size={24} strokeWidth={2.1} /><span className="ff-tool-preview ff-tool-preview-eraser">{eraserSize}pt</span></button><button type="button" className="ff-toolbar-tool ff-toolbar-color" data-active={toolSheet === "color"} aria-label="색상 선택" onClick={() => setToolSheet("color")}><Palette size={24} strokeWidth={2.1} /><span className="ff-toolbar-swatch" style={{ background: brushColor.hex }} /></button><button type="button" className="ff-toolbar-tool" data-active={toolSheet === "save"} aria-label="그림 저장 형식 선택" onClick={() => setToolSheet("save")}><Download size={24} strokeWidth={2.1} /></button><button type="button" className="ff-toolbar-tool" aria-label="그림 공유" onClick={shareDrawing}><Share2 size={24} strokeWidth={2.1} /></button></div></div><BottomSheetRoot open={toolSheet !== null} onOpenChange={(open) => { if (!open) setToolSheet(null); }}><BottomSheetContent title={toolSheet === "brush" ? "브러시" : toolSheet === "eraser" ? "지우개 크기" : toolSheet === "color" ? "색상" : "그림 저장"} showHandle className={`ff-drawing-tool-sheet ff-drawing-tool-sheet-${toolSheet || "none"}`}><BottomSheetBody>{(toolSheet === "brush" || toolSheet === "eraser") && (() => { const eraser = toolSheet === "eraser"; const value = eraser ? eraserSize : brushSize; return <div className="ff-drawing-size-slider">{!eraser && <div className="ff-drawing-brush-types" role="group" aria-label="브러시 종류">{brushTypes.map((type) => <button type="button" key={type.id} data-active={brushType === type.id} onClick={() => setBrushType(type.id)}><span>{type.label}</span><small>{type.description}</small></button>)}</div>}<div className="ff-drawing-size-slider-heading"><span>{eraser ? "지우개 크기" : "브러시 크기"}</span><strong>{value}pt</strong></div><input aria-label={eraser ? "지우개 크기" : "브러시 크기"} type="range" min="1" max="10" step="1" value={value} style={{ "--brush-thumb-size": (10 + value * 1.4) + "px" } as React.CSSProperties} onChange={(event) => { const next = Number(event.target.value); if (eraser) { setEraserSize(next); setIsErasing(true); } else { setBrushSize(next); setIsErasing(false); } }} /><div className="ff-drawing-size-slider-labels"><span>1pt</span><span>5pt</span><span>10pt</span></div></div>; })()}{toolSheet === "color" && <div className="ff-drawing-color-picker-panel"><HexColorPicker color={brushColor.hex} onChange={chooseColor} /><label className="ff-drawing-hex-field"><span>HEX</span><input value={colorInput} maxLength={7} spellCheck={false} aria-label="HEX 색상값" onChange={(event) => setColorInput(event.target.value)} onBlur={(event) => chooseColor(event.currentTarget.value)} onKeyDown={(event) => { if (event.key === "Enter") chooseColor(event.currentTarget.value); }} /></label><div className="ff-drawing-color-presets" role="group" aria-label="추천 색상">{palette.map((color) => <button type="button" key={color.name} data-active={!isErasing && brushColor.hex === color.hex} style={{ background: color.hex }} aria-label={color.name + " 색상"} onClick={() => chooseColor(color.hex)} />)}</div></div>}{toolSheet === "save" && <div className="ff-drawing-save-options" role="menu"><button type="button" onClick={() => saveDrawing("png")}>PNG 이미지</button><button type="button" onClick={() => saveDrawing("jpeg")}>JPG 이미지</button><button type="button" onClick={() => saveDrawing("webp")}>WEBP 이미지</button></div>}</BottomSheetBody></BottomSheetContent></BottomSheetRoot></>}
     {mode === "draw" &&
         <section className="ff-canvas-panel">
           <h2 className="ff-section-title">마음속 친구를 그려보세요</h2><p className="ff-description" style={{ margin: "5px 0 14px" }}>털색과 무늬, 귀와 얼굴 모양을 자유롭게 표현해 주세요.</p>

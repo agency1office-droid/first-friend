@@ -699,6 +699,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-drawing-match-action { min-width: 0; height: 56px !important; margin: 0 !important; border-radius: 14px !important; white-space: nowrap; }
 
 @media(min-width:701px){
+  .ff-drawing-workspace { min-height: 0; }
+  .ff-drawing-bottom-actions { position: static; }
   .ff-drawing-bottom-actions > button,
   .ff-drawing-upload-action { height: 56px; align-self: center; }
 }

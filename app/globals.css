@@ -239,6 +239,17 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-facet span { color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 16px; }
 .ff-detail-facet strong { overflow-wrap: anywhere; color: var(--seed-color-fg-neutral); font-size: 15px; line-height: 21px; font-weight: 700; }
 .ff-detail-facet[data-muted="true"] strong { color: var(--seed-color-fg-neutral-subtle); font-weight: 600; }
+.ff-detail-info-section { margin: 24px 0 0; padding-top: 20px; border-top: 1px solid var(--seed-color-stroke-neutral-muted); }
+.ff-detail-info-section h2 { margin: 0 0 4px; color: var(--seed-color-fg-neutral); font-size: 18px; line-height: 25px; }
+.ff-detail-info-list { display: grid; }
+.ff-detail-info-row { display: grid; grid-template-columns: 24px 76px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 48px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 20px; }
+.ff-detail-info-row:last-child { border-bottom: 0; }
+.ff-detail-info-icon { width: 20px; height: 20px; color: var(--seed-color-fg-neutral-subtle); }
+.ff-detail-info-row strong { overflow-wrap: anywhere; color: var(--seed-color-fg-neutral); font-size: 14px; font-weight: 600; text-align: right; }
+.ff-detail-info-row strong[data-muted="true"] { color: var(--seed-color-fg-neutral-subtle); }
+.ff-detail-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; padding: 12px; border-radius: 12px; background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral-muted); }
+.ff-detail-note svg { flex: none; width: 18px; height: 18px; color: var(--seed-color-fg-neutral-subtle); }
+.ff-detail-note p { margin: 0; font-size: 13px; line-height: 19px; }
 .ff-detail-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .ff-detail-name { margin: 4px 0 0; font-size: 28px; line-height: 36px; font-weight: 700; }
 .ff-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); margin: 20px 0; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 12px; overflow: hidden; }

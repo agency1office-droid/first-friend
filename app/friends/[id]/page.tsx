@@ -1,13 +1,20 @@
 import { getAnimalById } from "../../../lib/public-data";
 import type { Animal } from "../../../lib/data";
 import { getAnimalPublicStatus, getNoticeDaysRemaining } from "../../../lib/animal-public-status";
+import type { ComponentType, SVGProps } from "react";
 import { Callout } from "seed-design/ui/callout";
 import {
+  IconCalendarLine,
   IconCheckmarkCircleFill,
+  IconCheckmarkScaleLine,
   IconChevronRightLine,
+  IconDocumentLine,
   IconHospitalcrossBuildingLine,
+  IconLocationpinLine,
   IconMapLocationpinLine,
+  IconPawprintLine,
   IconPhoneLine,
+  IconTagLine,
 } from "@karrotmarket/react-monochrome-icon";
 import { AnimalGallery } from "../../components/AnimalGallery";
 import { AnimalActions } from "../../components/AnimalActions";
@@ -71,10 +78,11 @@ function detailNeutered(animal: Animal) {
   return "확인 필요";
 }
 
-function DetailFacet({ label, value }: { label: string; value: string }) {
-  return <div className="ff-detail-facet" data-muted={value === "확인 필요" || undefined}>
+function DetailInfoRow({ icon: Icon, label, value }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string }) {
+  return <div className="ff-detail-info-row">
+    <Icon className="ff-detail-info-icon" aria-hidden />
     <span>{label}</span>
-    <strong>{value}</strong>
+    <strong data-muted={value === "확인 필요" || undefined}>{value}</strong>
   </div>;
 }
 
@@ -99,6 +107,9 @@ export default async function AnimalPage({
   const shelterAddress = animal.shelterAddress || animal.region;
   const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}` : null;
   const shelterMapHref = `https://map.kakao.com/link/search/${encodeURIComponent(`${animal.shelter} ${shelterAddress}`)}`;
+  const weight = detailWeight(animal);
+  const foundArea = animal.life.find((item) => item.startsWith("발견 지역:"))?.replace("발견 지역:", "").trim() || "확인 필요";
+  const publicState = publicStatus.publicState || "보호 중";
   return (
     <>
       <AnimalDetailChromeBridge />
@@ -149,12 +160,16 @@ export default async function AnimalPage({
           <IconChevronRightLine aria-hidden />
           <strong>{animal.breed}</strong>
         </nav>
-        <section className="ff-detail-facets" aria-label="친구 조건 정보">
-          <DetailFacet label="크기" value={detailSize(animal)} />
-          <DetailFacet label="털색" value={colors.length ? colors.join(" · ") : "확인 필요"} />
-          <DetailFacet label="나이" value={`${ageLabels[animal.ageGroup]} · ${animal.age}`} />
-          <DetailFacet label="성별" value={animal.sex || "확인 필요"} />
-          <DetailFacet label="중성화" value={detailNeutered(animal)} />
+        <section className="ff-detail-info-section" aria-labelledby="detail-info-title">
+          <h2 id="detail-info-title">이 친구의 정보</h2>
+          <div className="ff-detail-info-list">
+            <DetailInfoRow icon={IconPawprintLine} label="종류" value={`${animal.species} · ${animal.breed}`} />
+            <DetailInfoRow icon={IconCheckmarkScaleLine} label="크기" value={detailSize(animal)} />
+            <DetailInfoRow icon={IconTagLine} label="털색" value={colors.length ? colors.join(" · ") : "확인 필요"} />
+            <DetailInfoRow icon={IconCalendarLine} label="나이" value={`${ageLabels[animal.ageGroup]} · ${animal.age}`} />
+            <DetailInfoRow icon={IconPawprintLine} label="성별" value={animal.sex || "확인 필요"} />
+            <DetailInfoRow icon={IconCheckmarkCircleFill} label="중성화" value={detailNeutered(animal)} />
+          </div>
         </section>
         <p className="ff-description" style={{ marginTop: 8 }}>
           {animal.summary}
@@ -166,27 +181,18 @@ export default async function AnimalPage({
             </span>
           ))}
         </div>
-        <section className="ff-info-block" style={{ marginTop: 20 }}>
-          <h2>공개된 기본 정보</h2>
-          <ul className="ff-checklist">
-            {animal.health.map((item) => (
-              <li key={item}>
-                <IconCheckmarkCircleFill className="ff-check" />
-                {item}
-              </li>
-            ))}
-          </ul>
+        <section className="ff-detail-info-section" aria-labelledby="public-info-title">
+          <h2 id="public-info-title">공공데이터로 확인한 정보</h2>
+          <div className="ff-detail-info-list">
+            <DetailInfoRow icon={IconCheckmarkScaleLine} label="공개 체중" value={weight === undefined ? "확인 필요" : `${weight}kg`} />
+            <DetailInfoRow icon={IconDocumentLine} label="현재 상태" value={publicState} />
+            <DetailInfoRow icon={IconCalendarLine} label="공고 기간" value={publicStatus.notice?.replace(/^공고\s*/, "") || "확인 필요"} />
+            <DetailInfoRow icon={IconLocationpinLine} label="발견 지역" value={foundArea} />
+          </div>
         </section>
-        <section className="ff-info-block">
-          <h2>보호 정보를 확인해 주세요</h2>
-          <ul className="ff-checklist">
-            {animal.life.filter((item) => item !== publicStatus.notice).map((item) => (
-              <li key={item}>
-                <IconCheckmarkCircleFill className="ff-check" />
-                {item}
-              </li>
-            ))}
-          </ul>
+        <section className="ff-detail-note" aria-label="확인 안내">
+          <IconDocumentLine aria-hidden />
+          <p>성격·건강 상태와 정확한 구조 위치는 보호소 상담을 통해 확인해 주세요.</p>
         </section>
         {animal.shelterLat !== undefined && animal.shelterLng !== undefined && <ShelterLocationCard
           jsKey={process.env.NEXT_PUBLIC_KAKAO_JS_KEY || ""}

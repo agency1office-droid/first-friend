@@ -117,6 +117,54 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   }, []);
 
   function point(event: React.PointerEvent<HTMLCanvasElement>): [number, number, number] { const canvas = event.currentTarget; const rect = canvas.getBoundingClientRect(); const ratio = window.devicePixelRatio || 1; const logicalWidth = canvas.width / ratio; const logicalHeight = canvas.height / ratio; return [(event.clientX - rect.left) * (logicalWidth / rect.width), (event.clientY - rect.top) * (logicalHeight / rect.height), event.pressure || 0.5]; }
+  function drawBrushTexture(context: CanvasRenderingContext2D, points: [number, number, number][], outline: [number, number][]) {
+    if (isErasing || !points.length) return;
+    context.save();
+    context.beginPath();
+    context.moveTo(outline[0][0], outline[0][1]);
+    for (const [x, y] of outline.slice(1)) context.lineTo(x, y);
+    context.closePath();
+    context.clip();
+    context.strokeStyle = brushColor.hex;
+    context.fillStyle = brushColor.hex;
+    context.globalCompositeOperation = "multiply";
+    if (brushType === "pencil") {
+      context.globalAlpha = 0.24;
+      context.lineWidth = Math.max(0.55, brushSize * 0.16);
+      context.setLineDash([1.2, 2.6]);
+      for (const offset of [-0.7, 0.7]) {
+        context.beginPath();
+        points.forEach(([x, y], index) => index === 0 ? context.moveTo(x + offset, y - offset) : context.lineTo(x + offset, y - offset));
+        context.stroke();
+      }
+    } else if (brushType === "colored-pencil") {
+      context.globalAlpha = 0.17;
+      context.lineWidth = Math.max(0.8, brushSize * 0.28);
+      context.setLineDash([2.2, 1.4]);
+      for (let pass = 0; pass < 3; pass += 1) {
+        context.beginPath();
+        points.forEach(([x, y], index) => {
+          const jitter = Math.sin(index * 7.31 + pass * 2.17) * Math.max(0.6, brushSize * 0.16);
+          if (index === 0) context.moveTo(x + jitter, y - jitter);
+          else context.lineTo(x + jitter, y - jitter);
+        });
+        context.stroke();
+      }
+    } else {
+      context.globalAlpha = 0.12;
+      const radius = Math.max(0.8, brushSize * 0.24);
+      points.forEach(([x, y], index) => {
+        for (let particle = 0; particle < 4; particle += 1) {
+          const angle = index * 2.41 + particle * 1.57;
+          const distance = (Math.sin(index * 3.17 + particle) + 1) * brushSize * 0.42;
+          context.beginPath();
+          context.arc(x + Math.cos(angle) * distance, y + Math.sin(angle) * distance, radius, 0, Math.PI * 2);
+          context.fill();
+        }
+      });
+    }
+    context.restore();
+  }
   function drawSmoothStroke(context: CanvasRenderingContext2D, points: [number, number, number][]) {
     if (!points.length) return;
     const outline = getStroke(points, { size: isErasing ? eraserSize : brushSize, thinning, smoothing, streamline, simulatePressure, easing: easing === "Linear" ? undefined : (value: number) => value * value, last: true, start: { cap: capStart, taper: taperStart || false }, end: { cap: capEnd, taper: taperEnd || false } });
@@ -129,6 +177,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     context.fillStyle = isErasing ? "#ffffff" : brushColor.hex;
     context.fill();
     if (strokeWidth > 0) { context.lineWidth = strokeWidth; context.strokeStyle = isErasing ? "#ffffff" : brushColor.hex; context.stroke(); }
+    drawBrushTexture(context, points, outline);
     context.restore();
   }
   function start(event: React.PointerEvent<HTMLCanvasElement>) { const canvas = event.currentTarget, context = canvas.getContext("2d"); if (!context) return; strokeBaseImage.current = context.getImageData(0, 0, canvas.width, canvas.height); undoStack.current.push(strokeBaseImage.current); if (undoStack.current.length > 12) undoStack.current.shift(); drawing.current = true; strokePoints.current = [point(event)]; canvas.setPointerCapture(event.pointerId); drawSmoothStroke(context, strokePoints.current); }

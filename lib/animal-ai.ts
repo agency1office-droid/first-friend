@@ -3,7 +3,7 @@ import type { Animal } from "./data";
 import { getAnimalById } from "./public-data";
 import { getSupabaseServerClient } from "./supabase/server";
 
-const MODEL_VERSION = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash-lite";
+const MODEL_VERSION = process.env.GEMINI_MODEL?.trim() || "gemini-3.1-flash-lite";
 const MAX_RETRIES = 3;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const SAFE_IMAGE_HOST_SUFFIX = ".go.kr";
@@ -107,12 +107,22 @@ function safeImageUrl(value: string) {
 }
 
 async function readImage(url: string) {
-  const safeUrl = safeImageUrl(url);
+  let safeUrl = safeImageUrl(url);
   if (!safeUrl) throw new Error("공공 이미지 주소를 확인하지 못했어요.");
-  const response = await fetch(safeUrl, { redirect: "error", signal: AbortSignal.timeout(8000), headers: { accept: "image/jpeg,image/png,image/webp" } });
+
+  let response: Response;
+  for (let redirectCount = 0; redirectCount <= 2; redirectCount += 1) {
+    response = await fetch(safeUrl, { redirect: "manual", signal: AbortSignal.timeout(8000), headers: { accept: "image/jpeg,image/png,image/webp" } });
+    if (response.status < 300 || response.status >= 400) break;
+    const location = response.headers.get("location");
+    const redirectedUrl = location ? safeImageUrl(new URL(location, safeUrl).toString()) : null;
+    if (!redirectedUrl) throw new Error("공공 이미지 리다이렉트 주소를 확인하지 못했어요.");
+    safeUrl = redirectedUrl;
+    if (redirectCount === 2) throw new Error("공공 이미지 리다이렉트가 너무 많아요.");
+  }
   if (!response.ok) throw new Error(`공공 이미지 응답 오류(${response.status})`);
-  const type = response.headers.get("content-type")?.split(";", 1)[0]?.toLowerCase();
-  if (!type || !["image/jpeg", "image/png", "image/webp"].includes(type)) throw new Error("지원하지 않는 이미지 형식이에요.");
+  const declaredType = response.headers.get("content-type")?.split(";", 1)[0]?.toLowerCase();
+  if (!declaredType || (!["image/jpeg", "image/png", "image/webp", "application/octet-stream"].includes(declaredType))) throw new Error("지원하지 않는 이미지 형식이에요.");
   const declaredLength = Number(response.headers.get("content-length") || 0);
   if (declaredLength > MAX_IMAGE_BYTES) throw new Error("이미지가 너무 커서 분석하지 않았어요.");
   if (!response.body) throw new Error("이미지를 읽지 못했어요.");
@@ -135,6 +145,7 @@ async function readImage(url: string) {
   const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
   const isWebp = bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50;
   if (!isJpeg && !isPng && !isWebp) throw new Error("이미지 형식을 확인하지 못했어요.");
+  const type = isJpeg ? "image/jpeg" : isPng ? "image/png" : "image/webp";
   return `data:${type};base64,${Buffer.from(bytes).toString("base64")}`;
 }
 

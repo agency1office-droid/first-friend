@@ -198,7 +198,7 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(api, /enqueueAnimalAiSummary/);
   assert.match(worker, /createHash\("sha256"\)/);
   assert.match(worker, /MAX_IMAGE_BYTES/);
-  assert.match(worker, /redirect: "error"/);
+  assert.match(worker, /redirect: "manual"/);
   assert.match(worker, /GEMINI_API_KEY/);
   assert.match(worker, /next_attempt_at/);
   assert.match(worker, /status === "processing"/);

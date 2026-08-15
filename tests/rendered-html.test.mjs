@@ -203,11 +203,8 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(styles, /seed-callout__title \{ display: flex;.*color: var\(--seed-color-fg-brand\)/);
   assert.match(styles, /padding: var\(--seed-dimension-x5\) var\(--seed-dimension-x4_5\)/);
   assert.match(styles, /font-size: calc\(var\(--seed-font-size-t4\) \+ 1px\)/);
-  assert.match(styles, /\.ff-detail-memo \{ position: relative; overflow: hidden; margin: 16px 0;.*seed-color-bg-neutral-weak/);
-  assert.match(styles, /\.ff-detail-memo::after/);
-  assert.match(styles, /\.ff-detail-memo::after \{ position: absolute; top: -1px; right: -1px; width: 26px; height: 26px; background: var\(--seed-color-bg-layer-default\)/);
-  assert.match(page, /ff-detail-memo[\s\S]*IconDocumentLine/);
-  assert.match(styles, /\.ff-detail-memo \.seed-callout__title \{ display: flex;.*seed-color-fg-neutral/);
+  assert.doesNotMatch(page, /ff-detail-memo/);
+  assert.match(page, /DetailInfoRow icon=\{IconLocationpinLine\} label="발견 지역"[\s\S]*DetailInfoRow icon=\{IconDocumentLine\} label="보호소 메모"/);
   assert.match(api, /enqueueAnimalAiSummary/);
   assert.match(worker, /row\.analysis_key !== createAnimalAnalysisKey\(animal\)/);
   assert.match(worker, /createHash\("sha256"\)/);

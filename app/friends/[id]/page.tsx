@@ -12,7 +12,6 @@ import {
   IconLocationpinLine,
   IconMapLocationpinLine,
   IconPawprintLine,
-  IconPhoneLine,
   IconTagLine,
 } from "@karrotmarket/react-monochrome-icon";
 import { AnimalGallery } from "../../components/AnimalGallery";
@@ -24,6 +23,7 @@ import { AnimalFundraiserPanel } from "../../components/AnimalFundraiserPanel";
 import { DeferredSection } from "../../components/DeferredSection";
 import { ShelterLocationCard } from "../../components/ShelterLocationCard";
 import { ShelterTravelMeta } from "../../components/ShelterTravelMeta";
+import { ShelterPhoneDialog } from "../../components/ShelterPhoneDialog";
 import { AnimalDetailChromeBridge } from "../../components/AnimalDetailChromeBridge";
 import { AnimalPublicStatusBanner } from "../../components/AnimalPublicStatusBanner";
 
@@ -148,10 +148,7 @@ export default async function AnimalPage({
           <ShelterTravelMeta distance={animal.distanceMeters} lat={animal.shelterLat} lng={animal.shelterLng} />
         </div>}
         <div className="ff-detail-shelter-actions">
-          {animal.shelterPhone && <a className="ff-detail-contact-link" href={`tel:${animal.shelterPhone.replace(/[^0-9+]/g, "")}`} aria-label={`${animal.shelter}에 전화하기`}>
-            <IconPhoneLine aria-hidden />
-            <span className="ff-detail-phone-number">{animal.shelterPhone}</span>
-          </a>}
+          {animal.shelterPhone && <ShelterPhoneDialog shelter={animal.shelter} phone={animal.shelterPhone} />}
           <a className="ff-detail-contact-link" href={shelterMapHref} target="_blank" rel="noreferrer" aria-label={`${animal.shelter} 위치를 카카오맵에서 보기`}>
             <IconMapLocationpinLine aria-hidden />
           </a>

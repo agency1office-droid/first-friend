@@ -31,13 +31,18 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const undoStack = useRef<ImageData[]>([]);
   const mode = modeOnly || "draw";
   const [brushColor, setBrushColor] = useState(palette[0]);
-  const [brushSize, setBrushSize] = useState(6);
+  const [brushSize, setBrushSize] = useState(1);
   const [thinning, setThinning] = useState(0.35);
   const [smoothing, setSmoothing] = useState(0.65);
   const [streamline, setStreamline] = useState(0.45);
   const [simulatePressure, setSimulatePressure] = useState(true);
-  const [roundCaps, setRoundCaps] = useState(true);
-  const [taperEnds, setTaperEnds] = useState(false);
+  const [taperStart, setTaperStart] = useState(0);
+  const [capStart, setCapStart] = useState(true);
+  const [taperEnd, setTaperEnd] = useState(0);
+  const [capEnd, setCapEnd] = useState(true);
+  const [strokeWidth, setStrokeWidth] = useState(0);
+  const [easing, setEasing] = useState("Linear");
+  const [settingsOpen, setSettingsOpen] = useState(true);
   const [uploaded, setUploaded] = useState("");
   const [preview, setPreview] = useState("");
   const [query, setQuery] = useState(initialTags.split(",")[0] || "");
@@ -79,13 +84,14 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   function point(event: React.PointerEvent<HTMLCanvasElement>): [number, number, number] { const rect = event.currentTarget.getBoundingClientRect(); return [event.clientX - rect.left, event.clientY - rect.top, event.pressure || 0.5]; }
   function drawSmoothStroke(context: CanvasRenderingContext2D, points: [number, number, number][]) {
     if (!points.length) return;
-    const outline = getStroke(points, { size: brushSize, thinning, smoothing, streamline, simulatePressure, last: true, start: { cap: roundCaps, taper: taperEnds }, end: { cap: roundCaps, taper: taperEnds } });
+    const outline = getStroke(points, { size: brushSize, thinning, smoothing, streamline, simulatePressure, easing: easing === "Linear" ? undefined : (value: number) => value * value, last: true, start: { cap: capStart, taper: taperStart || false }, end: { cap: capEnd, taper: taperEnd || false } });
     context.beginPath();
     context.moveTo(outline[0][0], outline[0][1]);
     for (const [x, y] of outline.slice(1)) context.lineTo(x, y);
     context.closePath();
     context.fillStyle = brushColor.hex;
     context.fill();
+    if (strokeWidth > 0) { context.lineWidth = strokeWidth; context.strokeStyle = brushColor.hex; context.stroke(); }
   }
   function start(event: React.PointerEvent<HTMLCanvasElement>) { const canvas = event.currentTarget, context = canvas.getContext("2d"); if (!context) return; strokeBaseImage.current = context.getImageData(0, 0, canvas.width, canvas.height); undoStack.current.push(strokeBaseImage.current); if (undoStack.current.length > 12) undoStack.current.shift(); drawing.current = true; strokePoints.current = [point(event)]; canvas.setPointerCapture(event.pointerId); drawSmoothStroke(context, strokePoints.current); }
   function move(event: React.PointerEvent<HTMLCanvasElement>) { if (!drawing.current) return; const context = event.currentTarget.getContext("2d"); if (!context || !strokeBaseImage.current) return; strokePoints.current.push(point(event)); context.putImageData(strokeBaseImage.current, 0, 0); drawSmoothStroke(context, strokePoints.current); }
@@ -135,8 +141,27 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     {mode === "draw" &&
         <section className="ff-canvas-panel">
           <h2 className="ff-section-title">마음속 친구를 그려보세요</h2><p className="ff-description" style={{ margin: "5px 0 14px" }}>털색과 무늬, 귀와 얼굴 모양을 자유롭게 표현해 주세요.</p>
-          <div className="ff-draw-tools" aria-label="그림 도구"><div className="ff-palette">{palette.map((color) => <button type="button" key={color.name} className="ff-color-button" data-active={brushColor.name === color.name} style={{ background: color.hex }} aria-label={`${color.name} 색상`} onClick={() => setBrushColor(color)}/>)}</div><label className="ff-brush-size">굵기 <input type="range" min="2" max="40" value={brushSize} onChange={(event) => setBrushSize(Number(event.target.value))}/><output>{brushSize}</output></label></div>
-          <details className="ff-stroke-settings"><summary>선 설정</summary><div className="ff-stroke-settings-grid"><label>압력 반응<input type="range" min="-1" max="1" step="0.05" value={thinning} onChange={(event) => setThinning(Number(event.target.value))}/><output>{Math.round(thinning * 100)}%</output></label><label>선 다듬기<input type="range" min="0" max="1" step="0.05" value={smoothing} onChange={(event) => setSmoothing(Number(event.target.value))}/><output>{Math.round(smoothing * 100)}%</output></label><label>선 따라오기<input type="range" min="0" max="1" step="0.05" value={streamline} onChange={(event) => setStreamline(Number(event.target.value))}/><output>{Math.round(streamline * 100)}%</output></label><label className="ff-pressure-toggle"><input type="checkbox" checked={simulatePressure} onChange={(event) => setSimulatePressure(event.target.checked)}/>속도에 따라 굵기 바꾸기</label><label className="ff-pressure-toggle"><input type="checkbox" checked={roundCaps} onChange={(event) => setRoundCaps(event.target.checked)}/>선 시작과 끝을 둥글게</label><label className="ff-pressure-toggle"><input type="checkbox" checked={taperEnds} onChange={(event) => setTaperEnds(event.target.checked)}/>선 시작과 끝을 가늘게</label></div></details>
+          <div className="ff-freehand-demo-tools">
+            <button type="button" className="ff-demo-menu-button" aria-expanded={settingsOpen} aria-label="그림 설정 열기" onClick={() => setSettingsOpen((value) => !value)}>☰</button>
+            {settingsOpen && <div className="ff-freehand-demo-panel" aria-label="perfect-freehand 그림 설정">
+              <div className="ff-demo-range-row"><label htmlFor="draw-size">Size</label><input id="draw-size" type="range" min="1" max="40" step="1" value={brushSize} onChange={(event) => setBrushSize(Number(event.target.value))}/><output>{brushSize}</output></div>
+              <div className="ff-demo-range-row"><label htmlFor="draw-thinning">Thinning</label><input id="draw-thinning" type="range" min="-1" max="1" step="0.05" value={thinning} onChange={(event) => setThinning(Number(event.target.value))}/><output>{thinning}</output></div>
+              <div className="ff-demo-range-row"><label htmlFor="draw-streamline">Streamline</label><input id="draw-streamline" type="range" min="0" max="1" step="0.05" value={streamline} onChange={(event) => setStreamline(Number(event.target.value))}/><output>{streamline}</output></div>
+              <div className="ff-demo-range-row"><label htmlFor="draw-smoothing">Smoothing</label><input id="draw-smoothing" type="range" min="0" max="1" step="0.05" value={smoothing} onChange={(event) => setSmoothing(Number(event.target.value))}/><output>{smoothing}</output></div>
+              <div className="ff-demo-range-row"><label htmlFor="draw-easing">Easing</label><select id="draw-easing" value={easing} onChange={(event) => setEasing(event.target.value)}><option>Linear</option><option>Ease in</option></select><output>{easing}</output></div>
+              <label className="ff-demo-check"><span>Simulate Pressure</span><input type="checkbox" checked={simulatePressure} onChange={(event) => setSimulatePressure(event.target.checked)}/></label>
+              <hr />
+              <div className="ff-demo-range-row"><label htmlFor="draw-taper-start">Taper Start</label><input id="draw-taper-start" type="range" min="0" max="1" step="0.05" value={taperStart} onChange={(event) => setTaperStart(Number(event.target.value))}/><output>{taperStart}</output></div>
+              <label className="ff-demo-check"><span>Cap Start</span><input type="checkbox" checked={capStart} onChange={(event) => setCapStart(event.target.checked)}/></label>
+              <hr />
+              <div className="ff-demo-range-row"><label htmlFor="draw-taper-end">Taper End</label><input id="draw-taper-end" type="range" min="0" max="1" step="0.05" value={taperEnd} onChange={(event) => setTaperEnd(Number(event.target.value))}/><output>{taperEnd}</output></div>
+              <label className="ff-demo-check"><span>Cap End</span><input type="checkbox" checked={capEnd} onChange={(event) => setCapEnd(event.target.checked)}/></label>
+              <hr />
+              <div className="ff-demo-fill"><span>Fill</span><div className="ff-palette">{palette.map((color) => <button type="button" key={color.name} className="ff-color-button" data-active={brushColor.name === color.name} style={{ background: color.hex }} aria-label={`${color.name} 색상`} onClick={() => setBrushColor(color)}/>)}</div></div>
+              <div className="ff-demo-range-row"><label htmlFor="draw-stroke">Stroke</label><input id="draw-stroke" type="range" min="0" max="8" step="1" value={strokeWidth} onChange={(event) => setStrokeWidth(Number(event.target.value))}/><output>{strokeWidth}</output></div>
+              <div className="ff-demo-panel-actions"><button type="button" onClick={() => { setBrushSize(1); setThinning(0.35); setStreamline(0.45); setSmoothing(0.65); setSimulatePressure(true); setEasing("Linear"); setTaperStart(0); setCapStart(true); setTaperEnd(0); setCapEnd(true); setStrokeWidth(0); }}>Reset Options</button><button type="button" onClick={() => navigator.clipboard?.writeText(JSON.stringify({ size: brushSize, thinning, streamline, smoothing, simulatePressure, easing, taperStart, capStart, taperEnd, capEnd, strokeWidth }))}>Copy Options</button><button type="button" onClick={() => navigator.clipboard?.writeText(canvasRef.current?.toDataURL("image/svg+xml") || "")}>Copy to SVG</button></div>
+            </div>}
+          </div>
           <canvas ref={canvasRef} className="ff-canvas" aria-label="친구를 그리는 캔버스" onPointerDown={start} onPointerMove={move} onPointerUp={finish} onPointerCancel={finish}/>
           <div className="ff-drawing-actions"><ActionButton variant="neutralWeak" size="small" onClick={undo}><PrefixIcon svg={<IconArrowCounterclockwiseCircularLine/>}/>되돌리기</ActionButton><ActionButton variant="neutralWeak" size="small" onClick={clear}><PrefixIcon svg={<IconEraserHorizlineLine/>}/>지우기</ActionButton><ActionButton variant="neutralWeak" size="small" onClick={saveDrawing}><PrefixIcon svg={<IconArrowDownHorizlineLine/>}/>그림 저장</ActionButton></div>
         </section>

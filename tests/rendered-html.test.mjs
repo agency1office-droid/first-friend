@@ -739,8 +739,10 @@ test("keeps draw, photo, and condition journeys independent while draw uses perf
     );
   }
   assert.match(finder, /getStroke\(/);
-  assert.match(finder, /ff-stroke-settings/);
+  assert.match(finder, /ff-freehand-demo-panel/);
   assert.match(finder, /ff-draw-species-panel|ff-canvas-panel/);
+  for (const option of ["Size", "Thinning", "Streamline", "Smoothing", "Easing", "Taper Start", "Cap Start", "Taper End", "Cap End", "Fill", "Stroke", "Reset Options", "Copy Options", "Copy to SVG"])
+    assert.match(finder, new RegExp(option));
   assert.match(finder, /되돌리기/);
   assert.match(finder, /지우기/);
   assert.match(finder, /그림 저장/);

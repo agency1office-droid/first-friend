@@ -195,6 +195,7 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(page, /ff-detail-shelter[\s\S]*<AnimalAiIntro/);
   assert.match(intro, /AI가 발견한 이 친구의 매력/);
   assert.match(intro, /사진을 바탕으로 AI가 살펴본 내용/);
+  assert.doesNotMatch(intro, /이 친구를 소개할게요/);
   assert.match(api, /enqueueAnimalAiSummary/);
   assert.match(worker, /row\.analysis_key !== createAnimalAnalysisKey\(animal\)/);
   assert.match(worker, /createHash\("sha256"\)/);

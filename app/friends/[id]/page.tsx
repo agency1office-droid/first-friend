@@ -31,14 +31,6 @@ import { getBreedKnowledge } from "../../../lib/breed-knowledge";
 // 즐겨찾기 등 사용자 상태는 기존 클라이언트 브리지에서 별도로 처리합니다.
 export const revalidate = 60;
 
-const ageLabels: Record<Animal["ageGroup"], string> = {
-  "어린 친구": "아기",
-  "청년 친구": "성장기",
-  "어른 친구": "어른",
-  "나이 많은 친구": "노령",
-  "나이 미상": "확인 필요",
-};
-
 const colorGroups = [
   ["흰색", ["흰", "백색", "화이트", "아이보리"]],
   ["검정", ["검정", "검은", "검", "흑색", "블랙"]],
@@ -75,6 +67,19 @@ function detailNeutered(animal: Animal) {
   if (value.includes("완료")) return "중성화 완료";
   if (value.includes("않은") || value.includes("안 됨")) return "중성화 안 됨";
   return "확인 필요";
+}
+
+function detailAge(animal: Animal) {
+  const raw = String(animal.age || "").trim();
+  if (!raw || raw === "나이 미상") return "확인 필요";
+  if (raw.includes("60일미만")) return "0살";
+  const birthYear = raw.match(/((?:19|20)\d{2})\s*(?:\([^)]*\))?\s*년생/);
+  if (birthYear) return `${Math.max(0, new Date().getFullYear() - Number(birthYear[1]))}살`;
+  const months = raw.match(/(\d+(?:\.\d+)?)\s*개월/);
+  if (months) return `${Math.floor(Number(months[1]) / 12)}살`;
+  const years = raw.match(/(\d+(?:\.\d+)?)\s*살/);
+  if (years) return `${Math.floor(Number(years[1]))}살`;
+  return raw;
 }
 
 function isDuplicateTrait(trait: string, animal: Animal, colors: string[], publicState: string) {
@@ -191,7 +196,7 @@ export default async function AnimalPage({
             <DetailInfoRow icon={IconNeedleScaleLine} label="크기" value={detailSize(animal)} helper={knowledge.size} />
             <DetailInfoRow icon={IconCheckmarkScaleLine} label="체중" value={weight === undefined ? "확인 필요" : `${weight}kg`} />
             <DetailInfoRow icon={IconTagLine} label="털색" value={colors.length ? colors.join(" · ") : "확인 필요"} />
-            <DetailInfoRow icon={IconCalendarLine} label="나이" value={`${ageLabels[animal.ageGroup]} · ${animal.age}`} helper={knowledge.age} />
+            <DetailInfoRow icon={IconCalendarLine} label="나이" value={detailAge(animal)} helper={knowledge.age} />
             <DetailInfoRow icon={IconMalesymbolFemalesymbolLine} label="성별" value={animal.sex || "확인 필요"} />
             <DetailInfoRow icon={IconCheckmarkCircleFill} label="중성화" value={detailNeutered(animal)} helper={knowledge.neutered} />
             <DetailInfoRow icon={IconLocationpinLine} label="발견 지역" value={foundArea} />

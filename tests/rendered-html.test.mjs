@@ -194,13 +194,13 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(page, /<AnimalAiIntro animalId=\{animal\.id\} \/>/);
   assert.match(page, /ff-detail-shelter[\s\S]*<AnimalAiIntro/);
   assert.match(intro, /AI가 살펴본 이 친구의 매력/);
-  assert.match(intro, /IconSparkle2Fill/);
+  assert.match(intro, /IconSparkle2Line/);
   assert.match(intro, /사진을 바탕으로 AI가 살펴본 내용/);
   assert.doesNotMatch(intro, /이 친구를 소개할게요/);
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(styles, /ff-detail-ai-section \.seed-callout__root::after/);
   assert.match(styles, /seed-color-bg-warning-weak/);
-  assert.match(styles, /seed-callout__title \{ display: block;.*color: var\(--seed-color-fg-brand\)/);
+  assert.match(styles, /seed-callout__title \{ display: flex;.*color: var\(--seed-color-fg-brand\)/);
   assert.match(styles, /padding: var\(--seed-dimension-x5\) var\(--seed-dimension-x4_5\)/);
   assert.match(styles, /font-size: calc\(var\(--seed-font-size-t4\) \+ 1px\)/);
   assert.match(api, /enqueueAnimalAiSummary/);

@@ -33,7 +33,7 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
           <div className="ff-animal-name">{animal.name}</div>
           <div className="ff-animal-row-location"><span>{compactRegion(animal.region)}</span>{animal.distanceMeters !== undefined&&<div className="ff-animal-distance ff-animal-row-distance">{formatDistance(animal.distanceMeters)}</div>}</div>
           <div className="ff-meta">{displayAge(animal.age)} · {animal.sex}</div>
-          {publicStatus.cardLabel&&<Badge className={`ff-animal-row-public-status ff-public-status-${publicStatus.phase}`} tone={publicStatus.tone} variant={publicStatus.phase === "protected" ? "fill" : "weak"}>{publicStatus.cardLabel}</Badge>}
+          {publicStatus.cardLabel&&<Badge className={`ff-animal-row-public-status ff-public-status-${publicStatus.phase}`} tone={publicStatus.tone} variant="weak">{publicStatus.cardLabel}</Badge>}
         </a>
       </div>
     </div> : <div className="ff-animal-grid-main">

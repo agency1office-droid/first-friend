@@ -27,7 +27,6 @@ export function ShelterPhoneDialog({ shelter, phone }: { shelter: string; phone:
         <p className="ff-phone-dialog-label">보호소 전화번호</p>
         <h2 id="shelter-phone-title">{shelter}</h2>
         <a className="ff-phone-dialog-number" href={`tel:${tel}`}>{phone}</a>
-        <p className="ff-phone-dialog-help">PC에서는 아래 번호로 직접 전화해 주세요.</p>
       </div>
     </dialog>
   </>;

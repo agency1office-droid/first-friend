@@ -269,7 +269,13 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-info-row--memo { border-top: 1px solid var(--seed-color-stroke-neutral-muted); }
 .ff-detail-info-icon { width: 20px; height: 20px; color: var(--seed-color-fg-neutral-subtle); }
 .ff-detail-info-row strong { min-width: 0; overflow-wrap: anywhere; word-break: break-word; white-space: normal; color: var(--seed-color-fg-neutral); font-size: 14px; font-weight: 600; text-align: right; }
-.ff-detail-info-helper { display: block; margin: 0 0 10px 32px; padding: 8px 10px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 10px; background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral-subtle); font-size: 12px; font-weight: 400; line-height: 18px; text-align: right; }
+.ff-detail-info-row--accordion { position: relative; }
+.ff-detail-info-row--accordion > summary { list-style: none; cursor: pointer; }
+.ff-detail-info-row--accordion > summary::-webkit-details-marker { display: none; }
+.ff-detail-info-row--accordion > summary::after { position: absolute; top: 17px; right: 2px; width: 7px; height: 7px; border-right: 1.5px solid var(--seed-color-fg-neutral-subtle); border-bottom: 1.5px solid var(--seed-color-fg-neutral-subtle); transform: rotate(45deg); content: ""; }
+.ff-detail-info-row--accordion[open] > summary::after { top: 20px; transform: rotate(225deg); }
+.ff-detail-info-row--accordion > summary strong { padding-right: 20px; }
+.ff-detail-info-helper { display: block; margin: 0 0 10px 32px; color: var(--seed-color-fg-neutral-subtle); font-size: 12px; font-weight: 400; line-height: 18px; text-align: left; }
 .ff-detail-info-row strong[data-muted="true"] { color: var(--seed-color-fg-neutral-subtle); }
 .ff-detail-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; padding: 12px; border-radius: 12px; background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral-muted); }
 .ff-detail-note svg { flex: none; width: 18px; height: 18px; color: var(--seed-color-fg-neutral-subtle); }

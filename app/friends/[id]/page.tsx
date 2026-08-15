@@ -86,13 +86,20 @@ function isDuplicateTrait(trait: string, animal: Animal, colors: string[], publi
 }
 
 function DetailInfoRow({ icon: Icon, label, value, helper, className }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string; helper?: string; className?: string }) {
-  return <div className={`ff-detail-info-row${helper ? " ff-detail-info-row--has-helper" : ""}${className ? ` ${className}` : ""}`}>
+  if (helper) return <details className={`ff-detail-info-row ff-detail-info-row--accordion${className ? ` ${className}` : ""}`}>
+    <summary className="ff-detail-info-row-main">
+      <Icon className="ff-detail-info-icon" aria-hidden />
+      <span>{label}</span>
+      <strong data-muted={value === "확인 필요" || undefined}>{value}</strong>
+    </summary>
+    <div className="ff-detail-info-helper">{helper}</div>
+  </details>;
+  return <div className={`ff-detail-info-row${className ? ` ${className}` : ""}`}>
     <div className="ff-detail-info-row-main">
       <Icon className="ff-detail-info-icon" aria-hidden />
       <span>{label}</span>
       <strong data-muted={value === "확인 필요" || undefined}>{value}</strong>
     </div>
-    {helper && <small className="ff-detail-info-helper">{helper}</small>}
   </div>;
 }
 

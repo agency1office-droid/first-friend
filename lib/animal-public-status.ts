@@ -38,7 +38,7 @@ export function getAnimalPublicStatus(animal: Animal) {
     const outcome = publicOutcomeLabel(publicState);
     return { notice, publicState, processEnded, noticeEnded, phase: "ended" as const, cardLabel: outcome, statusLabel: outcome, tone: "neutral" as const, detailTitle: outcome, description: `공공데이터의 현재 처리 상태는 '${publicState}'입니다. 종료된 공고는 입양 신청 대상으로 표시하지 않습니다.` };
   }
-  if (noticeEnded) return { notice, publicState, processEnded, noticeEnded, phase: "protected" as const, cardLabel: "입양 상담 가능", statusLabel: "입양 상담 가능", tone: "warning" as const, detailTitle: "입양 상담을 시작할 수 있어요", description: `보호자 확인 공고가 끝나고 공공데이터에 '${publicState || "보호 중"}'으로 표시된 친구예요. 상담 이후 실제 입양 가능 여부와 절차는 보호소가 확인합니다.` };
+  if (noticeEnded) return { notice, publicState, processEnded, noticeEnded, phase: "protected" as const, cardLabel: "입양 상담 가능", statusLabel: "입양 상담 가능", tone: "positive" as const, detailTitle: "입양 상담을 시작할 수 있어요", description: `보호자 확인 공고가 끝나고 공공데이터에 '${publicState || "보호 중"}'으로 표시된 친구예요. 상담 이후 실제 입양 가능 여부와 절차는 보호소가 확인합니다.` };
   return { notice, publicState, processEnded, noticeEnded, phase: "notice" as const, cardLabel: "보호자 확인 공고 중", statusLabel: "보호자 확인 공고 중", tone: "informative" as const, detailTitle: `${noticeDeadline}까지 보호자를 확인해요`, description: "잃어버린 동물일 수 있어 원래 보호자를 확인하고 있어요. 공고 기간에는 입양 대상으로 안내하지 않습니다." };
 }
 

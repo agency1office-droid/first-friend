@@ -214,7 +214,7 @@ export default async function AnimalPage({
           <p>
             <strong>{animal.shelter}</strong>
             <br />
-            {animal.region} · {animal.source}
+            {animal.region}
           </p>
           <p className="ff-description">
             정보 갱신 {animal.updated}. 공공데이터에 없는 성격·질병·접종 정보는

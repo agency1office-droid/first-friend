@@ -41,6 +41,7 @@ export function ShelterTravelMeta({
 
   if (!distanceLabel) return null;
   return <p className="ff-detail-shelter-meta" aria-live="polite">
-    {distanceLabel}{durationLabel ? ` · 차로 약 ${durationLabel}` : ""}
+    <span className="ff-detail-shelter-distance">{distanceLabel}</span>
+    {durationLabel ? ` · 차로 약 ${durationLabel}` : ""}
   </p>;
 }

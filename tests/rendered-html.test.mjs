@@ -746,6 +746,7 @@ test("keeps draw, photo, and condition journeys independent while draw uses perf
   assert.match(finder, /ff-drawing-guide-picker|그리기 가이드/);
   assert.match(finder, /강아지.*고양이|고양이.*강아지/);
   assert.match(finder, /되돌리기/);
+  assert.match(finder, /다시 되돌리기/);
   assert.match(finder, /지우기/);
   assert.match(finder, /특징을 분석해 친구 찾기/);
   assert.match(drawPage, /<Finder animals={await getAnimalsWithPhotoCounts\(30\)} modeOnly="draw"\/>/);

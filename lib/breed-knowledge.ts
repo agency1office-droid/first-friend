@@ -48,7 +48,19 @@ const SPECIES_PROFILES: Record<"dog" | "cat", BreedProfile> = {
   cat: { species: "고양이는 품종과 개체에 따라 털, 체형, 활동량이 다양해요. 실제 성격과 생활 습관은 개체마다 달라요.", size: "성묘는 보통 3~6kg 정도지만 품종과 성별에 따라 달라질 수 있어요.", age: "고양이는 보통 12~18년 정도 함께하는 경우가 있어요. 건강 관리와 생활 환경에 따라 달라질 수 있어요.", neutered: COMMON_PROFILES["푸들"].neutered },
 };
 
-function polishKnowledge(profile: BreedProfile): BreedKnowledge {
+function neuterGuidance(species: string, sex?: string): string {
+  const isCat = /고양이/.test(species);
+  const subject = isCat ? "고양이" : "반려견";
+  if (/암컷|여아/.test(String(sex))) {
+    return `암컷 ${subject}의 중성화는 자궁축농증을 예방하고 유선 종양 위험을 낮추는 데 도움을 줄 수 있어요. 중성화한 반려동물이 더 오래 사는 경향이 보고되기도 하지만, 시기와 적합성은 수의사와 상담해 주세요.`;
+  }
+  if (/수컷|남아/.test(String(sex))) {
+    return `수컷 ${subject}의 중성화는 고환 질환 위험과 번식 관련 행동을 줄이는 데 도움을 줄 수 있어요. 중성화한 반려동물이 더 오래 사는 경향이 보고되기도 하지만, 시기와 적합성은 수의사와 상담해 주세요.`;
+  }
+  return `중성화는 원치 않는 번식을 예방하고, 암컷은 자궁축농증·유선 종양 위험을, 수컷은 고환 질환 위험을 낮추는 데 도움을 줄 수 있어요. 중성화와 수명 사이의 관계는 개체마다 달라 성별과 건강 상태를 바탕으로 수의사와 상담해 주세요.`;
+}
+
+function polishKnowledge(profile: BreedProfile, sex?: string, species = ""): BreedKnowledge {
   const shorten = (value: string) => value
     .replace("성별과 개체에 따라 체형과 체중이 달라질 수 있어요.", "개체마다 차이가 있어요.")
     .replace("성별과 개체에 따라 달라질 수 있어요.", "개체마다 차이가 있어요.")
@@ -56,7 +68,7 @@ function polishKnowledge(profile: BreedProfile): BreedKnowledge {
     .replace("건강 관리와 생활 환경에 따라 달라질 수 있어요.", "건강 관리에 따라 달라질 수 있어요.")
     .replace("품종과 건강 관리에 따라 달라질 수 있어요.", "품종에 따라 차이가 있어요.")
     .replace("원치 않는 번식을 예방하고 일부 질환·행동 위험을 줄이는 데 도움을 줄 수 있어요. 시기는 수의사와 상담해 주세요.", "번식 예방과 일부 위험 감소에 도움을 줄 수 있어요. 시기는 수의사와 상담해 주세요.");
-  return { species: shorten(profile.species), size: shorten(profile.size), age: shorten(profile.age), neutered: shorten(profile.neutered), source: "breed" };
+  return { species: shorten(profile.species), size: shorten(profile.size), age: shorten(profile.age), neutered: neuterGuidance(species, sex), source: "breed" };
 }
 
 export const BREED_KNOWLEDGE_PROMPT = `
@@ -67,18 +79,19 @@ export const BREED_KNOWLEDGE_PROMPT = `
 - 품종명만으로 실제 개체의 성격·건강·입양 가능 여부를 단정하지 마세요.
 - breed profile은 품종의 일반적인 경향과 외형적 특징만 1~2문장으로 작성하세요.
 - 크기와 수명은 단일 최대값보다 일반적인 범위로 쓰고, 품종·성별·개체에 따라 달라진다고 안내하세요.
-- 중성화 정보는 번식 방지와 일반적인 건강·행동상 이점만 안내하고, 시기와 의료 판단은 수의사 상담으로 연결하세요.
+- 중성화 정보는 성별에 맞춰 긍정적인 이점을 안내하세요. 암컷은 자궁축농증 예방과 유선 종양 위험 감소, 수컷은 고환 질환 위험과 번식 관련 행동 감소를 설명할 수 있어요.
+- 중성화한 반려동물이 더 오래 사는 경향이 보고되기도 한다고 쓸 수 있지만, 중성화만으로 수명 연장을 보장하지 마세요. 시기와 의료 판단은 수의사 상담으로 연결하세요.
 - 문체는 “~해요”, “~할 수 있어요”, “~경향이 있어요”를 사용하세요. “반드시”, “순해요”, “건강해요”, “입양 성공 가능성이 높아요”는 쓰지 마세요.
 - 자료가 부족한 품종은 임의로 채우지 말고 species 또는 breed group fallback을 사용하세요.
 - 새 항목은 이 파일의 COMMON_PROFILES에 한국어 API 품종명과 aliases를 추가하고, 출처 URL과 확인일을 docs/BREED_KNOWLEDGE_GUIDE.md에 기록하세요.
 `;
 
-export function getBreedKnowledge(input: { species: string; breed: string; upKindCd?: string; kindCd?: string }): BreedKnowledge {
+export function getBreedKnowledge(input: { species: string; breed: string; upKindCd?: string; kindCd?: string; sex?: string }): BreedKnowledge {
   const breed = String(input.breed || "품종 미상");
   const normalized = normalize(breed);
   const direct = Object.entries(COMMON_PROFILES).find(([name, profile]) => [name, ...(profile.aliases || [])].some(value => normalize(value) === normalized));
-  if (direct) return polishKnowledge(direct[1]);
+  if (direct) return polishKnowledge(direct[1], input.sex, input.species);
   const group = GROUP_PROFILES.find(([pattern]) => pattern.test(breed) || pattern.test(normalized));
-  if (group) return { ...polishKnowledge(group[1]), source: "group" };
-  return { ...polishKnowledge(SPECIES_PROFILES[/고양이/.test(input.species) ? "cat" : "dog"]), source: "species" };
+  if (group) return { ...polishKnowledge(group[1], input.sex, input.species), source: "group" };
+  return { ...polishKnowledge(SPECIES_PROFILES[/고양이/.test(input.species) ? "cat" : "dog"], input.sex, input.species), source: "species" };
 }

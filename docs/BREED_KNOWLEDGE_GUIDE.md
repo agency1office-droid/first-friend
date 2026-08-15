@@ -9,7 +9,9 @@
 - 품종 자체의 경향과 실제 보호 중인 개체의 성격·건강 상태를 구분합니다.
 - “순해요”, “건강해요”, “입양 가능성이 높아요”처럼 개인 동물에게 적용되는 단정은 쓰지 않습니다.
 - 크기와 수명은 일반적인 범위로 작성하고 성별·체급·개체 차이를 함께 안내합니다.
-- 질환명이나 번식 관련 의료 판단을 품종 소개에 과도하게 넣지 않습니다. 필요한 경우 수의사 상담으로 연결합니다.
+- 중성화 안내는 품종이 아니라 실제 동물의 성별을 기준으로 작성합니다. 암컷은 자궁축농증 예방과 유선 종양 위험 감소, 수컷은 고환 질환 위험과 번식 관련 행동 감소처럼 긍정적인 이점을 짧게 설명합니다.
+- 중성화한 반려동물이 더 오래 사는 경향이 보고되기도 하지만 개체별 차이가 있으므로 수명 연장을 보장하지 않습니다. 수술 시기와 적합성은 수의사 상담으로 연결합니다.
+- 질환명은 예방 또는 위험 감소의 가능성으로만 표현하고, 실제 개체의 건강 상태를 판단하지 않습니다.
 - 보조 설명은 고정 글자 수로 자르지 않습니다. 한 필드에 핵심 정보 1개와 보충 설명 1개만 담아 짧게 작성하고, 문장부호를 기준으로 의미 단위를 나눕니다. 나머지 줄바꿈은 브라우저의 자연스러운 균형 줄바꿈에 맡깁니다. AI 소개와 보호소 메모에는 이 규칙을 적용하지 않습니다.
 
 ## 신규 품종 추가 절차
@@ -31,7 +33,8 @@
 품종의 일반적인 경향과 외형적 특징만 설명하세요.
 실제 개체의 성격, 건강, 행동, 입양 가능 여부를 단정하지 마세요.
 크기와 수명은 일반적인 범위로 쓰고 품종·성별·개체 차이를 안내하세요.
-중성화는 번식 방지와 일반적인 이점만 설명하고, 시기와 의료 판단은 수의사 상담으로 안내하세요.
+중성화는 성별에 맞춰 긍정적인 이점을 설명하세요. 암컷은 자궁축농증 예방과 유선 종양 위험 감소, 수컷은 고환 질환 위험과 번식 관련 행동 감소를 안내할 수 있어요.
+중성화한 반려동물이 더 오래 사는 경향이 보고되기도 하지만 수명 연장을 보장하지 말고, 시기와 의료 판단은 수의사 상담으로 안내하세요.
 문체는 짧고 자연스러운 존댓말 “~해요”, “~할 수 있어요”, “~경향이 있어요”를 사용하세요.
 자료가 부족하면 임의로 만들지 말고 품종군 또는 종 공통 안내를 사용하세요.
 ```
@@ -40,4 +43,4 @@
 
 현재 공식 API 품종 전체는 모두 안내 대상입니다. 실제로 자주 노출되는 푸들, 말티즈, 포메라니안, 비숑 프리제, 진도견, 치와와, 리트리버류, 테리어류, 스피츠류, 페르시안, 브리티시 쇼트헤어, 한국 고양이 등은 개별 또는 품종군 프로필을 사용하고, 나머지는 종 공통 fallback으로 안전하게 표시합니다.
 
-출처 기준: [AKC 품종 자료](https://www.akc.org/dog-breeds/), [CFA 고양이 품종 자료](https://cfa.org/kids/breeds-and-colors/cfa-breeds/), [Merck Veterinary Manual](https://www.merckvetmanual.com/dog-owners/introduction-to-dogs/description-of-dogs), [AVMA 중성화 안내](https://ebusiness.avma.org/files/productdownloads/mcm-client-brochures-spay-neuter-2022.pdf)
+출처 기준: [AKC 품종 자료](https://www.akc.org/dog-breeds/), [CFA 고양이 품종 자료](https://cfa.org/kids/breeds-and-colors/cfa-breeds/), [Merck Veterinary Manual - 개 유선 종양](https://www.merckvetmanual.com/reproductive-system/mammary-tumors-in-dogs/mammary-tumors-in-dogs), [Merck Veterinary Manual - 고양이 유선 종양](https://www.merckvetmanual.com/reproductive-system/mammary-tumors-in-cats/mammary-tumors-in-cats), [AAHA 중성화 안내](https://www.aaha.org/resources/spay-or-neuter/), [VCA 암컷 중성화 이점](https://vcahospitals.com/all-animal-hospital/know-your-pet/spaying-in-dogs)

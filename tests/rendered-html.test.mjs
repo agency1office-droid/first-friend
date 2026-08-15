@@ -216,6 +216,11 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(page, /function formatDetailHelper/);
   assert.match(page, /sentences = value\.split/);
   assert.match(breedKnowledge, /function polishKnowledge/);
+  assert.match(breedKnowledge, /function neuterGuidance/);
+  assert.match(breedKnowledge, /유선 종양/);
+  assert.match(breedKnowledge, /자궁축농증/);
+  assert.match(breedKnowledge, /고환 질환/);
+  assert.match(breedKnowledge, /더 오래 사는 경향/);
   assert.match(breedKnowledge, /개체마다 차이가 있어요/);
   assert.match(breedKnowledge, /pattern\.test\(breed\) \|\| pattern\.test\(normalized\)/);
   assert.match(page, /helper=\{knowledge\.species\}/);

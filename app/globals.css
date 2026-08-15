@@ -235,6 +235,9 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-ai-section .seed-callout__description { display: block; }
 .ff-detail-ai-copy, .ff-detail-ai-disclaimer { display: block; }
 .ff-detail-ai-copy { line-height: 22px; }
+.ff-detail-ai-copy--pending { display: flex; align-items: flex-start; gap: 8px; }
+.ff-detail-ai-copy--pending .ff-loading-indicator { flex: none; width: 18px; height: 18px; margin-top: 2px; }
+.ff-detail-ai-copy--pending .ff-loading-indicator span { width: 14px; height: 14px; }
 .ff-detail-ai-disclaimer { margin-top: 12px; color: var(--seed-color-fg-neutral-subtle); font-size: 12px; line-height: 18px; }
 .ff-detail-shelter-actions { display: flex; flex: none; align-items: center; gap: 2px; margin-left: auto; }
 .ff-detail-contact-link { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--seed-color-fg-neutral-subtle); opacity: .72; appearance: none; cursor: pointer; }

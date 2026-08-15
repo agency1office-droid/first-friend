@@ -178,10 +178,6 @@ export default async function AnimalPage({
             </span>
           ))}
         </div>}
-        <section className="ff-detail-note" aria-label="확인 안내">
-          <IconDocumentLine aria-hidden />
-          <p>성격·건강 상태와 정확한 구조 위치는 보호소 상담을 통해 확인해 주세요.</p>
-        </section>
         {animal.shelterLat !== undefined && animal.shelterLng !== undefined && <ShelterLocationCard
           jsKey={process.env.NEXT_PUBLIC_KAKAO_JS_KEY || ""}
           name={animal.shelter}

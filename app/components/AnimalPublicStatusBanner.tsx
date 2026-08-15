@@ -17,7 +17,7 @@ export function AnimalPublicStatusBanner({
       <strong>{statusLabel}</strong>
     </div>
     <details className="ff-detail-status-details">
-      <summary>자세히 보기</summary>
+      <summary>알아보기</summary>
       <div className="ff-detail-status-description">
         <strong>{detailTitle || statusLabel}</strong>
         <p>{description || "공공데이터를 기준으로 현재 보호 상태를 안내합니다."}</p>

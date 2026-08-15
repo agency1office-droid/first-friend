@@ -210,7 +210,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-gallery-status .ff-detail-status-day { flex: none; padding: 3px 8px; border-radius: 999px; color: var(--seed-color-fg-informative); background: var(--seed-color-bg-informative-weak); border: 1px solid var(--seed-color-stroke-informative-weak); font-size: 12px; font-weight: var(--seed-font-weight-bold); line-height: 18px; }
 .ff-detail-gallery-status strong { overflow-wrap: anywhere; color: inherit; font-size: inherit; line-height: inherit; }
 .ff-detail-status-details { display: contents; color: inherit; font-size: 12px; font-weight: var(--seed-font-weight-bold); line-height: 18px; }
-.ff-detail-status-details summary { flex: 0 0 64px; width: 64px; box-sizing: border-box; padding: 5px 0; color: inherit; text-align: center; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; cursor: pointer; list-style: none; }
+.ff-detail-status-details summary { flex: 0 0 auto; min-width: 58px; box-sizing: border-box; padding: 5px 0; color: inherit; text-align: right; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; cursor: pointer; list-style: none; }
 .ff-detail-status-details summary::-webkit-details-marker { display: none; }
 .ff-detail-status-description { flex: 0 0 100%; padding-top: 10px; color: var(--seed-color-fg-neutral-muted); font-size: 13px; font-weight: var(--seed-font-weight-regular); line-height: 20px; }
 .ff-detail-status-description strong { display: block; margin-bottom: 2px; color: var(--seed-color-fg-neutral); font-size: 13px; }

@@ -159,6 +159,7 @@ export default async function AnimalPage({
         <section className="ff-detail-info-section ff-detail-animal-info" aria-labelledby="detail-info-title">
           <h2 id="detail-info-title">동물 친구 정보</h2>
           <div className="ff-detail-info-list">
+            <DetailInfoRow icon={IconCalendarLine} label="공고 기간" value={publicStatus.notice?.replace(/^공고\s*/, "") || "확인 필요"} />
             <DetailInfoRow icon={IconPawprintLine} label="종류" value={`${animal.species} · ${animal.breed}`} />
             <DetailInfoRow icon={IconCheckmarkScaleLine} label="크기" value={detailSize(animal)} />
             <DetailInfoRow icon={IconCheckmarkScaleLine} label="체중" value={weight === undefined ? "확인 필요" : `${weight}kg`} />
@@ -166,6 +167,7 @@ export default async function AnimalPage({
             <DetailInfoRow icon={IconCalendarLine} label="나이" value={`${ageLabels[animal.ageGroup]} · ${animal.age}`} />
             <DetailInfoRow icon={IconPawprintLine} label="성별" value={animal.sex || "확인 필요"} />
             <DetailInfoRow icon={IconCheckmarkCircleFill} label="중성화" value={detailNeutered(animal)} />
+            <DetailInfoRow icon={IconLocationpinLine} label="발견 지역" value={foundArea} />
           </div>
         </section>
         {animal.summary && <section className="ff-detail-memo" aria-label="보호소 메모">
@@ -182,12 +184,6 @@ export default async function AnimalPage({
             </span>
           ))}
         </div>}
-        <section className="ff-detail-info-section ff-detail-public-info" aria-label="발견 및 공고 정보">
-          <div className="ff-detail-info-list">
-            <DetailInfoRow icon={IconCalendarLine} label="공고 기간" value={publicStatus.notice?.replace(/^공고\s*/, "") || "확인 필요"} />
-            <DetailInfoRow icon={IconLocationpinLine} label="발견 지역" value={foundArea} />
-          </div>
-        </section>
         <section className="ff-detail-note" aria-label="확인 안내">
           <IconDocumentLine aria-hidden />
           <p>성격·건강 상태와 정확한 구조 위치는 보호소 상담을 통해 확인해 주세요.</p>

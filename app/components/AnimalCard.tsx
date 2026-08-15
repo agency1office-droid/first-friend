@@ -36,10 +36,17 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
           {publicStatus.cardLabel&&<Badge className={`ff-animal-row-public-status ff-public-status-${publicStatus.phase}`} tone={publicStatus.tone} variant="weak">{publicStatus.cardLabel}</Badge>}
         </a>
       </div>
-    </div> : <a href={animalHref}>
-      <div className="ff-animal-image-wrap"><AnimalThumbnail src={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail/>{(animal.photoCount || 1) > 1 && <span className="ff-card-photo-count" role="img" aria-label={`사진 ${animal.photoCount}장`}><IconPicture2StackedLine aria-hidden="true"/></span>}</div>
-      <div className="ff-animal-info"><div className="ff-meta">{animal.region} · {animal.source}</div><div className="ff-animal-name">{animal.name}</div><div className="ff-meta">{animal.age} · {animal.sex}</div>{animal.distanceMeters !== undefined&&<div className="ff-animal-distance">우리 동네에서 보호소까지 약 {formatDistance(animal.distanceMeters)}</div>}<div className="ff-tags">{animal.traits.slice(0, 2).map((trait) => <span className="ff-tag" key={trait}>{trait}</span>)}</div></div>
-    </a>}
+    </div> : <div className="ff-animal-grid-main">
+      <a href={animalHref} aria-label={`${animal.name} 상세 보기`}>
+        <div className="ff-animal-image-wrap"><AnimalThumbnail src={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail/>{(animal.photoCount || 1) > 1 && <span className="ff-card-photo-count" role="img" aria-label={`사진 ${animal.photoCount}장`}><IconPicture2StackedLine aria-hidden="true"/></span>}</div>
+      </a>
+      <div className="ff-animal-info">
+        {showShelter && <a className="ff-animal-row-shelter" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>{animal.shelter}</a>}
+        <a className="ff-animal-grid-animal-link" href={animalHref}>
+          <div className="ff-meta">{animal.region} · {animal.source}</div><div className="ff-animal-name">{animal.name}</div><div className="ff-meta">{animal.age} · {animal.sex}</div>{animal.distanceMeters !== undefined&&<div className="ff-animal-distance">우리 동네에서 보호소까지 약 {formatDistance(animal.distanceMeters)}</div>}<div className="ff-tags">{animal.traits.slice(0, 2).map((trait) => <span className="ff-tag" key={trait}>{trait}</span>)}</div>
+        </a>
+      </div>
+    </div>}
     <FavoriteButton animalId={animal.id} animalName={animal.name} initialSaved={initialSaved} onFavoriteChange={onFavoriteChange}/>
   </article>;
 }

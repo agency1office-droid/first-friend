@@ -206,5 +206,34 @@ export async function getShelters(limit = 20): Promise<Shelter[]> {
 }
 
 export async function getShelterById(id: string) {
+  try {
+    const { data, error } = await getSupabaseServerClient()
+      .from("public_shelters")
+      .select("id,name,organization,address,phone,hours,closed,lat,lng,approximate_location")
+      .eq("id", id)
+      .maybeSingle();
+    if (!error && data) {
+      const point = shelterPoint({
+        orgNm: String(data.organization || ""),
+        careAddr: String(data.address || ""),
+        lat: data.lat == null ? "" : String(data.lat),
+        lng: data.lng == null ? "" : String(data.lng),
+      });
+      return {
+        id: String(data.id),
+        name: String(data.name || "동물보호센터"),
+        organization: String(data.organization || "관할 기관"),
+        animals: "보호 동물 문의",
+        address: String(data.address || "주소 정보 없음"),
+        phone: String(data.phone || "전화번호 정보 없음"),
+        hours: String(data.hours || "운영시간 문의"),
+        closed: String(data.closed || "휴무일 문의"),
+        ...point,
+        approximateLocation: Boolean(data.approximate_location ?? point.approximateLocation),
+      } satisfies Shelter;
+    }
+  } catch {
+    // 동기화 직후나 DB 연결 장애 때는 공공 API fallback으로 공개 페이지를 유지합니다.
+  }
   return (await getShelters(1000)).find((shelter) => shelter.id === id);
 }

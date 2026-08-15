@@ -86,6 +86,9 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(bridge, /FavoriteButton/);
   assert.match(bridge, /IconAndroidshareLine/);
   assert.match(page, /AnimalDetailChromeBridge/);
+  assert.match(page, /shelterHref = animal\.shelterId/);
+  assert.match(page, /ff-detail-shelter-link/);
+  assert.match(page, /\/shelters\/\$\{encodeURIComponent\(animal\.shelterId\)\}/);
 });
 
 test("links the bottom navigation to saved friends", async () => {
@@ -521,10 +524,14 @@ test("shows verified multi-photo counts on discovery thumbnails", async () => {
   assert.match(card, /aria-label=\{`사진 \$\{animal\.photoCount\}장`\}/);
   assert.match(card, /ff-animal-row-location/);
   assert.match(card, /ff-animal-row-shelter/);
+  assert.match(card, /ff-animal-grid-main/);
+  assert.match(card, /ff-animal-grid-animal-link/);
   assert.match(card, /animal\.shelter/);
   assert.match(card, /\/shelters\/\$\{encodeURIComponent\(animal\.shelterId\)\}/);
   assert.match(card, /보호소 페이지 보기/);
   assert.match(publicData, /getShelters\(1000\)\)\.find/);
+  assert.match(publicData, /from\("public_shelters"\)/);
+  assert.match(publicData, /maybeSingle\(\)/);
   assert.match(card, /ff-animal-row-distance/);
   assert.match(card, /ff-animal-row-public-status/);
   assert.match(card, /getAnimalPublicStatus/);

@@ -95,6 +95,7 @@ export default async function AnimalPage({
   const noticeDaysRemaining = getNoticeDaysRemaining(publicStatus.notice);
   const colors = detailColors(animal.colors);
   const shelterAddress = animal.shelterAddress || animal.region;
+  const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}` : null;
   const shelterMapHref = `https://map.kakao.com/link/search/${encodeURIComponent(`${animal.shelter} ${shelterAddress}`)}`;
   return (
     <>
@@ -112,10 +113,13 @@ export default async function AnimalPage({
       </div>
       <section className="ff-detail-shelter" aria-label="보호소 정보">
         <div className="ff-detail-shelter-icon" aria-hidden><IconHospitalcrossBuildingLine /></div>
-        <div className="ff-detail-shelter-copy">
+        {shelterHref ? <a className="ff-detail-shelter-copy ff-detail-shelter-link" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>
+          <strong>{animal.shelter} <IconChevronRightLine aria-hidden /></strong>
+          <p>{shelterAddress}</p>
+        </a> : <div className="ff-detail-shelter-copy">
           <strong>{animal.shelter}</strong>
           <p>{shelterAddress}</p>
-        </div>
+        </div>}
         <a className="ff-detail-location-link" href={shelterMapHref} target="_blank" rel="noreferrer" aria-label={`${animal.shelter} 위치를 카카오맵에서 보기`}>
           <IconMapLocationpinLine aria-hidden />
         </a>

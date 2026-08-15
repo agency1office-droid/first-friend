@@ -203,8 +203,10 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(worker, /짧고 자연스러운 문장/);
   assert.match(worker, /고양이예요/);
   assert.match(worker, /사진에서 확인되는 털 색/);
-  assert.match(worker, /귀여움·예쁨·매력/);
-  assert.match(worker, /사진에 근거한 감상/);
+  assert.match(worker, /귀엽고 예쁘고 매력적인지/);
+  assert.match(worker, /실제로 보이는 특징에 근거/);
+  assert.match(worker, /반드시 한 문장 넣으세요/);
+  assert.match(worker, /귀여운 포인트예요/);
   assert.match(worker, /입니다/);
   assert.match(worker, /next_attempt_at/);
   assert.match(worker, /status === "processing"/);

@@ -4,7 +4,7 @@ import { getAnimalById } from "./public-data";
 import { getSupabaseServerClient } from "./supabase/server";
 
 const MODEL_VERSION = process.env.GEMINI_MODEL?.trim() || "gemini-3.1-flash-lite";
-const PROMPT_VERSION = "animal-charm-v6-first-friend-ux-writing";
+const PROMPT_VERSION = "animal-charm-v7-first-friend-ux-writing";
 const MAX_RETRIES = 3;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const SAFE_IMAGE_HOST_SUFFIX = ".go.kr";
@@ -160,6 +160,7 @@ function validateSummary(value: string) {
   const sentenceCount = summary.split(/[.!?。！？]+/).map(value => value.trim()).filter(Boolean).length;
   if (sentenceCount < 2 || sentenceCount > 3) return null;
   if (/건강|순해요|순합니다|온순|얌전|친화|사나워요|사납|활발|성격|입양 성공|입양 가능|입양을 기다|보호소에서|질병|치료|회복|불쌍|애타게|반드시 입양|입니다|합니다|하십시오/.test(summary)) return null;
+  if (!/귀여|예쁘|매력|사랑스럽|포인트/.test(summary)) return null;
   return summary;
 }
 
@@ -171,7 +172,7 @@ async function generateSummary(animal: Animal) {
     signal: AbortSignal.timeout(20000),
     headers: { "x-goog-api-key": process.env.GEMINI_API_KEY?.trim() || "", "content-type": "application/json" },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: "당신은 퍼스트프렌드의 반려동물 소개 문구를 작성하는 UX 라이팅 AI입니다. 당근의 친근함과 토스의 간결함을 참고하되, 두 브랜드의 문구를 그대로 따라 하지 말고 퍼스트프렌드만의 따뜻하고 담백한 친구 소개 말투를 사용하세요. 사용자를 존중하는 친근한 존댓말을 쓰고, 짧고 자연스러운 문장으로 작성하세요. 어려운 전문용어와 보고서 표현을 피하세요. 문장 끝은 '고양이예요', '강아지예요', '~처럼 보여요', '~한 모습이에요'처럼 자연스러운 '-요' 표현을 우선하고 '입니다', '합니다' 문체는 사용하지 마세요. 먼저 사진에서 확인되는 털 색·무늬·눈매·표정·자세를 구체적으로 말한 다음, 그 특징에서 느껴지는 귀여움·예쁨·매력을 한 문장 정도 자연스럽게 덧붙이세요. '동그란 눈이 귀여워 보여요', '무늬가 예쁘게 어우러져요', '앞발을 모은 모습에서 매력이 느껴져요'처럼 사진에 근거한 감상은 사용할 수 있지만, 모든 동물을 똑같이 칭찬하거나 과장하지 마세요. 매력에 대한 감상은 외형에만 한정하고 성격·건강·감정으로 확장하지 마세요. 과도하게 귀엽거나 감정적인 표현, 동정심을 유도하는 표현, 과장된 감탄사를 사용하지 마세요. 본문 2~3문장은 모두 사진 속 외형·무늬·표정·자세와 그에 대한 근거 있는 감상으로 쓰고, 보호소 상태나 입양 안내는 본문에 넣지 마세요. 공개 데이터는 종·품종·나이처럼 확인된 정보를 보완할 때만 사용하세요. 건강·성격·입양 가능 여부·미래 행동을 추측하거나 사실처럼 단정하지 말고, '불쌍한 아이', '주인을 애타게 기다려요', '순하고 착해요', '건강해 보여요', '반드시 입양해야 해요' 같은 표현은 사용하지 마세요. 출력에는 제목이나 안내 문구를 넣지 말고, UI에 표시할 본문만 한국어 2~3문장으로 JSON {\"summary\":\"...\"} 형식으로 반환하세요." }] },
+      systemInstruction: { parts: [{ text: "당신은 퍼스트프렌드의 반려동물 소개 문구를 작성하는 UX 라이팅 AI입니다. 당근의 친근함과 토스의 간결함을 참고하되, 두 브랜드의 문구를 그대로 따라 하지 말고 퍼스트프렌드만의 따뜻하고 담백한 친구 소개 말투를 사용하세요. 사용자를 존중하는 친근한 존댓말을 쓰고, 짧고 자연스러운 문장으로 작성하세요. 어려운 전문용어와 보고서 표현을 피하세요. 문장 끝은 '고양이예요', '강아지예요', '~처럼 보여요', '~한 모습이에요'처럼 자연스러운 '-요' 표현을 우선하고 '입니다', '합니다' 문체는 사용하지 마세요. 먼저 사진에서 확인되는 털 색·무늬·눈매·표정·자세를 구체적으로 말한 다음, 그 특징이 왜 귀엽고 예쁘고 매력적인지 감상하는 문장을 반드시 한 문장 넣으세요. 본문에는 '귀여운 포인트예요', '예쁜 무늬가 돋보여요', '매력이 느껴져요' 중 사진에 맞는 표현을 최소 한 번 사용하세요. 예를 들어 하얀 앞발이 양말을 신은 듯 보여 귀여운 포인트라고 말하거나, 색과 무늬가 어우러져 예쁘다고 말할 수 있어요. 단, 사진에 실제로 보이는 특징에 근거하고 모든 동물을 똑같이 칭찬하거나 과장하지 마세요. 매력에 대한 감상은 외형에만 한정하고 성격·건강·감정으로 확장하지 마세요. 과도하게 귀엽거나 감정적인 표현, 동정심을 유도하는 표현, 과장된 감탄사를 사용하지 마세요. 본문 2~3문장은 모두 사진 속 외형·무늬·표정·자세와 그에 대한 근거 있는 감상으로 쓰고, 보호소 상태나 입양 안내는 본문에 넣지 마세요. 공개 데이터는 종·품종·나이처럼 확인된 정보를 보완할 때만 사용하세요. 건강·성격·입양 가능 여부·미래 행동을 추측하거나 사실처럼 단정하지 말고, '불쌍한 아이', '주인을 애타게 기다려요', '순하고 착해요', '건강해 보여요', '반드시 입양해야 해요' 같은 표현은 사용하지 마세요. 출력에는 제목이나 안내 문구를 넣지 말고, UI에 표시할 본문만 한국어 2~3문장으로 JSON {\"summary\":\"...\"} 형식으로 반환하세요." }] },
       contents: [{ role: "user", parts: [
         { text: `다음 공개 정보를 참고해 사진에서 보이는 외형과 보호소 메모를 중심으로 소개해 주세요. 전화번호, 주소, 개인 정보는 언급하지 마세요. ${JSON.stringify({ ...input, imageUrl: undefined })}` },
         { inlineData: { mimeType: image.slice(5, image.indexOf(";")), data: image.slice(image.indexOf(",") + 1) } },

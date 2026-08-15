@@ -263,14 +263,13 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-animal-info { margin-top: 0; padding-top: 0; border-top: 0; }
 .ff-detail-info-section h2 { margin: 0 0 4px; color: var(--seed-color-fg-neutral); font-size: 18px; line-height: 25px; }
 .ff-detail-info-list { display: grid; }
-.ff-detail-info-row { display: grid; grid-template-columns: 24px 76px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 48px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 20px; }
+.ff-detail-info-row { min-height: 48px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 20px; }
+.ff-detail-info-row-main { display: grid; grid-template-columns: 24px 76px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 48px; }
 .ff-detail-info-row:last-child { border-bottom: 0; }
 .ff-detail-info-row--memo { border-top: 1px solid var(--seed-color-stroke-neutral-muted); }
 .ff-detail-info-icon { width: 20px; height: 20px; color: var(--seed-color-fg-neutral-subtle); }
 .ff-detail-info-row strong { min-width: 0; overflow-wrap: anywhere; word-break: break-word; white-space: normal; color: var(--seed-color-fg-neutral); font-size: 14px; font-weight: 600; text-align: right; }
-.ff-detail-info-value { display: grid; min-width: 0; gap: 4px; }
-.ff-detail-info-value > span { text-align: right; }
-.ff-detail-info-value small { color: var(--seed-color-fg-neutral-subtle); font-size: 12px; font-weight: 400; line-height: 18px; text-align: left; }
+.ff-detail-info-helper { display: block; margin: -2px 0 10px 32px; color: var(--seed-color-fg-neutral-subtle); font-size: 12px; font-weight: 400; line-height: 18px; text-align: left; }
 .ff-detail-info-row strong[data-muted="true"] { color: var(--seed-color-fg-neutral-subtle); }
 .ff-detail-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; padding: 12px; border-radius: 12px; background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral-muted); }
 .ff-detail-note svg { flex: none; width: 18px; height: 18px; color: var(--seed-color-fg-neutral-subtle); }

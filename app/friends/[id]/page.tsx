@@ -86,20 +86,23 @@ function isDuplicateTrait(trait: string, animal: Animal, colors: string[], publi
 }
 
 function DetailInfoRow({ icon: Icon, label, value, helper, className }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string; helper?: string; className?: string }) {
-  return <div className={`ff-detail-info-row${className ? ` ${className}` : ""}`}>
-    <Icon className="ff-detail-info-icon" aria-hidden />
-    <span>{label}</span>
-    <strong data-muted={value === "확인 필요" || undefined}>{helper ? <span className="ff-detail-info-value"><span>{value}</span><small>{helper}</small></span> : value}</strong>
+  return <div className={`ff-detail-info-row${helper ? " ff-detail-info-row--has-helper" : ""}${className ? ` ${className}` : ""}`}>
+    <div className="ff-detail-info-row-main">
+      <Icon className="ff-detail-info-icon" aria-hidden />
+      <span>{label}</span>
+      <strong data-muted={value === "확인 필요" || undefined}>{value}</strong>
+    </div>
+    {helper && <small className="ff-detail-info-helper">{helper}</small>}
   </div>;
 }
 
 function animalKnowledge(animal: Animal) {
   const isCat = /고양이/.test(animal.species);
   return {
-    species: isCat ? "호기심이 많고 독립적인 면이 있어요. 개체마다 달라요." : "사람과 교감하며 지내요. 품종과 개체마다 달라요.",
-    size: isCat ? "성묘는 보통 3~5kg, 7kg 이상 자라기도 해요." : "소형견부터 대형견까지 다양해요. 30kg 이상 자라기도 해요.",
-    age: isCat ? "평균 12~18년, 20년 이상 살기도 해요." : "평균 10~13년, 15년 이상 살기도 해요.",
-    neutered: "발정 행동과 일부 질환 위험을 줄이는 데 도움을 줄 수 있어요. 수의사 상담이 필요해요.",
+    species: isCat ? "독립적인 면과 호기심이 함께 있어요. 성격과 생활 습관은 개체마다 달라요." : "사람과 교감하며 생활하는 동물이에요. 품종과 개체에 따라 활동량과 성향이 달라요.",
+    size: isCat ? "성묘는 보통 3~5kg 정도예요. 개체에 따라 7kg 이상까지 자랄 수 있어요." : "소형견부터 대형견까지 크기 차이가 커요. 대형견은 30kg 이상까지 자랄 수 있어요.",
+    age: isCat ? "평균 12~18년 정도 살고, 20년 이상 사는 경우도 있어요." : "평균 10~13년 정도 살고, 품종과 건강에 따라 15년 이상 사는 경우도 있어요.",
+    neutered: "발정 관련 행동과 일부 생식기 질환 위험을 줄이는 데 도움을 줄 수 있어요. 시기와 방법은 수의사와 상담해 주세요.",
   };
 }
 

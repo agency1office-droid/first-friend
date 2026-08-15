@@ -114,7 +114,7 @@ export default async function AnimalPage({
       <section className="ff-detail-shelter" aria-label="보호소 정보">
         <div className="ff-detail-shelter-icon" aria-hidden><IconHospitalcrossBuildingLine /></div>
         {shelterHref ? <a className="ff-detail-shelter-copy ff-detail-shelter-link" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>
-          <strong>{animal.shelter} <IconChevronRightLine aria-hidden /></strong>
+          <strong>{animal.shelter}</strong>
           <p>{shelterAddress}</p>
         </a> : <div className="ff-detail-shelter-copy">
           <strong>{animal.shelter}</strong>

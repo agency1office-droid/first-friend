@@ -247,6 +247,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-facet strong { overflow-wrap: anywhere; color: var(--seed-color-fg-neutral); font-size: 15px; line-height: 21px; font-weight: 700; }
 .ff-detail-facet[data-muted="true"] strong { color: var(--seed-color-fg-neutral-subtle); font-weight: 600; }
 .ff-detail-info-section { margin: 24px 0 0; padding-top: 20px; border-top: 1px solid var(--seed-color-stroke-neutral-muted); }
+.ff-detail-animal-info { margin-top: 0; padding-top: 0; border-top: 0; }
 .ff-detail-info-section h2 { margin: 0 0 4px; color: var(--seed-color-fg-neutral); font-size: 18px; line-height: 25px; }
 .ff-detail-info-list { display: grid; }
 .ff-detail-info-row { display: grid; grid-template-columns: 24px 76px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 48px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 20px; }

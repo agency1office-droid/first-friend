@@ -156,8 +156,8 @@ export default async function AnimalPage({
       </section>
       <article className="ff-detail-body">
         <h1 className="ff-visually-hidden">{animal.name}</h1>
-        <section className="ff-detail-info-section" aria-labelledby="detail-info-title">
-          <h2 id="detail-info-title">이 친구의 정보</h2>
+        <section className="ff-detail-info-section ff-detail-animal-info" aria-labelledby="detail-info-title">
+          <h2 id="detail-info-title">동물 친구 정보</h2>
           <div className="ff-detail-info-list">
             <DetailInfoRow icon={IconPawprintLine} label="종류" value={`${animal.species} · ${animal.breed}`} />
             <DetailInfoRow icon={IconCheckmarkScaleLine} label="크기" value={detailSize(animal)} />

@@ -265,7 +265,8 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-info-icon { width: 20px; height: 20px; color: var(--seed-color-fg-neutral-subtle); }
 .ff-detail-info-row strong { overflow-wrap: anywhere; color: var(--seed-color-fg-neutral); font-size: 14px; font-weight: 600; text-align: right; }
 .ff-detail-info-row strong[data-muted="true"] { color: var(--seed-color-fg-neutral-subtle); }
-.ff-detail-memo { margin-top: 16px; }
+.ff-detail-memo { position: relative; overflow: hidden; margin: 16px; padding: var(--seed-dimension-x5) var(--seed-dimension-x4_5); border: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-neutral-weak); box-shadow: 0 2px 8px var(--seed-color-palette-static-black-alpha-200); }
+.ff-detail-memo::after { position: absolute; top: -1px; right: -1px; width: 24px; height: 24px; background: var(--seed-color-bg-neutral-muted); clip-path: polygon(100% 0, 0 0, 100% 100%); content: ""; pointer-events: none; }
 .ff-detail-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; padding: 12px; border-radius: 12px; background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral-muted); }
 .ff-detail-note svg { flex: none; width: 18px; height: 18px; color: var(--seed-color-fg-neutral-subtle); }
 .ff-detail-note p { margin: 0; font-size: 13px; line-height: 19px; }

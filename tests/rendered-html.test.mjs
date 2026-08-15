@@ -204,7 +204,8 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(styles, /padding: var\(--seed-dimension-x5\) var\(--seed-dimension-x4_5\)/);
   assert.match(styles, /font-size: calc\(var\(--seed-font-size-t4\) \+ 1px\)/);
   assert.doesNotMatch(page, /ff-detail-memo/);
-  assert.match(page, /DetailInfoRow icon=\{IconLocationpinLine\} label="발견 지역"[\s\S]*DetailInfoRow icon=\{IconDocumentLine\} label="보호소 메모"/);
+  assert.match(page, /DetailInfoRow icon=\{IconLocationpinLine\} label="발견 지역"[\s\S]*DetailInfoRow icon=\{IconDocumentLine\} label="메모" value=\{animal\.summary\} className="ff-detail-info-row--memo"/);
+  assert.match(styles, /\.ff-detail-info-row--memo \{ border-top: 1px solid var\(--seed-color-stroke-neutral-muted\); \}/);
   assert.match(api, /enqueueAnimalAiSummary/);
   assert.match(worker, /row\.analysis_key !== createAnimalAnalysisKey\(animal\)/);
   assert.match(worker, /createHash\("sha256"\)/);

@@ -89,8 +89,8 @@ function isDuplicateTrait(trait: string, animal: Animal, colors: string[], publi
   });
 }
 
-function DetailInfoRow({ icon: Icon, label, value }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string }) {
-  return <div className="ff-detail-info-row">
+function DetailInfoRow({ icon: Icon, label, value, className }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string; className?: string }) {
+  return <div className={`ff-detail-info-row${className ? ` ${className}` : ""}`}>
     <Icon className="ff-detail-info-icon" aria-hidden />
     <span>{label}</span>
     <strong data-muted={value === "확인 필요" || undefined}>{value}</strong>
@@ -174,7 +174,7 @@ export default async function AnimalPage({
             <DetailInfoRow icon={IconLocationpinLine} label="발견 지역" value={foundArea} />
           </div>
         </section>
-        {animal.summary && <DetailInfoRow icon={IconDocumentLine} label="보호소 메모" value={animal.summary} />}
+        {animal.summary && <DetailInfoRow icon={IconDocumentLine} label="메모" value={animal.summary} className="ff-detail-info-row--memo" />}
         {visibleTraits.length > 0 && <div className="ff-tags">
           {visibleTraits.map((trait) => (
             <span className="ff-tag" key={trait}>

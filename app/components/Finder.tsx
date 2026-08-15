@@ -131,8 +131,8 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     applySliderSize();
     const observer = new MutationObserver(applySliderSize);
     observer.observe(document.body, { childList: true, subtree: true });
-    const timeout = window.setTimeout(applySliderSize, 0);
-    return () => { observer.disconnect(); window.clearTimeout(timeout); };
+    const timeouts = [50, 150, 300].map((delay) => window.setTimeout(applySliderSize, delay));
+    return () => { observer.disconnect(); timeouts.forEach((timeout) => window.clearTimeout(timeout)); };
   }, [brushSize, eraserSize, toolSheet]);
 
   function point(event: React.PointerEvent<HTMLCanvasElement>): [number, number, number] { const canvas = event.currentTarget; const rect = canvas.getBoundingClientRect(); const ratio = window.devicePixelRatio || 1; const logicalWidth = canvas.width / ratio; const logicalHeight = canvas.height / ratio; return [(event.clientX - rect.left) * (logicalWidth / rect.width), (event.clientY - rect.top) * (logicalHeight / rect.height), event.pressure || 0.5]; }

@@ -214,8 +214,8 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(page, /function detailAge/);
   assert.match(page, /value=\{detailAge\(animal\)\}/);
   assert.match(page, /function formatDetailHelper/);
-  assert.match(page, /value\.length >= 32 && sentenceIndex >= 12/);
-  assert.match(page, /value\.slice\(0, commaIndex \+ 1\)[\s\S]*<br \/>/);
+  assert.match(page, /const DETAIL_HELPER_LINE_LENGTH = 20/);
+  assert.match(page, /Array\.from\(next\)\.length > DETAIL_HELPER_LINE_LENGTH/);
   assert.match(breedKnowledge, /pattern\.test\(breed\) \|\| pattern\.test\(normalized\)/);
   assert.match(page, /helper=\{knowledge\.species\}/);
   assert.match(page, /helper=\{knowledge\.size\}/);

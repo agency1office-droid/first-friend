@@ -161,7 +161,7 @@ img { display: block; max-width: 100%; }
 .ff-gallery-slide { display: block; flex: 0 0 100%; width: 100%; }
 .ff-gallery-slide .ff-detail-image { display: block; }
 .ff-gallery-expand, .ff-gallery-count { position: absolute; display: flex; align-items: center; gap: 5px; padding: 7px 10px; border-radius: 999px; color: #fff; background: rgba(0,0,0,.62); backdrop-filter: blur(8px); font-size: 12px; font-weight: 700; }
-.ff-gallery-count { right: 12px; bottom: 12px; min-width: 42px; justify-content: center; }
+.ff-gallery-count { z-index: 4; right: 12px; bottom: 12px; min-width: 42px; justify-content: center; }
 .ff-gallery-thumbs { display: flex; gap: 8px; padding: 10px 12px 12px; overflow-x: auto; }
 .ff-gallery-thumbs button, .ff-image-dialog-nav button { flex: none; width: 66px; height: 66px; padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: 9px; background: #222; opacity: .62; }
 .ff-gallery-thumbs button, .ff-image-dialog-nav button { position: relative; }

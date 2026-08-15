@@ -152,10 +152,6 @@ export default async function AnimalPage({
         <p className="ff-description" style={{ marginTop: 8 }}>
           {animal.summary}
         </p>
-        <LifetimeCarePlanner
-          species={animal.species}
-          animalAge={Number(animal.age.match(/\d+/)?.[0]) || null}
-        />
         <div className="ff-tags">
           {animal.traits.map((trait) => (
             <span className="ff-tag" key={trait}>
@@ -262,6 +258,12 @@ export default async function AnimalPage({
             ]}
           />
         </section>
+        <div className="ff-detail-care-section">
+          <LifetimeCarePlanner
+            species={animal.species}
+            animalAge={Number(animal.age.match(/\d+/)?.[0]) || null}
+          />
+        </div>
       </article>
       <AnimalActions animalId={animal.id} name={animal.name} shelterPhone={animal.shelterPhone} />
     </>

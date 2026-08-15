@@ -4,6 +4,7 @@ import { getAnimalById } from "./public-data";
 import { getSupabaseServerClient } from "./supabase/server";
 
 const MODEL_VERSION = process.env.GEMINI_MODEL?.trim() || "gemini-3.1-flash-lite";
+const PROMPT_VERSION = "animal-charm-v2";
 const MAX_RETRIES = 3;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const SAFE_IMAGE_HOST_SUFFIX = ".go.kr";
@@ -48,7 +49,7 @@ function sourceInput(animal: Animal) {
 }
 
 export function createAnimalAnalysisKey(animal: Animal) {
-  return createHash("sha256").update(JSON.stringify(sourceInput(animal))).digest("hex");
+  return createHash("sha256").update(JSON.stringify({ promptVersion: PROMPT_VERSION, ...sourceInput(animal) })).digest("hex");
 }
 
 function toState(row: SummaryRow | null): AnimalAiState {
@@ -158,7 +159,7 @@ function validateSummary(value: string) {
   if (summary.length < 30 || summary.length > 500) return null;
   const sentenceCount = summary.split(/[.!?。！？]+/).map(value => value.trim()).filter(Boolean).length;
   if (sentenceCount < 2 || sentenceCount > 3) return null;
-  if (/건강해요|건강합니다|순해요|순합니다|사나워요|입양 성공|입양 가능성이 높|질병이 없|질병 없음|성격이 좋|성격이 활발/.test(summary)) return null;
+  if (/건강|순해요|순합니다|온순|얌전|친화|사나워요|사납|활발|성격|입양 성공|입양 가능|입양을 기다|질병|치료|회복/.test(summary)) return null;
   return summary;
 }
 
@@ -170,7 +171,7 @@ async function generateSummary(animal: Animal) {
     signal: AbortSignal.timeout(20000),
     headers: { "x-goog-api-key": process.env.GEMINI_API_KEY?.trim() || "", "content-type": "application/json" },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: "당신은 보호동물 상세페이지의 따뜻한 참고 문구를 쓰는 편집자입니다. 공개 데이터와 사진에서 확인 가능한 내용만 사용합니다. 건강 상태, 성격, 입양 가능성, 미래 행동을 사실처럼 단정하지 말고, 사진에 보이지 않는 배경이나 감정을 창작하지 마세요. 한국어 2~3문장으로 JSON {\"summary\":\"...\"}만 반환하세요." }] },
+      systemInstruction: { parts: [{ text: "당신은 당근 SEED 톤의 보호동물 상세페이지 편집자입니다. 말투는 따뜻하고 담백한 존댓말로 쓰고, 광고처럼 과장하거나 감탄사를 남발하지 마세요. 반드시 첨부 사진을 실제로 관찰해 털 색과 무늬, 얼굴 특징, 체형, 자세처럼 사진에서 확인되는 외형 특징을 한 가지 이상 구체적으로 담으세요. 공개 데이터는 외형 설명을 보완할 때만 사용하세요. 건강 상태, 성격, 감정, 입양 가능성, 미래 행동을 추측하거나 사실처럼 단정하지 말고, 사진에 보이지 않는 배경을 창작하지 마세요. '건강하다', '순하다', '친화적이다', '입양을 기다린다' 같은 표현은 사용하지 마세요. 한국어 2~3문장으로, 이 친구의 눈에 보이는 매력이 자연스럽게 느껴지도록 JSON {\"summary\":\"...\"}만 반환하세요." }] },
       contents: [{ role: "user", parts: [
         { text: `다음 공개 정보를 참고해 사진에서 보이는 외형과 보호소 메모를 중심으로 소개해 주세요. 전화번호, 주소, 개인 정보는 언급하지 마세요. ${JSON.stringify({ ...input, imageUrl: undefined })}` },
         { inlineData: { mimeType: image.slice(5, image.indexOf(";")), data: image.slice(image.indexOf(",") + 1) } },

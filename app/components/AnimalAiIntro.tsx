@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 
 type State = { status: string; summary: string | null; available: boolean };
 
-const waitingCopy = "공개 정보와 사진을 바탕으로 이 친구를 살펴보고 있어요. 조금 뒤 따뜻한 소개가 준비됩니다.";
-const unavailableCopy = "AI 소개는 현재 준비 중이지만, 공개된 동물 정보와 보호소 메모는 위에서 확인할 수 있어요.";
+const waitingCopy = "사진과 공개 정보를 바탕으로 이 친구의 매력을 살펴보고 있어요. 곧 따뜻한 소개가 준비돼요.";
+const unavailableCopy = "사진과 공개 정보를 바탕으로 한 소개를 준비하고 있어요. 공개된 동물 정보와 보호소 메모는 위에서 확인할 수 있어요.";
 const failedCopy = "소개를 준비하는 동안 잠시 어려움이 있었어요. 공개 정보와 사진을 기준으로 천천히 살펴봐 주세요.";
 
 export function AnimalAiIntro({ animalId }: { animalId: string }) {

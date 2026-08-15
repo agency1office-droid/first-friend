@@ -33,7 +33,7 @@ export function AnimalAiIntro({ animalId }: { animalId: string }) {
     <Callout
       tone="neutral"
       title={<span id="animal-ai-title">AI가 발견한 이 친구의 매력</span>}
-      description={<><span className="ff-detail-ai-copy">{description}</span><span className="ff-detail-ai-disclaimer">AI가 공개 정보와 사진을 바탕으로 작성한 참고용 소개예요. 실제 건강·성격·입양 가능 여부는 보호소 상담에서 확인해 주세요.</span></>}
+      description={<><strong className="ff-detail-ai-intro-title">이 친구를 소개할게요</strong><span className="ff-detail-ai-copy">{description}</span><span className="ff-detail-ai-disclaimer">사진을 바탕으로 AI가 살펴본 내용이에요. 정확한 건강·성격 정보와 입양 가능 여부는 보호소에 확인해 주세요.</span></>}
     />
   </section>;
 }

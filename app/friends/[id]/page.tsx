@@ -170,13 +170,7 @@ export default async function AnimalPage({
             <DetailInfoRow icon={IconLocationpinLine} label="발견 지역" value={foundArea} />
           </div>
         </section>
-        {animal.summary && <section className="ff-detail-memo" aria-label="보호소 메모">
-          <div className="ff-detail-memo-heading">
-            <IconDocumentLine aria-hidden />
-            <strong>보호소 메모</strong>
-          </div>
-          <p>{animal.summary}</p>
-        </section>}
+        {animal.summary && <Callout className="ff-detail-memo" tone="neutral" prefixIcon={<IconDocumentLine aria-hidden />} title="보호소 메모" description={animal.summary} />}
         {visibleTraits.length > 0 && <div className="ff-tags">
           {visibleTraits.map((trait) => (
             <span className="ff-tag" key={trait}>

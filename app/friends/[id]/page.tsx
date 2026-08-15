@@ -7,7 +7,6 @@ import {
   IconCalendarLine,
   IconCheckmarkCircleFill,
   IconCheckmarkScaleLine,
-  IconChevronRightLine,
   IconDocumentLine,
   IconHospitalcrossBuildingLine,
   IconLocationpinLine,
@@ -78,6 +77,15 @@ function detailNeutered(animal: Animal) {
   return "확인 필요";
 }
 
+function isDuplicateTrait(trait: string, animal: Animal, colors: string[], publicState: string) {
+  const normalizedTrait = trait.replace(/[\s()]/g, "").toLocaleLowerCase("ko-KR");
+  if (/\d+(?:\.\d+)?kg/i.test(normalizedTrait) || normalizedTrait.includes("보호중")) return true;
+  return [...animal.colors, ...colors, publicState].some((value) => {
+    const normalizedValue = value.replace(/[\s()]/g, "").toLocaleLowerCase("ko-KR");
+    return normalizedValue.length > 1 && (normalizedTrait.includes(normalizedValue) || normalizedValue.includes(normalizedTrait));
+  });
+}
+
 function DetailInfoRow({ icon: Icon, label, value }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string }) {
   return <div className="ff-detail-info-row">
     <Icon className="ff-detail-info-icon" aria-hidden />
@@ -110,6 +118,7 @@ export default async function AnimalPage({
   const weight = detailWeight(animal);
   const foundArea = animal.life.find((item) => item.startsWith("발견 지역:"))?.replace("발견 지역:", "").trim() || "확인 필요";
   const publicState = publicStatus.publicState || "보호 중";
+  const visibleTraits = animal.traits.filter((trait) => !isDuplicateTrait(trait, animal, colors, publicState));
   return (
     <>
       <AnimalDetailChromeBridge />
@@ -151,40 +160,37 @@ export default async function AnimalPage({
       <article className="ff-detail-body">
         <div className="ff-detail-top">
           <div>
-            <div className="ff-kicker">{animal.source}</div>
             <h1 className="ff-detail-name">{animal.name}</h1>
           </div>
         </div>
-        <nav className="ff-detail-taxonomy" aria-label="동물 분류">
-          <span>{animal.species}</span>
-          <IconChevronRightLine aria-hidden />
-          <strong>{animal.breed}</strong>
-        </nav>
         <section className="ff-detail-info-section" aria-labelledby="detail-info-title">
           <h2 id="detail-info-title">이 친구의 정보</h2>
           <div className="ff-detail-info-list">
             <DetailInfoRow icon={IconPawprintLine} label="종류" value={`${animal.species} · ${animal.breed}`} />
             <DetailInfoRow icon={IconCheckmarkScaleLine} label="크기" value={detailSize(animal)} />
+            <DetailInfoRow icon={IconCheckmarkScaleLine} label="체중" value={weight === undefined ? "확인 필요" : `${weight}kg`} />
             <DetailInfoRow icon={IconTagLine} label="털색" value={colors.length ? colors.join(" · ") : "확인 필요"} />
             <DetailInfoRow icon={IconCalendarLine} label="나이" value={`${ageLabels[animal.ageGroup]} · ${animal.age}`} />
             <DetailInfoRow icon={IconPawprintLine} label="성별" value={animal.sex || "확인 필요"} />
             <DetailInfoRow icon={IconCheckmarkCircleFill} label="중성화" value={detailNeutered(animal)} />
           </div>
         </section>
-        <p className="ff-description" style={{ marginTop: 8 }}>
-          {animal.summary}
-        </p>
-        <div className="ff-tags">
-          {animal.traits.map((trait) => (
+        {animal.summary && <section className="ff-detail-memo" aria-label="보호소 메모">
+          <div className="ff-detail-memo-heading">
+            <IconDocumentLine aria-hidden />
+            <strong>보호소 메모</strong>
+          </div>
+          <p>{animal.summary}</p>
+        </section>}
+        {visibleTraits.length > 0 && <div className="ff-tags">
+          {visibleTraits.map((trait) => (
             <span className="ff-tag" key={trait}>
               {trait}
             </span>
           ))}
-        </div>
-        <section className="ff-detail-info-section" aria-labelledby="public-info-title">
-          <h2 id="public-info-title">공공데이터로 확인한 정보</h2>
+        </div>}
+        <section className="ff-detail-info-section ff-detail-public-info" aria-label="발견 및 공고 정보">
           <div className="ff-detail-info-list">
-            <DetailInfoRow icon={IconCheckmarkScaleLine} label="공개 체중" value={weight === undefined ? "확인 필요" : `${weight}kg`} />
             <DetailInfoRow icon={IconDocumentLine} label="현재 상태" value={publicState} />
             <DetailInfoRow icon={IconCalendarLine} label="공고 기간" value={publicStatus.notice?.replace(/^공고\s*/, "") || "확인 필요"} />
             <DetailInfoRow icon={IconLocationpinLine} label="발견 지역" value={foundArea} />

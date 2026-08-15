@@ -247,6 +247,10 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-info-icon { width: 20px; height: 20px; color: var(--seed-color-fg-neutral-subtle); }
 .ff-detail-info-row strong { overflow-wrap: anywhere; color: var(--seed-color-fg-neutral); font-size: 14px; font-weight: 600; text-align: right; }
 .ff-detail-info-row strong[data-muted="true"] { color: var(--seed-color-fg-neutral-subtle); }
+.ff-detail-memo { margin-top: 16px; padding: 16px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 4px; background: #fff8d9; box-shadow: 2px 3px 0 rgba(80, 63, 20, .08); transform: rotate(-.35deg); }
+.ff-detail-memo-heading { display: flex; align-items: center; gap: 6px; color: var(--seed-color-fg-neutral); font-size: 14px; line-height: 20px; }
+.ff-detail-memo-heading svg { width: 18px; height: 18px; color: var(--seed-color-fg-neutral-subtle); }
+.ff-detail-memo p { margin: 8px 0 0; color: var(--seed-color-fg-neutral); font-size: 14px; line-height: 22px; }
 .ff-detail-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; padding: 12px; border-radius: 12px; background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral-muted); }
 .ff-detail-note svg { flex: none; width: 18px; height: 18px; color: var(--seed-color-fg-neutral-subtle); }
 .ff-detail-note p { margin: 0; font-size: 13px; line-height: 19px; }

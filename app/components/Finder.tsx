@@ -19,6 +19,45 @@ const palette = [
   { name: "갈색", hex: "#8a5a35" }, { name: "치즈", hex: "#e89b32" }, { name: "크림", hex: "#ead8b5" },
 ];
 
+function getSvgPathFromStroke(points: number[][], closed = true) {
+  const average = (a: number, b: number) => (a + b) / 2;
+  const len = points.length;
+  if (len < 4) return "";
+  let a = points[0];
+  let b = points[1];
+  const c = points[2];
+  let result = `M${a[0].toFixed(2)},${a[1].toFixed(2)} Q${b[0].toFixed(2)},${b[1].toFixed(2)} ${average(b[0], c[0]).toFixed(2)},${average(b[1], c[1]).toFixed(2)} T`;
+  for (let i = 2, max = len - 1; i < max; i += 1) {
+    a = points[i];
+    b = points[i + 1];
+    result += `${average(a[0], b[0]).toFixed(2)},${average(a[1], b[1]).toFixed(2)} `;
+  }
+  return closed ? `${result}Z` : result;
+}
+
+export function PerfectFreehandCanvas() {
+  const [points, setPoints] = useState<[number, number, number][]>([]);
+  const stroke = getStroke(points, { size: 16, thinning: 0.5, smoothing: 0.5, streamline: 0.5 });
+
+  function handlePointerDown(event: React.PointerEvent<SVGSVGElement>) {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setPoints([[event.pageX, event.pageY, event.pressure]]);
+  }
+
+  function handlePointerMove(event: React.PointerEvent<SVGSVGElement>) {
+    if (event.buttons !== 1) return;
+    setPoints((current) => [...current, [event.pageX, event.pageY, event.pressure]]);
+  }
+
+  function handlePointerUp(event: React.PointerEvent<SVGSVGElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  }
+
+  return <svg className="ff-perfect-freehand" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} aria-label="자유롭게 그리는 캔버스">
+    {points.length > 0 && <path d={getSvgPathFromStroke(stroke)} fill="currentColor" />}
+  </svg>;
+}
+
 type Mode = "draw" | "photo" | "conditions";
 
 export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Animal[]; modeOnly?: Mode; initialTags?: string }) {

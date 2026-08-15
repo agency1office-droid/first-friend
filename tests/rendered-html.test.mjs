@@ -368,7 +368,7 @@ test("renders independent matching, care cost, encyclopedia, TNR, and support jo
     support,
   ])
     assert.equal(response.status, 200);
-  assert.match(await draw.text(), /마음속 친구를 그려보세요/);
+  assert.match(await draw.text(), /ff-perfect-freehand/);
   assert.match(await photo.text(), /업로드한 사진은 기기에서 특징만 분석/);
   assert.match(await conditions.text(), /품종·털색·나이·성별·지역/);
   assert.match(await prepare.text(), /월 생활비/);
@@ -724,8 +724,9 @@ test("supports actionable foster and shelter management with stale-listing prote
 });
 
 test("keeps draw, photo, and condition journeys independent while draw stays perfect-freehand only", async () => {
-  const [finder, draw, photo, conditions] = await Promise.all([
+  const [finder, drawPage, draw, photo, conditions] = await Promise.all([
     readFile(new URL("../app/components/Finder.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/find/draw/page.tsx", import.meta.url), "utf8"),
     render("/find/draw"),
     render("/find/photo"),
     render("/find/conditions"),
@@ -737,12 +738,14 @@ test("keeps draw, photo, and condition journeys independent while draw stays per
       /role="tablist"|role="tabpanel"/,
     );
   }
-  assert.doesNotMatch(finder, /TabsRoot|TabsContent|TabsTrigger/);
-  assert.match(finder, /getStroke\(/);
-  assert.match(finder, /ff-stroke-settings/);
-  assert.doesNotMatch(finder, /ff-draw-species-panel/);
-  assert.match(finder, /\{mode !== "draw" && <section className="ff-search-options">/);
-  assert.match(finder, /\{mode !== "draw" && matched && <section className="ff-section" id="match-results">/);
+  assert.match(finder, /export function PerfectFreehandCanvas/);
+  assert.match(finder, /getSvgPathFromStroke/);
+  assert.match(finder, /getStroke\(points, \{ size: 16, thinning: 0\.5, smoothing: 0\.5, streamline: 0\.5 \}\)/);
+  assert.match(drawPage, /<PerfectFreehandCanvas\/>/);
+  assert.doesNotMatch(drawPage, /getAnimalsWithPhotoCounts/);
+  const drawHtml = await draw.text();
+  assert.match(drawHtml, /ff-perfect-freehand/);
+  assert.doesNotMatch(drawPage, /ff-stroke-settings|ff-draw-species-panel/);
 });
 
 test("uses queued SEED snackbars for transient feedback across core actions", async () => {

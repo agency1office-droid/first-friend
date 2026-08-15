@@ -98,7 +98,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     try {
       if (mode === "draw" && canvasRef.current) visual = await analyzeVisual(canvasRef.current, true);
       if (mode === "photo" && imageRef.current) visual = await analyzeVisual(imageRef.current, false);
-      if (visual) { setAnalysis(visual); if (visual.species !== "전체") setSpecies(visual.species); if (visual.colors[0]) setCoat(visual.colors[0]); }
+      if (visual) { setAnalysis(visual); if (species === "전체" && visual.species !== "전체") setSpecies(visual.species); if (visual.colors[0]) setCoat(visual.colors[0]); }
       const result = [...animals].sort((a, b) => score(b, visual) - score(a, visual)); setRanked(result); setMatched(true); document.getElementById("match-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
     } finally { setAnalyzing(false); }
   }
@@ -108,12 +108,23 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
 
   return <>
     {mode === "draw" &&
+        <>
+        <section className="ff-canvas-panel ff-draw-species-panel">
+          <h2 className="ff-section-title">어떤 친구를 그릴까요?</h2>
+          <p className="ff-description" style={{ margin: "5px 0 14px" }}>미리 알려주면 그림이 단순해도 더 정확하게 찾아볼 수 있어요.</p>
+          <div className="ff-chip-row" aria-label="그릴 동물 종류">
+            <Chip.RadioRoot value={species === "전체" ? "잘 모르겠어요" : species} onValueChange={(value) => setSpecies(value === "잘 모르겠어요" ? "전체" : value as string)}>
+              {['강아지', '고양이', '잘 모르겠어요'].map((item) => <Chip.RadioItem value={item} key={item}><Chip.Label>{item}</Chip.Label></Chip.RadioItem>)}
+            </Chip.RadioRoot>
+          </div>
+        </section>
         <section className="ff-canvas-panel">
           <h2 className="ff-section-title">마음속 친구를 그려보세요</h2><p className="ff-description" style={{ margin: "5px 0 14px" }}>털색과 무늬, 귀와 얼굴 모양을 자유롭게 표현해 주세요.</p>
           <div className="ff-draw-tools" aria-label="그림 도구"><div className="ff-palette">{palette.map((color) => <button type="button" key={color.name} className="ff-color-button" data-active={brushColor.name === color.name} style={{ background: color.hex }} aria-label={`${color.name} 색상`} onClick={() => setBrushColor(color)}/>)}</div><label className="ff-brush-size">굵기 <input type="range" min="2" max="22" value={brushSize} onChange={(event) => setBrushSize(Number(event.target.value))}/></label></div>
           <canvas ref={canvasRef} className="ff-canvas" aria-label="친구를 그리는 캔버스" onPointerDown={start} onPointerMove={move} onPointerUp={() => drawing.current = false} onPointerCancel={() => drawing.current = false}/>
           <div className="ff-drawing-actions"><ActionButton variant="neutralWeak" size="small" onClick={undo}><PrefixIcon svg={<IconArrowCounterclockwiseCircularLine/>}/>되돌리기</ActionButton><ActionButton variant="neutralWeak" size="small" onClick={clear}><PrefixIcon svg={<IconEraserHorizlineLine/>}/>지우기</ActionButton><ActionButton variant="neutralWeak" size="small" onClick={saveDrawing}><PrefixIcon svg={<IconArrowDownHorizlineLine/>}/>그림 저장</ActionButton></div>
         </section>
+        </>
     }
     {mode === "photo" &&
         <section className="ff-canvas-panel"><h2 className="ff-section-title">그림이나 참고 사진을 올려주세요</h2><p className="ff-description" style={{ margin: "5px 0 14px" }}>이미지는 기기 안에서 분석하며 서버에 저장하지 않아요. JPG, PNG, WEBP를 사용할 수 있어요.</p><label className="ff-photo-drop" htmlFor="finder-photo"><IconPictureLine/>{preview ? <img ref={imageRef} src={preview} alt="업로드한 참고 이미지 미리보기"/> : <span>사진 또는 저장한 그림 선택</span>}<input id="finder-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={upload}/></label>{uploaded && <p className="ff-meta" style={{ marginTop: 8 }}>선택한 파일: {uploaded}</p>}</section>

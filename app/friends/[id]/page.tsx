@@ -119,7 +119,7 @@ export default async function AnimalPage({
   const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}` : null;
   const shelterMapHref = `https://map.kakao.com/link/search/${encodeURIComponent(`${animal.shelter} ${shelterAddress}`)}`;
   const weight = detailWeight(animal);
-  const foundArea = animal.life.find((item) => item.startsWith("발견 지역:"))?.replace("발견 지역:", "").trim() || "확인 필요";
+  const foundArea = animal.life.find((item) => item.startsWith("발견 지역:"))?.replace("발견 지역:", "").replace(/\s*·\s*정확한 구조 위치 비공개\s*$/, "").trim() || "확인 필요";
   const publicState = publicStatus.publicState || "보호 중";
   const visibleTraits = animal.traits.filter((trait) => !isDuplicateTrait(trait, animal, colors, publicState));
   return (

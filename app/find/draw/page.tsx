@@ -1,2 +1,2 @@
-import type { Metadata } from "next";import { PerfectFreehandCanvas } from "../../components/Finder";
-export const metadata:Metadata={title:"그림으로 친구 찾기"};export default function Page(){return <><h1 className="ff-visually-hidden">그림으로 친구 찾기</h1><PerfectFreehandCanvas/></>}
+import type { Metadata } from "next";import { Finder } from "../../components/Finder";import { getAnimalsWithPhotoCounts } from "../../../lib/public-data";
+export const dynamic="force-dynamic";export const metadata:Metadata={title:"그림으로 친구 찾기"};export default async function Page(){return <><h1 className="ff-visually-hidden">그림으로 친구 찾기</h1><Finder animals={await getAnimalsWithPhotoCounts(30)} modeOnly="draw"/></>}

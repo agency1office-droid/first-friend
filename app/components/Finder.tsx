@@ -32,6 +32,12 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const mode = modeOnly || "draw";
   const [brushColor, setBrushColor] = useState(palette[0]);
   const [brushSize, setBrushSize] = useState(6);
+  const [thinning, setThinning] = useState(0.35);
+  const [smoothing, setSmoothing] = useState(0.65);
+  const [streamline, setStreamline] = useState(0.45);
+  const [simulatePressure, setSimulatePressure] = useState(true);
+  const [roundCaps, setRoundCaps] = useState(true);
+  const [taperEnds, setTaperEnds] = useState(false);
   const [uploaded, setUploaded] = useState("");
   const [preview, setPreview] = useState("");
   const [query, setQuery] = useState(initialTags.split(",")[0] || "");
@@ -73,7 +79,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   function point(event: React.PointerEvent<HTMLCanvasElement>): [number, number, number] { const rect = event.currentTarget.getBoundingClientRect(); return [event.clientX - rect.left, event.clientY - rect.top, event.pressure || 0.5]; }
   function drawSmoothStroke(context: CanvasRenderingContext2D, points: [number, number, number][]) {
     if (!points.length) return;
-    const outline = getStroke(points, { size: brushSize, thinning: 0.35, smoothing: 0.65, streamline: 0.45, simulatePressure: true });
+    const outline = getStroke(points, { size: brushSize, thinning, smoothing, streamline, simulatePressure, last: true, start: { cap: roundCaps, taper: taperEnds }, end: { cap: roundCaps, taper: taperEnds } });
     context.beginPath();
     context.moveTo(outline[0][0], outline[0][1]);
     for (const [x, y] of outline.slice(1)) context.lineTo(x, y);
@@ -139,7 +145,8 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
         </section>
         <section className="ff-canvas-panel">
           <h2 className="ff-section-title">마음속 친구를 그려보세요</h2><p className="ff-description" style={{ margin: "5px 0 14px" }}>털색과 무늬, 귀와 얼굴 모양을 자유롭게 표현해 주세요.</p>
-          <div className="ff-draw-tools" aria-label="그림 도구"><div className="ff-palette">{palette.map((color) => <button type="button" key={color.name} className="ff-color-button" data-active={brushColor.name === color.name} style={{ background: color.hex }} aria-label={`${color.name} 색상`} onClick={() => setBrushColor(color)}/>)}</div><label className="ff-brush-size">굵기 <input type="range" min="2" max="22" value={brushSize} onChange={(event) => setBrushSize(Number(event.target.value))}/></label></div>
+          <div className="ff-draw-tools" aria-label="그림 도구"><div className="ff-palette">{palette.map((color) => <button type="button" key={color.name} className="ff-color-button" data-active={brushColor.name === color.name} style={{ background: color.hex }} aria-label={`${color.name} 색상`} onClick={() => setBrushColor(color)}/>)}</div><label className="ff-brush-size">굵기 <input type="range" min="2" max="40" value={brushSize} onChange={(event) => setBrushSize(Number(event.target.value))}/><output>{brushSize}</output></label></div>
+          <details className="ff-stroke-settings"><summary>선 설정</summary><div className="ff-stroke-settings-grid"><label>압력 반응<input type="range" min="-1" max="1" step="0.05" value={thinning} onChange={(event) => setThinning(Number(event.target.value))}/><output>{Math.round(thinning * 100)}%</output></label><label>선 다듬기<input type="range" min="0" max="1" step="0.05" value={smoothing} onChange={(event) => setSmoothing(Number(event.target.value))}/><output>{Math.round(smoothing * 100)}%</output></label><label>선 따라오기<input type="range" min="0" max="1" step="0.05" value={streamline} onChange={(event) => setStreamline(Number(event.target.value))}/><output>{Math.round(streamline * 100)}%</output></label><label className="ff-pressure-toggle"><input type="checkbox" checked={simulatePressure} onChange={(event) => setSimulatePressure(event.target.checked)}/>속도에 따라 굵기 바꾸기</label><label className="ff-pressure-toggle"><input type="checkbox" checked={roundCaps} onChange={(event) => setRoundCaps(event.target.checked)}/>선 시작과 끝을 둥글게</label><label className="ff-pressure-toggle"><input type="checkbox" checked={taperEnds} onChange={(event) => setTaperEnds(event.target.checked)}/>선 시작과 끝을 가늘게</label></div></details>
           <canvas ref={canvasRef} className="ff-canvas" aria-label="친구를 그리는 캔버스" onPointerDown={start} onPointerMove={move} onPointerUp={finish} onPointerCancel={finish}/>
           <div className="ff-drawing-actions"><ActionButton variant="neutralWeak" size="small" onClick={undo}><PrefixIcon svg={<IconArrowCounterclockwiseCircularLine/>}/>되돌리기</ActionButton><ActionButton variant="neutralWeak" size="small" onClick={clear}><PrefixIcon svg={<IconEraserHorizlineLine/>}/>지우기</ActionButton><ActionButton variant="neutralWeak" size="small" onClick={saveDrawing}><PrefixIcon svg={<IconArrowDownHorizlineLine/>}/>그림 저장</ActionButton></div>
         </section>

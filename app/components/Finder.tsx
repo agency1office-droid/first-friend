@@ -133,16 +133,6 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   return <div className={mode === "draw" ? "ff-drawing-workspace" : undefined}>
     {mode === "draw" && <div className="ff-drawing-topbar"><a href="/find" aria-label="그림 찾기 닫기">‹</a><h1>그림으로 찾기</h1><span>기기 안에서 분석</span></div>}
     {mode === "draw" &&
-        <>
-        <section className="ff-canvas-panel ff-draw-species-panel">
-          <h2 className="ff-section-title">어떤 친구를 그릴까요?</h2>
-          <p className="ff-description" style={{ margin: "5px 0 14px" }}>미리 알려주면 그림이 단순해도 더 정확하게 찾아볼 수 있어요.</p>
-          <div className="ff-chip-row" aria-label="그릴 동물 종류">
-            <Chip.RadioRoot value={species === "전체" ? "잘 모르겠어요" : species} onValueChange={(value) => setSpecies(value === "잘 모르겠어요" ? "전체" : value as string)}>
-              {['강아지', '고양이', '잘 모르겠어요'].map((item) => <Chip.RadioItem value={item} key={item}><Chip.Label>{item}</Chip.Label></Chip.RadioItem>)}
-            </Chip.RadioRoot>
-          </div>
-        </section>
         <section className="ff-canvas-panel">
           <h2 className="ff-section-title">마음속 친구를 그려보세요</h2><p className="ff-description" style={{ margin: "5px 0 14px" }}>털색과 무늬, 귀와 얼굴 모양을 자유롭게 표현해 주세요.</p>
           <div className="ff-draw-tools" aria-label="그림 도구"><div className="ff-palette">{palette.map((color) => <button type="button" key={color.name} className="ff-color-button" data-active={brushColor.name === color.name} style={{ background: color.hex }} aria-label={`${color.name} 색상`} onClick={() => setBrushColor(color)}/>)}</div><label className="ff-brush-size">굵기 <input type="range" min="2" max="40" value={brushSize} onChange={(event) => setBrushSize(Number(event.target.value))}/><output>{brushSize}</output></label></div>
@@ -150,7 +140,6 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
           <canvas ref={canvasRef} className="ff-canvas" aria-label="친구를 그리는 캔버스" onPointerDown={start} onPointerMove={move} onPointerUp={finish} onPointerCancel={finish}/>
           <div className="ff-drawing-actions"><ActionButton variant="neutralWeak" size="small" onClick={undo}><PrefixIcon svg={<IconArrowCounterclockwiseCircularLine/>}/>되돌리기</ActionButton><ActionButton variant="neutralWeak" size="small" onClick={clear}><PrefixIcon svg={<IconEraserHorizlineLine/>}/>지우기</ActionButton><ActionButton variant="neutralWeak" size="small" onClick={saveDrawing}><PrefixIcon svg={<IconArrowDownHorizlineLine/>}/>그림 저장</ActionButton></div>
         </section>
-        </>
     }
     {mode === "photo" &&
         <section className="ff-canvas-panel"><h2 className="ff-section-title">그림이나 참고 사진을 올려주세요</h2><p className="ff-description" style={{ margin: "5px 0 14px" }}>이미지는 기기 안에서 분석하며 서버에 저장하지 않아요. JPG, PNG, WEBP를 사용할 수 있어요.</p><label className="ff-photo-drop" htmlFor="finder-photo"><IconPictureLine/>{preview ? <img ref={imageRef} src={preview} alt="업로드한 참고 이미지 미리보기"/> : <span>사진 또는 저장한 그림 선택</span>}<input id="finder-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={upload}/></label>{uploaded && <p className="ff-meta" style={{ marginTop: 8 }}>선택한 파일: {uploaded}</p>}</section>
@@ -159,13 +148,13 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
         <section className="ff-canvas-panel"><h2 className="ff-section-title">원하는 모습을 골라주세요</h2><p className="ff-description" style={{ margin: "5px 0 16px" }}>한 가지만 골라도 되고, 나이는 상관없음으로 둘 수 있어요.</p><div className="ff-condition-grid"><div className="ff-field"><label htmlFor="breed">품종</label><select id="breed" className="ff-native-select" value={breed} onChange={(event) => setBreed(event.target.value)}>{breeds.map((item) => <option key={item}>{item}</option>)}</select></div><div className="ff-field"><label htmlFor="coat">털색·무늬</label><select id="coat" className="ff-native-select" value={coat} onChange={(event) => setCoat(event.target.value)}><option>상관 없음</option>{palette.map((item) => <option key={item.name}>{item.name}</option>)}<option>줄무늬</option><option>삼색</option></select></div><div className="ff-field"><label htmlFor="age">나이</label><select id="age" className="ff-native-select" value={age} onChange={(event) => setAge(event.target.value)}><option>상관 없음</option><option>어린 친구</option><option>어른 친구</option></select></div><div className="ff-field"><label htmlFor="gender">성별</label><select id="gender" className="ff-native-select" value={gender} onChange={(event) => setGender(event.target.value)}><option>상관 없음</option><option>수컷</option><option>암컷</option></select></div><div className="ff-field"><label htmlFor="region">지역</label><select id="region" className="ff-native-select" value={region} onChange={(event) => setRegion(event.target.value)}>{regions.map((item) => <option key={item}>{item}</option>)}</select></div></div></section>
     }
 
-    <section className="ff-search-options">
+    {mode !== "draw" && <section className="ff-search-options">
       <div className="ff-kicker">공통 조건</div><div className="ff-chip-row"><Chip.RadioRoot value={species} onValueChange={(value) => setSpecies(value as string)}>{["전체", "고양이", "강아지"].map((item) => <Chip.RadioItem value={item} key={item}><Chip.Label>{item}</Chip.Label></Chip.RadioItem>)}</Chip.RadioRoot></div>
       <div style={{ marginTop: 14 }}><TextField prefixIcon={<IconMagnifyingglassLine/>} aria-label="보호동물 검색"><TextFieldInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder="품종, 지역, 특징 검색"/></TextField></div>
       <ActionButton size="large" className="ff-action-link" style={{ marginTop: 12 }} onClick={match} disabled={analyzing || (mode==="photo"&&!preview)}><PrefixIcon svg={mode === "photo" ? <IconCameraLine/> : <IconMagnifyingglassSparkleLine/>}/>{analyzing ? "그림을 살펴보고 있어요…" : "특징을 분석해 친구 찾기"}</ActionButton>
-    </section>
+    </section>}
 
-    {matched && <section className="ff-section" id="match-results">
+    {mode !== "draw" && matched && <section className="ff-section" id="match-results">
       <div className="ff-section-head"><h2 className="ff-section-title">{matched ? "닮은 순서로 찾은 친구" : "현재 보호 중인 친구"}</h2><span className="ff-meta">{visible.length}마리</span></div>
       {analysis && <div className="ff-analysis-card"><div className="ff-analysis-head"><div><span>온디바이스 시각 분석</span><strong>그림에서 찾은 검색 태그</strong></div><span className="ff-analysis-badge">{analysis.usedOpenSourceModel ? "기기 안에서 분석" : "특징 분석"}</span></div><div className="ff-tags">{analysis.tags.map(tag=><span className="ff-tag" key={tag}>{tag}</span>)}</div><p>색상·그림이 차지하는 면적·어두운 눈 영역·경계 밀도를 태그로 바꿨어요. 그림은 서버에 저장하지 않고 공개된 보호동물 정보와 비교합니다.</p></div>}
       {matched && visible[0] && <Callout tone="positive" title={`${visible[0].name} 친구가 가장 가까워요`} description={`${visible[0].matchReason} 분석 태그와 공개된 품종·털색·체중 단서를 비교했으며 건강·성격·입양 성공은 추측하지 않았어요.`}/>}

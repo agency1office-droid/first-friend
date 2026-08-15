@@ -723,7 +723,7 @@ test("supports actionable foster and shelter management with stale-listing prote
   assert.match(tnr, /제주특별자치도/);
 });
 
-test("keeps draw, photo, and condition matching as independent non-tab journeys", async () => {
+test("keeps draw, photo, and condition journeys independent while draw stays perfect-freehand only", async () => {
   const [finder, draw, photo, conditions] = await Promise.all([
     readFile(new URL("../app/components/Finder.tsx", import.meta.url), "utf8"),
     render("/find/draw"),
@@ -738,10 +738,11 @@ test("keeps draw, photo, and condition matching as independent non-tab journeys"
     );
   }
   assert.doesNotMatch(finder, /TabsRoot|TabsContent|TabsTrigger/);
-  assert.match(
-    finder,
-    /\{matched && <section className="ff-section" id="match-results">/,
-  );
+  assert.match(finder, /getStroke\(/);
+  assert.match(finder, /ff-stroke-settings/);
+  assert.doesNotMatch(finder, /ff-draw-species-panel/);
+  assert.match(finder, /\{mode !== "draw" && <section className="ff-search-options">/);
+  assert.match(finder, /\{mode !== "draw" && matched && <section className="ff-section" id="match-results">/);
 });
 
 test("uses queued SEED snackbars for transient feedback across core actions", async () => {

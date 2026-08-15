@@ -475,6 +475,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-main { min-width: 0; }
 .ff-page { width: 100%; padding-bottom: 44px; }
 .ff-page-header { max-width: 460px; }
+.ff-draw-page .ff-page-header { max-width: none; }
+.ff-draw-page .ff-description { max-width: none; }
 .ff-page-header .ff-kicker { margin-bottom: 6px; }
 .ff-title, .ff-section-title, .ff-detail-name, .ff-hero h1 { word-break: keep-all; text-wrap: balance; }
 .ff-description, .ff-story-content, .ff-legal p, .ff-info-board-content { word-break: keep-all; overflow-wrap: anywhere; }

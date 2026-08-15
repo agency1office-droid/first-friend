@@ -559,8 +559,15 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-toolbar-palette { position: absolute; top: calc(100% + 8px); left: 50%; z-index: 5; display: flex; gap: 7px; padding: 9px; transform: translateX(-50%); border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 14px; background: var(--seed-color-bg-layer-default); box-shadow: 0 8px 24px rgba(0,0,0,.14); }
 .ff-toolbar-palette .ff-color-button { flex: 0 0 auto; }
 .ff-drawing-topbar:not(.ff-modern-drawing-topbar) { display: none !important; }
-.ff-modern-drawing-topbar { grid-template-columns: 42px minmax(0, 1fr); }
+.ff-modern-drawing-topbar { grid-template-columns: 44px minmax(0, 1fr); min-height: 56px; padding: 4px 8px 4px 4px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
+.ff-modern-drawing-topbar a { width: 44px; height: 44px; font-size: 0; }
 .ff-modern-drawing-topbar .ff-drawing-toolbar { justify-content: flex-end; margin-left: auto; }
+.ff-modern-drawing-topbar .ff-toolbar-tool,
+.ff-modern-drawing-topbar .ff-toolbar-color { width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; }
+.ff-modern-drawing-topbar .ff-toolbar-tool svg,
+.ff-modern-drawing-topbar .ff-toolbar-color svg { width: 24px; height: 24px; }
+.ff-modern-drawing-topbar .ff-toolbar-tool[data-active="true"] { background: var(--seed-color-bg-brand-weak); color: var(--seed-color-fg-brand); }
+.ff-modern-drawing-topbar .ff-toolbar-swatch { right: 7px; bottom: 7px; width: 9px; height: 9px; }
 .ff-drawing-tool-sheet .seed-bottom-sheet__body { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
 .ff-drawing-size-slider { display: grid; gap: 16px; padding: 4px 2px 8px; }
 .ff-drawing-size-slider-heading { display: flex; align-items: center; justify-content: space-between; color: var(--seed-color-fg-neutral); font-size: 17px; }
@@ -628,6 +635,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 @media(max-width:700px){
   .ff-drawing-workspace { display: flex; flex-direction: column; gap: 8px; padding-inline: 10px; }
   .ff-drawing-topbar { flex: none; grid-template-columns: 36px 1fr 86px; }
+  .ff-modern-drawing-topbar { grid-template-columns: 44px minmax(0, 1fr); padding-inline: 4px; }
   .ff-drawing-toolbar { gap: 4px; }
   .ff-toolbar-color, .ff-toolbar-tool { width: 36px; height: 36px; }
   .ff-drawing-workspace .ff-draw-species-panel { padding: 10px 12px; border-radius: 14px; }

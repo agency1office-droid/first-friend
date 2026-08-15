@@ -75,6 +75,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   const restorePending = useRef(false);
   const restoreScrollY = useRef(0);
   const restoreFrame = useRef<number | null>(null);
+  const restoreRevealTimer = useRef<number | null>(null);
   const [isRestoring, setIsRestoring] = useState(() => {
     const snapshot = readFeedSnapshot();
     return Boolean(snapshot && snapshot.scrollY > 0);
@@ -108,6 +109,10 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     }
     restorePending.current = true;
     restoreScrollY.current = snapshot.scrollY;
+    restoreRevealTimer.current = window.setTimeout(() => {
+      restoreRevealTimer.current = null;
+      setIsRestoring(false);
+    }, 1200);
     const timer = window.setTimeout(() => {
       setItems(snapshot.items); setTotal(snapshot.total); setCursor(snapshot.cursor);
       setSyncedAt(snapshot.syncedAt); setStale(snapshot.stale);
@@ -115,6 +120,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     return () => {
       window.clearTimeout(timer);
       if (restoreFrame.current !== null) window.cancelAnimationFrame(restoreFrame.current);
+      if (restoreRevealTimer.current !== null) window.clearTimeout(restoreRevealTimer.current);
       window.history.scrollRestoration = previousRestoration;
     };
   }, []);
@@ -125,14 +131,24 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     if (!restorePending.current || !ready || !filtersReady || !items.length) return;
     const target = restoreScrollY.current;
     restorePending.current = false;
-    if (target <= 0) { setIsRestoring(false); return; }
+    if (target <= 0) {
+      if (restoreRevealTimer.current !== null) window.clearTimeout(restoreRevealTimer.current);
+      restoreRevealTimer.current = null;
+      setIsRestoring(false);
+      return;
+    }
     let attempts = 0;
     const restore = () => {
       attempts += 1;
       const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
       window.scrollTo({ top: Math.min(target, maxScroll), behavior: "auto" });
       if (attempts < 12 && maxScroll < target) restoreFrame.current = window.requestAnimationFrame(restore);
-      else { restoreFrame.current = null; setIsRestoring(false); }
+      else {
+        restoreFrame.current = null;
+        if (restoreRevealTimer.current !== null) window.clearTimeout(restoreRevealTimer.current);
+        restoreRevealTimer.current = null;
+        setIsRestoring(false);
+      }
     };
     restoreFrame.current = window.requestAnimationFrame(restore);
     return () => {

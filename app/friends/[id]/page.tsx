@@ -99,7 +99,7 @@ export default async function AnimalPage({
   const shelterMapHref = `https://map.kakao.com/link/search/${encodeURIComponent(`${animal.shelter} ${shelterAddress}`)}`;
   return (
     <>
-      <AnimalDetailChromeBridge animalId={animal.id} name={animal.name}/>
+      <AnimalDetailChromeBridge />
       <div className="ff-detail-gallery">
         <AnimalGallery
           name={animal.name}

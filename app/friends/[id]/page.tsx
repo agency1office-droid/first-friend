@@ -19,6 +19,7 @@ import { DeferredSection } from "../../components/DeferredSection";
 import { ShelterLocationCard } from "../../components/ShelterLocationCard";
 import { ShelterTravelMeta } from "../../components/ShelterTravelMeta";
 import { AnimalDetailChromeBridge } from "../../components/AnimalDetailChromeBridge";
+import { AnimalPublicStatusBanner } from "../../components/AnimalPublicStatusBanner";
 
 // 공개 동물 정보는 초 단위로 바뀌지 않으므로 반복 방문은 짧게 캐시합니다.
 // 즐겨찾기 등 사용자 상태는 기존 클라이언트 브리지에서 별도로 처리합니다.
@@ -108,10 +109,13 @@ export default async function AnimalPage({
           images={animal.images}
         />
       </div>
-      <div className={`ff-detail-gallery-status ff-public-status-${publicStatus.phase}`} role="status" aria-label="보호 단계">
-        {publicStatus.phase === "notice" && noticeDaysRemaining !== null && <span className="ff-detail-status-day">D-{noticeDaysRemaining}</span>}
-        <strong>{publicStatus.statusLabel}</strong>
-      </div>
+      <AnimalPublicStatusBanner
+        phase={publicStatus.phase}
+        statusLabel={publicStatus.statusLabel}
+        detailTitle={publicStatus.detailTitle}
+        description={publicStatus.description}
+        noticeDaysRemaining={noticeDaysRemaining}
+      />
       <section className="ff-detail-shelter" aria-label="보호소 정보">
         <div className="ff-detail-shelter-icon" aria-hidden><IconHospitalcrossBuildingLine /></div>
         {shelterHref ? <a className="ff-detail-shelter-copy ff-detail-shelter-link" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>

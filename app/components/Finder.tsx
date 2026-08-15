@@ -116,6 +116,22 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const previews = document.querySelectorAll<HTMLElement>('.ff-modern-drawing-topbar .ff-tool-preview');
+    const labels = [`${brushSize}pt`, `${eraserSize}pt`];
+    previews.forEach((preview, index) => {
+      preview.textContent = labels[index] || '';
+      preview.style.width = 'auto';
+      preview.style.height = 'auto';
+    });
+
+    const size = toolSheet === 'eraser' ? eraserSize : brushSize;
+    const thumbSize = `${10 + size * 1.4}px`;
+    document.querySelectorAll<HTMLInputElement>('.ff-drawing-size-slider input[type="range"]').forEach((slider) => {
+      slider.style.setProperty('--brush-thumb-size', thumbSize);
+    });
+  }, [brushSize, eraserSize, toolSheet]);
+
   function point(event: React.PointerEvent<HTMLCanvasElement>): [number, number, number] { const canvas = event.currentTarget; const rect = canvas.getBoundingClientRect(); const ratio = window.devicePixelRatio || 1; const logicalWidth = canvas.width / ratio; const logicalHeight = canvas.height / ratio; return [(event.clientX - rect.left) * (logicalWidth / rect.width), (event.clientY - rect.top) * (logicalHeight / rect.height), event.pressure || 0.5]; }
   function drawBrushTexture(context: CanvasRenderingContext2D, points: [number, number, number][], outline: [number, number][]) {
     if (isErasing || !points.length) return;

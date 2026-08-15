@@ -155,11 +155,7 @@ export default async function AnimalPage({
         </div>
       </section>
       <article className="ff-detail-body">
-        <div className="ff-detail-top">
-          <div>
-            <h1 className="ff-detail-name">{animal.name}</h1>
-          </div>
-        </div>
+        <h1 className="ff-visually-hidden">{animal.name}</h1>
         <section className="ff-detail-info-section" aria-labelledby="detail-info-title">
           <h2 id="detail-info-title">이 친구의 정보</h2>
           <div className="ff-detail-info-list">

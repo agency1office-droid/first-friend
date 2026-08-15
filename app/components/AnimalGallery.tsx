@@ -121,7 +121,11 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
           {available.map((src, index) => <span className="ff-gallery-slide" key={src}><ProgressiveAnimalImage src={src} fullSrc={imageSource(src)} alt={`${name}의 공공데이터 등록 사진 ${index + 1}`} priority={index < 2}/></span>)}
         </span>
       </span>
-      {available.length > 1 && <span className="ff-gallery-count">{selected + 1}/{available.length}</span>}
+      <span className="ff-gallery-bottom-gradient" aria-hidden="true" />
+      <span className="ff-gallery-bottom-meta" aria-hidden="true">
+        <strong className="ff-gallery-title">{name}</strong>
+        {available.length > 1 && <span className="ff-gallery-count">{selected + 1}/{available.length}</span>}
+      </span>
     </button>
     <dialog ref={dialogRef} className="ff-image-dialog" tabIndex={-1} onKeyDown={handleKeyDown}>
       <div className="ff-image-dialog-inner">

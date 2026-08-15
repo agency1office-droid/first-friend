@@ -201,6 +201,8 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(worker, /redirect: "error"/);
   assert.match(worker, /OPENAI_API_KEY/);
   assert.match(worker, /next_attempt_at/);
+  assert.match(worker, /status === "processing"/);
+  assert.match(worker, /2 \* 60 \* 1000/);
   assert.doesNotMatch(worker, /insert\([^)]*image/);
   for (const column of ["animal_id", "analysis_key", "generated_summary", "status", "model_version", "source_updated_at", "retry_count", "last_error"]) assert.match(migration, new RegExp(column));
   assert.match(env, /OPENAI_API_KEY=/);

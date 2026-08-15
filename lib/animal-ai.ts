@@ -212,13 +212,17 @@ export async function processAnimalAiJob(animalId: string, expectedKey?: string)
 
 export async function processPendingAnimalAiJobs(limit = 3) {
   if (!hasAiKey()) return { processed: 0, skipped: "unavailable" };
-  const { data, error } = await getSupabaseServerClient().from("public_animal_ai_summaries").select("animal_id,status,next_attempt_at").in("status", ["pending", "failed"]).lt("retry_count", MAX_RETRIES).order("updated_at", { ascending: true }).limit(Math.min(Math.max(limit, 1), 5));
+  const { data, error } = await getSupabaseServerClient().from("public_animal_ai_summaries").select("animal_id,status,next_attempt_at,updated_at").in("status", ["pending", "failed", "processing"]).lt("retry_count", MAX_RETRIES).order("updated_at", { ascending: true }).limit(Math.min(Math.max(limit, 1), 5));
   if (error) throw error;
   let processed = 0;
   for (const row of data || []) {
     if (row.status === "failed" && row.next_attempt_at && new Date(row.next_attempt_at).getTime() > Date.now()) continue;
+    if (row.status === "processing" && new Date(row.updated_at).getTime() > Date.now() - 2 * 60 * 1000) continue;
     if (row.status === "failed") {
       await getSupabaseServerClient().from("public_animal_ai_summaries").update({ status: "pending", updated_at: new Date().toISOString() }).eq("animal_id", row.animal_id).eq("status", "failed");
+    }
+    if (row.status === "processing") {
+      await getSupabaseServerClient().from("public_animal_ai_summaries").update({ status: "pending", updated_at: new Date().toISOString() }).eq("animal_id", row.animal_id).eq("status", "processing");
     }
     await processAnimalAiJob(String(row.animal_id)); processed += 1;
   }

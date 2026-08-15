@@ -227,9 +227,11 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-shelter-meta { margin: 0; color: var(--seed-color-fg-neutral-subtle); font-size: 12px; font-weight: 600; line-height: 17px; }
 .ff-detail-shelter-distance { color: var(--seed-color-fg-brand); }
 .ff-detail-ai-section { padding: 16px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
-.ff-detail-ai-section .seed-callout__root { position: relative; overflow: hidden; margin: 0; border: 1px solid var(--seed-color-stroke-warning-weak); background: var(--seed-color-bg-warning-weak); box-shadow: 0 2px 8px var(--seed-color-palette-static-black-alpha-200); }
-.ff-detail-ai-section .seed-callout__root::after { position: absolute; top: -1px; right: -1px; width: 14px; height: 14px; background: var(--seed-color-palette-yellow-200); clip-path: polygon(100% 0, 0 0, 100% 100%); content: ""; pointer-events: none; }
-.ff-detail-ai-section .seed-callout__title { color: var(--seed-color-fg-brand); }
+.ff-detail-ai-section .seed-callout__root { position: relative; overflow: hidden; margin: 0; padding: var(--seed-dimension-x5) var(--seed-dimension-x4_5); border: 1px solid var(--seed-color-stroke-warning-weak); background: var(--seed-color-bg-warning-weak); box-shadow: 0 2px 8px var(--seed-color-palette-static-black-alpha-200); }
+.ff-detail-ai-section .seed-callout__root::after { position: absolute; top: -1px; right: -1px; width: 24px; height: 24px; background: var(--seed-color-palette-yellow-200); clip-path: polygon(100% 0, 0 0, 100% 100%); content: ""; pointer-events: none; }
+.ff-detail-ai-section .seed-callout__title { display: block; margin-bottom: var(--seed-dimension-x2_5); padding-bottom: var(--seed-dimension-x2_5); border-bottom: 1px solid var(--seed-color-stroke-warning-weak); color: var(--seed-color-fg-brand); font-size: calc(var(--seed-font-size-t4) + 1px); line-height: calc(var(--seed-line-height-t4) + 1px); }
+.ff-detail-ai-section .seed-callout__title::after { content: none; }
+.ff-detail-ai-section .seed-callout__description { display: block; }
 .ff-detail-ai-copy, .ff-detail-ai-disclaimer { display: block; }
 .ff-detail-ai-copy { line-height: 22px; }
 .ff-detail-ai-disclaimer { margin-top: 12px; color: var(--seed-color-fg-neutral-subtle); font-size: 12px; line-height: 18px; }

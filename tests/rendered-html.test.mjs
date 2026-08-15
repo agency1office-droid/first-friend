@@ -210,6 +210,8 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(styles, /\.ff-detail-info-row--memo \{ border-top: 1px solid var\(--seed-color-stroke-neutral-muted\); \}/);
   assert.match(styles, /\.ff-detail-info-row strong \{ min-width: 0;.*word-break: break-word; white-space: normal;/);
   assert.match(page, /function animalKnowledge/);
+  assert.match(page, /function formatDetailHelper/);
+  assert.match(page, /value\.slice\(0, commaIndex \+ 1\)[\s\S]*<br \/>/);
   assert.match(page, /helper=\{knowledge\.species\}/);
   assert.match(page, /helper=\{knowledge\.size\}/);
   assert.match(page, /helper=\{knowledge\.age\}/);

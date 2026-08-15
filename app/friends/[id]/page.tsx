@@ -1,7 +1,7 @@
 import { getAnimalById } from "../../../lib/public-data";
 import type { Animal } from "../../../lib/data";
 import { getAnimalPublicStatus, getNoticeDaysRemaining } from "../../../lib/animal-public-status";
-import type { ComponentType, SVGProps } from "react";
+import type { ComponentType, ReactNode, SVGProps } from "react";
 import { Callout } from "seed-design/ui/callout";
 import {
   IconCalendarLine,
@@ -86,6 +86,13 @@ function isDuplicateTrait(trait: string, animal: Animal, colors: string[], publi
   });
 }
 
+function formatDetailHelper(value: string): ReactNode {
+  if (value.length < 42) return value;
+  const commaIndex = value.indexOf(",");
+  if (commaIndex < 16 || commaIndex > 48 || commaIndex >= value.length - 8) return value;
+  return <>{value.slice(0, commaIndex + 1)}<br />{value.slice(commaIndex + 1).trim()}</>;
+}
+
 function DetailInfoRow({ icon: Icon, label, value, helper, className }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string; helper?: string; className?: string }) {
   if (helper) return <details className={`ff-detail-info-row ff-detail-info-row--accordion${className ? ` ${className}` : ""}`}>
     <summary className="ff-detail-info-row-main">
@@ -93,7 +100,7 @@ function DetailInfoRow({ icon: Icon, label, value, helper, className }: { icon: 
       <span>{label}</span>
       <strong data-muted={value === "확인 필요" || undefined}>{value}</strong>
     </summary>
-    <div className="ff-detail-info-helper">{helper}</div>
+    <div className="ff-detail-info-helper">{formatDetailHelper(helper)}</div>
   </details>;
   return <div className={`ff-detail-info-row${className ? ` ${className}` : ""}`}>
     <div className="ff-detail-info-row-main">

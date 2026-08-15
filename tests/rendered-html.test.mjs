@@ -214,8 +214,7 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(page, /function detailAge/);
   assert.match(page, /value=\{detailAge\(animal\)\}/);
   assert.match(page, /function formatDetailHelper/);
-  assert.match(page, /const DETAIL_HELPER_LINE_LENGTH = 20/);
-  assert.match(page, /Array\.from\(next\)\.length > DETAIL_HELPER_LINE_LENGTH/);
+  assert.match(page, /sentences = value\.split/);
   assert.match(breedKnowledge, /pattern\.test\(breed\) \|\| pattern\.test\(normalized\)/);
   assert.match(page, /helper=\{knowledge\.species\}/);
   assert.match(page, /helper=\{knowledge\.size\}/);
@@ -224,7 +223,7 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(styles, /\.ff-detail-info-row-main \{ display: grid; grid-template-columns: 24px 76px minmax\(0, 1fr\)/);
   assert.match(page, /<details className=\{`ff-detail-info-row ff-detail-info-row--accordion/);
   assert.match(styles, /\.ff-detail-info-row--accordion > summary \{ list-style: none; cursor: pointer; \}/);
-  assert.match(styles, /\.ff-detail-info-helper \{ display: block; width: 66\.6667%; margin: 0 0 10px auto;.*text-align: right; \}/);
+  assert.match(styles, /\.ff-detail-info-helper \{ display: block; width: 66\.6667%; margin: 0 0 10px auto;.*text-align: right;.*text-wrap: pretty;.*word-break: keep-all;/);
   assert.match(api, /enqueueAnimalAiSummary/);
   assert.match(worker, /row\.analysis_key !== createAnimalAnalysisKey\(animal\)/);
   assert.match(worker, /createHash\("sha256"\)/);

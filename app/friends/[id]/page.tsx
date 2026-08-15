@@ -91,26 +91,10 @@ function isDuplicateTrait(trait: string, animal: Animal, colors: string[], publi
   });
 }
 
-const DETAIL_HELPER_LINE_LENGTH = 20;
-
 function formatDetailHelper(value: string): ReactNode {
   const sentences = value.split(/(?<=[.!?。！？])\s*/).filter(Boolean);
-  const lines: string[] = [];
-  for (const sentence of sentences) {
-    let line = "";
-    for (const word of sentence.split(/\s+/)) {
-      const next = line ? `${line} ${word}` : word;
-      if (line && Array.from(next).length > DETAIL_HELPER_LINE_LENGTH) {
-        lines.push(line);
-        line = word;
-      } else {
-        line = next;
-      }
-    }
-    if (line) lines.push(line);
-  }
-  if (lines.length <= 1) return value;
-  return <>{lines.map((line, index) => <span key={`${line}-${index}`}>{line}{index < lines.length - 1 && <br />}</span>)}</>;
+  if (sentences.length <= 1) return value;
+  return <>{sentences.map((sentence, index) => <span key={`${sentence}-${index}`}>{sentence}{index < sentences.length - 1 && <br />}</span>)}</>;
 }
 
 function DetailInfoRow({ icon: Icon, label, value, helper, className }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string; helper?: string; className?: string }) {

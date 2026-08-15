@@ -184,7 +184,6 @@ export default async function AnimalPage({
         </div>}
         <section className="ff-detail-info-section ff-detail-public-info" aria-label="발견 및 공고 정보">
           <div className="ff-detail-info-list">
-            <DetailInfoRow icon={IconDocumentLine} label="현재 상태" value={publicState} />
             <DetailInfoRow icon={IconCalendarLine} label="공고 기간" value={publicStatus.notice?.replace(/^공고\s*/, "") || "확인 필요"} />
             <DetailInfoRow icon={IconLocationpinLine} label="발견 지역" value={foundArea} />
           </div>

@@ -5,7 +5,9 @@
 1. SEED Foundations
 2. SEED Components와 설치된 패키지의 실제 recipe
 3. SEED Patterns
-4. SEED에 적절한 패턴이 없을 때만 Toss의 정보 구조를 참고하되, 색상·타이포그래피·간격·아이콘 토큰은 SEED를 유지한다.
+4. SEED에 적절한 패턴이 없을 때는 로컬에 보관한 Toss TDS 레퍼런스를 먼저 검토한다. 적용할 때도 색상·타이포그래피·간격·아이콘 토큰은 SEED를 기본으로 유지하고, TDS의 정보 구조·상태 표현·행동 우선순위만 보조 기준으로 사용한다.
+
+토스 TDS 레퍼런스: `D:\\codex\\first-friend\\.codex-local\\design-references\\toss-tds` (v2.5.1)
 
 기준 문서: https://seed-design.io/foundations
 
@@ -119,3 +121,10 @@
 - [ ] 문구가 직접적이고 다음 행동을 설명하는가?
 - [ ] 브라우저 실화면, 계산된 스타일, 콘솔 오류를 확인했는가?
 - [ ] lint, 테스트, build를 통과했는가?
+
+## 요청별 디자인 검토 순서
+
+1. 현재 화면과 설치된 SEED recipe를 먼저 확인한다.
+2. SEED에 같은 목적의 컴포넌트나 패턴이 있으면 SEED를 그대로 사용한다.
+3. SEED에 없거나 정보 위계가 약하면 로컬 TDS 레퍼런스에서 Badge, Button, Banner, CTA, 상태 표현을 비교한다.
+4. 최종 구현은 하나의 화면 안에서 SEED 토큰과 접근성 기준으로 통합하며, 두 시스템의 시각 토큰을 임의로 섞지 않는다.

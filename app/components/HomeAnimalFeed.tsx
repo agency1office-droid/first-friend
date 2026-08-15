@@ -70,7 +70,7 @@ export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
   const recent = feed.filters.sort === "recent" || !feed.location;
   const kicker = recent ? "새로 등록된 친구들" : (area ? `${area}에서 실제 거리순` : "현재 위치를 설정하면 가까운 순");
   const title = recent ? "가족을 기다리는 새 친구들" : "생각보다 가까운 친구들";
-  return <section className="ff-home-feed" id="nearby-animals" aria-label="새 가족을 기다리는 보호동물">
+  return <section className={`ff-home-feed${feed.isRestoring ? " ff-home-feed-restoring" : ""}`} id="nearby-animals" aria-label="새 가족을 기다리는 보호동물" aria-busy={feed.isRestoring}>
     <header className="ff-home-feed-head"><div><div className="ff-kicker">{kicker}</div><h1 id="nearby-title">{title}</h1></div><a href="/find">전체 {count}마리</a></header>
     <AnimalFilterBar filters={feed.filters} location={feed.location} hasLocation={Boolean(feed.location)} activeCount={feed.activeCount} setFilter={feed.setFilter} resetFilters={feed.resetFilters}/>
     {feed.loading && !feed.items.length ? <FeedLoadingState/> : <div className="ff-animal-list">{feed.items.map((animal, index) => <Fragment key={animal.id}><AnimalCard animal={animal} layout="row" priority={index < 4}/>{(index + 1) % 25 === 0 && lostAnimals[(index + 1) / 25 - 1] && <LostAnimalInsert animal={lostAnimals[(index + 1) / 25 - 1]}/>}</Fragment>)}</div>}

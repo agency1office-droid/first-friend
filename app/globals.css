@@ -713,6 +713,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-home-menu a { min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); font-size: 16px; font-weight: 700; }
 .ff-home-menu a svg { width: 20px; height: 20px; color: var(--seed-color-fg-neutral-muted); }
 .ff-home-feed { min-width: 0; }
+.ff-home-feed-restoring { visibility: hidden; }
 .ff-home-feed-head { min-height: 82px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 18px 0 14px; }
 .ff-home-feed-head h1 { margin: 3px 0 0; font-size: 22px; line-height: 30px; letter-spacing: -.025em; }
 .ff-home-feed-head > a { min-height: 0; align-self: flex-end; display: inline-flex; align-items: flex-end; flex: none; padding-bottom: 2px; color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; font-weight: 700; }

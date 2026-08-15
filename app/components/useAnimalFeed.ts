@@ -75,6 +75,10 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   const restorePending = useRef(false);
   const restoreScrollY = useRef(0);
   const restoreFrame = useRef<number | null>(null);
+  const [isRestoring, setIsRestoring] = useState(() => {
+    const snapshot = readFeedSnapshot();
+    return Boolean(snapshot && snapshot.scrollY > 0);
+  });
   const [items, setItems] = useState<Animal[]>(initialPage.items);
   const [total, setTotal] = useState(initialPage.total);
   const [cursor, setCursor] = useState<string | null>(initialPage.nextCursor);
@@ -99,7 +103,9 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     const previousRestoration = window.history.scrollRestoration;
     window.history.scrollRestoration = "manual";
     const snapshot = readFeedSnapshot();
-    if (!snapshot) return () => { window.history.scrollRestoration = previousRestoration; };
+    if (!snapshot) {
+      return () => { window.history.scrollRestoration = previousRestoration; };
+    }
     restorePending.current = true;
     restoreScrollY.current = snapshot.scrollY;
     const timer = window.setTimeout(() => {
@@ -119,14 +125,14 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     if (!restorePending.current || !ready || !filtersReady || !items.length) return;
     const target = restoreScrollY.current;
     restorePending.current = false;
-    if (target <= 0) return;
+    if (target <= 0) { setIsRestoring(false); return; }
     let attempts = 0;
     const restore = () => {
       attempts += 1;
       const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
       window.scrollTo({ top: Math.min(target, maxScroll), behavior: "auto" });
       if (attempts < 12 && maxScroll < target) restoreFrame.current = window.requestAnimationFrame(restore);
-      else restoreFrame.current = null;
+      else { restoreFrame.current = null; setIsRestoring(false); }
     };
     restoreFrame.current = window.requestAnimationFrame(restore);
     return () => {
@@ -334,5 +340,5 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   const setFilter = useCallback(<K extends keyof AnimalFeedFilters>(key: K, value: AnimalFeedFilters[K]) => setFilters(current => ({ ...current, [key]: value })), []);
   const resetFilters = useCallback(() => setFilters(defaultFilters), []);
   const activeCount = Number(filters.sort === "recent") + Number(filters.species !== "all") + Number(filters.publicStatus !== "all") + Number(filters.breedKeys.length > 0) + Number(filters.sex !== "all") + Number(filters.neutered !== "all") + Number(filters.color !== "all") + Number(filters.ageGroup !== "all") + Number(filters.sizeGroup !== "all");
-  return { items, total, cursor, syncedAt, stale, location, region, filters, setFilter, resetFilters, activeCount, loading, error, loadMore };
+  return { items, total, cursor, syncedAt, stale, location, region, filters, setFilter, resetFilters, activeCount, loading, error, loadMore, isRestoring };
 }

@@ -591,6 +591,11 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-modern-drawing-topbar { grid-template-columns: 44px minmax(0, 1fr); min-height: 56px; padding: 4px 8px 4px 4px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
 .ff-modern-drawing-topbar a { width: 44px; height: 44px; font-size: 0; }
 .ff-modern-drawing-topbar .ff-drawing-toolbar { justify-content: flex-end; margin-left: auto; }
+.ff-modern-drawing-topbar .ff-drawing-toolbar { padding-right: 92px; }
+.ff-drawing-quick-actions { position: absolute; top: 12px; right: 8px; z-index: 2; display: flex; gap: 4px; }
+.ff-modern-drawing-topbar { position: relative; }
+.ff-drawing-quick-actions button { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 12px; background: transparent; color: var(--seed-color-fg-neutral-muted); cursor: pointer; }
+.ff-drawing-quick-actions button:hover, .ff-drawing-quick-actions button:focus-visible { background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral); outline: none; }
 .ff-modern-drawing-topbar .ff-toolbar-tool,
 .ff-modern-drawing-topbar .ff-toolbar-color { width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; }
 .ff-modern-drawing-topbar .ff-toolbar-tool svg,
@@ -659,6 +664,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-size-dot { display: block; flex: 0 0 auto; border-radius: 50%; background: var(--seed-color-fg-neutral); }
 .ff-size-picker small { min-width: 28px; color: var(--seed-color-fg-neutral-muted); text-align: right; }
 .ff-freehand-demo-tools { display: none !important; }
+.ff-drawing-workspace { position: relative; }
 .ff-drawing-workspace .ff-draw-species-panel, .ff-drawing-workspace .ff-canvas-panel, .ff-drawing-workspace .ff-search-options { min-width: 0; border: 0; border-radius: 18px; }
 .ff-drawing-workspace .ff-draw-species-panel { padding: 14px 18px; background: var(--seed-color-bg-layer-default); }
 .ff-drawing-workspace .ff-draw-species-panel .ff-section-title { margin: 0; font-size: 18px; }
@@ -696,6 +702,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
   .ff-drawing-workspace { display: flex; flex-direction: column; gap: 8px; padding-inline: 10px; }
   .ff-drawing-topbar { flex: none; grid-template-columns: 36px 1fr 86px; }
   .ff-modern-drawing-topbar { grid-template-columns: 44px minmax(0, 1fr); padding-inline: 4px; }
+  .ff-modern-drawing-topbar .ff-drawing-toolbar { padding-right: 84px; }
+  .ff-drawing-quick-actions { top: 10px; right: 4px; }
   .ff-drawing-toolbar { gap: 4px; }
   .ff-toolbar-color, .ff-toolbar-tool { width: 36px; height: 36px; }
   .ff-drawing-workspace .ff-draw-species-panel { padding: 10px 12px; border-radius: 14px; }

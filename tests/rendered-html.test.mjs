@@ -202,7 +202,9 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(worker, /GEMINI_API_KEY/);
   assert.match(worker, /짧고 자연스러운 문장/);
   assert.match(worker, /고양이예요/);
-  assert.match(worker, /직접 관찰해/);
+  assert.match(worker, /사진에서 확인되는 털 색/);
+  assert.match(worker, /귀여움·예쁨·매력/);
+  assert.match(worker, /사진에 근거한 감상/);
   assert.match(worker, /입니다/);
   assert.match(worker, /next_attempt_at/);
   assert.match(worker, /status === "processing"/);

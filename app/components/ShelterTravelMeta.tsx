@@ -77,6 +77,6 @@ export function ShelterTravelMeta({
   if (!distanceLabel) return null;
   return <p className="ff-detail-shelter-meta" aria-live="polite">
     <span className="ff-detail-shelter-distance">{distanceLabel}</span>
-    {durationLabel ? ` · 보호소까지 차로 약 ${durationLabel}` : durationLoading ? " · 이동 시간 확인 중" : ""}
+    {durationLabel ? ` · 차로 약 ${durationLabel}` : durationLoading ? " · 이동 시간 확인 중" : ""}
   </p>;
 }

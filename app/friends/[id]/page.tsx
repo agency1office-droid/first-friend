@@ -130,6 +130,7 @@ export default async function AnimalPage({
         <div className="ff-detail-shelter-actions">
           {animal.shelterPhone && <a className="ff-detail-contact-link" href={`tel:${animal.shelterPhone.replace(/[^0-9+]/g, "")}`} aria-label={`${animal.shelter}에 전화하기`}>
             <IconPhoneLine aria-hidden />
+            <span className="ff-detail-phone-number">{animal.shelterPhone}</span>
           </a>}
           <a className="ff-detail-contact-link" href={shelterMapHref} target="_blank" rel="noreferrer" aria-label={`${animal.shelter} 위치를 카카오맵에서 보기`}>
             <IconMapLocationpinLine aria-hidden />

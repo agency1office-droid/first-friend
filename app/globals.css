@@ -226,6 +226,11 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-shelter-actions { display: flex; flex: none; align-items: center; gap: 2px; margin-left: auto; }
 .ff-detail-contact-link { display: grid; place-items: center; width: 36px; height: 36px; color: var(--seed-color-fg-neutral-subtle); opacity: .72; }
 .ff-detail-contact-link svg { width: 22px; height: 22px; }
+.ff-detail-phone-number { display: none; }
+@media (min-width: 521px) {
+  .ff-detail-contact-link[href^="tel:"] { display: flex; width: auto; gap: 6px; padding: 0 8px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .ff-detail-phone-number { display: inline; }
+}
 .ff-detail-taxonomy { display: flex; align-items: center; gap: 4px; margin: -8px 0 16px; color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 18px; }
 .ff-detail-taxonomy svg { width: 16px; height: 16px; color: var(--seed-color-fg-neutral-subtle); }
 .ff-detail-taxonomy strong { color: var(--seed-color-fg-neutral); font-weight: 700; }

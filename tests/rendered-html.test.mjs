@@ -182,7 +182,7 @@ test("replaces species tabs with actionable shelter-distance animal filters", as
 });
 
 test("adds cached, deferred AI animal introductions without putting image bytes in storage", async () => {
-  const [page, intro, api, worker, migration, env, vercel] = await Promise.all([
+  const [page, intro, api, worker, migration, env, vercel, breedKnowledge] = await Promise.all([
     readFile(new URL("../app/friends/[id]/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/AnimalAiIntro.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/animal-ai/route.ts", import.meta.url), "utf8"),
@@ -190,6 +190,7 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
     readFile(new URL("../supabase/migrations/20260815000100_animal_ai_summaries.sql", import.meta.url), "utf8"),
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
     readFile(new URL("../vercel.json", import.meta.url), "utf8"),
+    readFile(new URL("../lib/breed-knowledge.ts", import.meta.url), "utf8"),
   ]);
   assert.match(page, /<AnimalAiIntro animalId=\{animal\.id\} \/>/);
   assert.match(page, /ff-detail-shelter[\s\S]*<AnimalAiIntro/);
@@ -212,6 +213,7 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(page, /function animalKnowledge/);
   assert.match(page, /function formatDetailHelper/);
   assert.match(page, /value\.slice\(0, commaIndex \+ 1\)[\s\S]*<br \/>/);
+  assert.match(breedKnowledge, /pattern\.test\(breed\) \|\| pattern\.test\(normalized\)/);
   assert.match(page, /helper=\{knowledge\.species\}/);
   assert.match(page, /helper=\{knowledge\.size\}/);
   assert.match(page, /helper=\{knowledge\.age\}/);

@@ -30,6 +30,7 @@ const COMMON_PROFILES: Record<string, BreedProfile> = {
   "스코티시폴드": { species: "앞으로 접힌 귀와 둥근 눈매가 특징인 고양이예요. 접힌 귀는 모든 개체의 특징이 아니며 실제 성격과 생활 습관은 개체마다 달라요.", size: "성묘는 보통 3~6kg 정도예요. 성별과 개체에 따라 달라질 수 있어요.", age: "일반적으로 11~15년 정도 함께하는 경우가 있어요. 건강 상태에 따라 달라질 수 있어요.", neutered: "원치 않는 번식을 예방하는 데 도움을 줄 수 있어요. 품종 특성과 건강 상태를 고려한 시기는 수의사와 상담해 주세요." },
   "샴": { species: "날씬한 체형과 얼굴·귀·다리 끝의 색이 짙어지는 무늬가 특징인 고양이예요. 사람과 소리로 교감하는 경향이 있어요.", size: "성묘는 보통 2.5~5.5kg 정도예요. 성별과 개체에 따라 달라질 수 있어요.", age: "일반적으로 12~20년 정도 함께하는 경우가 있어요. 건강 관리에 따라 달라질 수 있어요.", neutered: "원치 않는 번식을 예방하고 일부 질환·행동 위험을 줄이는 데 도움을 줄 수 있어요. 시기는 수의사와 상담해 주세요." },
   "터키시앙고라": { species: "길고 부드러운 털과 우아한 체형, 또렷한 눈매가 특징인 고양이예요. 호기심이 많고 사람과 주변 환경을 살피는 경향이 있어요.", size: "성묘는 보통 3~6kg 정도예요. 성별과 개체에 따라 달라질 수 있어요.", age: "일반적으로 12~18년 정도 함께하는 경우가 있어요. 건강 관리에 따라 달라질 수 있어요.", neutered: "원치 않는 번식을 예방하고 일부 질환·행동 위험을 줄이는 데 도움을 줄 수 있어요. 시기는 수의사와 상담해 주세요." },
+  "한국 고양이": { aliases: ["코리안숏헤어", "한국고양이"], species: "한국에서 흔히 만나는 집고양이로, 털 색과 무늬, 눈매와 체형이 매우 다양해요. 특정 품종의 성격으로 단정하기보다 이 친구의 실제 모습과 생활 습관을 살펴보는 것이 좋아요.", size: "성묘는 보통 3~6kg 정도예요. 성별과 개체에 따라 체형과 체중이 달라질 수 있어요.", age: "일반적으로 12~18년 정도 함께하는 경우가 있어요. 건강 관리와 생활 환경에 따라 달라질 수 있어요.", neutered: "원치 않는 번식을 예방하고 일부 질환·행동 위험을 줄이는 데 도움을 줄 수 있어요. 시기는 수의사와 상담해 주세요." },
 };
 
 const GROUP_PROFILES: Array<[RegExp, BreedProfile]> = [
@@ -66,7 +67,7 @@ export function getBreedKnowledge(input: { species: string; breed: string; upKin
   const normalized = normalize(breed);
   const direct = Object.entries(COMMON_PROFILES).find(([name, profile]) => [name, ...(profile.aliases || [])].some(value => normalize(value) === normalized));
   if (direct) return { ...direct[1], source: "breed" };
-  const group = GROUP_PROFILES.find(([pattern]) => pattern.test(breed));
+  const group = GROUP_PROFILES.find(([pattern]) => pattern.test(breed) || pattern.test(normalized));
   if (group) return { ...group[1], source: "group" };
   return { ...(SPECIES_PROFILES[/고양이/.test(input.species) ? "cat" : "dog"]), source: "species" };
 }

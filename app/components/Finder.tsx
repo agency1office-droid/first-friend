@@ -127,9 +127,12 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
 
     const size = toolSheet === 'eraser' ? eraserSize : brushSize;
     const thumbSize = `${10 + size * 1.4}px`;
-    document.querySelectorAll<HTMLInputElement>('.ff-drawing-size-slider input[type="range"]').forEach((slider) => {
-      slider.style.setProperty('--brush-thumb-size', thumbSize);
-    });
+    const applySliderSize = () => document.querySelectorAll<HTMLInputElement>('.ff-drawing-size-slider input[type="range"]').forEach((slider) => slider.style.setProperty('--brush-thumb-size', thumbSize));
+    applySliderSize();
+    const observer = new MutationObserver(applySliderSize);
+    observer.observe(document.body, { childList: true, subtree: true });
+    const timeout = window.setTimeout(applySliderSize, 0);
+    return () => { observer.disconnect(); window.clearTimeout(timeout); };
   }, [brushSize, eraserSize, toolSheet]);
 
   function point(event: React.PointerEvent<HTMLCanvasElement>): [number, number, number] { const canvas = event.currentTarget; const rect = canvas.getBoundingClientRect(); const ratio = window.devicePixelRatio || 1; const logicalWidth = canvas.width / ratio; const logicalHeight = canvas.height / ratio; return [(event.clientX - rect.left) * (logicalWidth / rect.width), (event.clientY - rect.top) * (logicalHeight / rect.height), event.pressure || 0.5]; }

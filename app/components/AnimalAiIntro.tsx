@@ -1,7 +1,7 @@
 "use client";
 
 import { Callout } from "seed-design/ui/callout";
-import { IconSparkle2Line } from "@karrotmarket/react-monochrome-icon";
+import { IconSparkle2Fill } from "@karrotmarket/react-monochrome-icon";
 import { useEffect, useState } from "react";
 
 type State = { status: string; summary: string | null; available: boolean };
@@ -33,7 +33,7 @@ export function AnimalAiIntro({ animalId }: { animalId: string }) {
   return <section className="ff-detail-ai-section" aria-labelledby="animal-ai-title">
     <Callout
       tone="neutral"
-      title={<span id="animal-ai-title"><IconSparkle2Line aria-hidden="true" focusable="false" /><span>AI가 살펴본 이 친구의 매력</span></span>}
+      title={<span id="animal-ai-title"><IconSparkle2Fill aria-hidden="true" focusable="false" /> <span>AI가 살펴본 이 친구의 매력</span></span>}
       description={<><span className="ff-detail-ai-copy">{description}</span><span className="ff-detail-ai-disclaimer">사진을 바탕으로 AI가 살펴본 내용이에요. 정확한 건강·성격 정보와 입양 가능 여부는 보호소에 확인해 주세요.</span></>}
     />
   </section>;

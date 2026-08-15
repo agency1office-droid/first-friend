@@ -66,7 +66,11 @@ export async function getAnimalAiState(animalId: string): Promise<AnimalAiState>
     .eq("animal_id", animalId)
     .maybeSingle();
   if (error) throw error;
-  return toState((data || null) as SummaryRow | null);
+  const row = (data || null) as SummaryRow | null;
+  const animal = await getAnimalById(animalId);
+  if (!animal) return toState(row);
+  if (!row || row.analysis_key !== createAnimalAnalysisKey(animal)) return toState(null);
+  return toState(row);
 }
 
 export async function enqueueAnimalAiSummary(animal: Animal) {

@@ -684,7 +684,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-drawing-bottom-actions > button:hover,
 .ff-drawing-upload-action:hover,
 .ff-drawing-bottom-actions > button:focus-visible,
-.ff-drawing-upload-action:focus-within { background: var(--seed-color-bg-neutral-weak-hover); color: var(--seed-color-fg-neutral); }
+.ff-drawing-upload-action:focus-within { background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral); }
 .ff-drawing-bottom-actions > button:nth-child(-n+2) { padding: 0; background: transparent; }
 .ff-drawing-bottom-actions > button:nth-child(-n+2) span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .ff-drawing-upload-action { position: relative; }

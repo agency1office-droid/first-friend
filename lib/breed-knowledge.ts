@@ -48,6 +48,17 @@ const SPECIES_PROFILES: Record<"dog" | "cat", BreedProfile> = {
   cat: { species: "고양이는 품종과 개체에 따라 털, 체형, 활동량이 다양해요. 실제 성격과 생활 습관은 개체마다 달라요.", size: "성묘는 보통 3~6kg 정도지만 품종과 성별에 따라 달라질 수 있어요.", age: "고양이는 보통 12~18년 정도 함께하는 경우가 있어요. 건강 관리와 생활 환경에 따라 달라질 수 있어요.", neutered: COMMON_PROFILES["푸들"].neutered },
 };
 
+function polishKnowledge(profile: BreedProfile): BreedKnowledge {
+  const shorten = (value: string) => value
+    .replace("성별과 개체에 따라 체형과 체중이 달라질 수 있어요.", "개체마다 차이가 있어요.")
+    .replace("성별과 개체에 따라 달라질 수 있어요.", "개체마다 차이가 있어요.")
+    .replace("건강과 생활 환경에 따라 달라질 수 있어요.", "건강 관리에 따라 달라질 수 있어요.")
+    .replace("건강 관리와 생활 환경에 따라 달라질 수 있어요.", "건강 관리에 따라 달라질 수 있어요.")
+    .replace("품종과 건강 관리에 따라 달라질 수 있어요.", "품종에 따라 차이가 있어요.")
+    .replace("원치 않는 번식을 예방하고 일부 질환·행동 위험을 줄이는 데 도움을 줄 수 있어요. 시기는 수의사와 상담해 주세요.", "번식 예방과 일부 위험 감소에 도움을 줄 수 있어요. 시기는 수의사와 상담해 주세요.");
+  return { species: shorten(profile.species), size: shorten(profile.size), age: shorten(profile.age), neutered: shorten(profile.neutered), source: "breed" };
+}
+
 export const BREED_KNOWLEDGE_PROMPT = `
 퍼스트프렌드의 공공 동물 품종 지식 데이터를 작성하세요.
 입력값은 국가동물보호정보시스템의 upKindCd, kindCd, kindNm, species입니다.
@@ -66,8 +77,8 @@ export function getBreedKnowledge(input: { species: string; breed: string; upKin
   const breed = String(input.breed || "품종 미상");
   const normalized = normalize(breed);
   const direct = Object.entries(COMMON_PROFILES).find(([name, profile]) => [name, ...(profile.aliases || [])].some(value => normalize(value) === normalized));
-  if (direct) return { ...direct[1], source: "breed" };
+  if (direct) return polishKnowledge(direct[1]);
   const group = GROUP_PROFILES.find(([pattern]) => pattern.test(breed) || pattern.test(normalized));
-  if (group) return { ...group[1], source: "group" };
-  return { ...(SPECIES_PROFILES[/고양이/.test(input.species) ? "cat" : "dog"]), source: "species" };
+  if (group) return { ...polishKnowledge(group[1]), source: "group" };
+  return { ...polishKnowledge(SPECIES_PROFILES[/고양이/.test(input.species) ? "cat" : "dog"]), source: "species" };
 }

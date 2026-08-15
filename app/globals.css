@@ -204,7 +204,7 @@ img { display: block; max-width: 100%; }
 .ff-image-dialog-nav { position: absolute; z-index: 2; right: 0; bottom: 22px; left: 0; display: flex; justify-content: center; gap: 8px; padding: 0 12px; overflow-x: auto; }
 html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-body { padding: 24px 16px 36px; }
-.ff-detail-gallery-status { position: absolute; z-index: 3; right: 0; bottom: 0; left: 0; display: flex; align-items: center; gap: 6px; max-width: none; padding: 40px 72px 12px 16px; overflow-wrap: anywhere; color: var(--seed-color-fg-neutral-inverted); background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.72)); font-size: 16px; font-weight: var(--seed-font-weight-bold); line-height: 22px; pointer-events: none; }
+.ff-detail-gallery-status { position: absolute; z-index: 3; right: 0; bottom: 0; left: 0; display: flex; align-items: center; gap: 6px; max-width: none; padding: 40px 72px 9px 16px; overflow-wrap: anywhere; color: var(--seed-color-fg-neutral-inverted); background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.72)); font-size: 16px; font-weight: var(--seed-font-weight-bold); line-height: 22px; pointer-events: none; }
 .ff-detail-gallery-status::before { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--seed-color-fg-brand); content: ""; }
 .ff-detail-gallery-status.ff-public-status-protected::before { background: var(--seed-color-bg-positive-solid); }
 .ff-detail-gallery-status.ff-public-status-notice::before { background: var(--seed-color-bg-informative-solid); }
@@ -539,6 +539,18 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-drawing-topbar a { display: grid; place-items: center; width: 40px; height: 40px; color: var(--seed-color-fg-neutral); text-decoration: none; font-size: 38px; font-weight: 300; line-height: 1; }
 .ff-drawing-topbar h1 { justify-self: center; margin: 0; color: var(--seed-color-fg-neutral); font-size: 16px; }
 .ff-drawing-topbar span { justify-self: end; font-size: 12px; }
+.ff-drawing-toolbar { display: flex; justify-content: center; align-items: center; gap: 6px; min-width: 0; }
+.ff-color-picker { position: relative; }
+.ff-toolbar-color, .ff-toolbar-tool { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 50%; background: var(--seed-color-bg-layer-default); color: var(--seed-color-fg-neutral); cursor: pointer; }
+.ff-toolbar-color { position: relative; overflow: hidden; border-width: 2px; }
+.ff-toolbar-color::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: inherit; }
+.ff-toolbar-color svg { position: relative; z-index: 1; width: 17px; height: 17px; color: var(--seed-color-fg-neutral); mix-blend-mode: difference; }
+.ff-toolbar-tool { position: relative; border-radius: 10px; }
+.ff-toolbar-tool[data-active="true"], .ff-toolbar-color[data-active="true"] { border-color: var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-weak); color: var(--seed-color-fg-brand); }
+.ff-toolbar-tool svg { width: 20px; height: 20px; }
+.ff-toolbar-tool small { position: absolute; right: -3px; bottom: -3px; min-width: 15px; padding: 1px 3px; border-radius: 999px; background: var(--seed-color-bg-brand-solid); color: var(--seed-color-fg-on-color); font-size: 9px; line-height: 1.2; }
+.ff-toolbar-palette { position: absolute; top: calc(100% + 8px); left: 50%; z-index: 5; display: flex; gap: 7px; padding: 9px; transform: translateX(-50%); border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 14px; background: var(--seed-color-bg-layer-default); box-shadow: 0 8px 24px rgba(0,0,0,.14); }
+.ff-toolbar-palette .ff-color-button { flex: 0 0 auto; }
 .ff-drawing-workspace .ff-draw-species-panel, .ff-drawing-workspace .ff-canvas-panel, .ff-drawing-workspace .ff-search-options { min-width: 0; border: 0; border-radius: 18px; }
 .ff-drawing-workspace .ff-draw-species-panel { padding: 14px 18px; background: var(--seed-color-bg-layer-default); }
 .ff-drawing-workspace .ff-draw-species-panel .ff-section-title { margin: 0; font-size: 18px; }
@@ -560,7 +572,9 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 
 @media(max-width:700px){
   .ff-drawing-workspace { display: flex; flex-direction: column; gap: 8px; padding-inline: 10px; }
-  .ff-drawing-topbar { flex: none; }
+  .ff-drawing-topbar { flex: none; grid-template-columns: 36px 1fr 86px; }
+  .ff-drawing-toolbar { gap: 4px; }
+  .ff-toolbar-color, .ff-toolbar-tool { width: 36px; height: 36px; }
   .ff-drawing-workspace .ff-draw-species-panel { padding: 10px 12px; border-radius: 14px; }
   .ff-drawing-workspace .ff-canvas-panel { flex: 1 1 auto; min-height: 0; padding: 16px 12px 12px; border-radius: 16px; }
   .ff-drawing-workspace .ff-canvas-panel .ff-description { font-size: 13px; }

@@ -11,7 +11,7 @@ import { TextField, TextFieldInput } from "seed-design/ui/text-field";
 import { Chip } from "seed-design/ui/chip";
 import { Callout } from "seed-design/ui/callout";
 import { PrefixIcon } from "@seed-design/react";
-import { IconCameraLine, IconArrowDownHorizlineLine, IconEraserHorizlineLine, IconMagnifyingglassLine, IconMagnifyingglassSparkleLine, IconPictureLine, IconArrowCounterclockwiseCircularLine, IconSlider2HorizontalLine } from "@karrotmarket/react-monochrome-icon";
+import { IconCameraLine, IconArrowDownHorizlineLine, IconEraserHorizlineLine, IconMagnifyingglassLine, IconMagnifyingglassSparkleLine, IconPictureLine, IconArrowCounterclockwiseCircularLine, IconSlider2HorizontalLine, IconPaletteLine, IconPencilLine } from "@karrotmarket/react-monochrome-icon";
 import { useAppFeedback } from "./AppFeedback";
 
 const palette = [
@@ -43,6 +43,8 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const [strokeWidth, setStrokeWidth] = useState(0);
   const [easing, setEasing] = useState("Linear");
   const [settingsOpen, setSettingsOpen] = useState(true);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [isErasing, setIsErasing] = useState(false);
   const [uploaded, setUploaded] = useState("");
   const [preview, setPreview] = useState("");
   const [query, setQuery] = useState(initialTags.split(",")[0] || "");
@@ -100,9 +102,9 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     context.moveTo(outline[0][0], outline[0][1]);
     for (const [x, y] of outline.slice(1)) context.lineTo(x, y);
     context.closePath();
-    context.fillStyle = brushColor.hex;
+    context.fillStyle = isErasing ? "#ffffff" : brushColor.hex;
     context.fill();
-    if (strokeWidth > 0) { context.lineWidth = strokeWidth; context.strokeStyle = brushColor.hex; context.stroke(); }
+    if (strokeWidth > 0) { context.lineWidth = strokeWidth; context.strokeStyle = isErasing ? "#ffffff" : brushColor.hex; context.stroke(); }
   }
   function start(event: React.PointerEvent<HTMLCanvasElement>) { const canvas = event.currentTarget, context = canvas.getContext("2d"); if (!context) return; strokeBaseImage.current = context.getImageData(0, 0, canvas.width, canvas.height); undoStack.current.push(strokeBaseImage.current); if (undoStack.current.length > 12) undoStack.current.shift(); drawing.current = true; strokePoints.current = [point(event)]; canvas.setPointerCapture(event.pointerId); drawSmoothStroke(context, strokePoints.current); }
   function move(event: React.PointerEvent<HTMLCanvasElement>) { if (!drawing.current) return; const context = event.currentTarget.getContext("2d"); if (!context || !strokeBaseImage.current) return; strokePoints.current.push(point(event)); context.putImageData(strokeBaseImage.current, 0, 0); drawSmoothStroke(context, strokePoints.current); }
@@ -148,7 +150,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const visible = (matched ? ranked : animals).filter((animal) => !query || `${animal.name} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
 
   return <div className={mode === "draw" ? "ff-drawing-workspace" : undefined}>
-    {mode === "draw" && <div className="ff-drawing-topbar"><a href="/find" aria-label="그림 찾기 닫기">‹</a><h1>그림으로 찾기</h1><span>기기 안에서 분석</span></div>}
+    {mode === "draw" && <div className="ff-drawing-topbar"><a href="/find" aria-label="그림 찾기 닫기">‹</a><div className="ff-drawing-toolbar" aria-label="그림 도구"><div className="ff-color-picker"><button type="button" className="ff-toolbar-color" style={{ background: brushColor.hex }} data-active={paletteOpen} aria-label="색상 팔레트 열기" aria-expanded={paletteOpen} onClick={() => setPaletteOpen((value) => !value)}><PrefixIcon svg={<IconPaletteLine/>}/></button>{paletteOpen && <div className="ff-toolbar-palette" role="group" aria-label="색상 선택">{palette.map((color) => <button type="button" key={color.name} className="ff-color-button" data-active={!isErasing && brushColor.name === color.name} style={{ background: color.hex }} aria-label={`${color.name} 색상`} onClick={() => { setBrushColor(color); setIsErasing(false); setPaletteOpen(false); }}/>)}</div>}</div><button type="button" className="ff-toolbar-tool" data-active={settingsOpen && !isErasing} aria-label="붓 설정 열기" onClick={() => { setIsErasing(false); setSettingsOpen(true); }}><PrefixIcon svg={<IconPencilLine/>}/><small>{brushSize}</small></button><button type="button" className="ff-toolbar-tool" data-active={isErasing} aria-label="지우개 선택" onClick={() => setIsErasing(true)}><PrefixIcon svg={<IconEraserHorizlineLine/>}/></button><button type="button" className="ff-toolbar-tool" aria-label="세부 그림 설정 열기" onClick={() => setSettingsOpen((value) => !value)}><PrefixIcon svg={<IconSlider2HorizontalLine/>}/></button></div><span>기기 안에서 분석</span></div>}
     {mode === "draw" &&
         <section className="ff-canvas-panel">
           <h2 className="ff-section-title">마음속 친구를 그려보세요</h2><p className="ff-description" style={{ margin: "5px 0 14px" }}>털색과 무늬, 귀와 얼굴 모양을 자유롭게 표현해 주세요.</p>
@@ -168,7 +170,6 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
               <div className="ff-demo-range-row"><label htmlFor="draw-taper-end">끝 가늘기</label><input id="draw-taper-end" type="range" min="0" max="1" step="0.05" value={taperEnd} onChange={(event) => setTaperEnd(Number(event.target.value))}/><output>{taperEnd}</output></div>
               <label className="ff-demo-check"><span>끝 부분 둥글게</span><input type="checkbox" checked={capEnd} onChange={(event) => setCapEnd(event.target.checked)}/></label>
               <hr />
-              <div className="ff-demo-fill"><span>색상</span><div className="ff-palette">{palette.map((color) => <button type="button" key={color.name} className="ff-color-button" data-active={brushColor.name === color.name} style={{ background: color.hex }} aria-label={`${color.name} 색상`} onClick={() => setBrushColor(color)}/>)}</div></div>
               <div className="ff-demo-range-row"><label htmlFor="draw-stroke">외곽선</label><input id="draw-stroke" type="range" min="0" max="8" step="1" value={strokeWidth} onChange={(event) => setStrokeWidth(Number(event.target.value))}/><output>{strokeWidth}</output></div>
               <div className="ff-demo-panel-actions"><button type="button" onClick={() => { setBrushSize(1); setThinning(0.35); setStreamline(0.45); setSmoothing(0.65); setSimulatePressure(true); setEasing("Linear"); setTaperStart(0); setCapStart(true); setTaperEnd(0); setCapEnd(true); setStrokeWidth(0); }}>기본값으로</button><button type="button" onClick={() => navigator.clipboard?.writeText(JSON.stringify({ size: brushSize, thinning, streamline, smoothing, simulatePressure, easing, taperStart, capStart, taperEnd, capEnd, strokeWidth }))}>설정 복사</button><button type="button" onClick={() => navigator.clipboard?.writeText(canvasRef.current?.toDataURL("image/svg+xml") || "")}>SVG로 복사</button></div>
             </div>}

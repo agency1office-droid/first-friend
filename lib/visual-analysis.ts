@@ -96,7 +96,13 @@ async function classify(source: HTMLCanvasElement | HTMLImageElement) {
   try {
     const model = await loadModel();
     if (!model) return [];
-    const predictions = await model.classify(source, 5);
+    // MobileCLIP은 첫 실행 때 모델 파일을 내려받을 수 있습니다. 분석 버튼을
+    // 그 다운로드가 끝날 때까지 붙잡아 두지 않고, 빠른 휴리스틱 결과를 먼저
+    // 사용할 수 있도록 제한 시간을 둡니다. 모델은 백그라운드에서 계속 준비됩니다.
+    const predictions = await Promise.race([
+      model.classify(source, 5),
+      new Promise<ClipPrediction[]>((resolve) => window.setTimeout(() => resolve([]), 1200)),
+    ]);
     return predictions;
   } catch { return []; }
 }

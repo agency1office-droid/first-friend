@@ -210,13 +210,13 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-gallery-status.ff-public-status-notice::before { background: var(--seed-color-bg-informative-solid); }
 .ff-detail-gallery-status .ff-detail-status-day { flex: none; padding: 0; color: inherit; background: transparent; font-size: inherit; line-height: inherit; }
 .ff-detail-gallery-status strong { overflow-wrap: anywhere; color: inherit; font-size: inherit; line-height: inherit; }
-.ff-detail-shelter { display: flex; align-items: center; gap: 10px; padding: 16px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
+.ff-detail-shelter { display: flex; align-items: center; gap: 10px; padding: 20px 16px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
 .ff-detail-shelter-icon { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 12px; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
 .ff-detail-shelter-icon svg { width: 22px; height: 22px; }
 .ff-detail-shelter-copy { display: grid; gap: 2px; min-width: 0; flex: 1; }
 .ff-detail-shelter-copy strong { overflow-wrap: anywhere; color: var(--seed-color-fg-neutral); font-size: 15px; line-height: 21px; }
 .ff-detail-shelter-copy p { margin: 0; overflow-wrap: anywhere; color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 18px; }
-.ff-detail-location-link { display: grid; flex: none; place-items: center; width: 36px; height: 36px; color: var(--seed-color-fg-neutral-subtle); }
+.ff-detail-location-link { display: grid; flex: none; place-items: center; width: 36px; height: 36px; color: var(--seed-color-fg-neutral-subtle); opacity: .72; }
 .ff-detail-location-link svg { width: 22px; height: 22px; }
 .ff-detail-taxonomy { display: flex; align-items: center; gap: 4px; margin: -8px 0 16px; color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 18px; }
 .ff-detail-taxonomy svg { width: 16px; height: 16px; color: var(--seed-color-fg-neutral-subtle); }

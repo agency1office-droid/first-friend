@@ -3,7 +3,7 @@ import type { Animal } from "./data";
 import { getAnimalById } from "./public-data";
 import { getSupabaseServerClient } from "./supabase/server";
 
-const MODEL_VERSION = process.env.OPENAI_VISION_MODEL?.trim() || "gpt-4.1-mini";
+const MODEL_VERSION = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash-lite";
 const MAX_RETRIES = 3;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const SAFE_IMAGE_HOST_SUFFIX = ".go.kr";
@@ -26,7 +26,7 @@ export type AnimalAiState = {
   available: boolean;
 };
 
-function hasAiKey() { return Boolean(process.env.OPENAI_API_KEY?.trim()); }
+function hasAiKey() { return Boolean(process.env.GEMINI_API_KEY?.trim()); }
 
 function normalize(value: unknown) {
   return String(value || "").trim().replace(/\s+/g, " ");
@@ -138,9 +138,8 @@ async function readImage(url: string) {
   return `data:${type};base64,${Buffer.from(bytes).toString("base64")}`;
 }
 
-function extractText(payload: { choices?: Array<{ message?: { content?: string | Array<{ text?: string }> } }> }) {
-  const content = payload.choices?.[0]?.message?.content;
-  return Array.isArray(content) ? content.map(item => item.text || "").join("") : content || "";
+function extractText(payload: { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }) {
+  return payload.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("") || "";
 }
 
 function validateSummary(value: string) {
@@ -155,26 +154,21 @@ function validateSummary(value: string) {
 async function generateSummary(animal: Animal) {
   const image = await readImage(animal.image);
   const input = sourceInput(animal);
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL_VERSION)}:generateContent`, {
     method: "POST",
     signal: AbortSignal.timeout(20000),
-    headers: { authorization: `Bearer ${process.env.OPENAI_API_KEY?.trim()}`, "content-type": "application/json" },
+    headers: { "x-goog-api-key": process.env.GEMINI_API_KEY?.trim() || "", "content-type": "application/json" },
     body: JSON.stringify({
-      model: MODEL_VERSION,
-      temperature: 0.4,
-      max_tokens: 220,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: "당신은 보호동물 상세페이지의 따뜻한 참고 문구를 쓰는 편집자입니다. 공개 데이터와 사진에서 확인 가능한 내용만 사용합니다. 건강 상태, 성격, 입양 가능성, 미래 행동을 사실처럼 단정하지 말고, 사진에 보이지 않는 배경이나 감정을 창작하지 마세요. 한국어 2~3문장으로 JSON {\"summary\":\"...\"}만 반환하세요." },
-        { role: "user", content: [
-          { type: "text", text: `다음 공개 정보를 참고해 사진에서 보이는 외형과 보호소 메모를 중심으로 소개해 주세요. 전화번호, 주소, 개인 정보는 언급하지 마세요. ${JSON.stringify({ ...input, imageUrl: undefined })}` },
-          { type: "image_url", image_url: { url: image, detail: "low" } },
-        ] },
-      ],
+      systemInstruction: { parts: [{ text: "당신은 보호동물 상세페이지의 따뜻한 참고 문구를 쓰는 편집자입니다. 공개 데이터와 사진에서 확인 가능한 내용만 사용합니다. 건강 상태, 성격, 입양 가능성, 미래 행동을 사실처럼 단정하지 말고, 사진에 보이지 않는 배경이나 감정을 창작하지 마세요. 한국어 2~3문장으로 JSON {\"summary\":\"...\"}만 반환하세요." }] },
+      contents: [{ role: "user", parts: [
+        { text: `다음 공개 정보를 참고해 사진에서 보이는 외형과 보호소 메모를 중심으로 소개해 주세요. 전화번호, 주소, 개인 정보는 언급하지 마세요. ${JSON.stringify({ ...input, imageUrl: undefined })}` },
+        { inlineData: { mimeType: image.slice(5, image.indexOf(";")), data: image.slice(image.indexOf(",") + 1) } },
+      ] }],
+      generationConfig: { temperature: 0.4, maxOutputTokens: 220, responseMimeType: "application/json" },
     }),
   });
   if (!response.ok) throw new Error(`AI 응답 오류(${response.status})`);
-  const payload = await response.json() as { choices?: Array<{ message?: { content?: string | Array<{ text?: string }> } }> };
+  const payload = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
   let parsed: { summary?: string };
   try { parsed = JSON.parse(extractText(payload)) as { summary?: string }; } catch { throw new Error("AI 응답 형식을 확인하지 못했어요."); }
   const summary = validateSummary(String(parsed.summary || ""));

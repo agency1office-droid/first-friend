@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { getStroke } from "perfect-freehand";
 import type { Animal } from "../../lib/data";
 import { analyzeVisual, animalVisualTags, preloadVisualModel, type VisualAnalysis } from "../../lib/visual-analysis";
 import { AnimalCard } from "./AnimalCard";
@@ -25,6 +26,8 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const drawing = useRef(false);
+  const strokePoints = useRef<[number, number, number][]>([]);
+  const strokeBaseImage = useRef<ImageData | null>(null);
   const undoStack = useRef<ImageData[]>([]);
   const mode = modeOnly || "draw";
   const [brushColor, setBrushColor] = useState(palette[0]);
@@ -67,9 +70,20 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     context.lineJoin = "round";
   }, []);
 
-  function point(event: React.PointerEvent<HTMLCanvasElement>) { const rect = event.currentTarget.getBoundingClientRect(); return { x: event.clientX - rect.left, y: event.clientY - rect.top }; }
-  function start(event: React.PointerEvent<HTMLCanvasElement>) { const canvas = event.currentTarget, context = canvas.getContext("2d"); if (!context) return; undoStack.current.push(context.getImageData(0, 0, canvas.width, canvas.height)); if (undoStack.current.length > 12) undoStack.current.shift(); drawing.current = true; canvas.setPointerCapture(event.pointerId); const p = point(event); context.beginPath(); context.moveTo(p.x, p.y); }
-  function move(event: React.PointerEvent<HTMLCanvasElement>) { if (!drawing.current) return; const context = event.currentTarget.getContext("2d"); if (!context) return; const p = point(event); context.strokeStyle = brushColor.hex; context.lineWidth = brushSize; context.lineTo(p.x, p.y); context.stroke(); }
+  function point(event: React.PointerEvent<HTMLCanvasElement>): [number, number, number] { const rect = event.currentTarget.getBoundingClientRect(); return [event.clientX - rect.left, event.clientY - rect.top, event.pressure || 0.5]; }
+  function drawSmoothStroke(context: CanvasRenderingContext2D, points: [number, number, number][]) {
+    if (!points.length) return;
+    const outline = getStroke(points, { size: brushSize, thinning: 0.35, smoothing: 0.65, streamline: 0.45, simulatePressure: true });
+    context.beginPath();
+    context.moveTo(outline[0][0], outline[0][1]);
+    for (const [x, y] of outline.slice(1)) context.lineTo(x, y);
+    context.closePath();
+    context.fillStyle = brushColor.hex;
+    context.fill();
+  }
+  function start(event: React.PointerEvent<HTMLCanvasElement>) { const canvas = event.currentTarget, context = canvas.getContext("2d"); if (!context) return; strokeBaseImage.current = context.getImageData(0, 0, canvas.width, canvas.height); undoStack.current.push(strokeBaseImage.current); if (undoStack.current.length > 12) undoStack.current.shift(); drawing.current = true; strokePoints.current = [point(event)]; canvas.setPointerCapture(event.pointerId); drawSmoothStroke(context, strokePoints.current); }
+  function move(event: React.PointerEvent<HTMLCanvasElement>) { if (!drawing.current) return; const context = event.currentTarget.getContext("2d"); if (!context || !strokeBaseImage.current) return; strokePoints.current.push(point(event)); context.putImageData(strokeBaseImage.current, 0, 0); drawSmoothStroke(context, strokePoints.current); }
+  function finish(event: React.PointerEvent<HTMLCanvasElement>) { drawing.current = false; strokePoints.current = []; strokeBaseImage.current = null; if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }
   function clear() { const canvas = canvasRef.current, context = canvas?.getContext("2d"); if (!canvas || !context) return; undoStack.current.push(context.getImageData(0, 0, canvas.width, canvas.height)); context.save(); context.setTransform(1, 0, 0, 1, 0, 0); context.fillStyle = "#fff"; context.fillRect(0, 0, canvas.width, canvas.height); context.restore(); setMatched(false); setAnalysis(null); }
   function undo() { const canvas = canvasRef.current, context = canvas?.getContext("2d"), previous = undoStack.current.pop(); if (canvas && context && previous) context.putImageData(previous, 0, 0); }
   function saveDrawing() { const link = document.createElement("a"); link.download = `퍼스트프렌드-그림-${new Date().toISOString().slice(0, 10)}.png`; link.href = canvasRef.current?.toDataURL("image/png") || ""; link.click(); }
@@ -125,7 +139,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
         <section className="ff-canvas-panel">
           <h2 className="ff-section-title">마음속 친구를 그려보세요</h2><p className="ff-description" style={{ margin: "5px 0 14px" }}>털색과 무늬, 귀와 얼굴 모양을 자유롭게 표현해 주세요.</p>
           <div className="ff-draw-tools" aria-label="그림 도구"><div className="ff-palette">{palette.map((color) => <button type="button" key={color.name} className="ff-color-button" data-active={brushColor.name === color.name} style={{ background: color.hex }} aria-label={`${color.name} 색상`} onClick={() => setBrushColor(color)}/>)}</div><label className="ff-brush-size">굵기 <input type="range" min="2" max="22" value={brushSize} onChange={(event) => setBrushSize(Number(event.target.value))}/></label></div>
-          <canvas ref={canvasRef} className="ff-canvas" aria-label="친구를 그리는 캔버스" onPointerDown={start} onPointerMove={move} onPointerUp={() => drawing.current = false} onPointerCancel={() => drawing.current = false}/>
+          <canvas ref={canvasRef} className="ff-canvas" aria-label="친구를 그리는 캔버스" onPointerDown={start} onPointerMove={move} onPointerUp={finish} onPointerCancel={finish}/>
           <div className="ff-drawing-actions"><ActionButton variant="neutralWeak" size="small" onClick={undo}><PrefixIcon svg={<IconArrowCounterclockwiseCircularLine/>}/>되돌리기</ActionButton><ActionButton variant="neutralWeak" size="small" onClick={clear}><PrefixIcon svg={<IconEraserHorizlineLine/>}/>지우기</ActionButton><ActionButton variant="neutralWeak" size="small" onClick={saveDrawing}><PrefixIcon svg={<IconArrowDownHorizlineLine/>}/>그림 저장</ActionButton></div>
         </section>
         </>
@@ -140,12 +154,12 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     <section className="ff-search-options">
       <div className="ff-kicker">공통 조건</div><div className="ff-chip-row"><Chip.RadioRoot value={species} onValueChange={(value) => setSpecies(value as string)}>{["전체", "고양이", "강아지"].map((item) => <Chip.RadioItem value={item} key={item}><Chip.Label>{item}</Chip.Label></Chip.RadioItem>)}</Chip.RadioRoot></div>
       <div style={{ marginTop: 14 }}><TextField prefixIcon={<IconMagnifyingglassLine/>} aria-label="보호동물 검색"><TextFieldInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder="품종, 지역, 특징 검색"/></TextField></div>
-      <ActionButton size="large" className="ff-action-link" style={{ marginTop: 12 }} onClick={match} disabled={analyzing || (mode==="photo"&&!preview)}><PrefixIcon svg={mode === "photo" ? <IconCameraLine/> : <IconMagnifyingglassSparkleLine/>}/>{analyzing ? "AI가 그림을 살펴보고 있어요…" : "특징을 분석해 친구 찾기"}</ActionButton>
+      <ActionButton size="large" className="ff-action-link" style={{ marginTop: 12 }} onClick={match} disabled={analyzing || (mode==="photo"&&!preview)}><PrefixIcon svg={mode === "photo" ? <IconCameraLine/> : <IconMagnifyingglassSparkleLine/>}/>{analyzing ? "그림을 살펴보고 있어요…" : "특징을 분석해 친구 찾기"}</ActionButton>
     </section>
 
     {matched && <section className="ff-section" id="match-results">
       <div className="ff-section-head"><h2 className="ff-section-title">{matched ? "닮은 순서로 찾은 친구" : "현재 보호 중인 친구"}</h2><span className="ff-meta">{visible.length}마리</span></div>
-      {analysis && <div className="ff-analysis-card"><div className="ff-analysis-head"><div><span>온디바이스 시각 분석</span><strong>그림에서 찾은 검색 태그</strong></div><span className="ff-analysis-badge">{analysis.usedOpenSourceModel ? "MobileCLIP + 특징 분석" : "특징 분석"}</span></div><div className="ff-tags">{analysis.tags.map(tag=><span className="ff-tag" key={tag}>{tag}</span>)}</div><p>색상·그림이 차지하는 면적·어두운 눈 영역·경계 밀도를 태그로 바꿨어요. 오픈소스 MobileCLIP은 강아지·고양이와 체형 단서를 보조하며, 결과는 공공데이터 태그와 비교합니다.</p></div>}
+      {analysis && <div className="ff-analysis-card"><div className="ff-analysis-head"><div><span>온디바이스 시각 분석</span><strong>그림에서 찾은 검색 태그</strong></div><span className="ff-analysis-badge">{analysis.usedOpenSourceModel ? "기기 안에서 분석" : "특징 분석"}</span></div><div className="ff-tags">{analysis.tags.map(tag=><span className="ff-tag" key={tag}>{tag}</span>)}</div><p>색상·그림이 차지하는 면적·어두운 눈 영역·경계 밀도를 태그로 바꿨어요. 그림은 서버에 저장하지 않고 공개된 보호동물 정보와 비교합니다.</p></div>}
       {matched && visible[0] && <Callout tone="positive" title={`${visible[0].name} 친구가 가장 가까워요`} description={`${visible[0].matchReason} 분석 태그와 공개된 품종·털색·체중 단서를 비교했으며 건강·성격·입양 성공은 추측하지 않았어요.`}/>}
       <div className="ff-animal-grid" style={{ marginTop: 14 }}>{visible.map((animal) => <AnimalCard animal={animal} key={animal.id}/>)}</div>
       {!visible.length && <div className="ff-empty"><strong>조건에 맞는 친구가 아직 없어요.</strong><p>지역이나 나이를 넓히거나, 같은 털색의 다른 품종을 살펴보세요.</p><ActionButton variant="neutralWeak" size="small" onClick={()=>{setRegion("전국");setAge("상관 없음");setQuery("");setRanked(animals);}}>조건 넓히기</ActionButton></div>}

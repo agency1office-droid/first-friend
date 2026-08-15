@@ -475,8 +475,8 @@ test("implements on-device visual tags and explicit external dummies", async () 
       readFile(new URL("../package.json", import.meta.url), "utf8"),
     ]);
   assert.match(finder, /온디바이스 시각 분석/);
-  assert.match(analyzer, /edgeDensity|eyeRatio|MobileNet/);
-  assert.match(packageJson, /@tensorflow-models\/mobilenet/);
+  assert.match(analyzer, /edgeDensity|eyeRatio|MobileCLIP/);
+  assert.match(packageJson, /@huggingface\/transformers/);
   assert.match(integrations, /DUMMY INTEGRATION/g);
   for (const table of [
     "saved_searches",

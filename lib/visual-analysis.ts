@@ -12,19 +12,50 @@ export type VisualAnalysis = {
   usedOpenSourceModel: boolean;
 };
 
-type MobileNetModel = {
+type ClipPrediction = { className: string; probability: number };
+type MobileClipModel = {
   classify(source: HTMLCanvasElement | HTMLImageElement, topK?: number): Promise<{ className: string; probability: number }[]>;
 };
 
-let modelPromise: Promise<MobileNetModel | null> | null = null;
+const mobileClipModelId = "plhery/mobileclip2-onnx";
+const mobileClipLabels = ["a dog", "a cat", "a small dog", "a large dog", "a small cat", "a large cat"];
+let modelPromise: Promise<MobileClipModel | null> | null = null;
+
+async function createMobileClip(device: "webgpu" | "wasm") {
+  const transformers = await import("@huggingface/transformers");
+  const options = { device, dtype: "fp32" as const, model_file_name: "onnx/s0/vision_model" };
+  const [tokenizer, processor, textModel, visionModel] = await Promise.all([
+    transformers.AutoTokenizer.from_pretrained(mobileClipModelId),
+    transformers.AutoProcessor.from_pretrained(mobileClipModelId, { config_file_name: "onnx/s0/preprocessor_config.json" }),
+    transformers.CLIPTextModelWithProjection.from_pretrained(mobileClipModelId, { ...options, model_file_name: "onnx/s0/text_model" }),
+    transformers.CLIPVisionModelWithProjection.from_pretrained(mobileClipModelId, options),
+  ]);
+  const textInputs = tokenizer(mobileClipLabels, { padding: "max_length", truncation: true });
+  const textOutput = await textModel(textInputs);
+  const textEmbeddings = textOutput.text_embeds.normalize(2, -1).tolist() as number[][];
+  return {
+    async classify(source: HTMLCanvasElement | HTMLImageElement) {
+      const image = source instanceof HTMLCanvasElement ? transformers.RawImage.fromCanvas(source) : await transformers.RawImage.read(source.src);
+      const imageInputs = await processor(image);
+      const imageOutput = await visionModel(imageInputs);
+      const imageEmbedding = (imageOutput.image_embeds.normalize(2, -1).tolist() as number[][])[0];
+      const scores = textEmbeddings.map((embedding) => embedding.reduce((sum, value, index) => sum + value * (imageEmbedding[index] || 0), 0));
+      const max = Math.max(...scores);
+      const probabilities = scores.map((score) => Math.exp((score - max) * 12));
+      const total = probabilities.reduce((sum, value) => sum + value, 0) || 1;
+      return mobileClipLabels.map((className, index) => ({ className, probability: probabilities[index] / total })).sort((a, b) => b.probability - a.probability) as ClipPrediction[];
+    },
+  } satisfies MobileClipModel;
+}
 
 async function loadModel() {
   if (!modelPromise) {
     modelPromise = (async () => {
       try {
-        const mobilenet = await import("@tensorflow-models/mobilenet");
-        await import("@tensorflow/tfjs");
-        return await mobilenet.load({ version: 2, alpha: 0.5 });
+        if (typeof navigator !== "undefined" && "gpu" in navigator) return await createMobileClip("webgpu");
+      } catch { /* Fall back to WASM on devices without usable WebGPU support. */ }
+      try {
+        return await createMobileClip("wasm");
       } catch {
         return null;
       }
@@ -33,7 +64,7 @@ async function loadModel() {
   return modelPromise;
 }
 
-/** Starts loading the on-device model without blocking the drawing UI. */
+/** Starts loading MobileCLIP without blocking the drawing UI. */
 export function preloadVisualModel() {
   void loadModel();
 }

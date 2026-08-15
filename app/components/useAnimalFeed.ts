@@ -137,14 +137,17 @@ export function useAnimalFeed(initialPage: AnimalPage) {
       setIsRestoring(false);
       return;
     }
+    const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior = "auto";
     let attempts = 0;
     const restore = () => {
       attempts += 1;
       const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-      window.scrollTo({ top: Math.min(target, maxScroll), behavior: "auto" });
+      window.scrollTo(0, Math.min(target, maxScroll));
       if (attempts < 12 && maxScroll < target) restoreFrame.current = window.requestAnimationFrame(restore);
       else {
         restoreFrame.current = null;
+        document.documentElement.style.scrollBehavior = previousScrollBehavior;
         if (restoreRevealTimer.current !== null) window.clearTimeout(restoreRevealTimer.current);
         restoreRevealTimer.current = null;
         setIsRestoring(false);
@@ -154,6 +157,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     return () => {
       if (restoreFrame.current !== null) window.cancelAnimationFrame(restoreFrame.current);
       restoreFrame.current = null;
+      document.documentElement.style.scrollBehavior = previousScrollBehavior;
     };
   }, [filtersReady, items.length, ready]);
 

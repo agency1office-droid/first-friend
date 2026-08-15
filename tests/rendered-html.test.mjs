@@ -739,13 +739,11 @@ test("keeps draw, photo, and condition journeys independent while draw uses perf
     );
   }
   assert.match(finder, /getStroke\(/);
-  assert.match(finder, /ff-freehand-demo-panel/);
   assert.match(finder, /ff-draw-species-panel|ff-canvas-panel/);
-  for (const option of ["선 굵기", "압력 변화", "선 따라가기", "선 다듬기", "끝맺음", "시작 가늘기", "시작 부분 둥글게", "끝 가늘기", "끝 부분 둥글게", "색상", "외곽선", "기본값으로", "설정 복사", "SVG로 복사"])
+  for (const option of ["브러시 크기", "지우개 크기", "색상 팔레트", "저장 형식", "PNG", "JPG", "WEBP", "그림 공유"])
     assert.match(finder, new RegExp(option));
   assert.match(finder, /되돌리기/);
   assert.match(finder, /지우기/);
-  assert.match(finder, /그림 저장/);
   assert.match(finder, /특징을 분석해 친구 찾기/);
   assert.match(drawPage, /<Finder animals={await getAnimalsWithPhotoCounts\(30\)} modeOnly="draw"\/>/);
   assert.doesNotMatch(drawPage, /PerfectFreehandCanvas/);

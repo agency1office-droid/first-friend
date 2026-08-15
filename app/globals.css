@@ -463,7 +463,9 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-page > :first-child { margin-top: 0; }
 .ff-page-header > :last-child { margin-bottom: 0; }
 .ff-app-back, .ff-more { min-height: 44px; display: inline-flex; align-items: center; }
-.ff-top-actions .ff-icon-link { min-width: 44px; min-height: 44px; }
+.ff-top-actions { gap: 0; }
+.ff-top-actions .ff-icon-link { width: 44px; height: 44px; min-width: 44px; min-height: 44px; color: var(--seed-color-fg-neutral-muted); background: transparent; box-shadow: none; }
+.ff-top-actions .ff-icon-link svg { width: 22px; height: 22px; }
 .ff-section-head > * { min-width: 0; }
 .ff-section-head .ff-section-title { text-wrap: balance; }
 .ff-cta-section { display: grid; gap: 12px; }

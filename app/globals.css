@@ -706,17 +706,18 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 @media(max-width:700px){
   .ff-drawing-workspace { display: flex; flex-direction: column; gap: 8px; padding-inline: 10px; }
   .ff-drawing-topbar { flex: none; grid-template-columns: 36px 1fr 86px; }
-  .ff-modern-drawing-topbar { grid-template-columns: 44px minmax(0, 1fr); padding-inline: 4px; }
+  .ff-modern-drawing-topbar { width: 100%; box-sizing: border-box; grid-template-columns: 44px minmax(0, 1fr); padding-inline: 4px; }
   .ff-modern-drawing-topbar .ff-drawing-toolbar { padding-right: 84px; }
   .ff-drawing-quick-actions { top: 10px; right: 4px; }
   .ff-drawing-toolbar { gap: 4px; }
   .ff-toolbar-color, .ff-toolbar-tool { width: 36px; height: 36px; }
   .ff-drawing-workspace .ff-draw-species-panel { padding: 10px 12px; border-radius: 14px; }
-  .ff-drawing-workspace .ff-canvas-panel { flex: 1 1 auto; min-height: 0; padding: 16px 12px 12px; border-radius: 16px; }
+  .ff-drawing-workspace .ff-canvas-panel { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; padding: 16px 12px 12px; border-radius: 16px; }
   .ff-drawing-workspace .ff-canvas-panel .ff-description { font-size: 13px; }
-  .ff-drawing-workspace .ff-canvas { height: clamp(300px, 52dvh, 560px); min-height: 300px; }
-  .ff-drawing-bottom-actions { grid-template-columns: 44px 44px minmax(0, 1fr) minmax(132px, 1.2fr); grid-template-rows: 52px; height: 68px; min-height: 68px; max-height: 68px; gap: 6px; margin-inline: 0; padding: 8px; border-radius: 16px 16px 0 0; }
-  .ff-drawing-bottom-actions > button, .ff-drawing-upload-action { min-height: 52px; padding-inline: 6px; font-size: 13px; }
+  .ff-drawing-workspace .ff-canvas { flex: 1 1 auto; width: 100%; height: auto; min-height: 300px; }
+  .ff-drawing-bottom-actions { grid-template-columns: 40px 40px minmax(0, 1fr) minmax(0, 1.2fr); grid-template-rows: 52px; width: 100%; box-sizing: border-box; height: 68px; min-height: 68px; max-height: 68px; gap: 6px; margin-inline: 0; padding: 8px; border-radius: 16px 16px 0 0; }
+  .ff-drawing-bottom-actions > button, .ff-drawing-upload-action { min-width: 0; min-height: 52px; padding-inline: 6px; font-size: 13px; }
+  .ff-drawing-upload-action, .ff-drawing-match-action { white-space: normal; word-break: keep-all; }
   .ff-drawing-bottom-actions > button:nth-child(-n+2) svg { width: 24px; height: 24px; }
   .ff-drawing-match-action { padding-inline: 8px !important; font-size: 14px !important; }
   .ff-stroke-settings-grid { grid-template-columns: 1fr 1fr; }

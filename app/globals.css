@@ -178,12 +178,12 @@ img { display: block; max-width: 100%; }
 .ff-image-dialog-nav { position: absolute; z-index: 2; right: 0; bottom: 22px; left: 0; display: flex; justify-content: center; gap: 8px; padding: 0 12px; overflow-x: auto; }
 html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-body { padding: 24px 16px 36px; }
-.ff-detail-status-banner { display: flex; align-items: center; gap: 8px; padding: 14px 16px; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
-.ff-detail-status-banner.ff-public-status-protected { padding-block: 16px; color: var(--seed-color-fg-warning); background: var(--seed-color-bg-warning-weak); box-shadow: inset 0 1px 0 var(--seed-color-stroke-warning-weak), inset 0 -1px 0 var(--seed-color-stroke-warning-weak); }
-.ff-detail-status-banner.ff-public-status-notice { color: var(--seed-color-fg-informative); background: var(--seed-color-bg-informative-weak); }
-.ff-detail-status-day { flex: none; padding: 3px 9px; border-radius: 999px; color: var(--seed-color-fg-informative); background: var(--seed-color-bg-informative-weak); font-size: 13px; font-weight: var(--seed-font-weight-bold); line-height: 18px; }
-.ff-detail-status-banner strong { overflow-wrap: anywhere; color: inherit; font-size: 15px; line-height: 21px; }
-.ff-detail-status-banner.ff-public-status-protected strong { font-size: 17px; line-height: 24px; }
+.ff-detail-gallery-status { position: absolute; z-index: 3; right: 0; bottom: 0; left: 0; display: flex; align-items: center; gap: 6px; max-width: none; padding: 40px 72px 14px 16px; overflow-wrap: anywhere; color: var(--seed-color-fg-neutral-inverted); background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.72)); font-size: 16px; font-weight: var(--seed-font-weight-bold); line-height: 22px; pointer-events: none; }
+.ff-detail-gallery-status::before { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--seed-color-fg-brand); content: ""; }
+.ff-detail-gallery-status.ff-public-status-protected::before { background: var(--seed-color-bg-warning-solid); }
+.ff-detail-gallery-status.ff-public-status-notice::before { background: var(--seed-color-bg-informative-solid); }
+.ff-detail-gallery-status .ff-detail-status-day { flex: none; padding: 0; color: inherit; background: transparent; font-size: inherit; line-height: inherit; }
+.ff-detail-gallery-status strong { overflow-wrap: anywhere; color: inherit; font-size: inherit; line-height: inherit; }
 .ff-detail-shelter { display: flex; align-items: center; gap: 10px; padding: 16px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
 .ff-detail-shelter-icon { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 12px; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
 .ff-detail-shelter-icon svg { width: 22px; height: 22px; }

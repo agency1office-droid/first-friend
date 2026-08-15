@@ -100,6 +100,7 @@ export function AppChrome({children}:{children:React.ReactNode}){
     }
     if(stack.at(-1)!==current){stack.push(current);writeHistory(stack)}
   },[path]);
+  if(path==="/find/draw") return <div className="ff-drawing-shell">{children}</div>;
   const hideBottom=route?.mode==="detail"||route?.mode==="form";
   const resolvedRoute=route||{rule:/.*/,title:"퍼스트 프렌드",back:"/",mode:"stack" as const};
   return <div className="ff-shell" data-route-mode={route?.mode||"main"}>

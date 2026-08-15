@@ -124,7 +124,8 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
 
   const visible = (matched ? ranked : animals).filter((animal) => !query || `${animal.name} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
 
-  return <>
+  return <div className={mode === "draw" ? "ff-drawing-workspace" : undefined}>
+    {mode === "draw" && <div className="ff-drawing-topbar"><a href="/find" aria-label="그림 찾기 닫기">‹</a><h1>그림으로 찾기</h1><span>기기 안에서 분석</span></div>}
     {mode === "draw" &&
         <>
         <section className="ff-canvas-panel ff-draw-species-panel">
@@ -166,5 +167,5 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
       {matched && visible[0] && <div className="ff-result-shortcut"><a href={`/friends/${visible[0].id}`}>첫 번째 친구 자세히 보기</a></div>}
       {matched && <div className="ff-save-search"><ActionButton variant="neutralWeak" onClick={saveSearch}>이 조건과 신규 등록 알림 저장</ActionButton>{saveState&&<p className="ff-meta">{saveState}</p>}</div>}
     </section>}
-  </>;
+  </div>;
 }

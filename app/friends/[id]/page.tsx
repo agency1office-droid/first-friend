@@ -193,11 +193,6 @@ export default async function AnimalPage({
         />}
         <section className="ff-info-block">
           <h2>구조와 보호 정보</h2>
-          <p>
-            <strong>{animal.shelter}</strong>
-            <br />
-            {animal.region}
-          </p>
           <p className="ff-description">
             정보 갱신 {animal.updated}. 공공데이터에 없는 성격·질병·접종 정보는
             추측하지 않아요.

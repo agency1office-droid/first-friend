@@ -73,6 +73,8 @@ function filtersFromUrl() {
 
 export function useAnimalFeed(initialPage: AnimalPage) {
   const restorePending = useRef(false);
+  const restoreScrollY = useRef(0);
+  const restoreFrame = useRef<number | null>(null);
   const [items, setItems] = useState<Animal[]>(initialPage.items);
   const [total, setTotal] = useState(initialPage.total);
   const [cursor, setCursor] = useState<string | null>(initialPage.nextCursor);
@@ -94,15 +96,44 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   useEffect(() => () => loadMoreController.current?.abort(), []);
 
   useEffect(() => {
+    const previousRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
     const snapshot = readFeedSnapshot();
-    if (!snapshot) return;
+    if (!snapshot) return () => { window.history.scrollRestoration = previousRestoration; };
     restorePending.current = true;
+    restoreScrollY.current = snapshot.scrollY;
     const timer = window.setTimeout(() => {
       setItems(snapshot.items); setTotal(snapshot.total); setCursor(snapshot.cursor);
       setSyncedAt(snapshot.syncedAt); setStale(snapshot.stale);
     }, 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      if (restoreFrame.current !== null) window.cancelAnimationFrame(restoreFrame.current);
+      window.history.scrollRestoration = previousRestoration;
+    };
   }, []);
+
+  // 상세 페이지에서 돌아왔을 때 데이터가 화면에 배치된 뒤에 복원합니다.
+  // 목록 높이가 아직 충분하지 않은 초기 렌더에서는 여러 프레임에 걸쳐 재시도합니다.
+  useEffect(() => {
+    if (!restorePending.current || !ready || !filtersReady || !items.length) return;
+    const target = restoreScrollY.current;
+    restorePending.current = false;
+    if (target <= 0) return;
+    let attempts = 0;
+    const restore = () => {
+      attempts += 1;
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      window.scrollTo({ top: Math.min(target, maxScroll), behavior: "auto" });
+      if (attempts < 12 && maxScroll < target) restoreFrame.current = window.requestAnimationFrame(restore);
+      else restoreFrame.current = null;
+    };
+    restoreFrame.current = window.requestAnimationFrame(restore);
+    return () => {
+      if (restoreFrame.current !== null) window.cancelAnimationFrame(restoreFrame.current);
+      restoreFrame.current = null;
+    };
+  }, [filtersReady, items.length, ready]);
 
   const endpoint = useCallback((nextCursor?: string | null) => {
     const params = new URLSearchParams({ limit: "20" });
@@ -243,22 +274,27 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     if (!ready || !filtersReady || !items.length) return;
     try {
       const url = `${window.location.pathname}${window.location.search}`;
-      const save = () => {
-        const current = JSON.parse(window.sessionStorage.getItem(HOME_FEED_SNAPSHOT_KEY) || "null") as Partial<FeedSnapshot> | null;
-        window.sessionStorage.setItem(HOME_FEED_SNAPSHOT_KEY, JSON.stringify({ url, items, total, cursor, syncedAt, stale, scrollY: Number(current?.scrollY) || window.scrollY } satisfies FeedSnapshot));
+      const save = (scrollY = window.scrollY) => {
+        window.sessionStorage.setItem(HOME_FEED_SNAPSHOT_KEY, JSON.stringify({ url, items, total, cursor, syncedAt, stale, scrollY } satisfies FeedSnapshot));
       };
-      save();
+      const current = JSON.parse(window.sessionStorage.getItem(HOME_FEED_SNAPSHOT_KEY) || "null") as Partial<FeedSnapshot> | null;
+      save(Number(current?.scrollY) || window.scrollY);
       let saveTimer: number | null = null;
       const onScroll = () => {
         if (saveTimer !== null) return;
         saveTimer = window.setTimeout(() => {
           saveTimer = null;
-          const current = JSON.parse(window.sessionStorage.getItem(HOME_FEED_SNAPSHOT_KEY) || "null") as Partial<FeedSnapshot> | null;
-          if (current?.url === url) window.sessionStorage.setItem(HOME_FEED_SNAPSHOT_KEY, JSON.stringify({ ...current, scrollY: window.scrollY }));
+          save();
         }, 200);
       };
+      const saveBeforeLeave = () => save();
       window.addEventListener("scroll", onScroll, { passive: true });
-      return () => { window.removeEventListener("scroll", onScroll); if (saveTimer !== null) window.clearTimeout(saveTimer); };
+      window.addEventListener("pagehide", saveBeforeLeave);
+      return () => {
+        window.removeEventListener("scroll", onScroll);
+        window.removeEventListener("pagehide", saveBeforeLeave);
+        if (saveTimer !== null) window.clearTimeout(saveTimer);
+      };
     } catch { return undefined; }
   }, [cursor, filtersReady, items, ready, stale, syncedAt, total]);
 

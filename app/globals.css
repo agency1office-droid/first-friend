@@ -674,7 +674,16 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-drawing-workspace .ff-canvas-panel .ff-description { margin: 0 !important; }
 .ff-drawing-workspace .ff-draw-tools { margin: 0; }
 .ff-drawing-workspace .ff-stroke-settings { margin-top: -2px; }
-.ff-drawing-workspace .ff-canvas { height: min(56dvh, 620px); min-height: 260px; border-color: var(--seed-color-stroke-neutral-muted); border-radius: 16px; box-shadow: inset 0 1px 2px rgba(0,0,0,.025); }
+.ff-drawing-guide-picker { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 14px; background: var(--seed-color-bg-neutral-weak); }
+.ff-drawing-guide-picker > div:first-child { display: grid; gap: 3px; min-width: 0; }
+.ff-drawing-guide-picker strong { font-size: 14px; }
+.ff-drawing-guide-picker small { color: var(--seed-color-fg-neutral-muted); font-size: 12px; }
+.ff-drawing-guide-options { display: flex; flex: 0 0 auto; gap: 5px; }
+.ff-drawing-guide-options button { min-height: 34px; padding: 0 10px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 999px; background: var(--seed-color-bg-layer-default); color: var(--seed-color-fg-neutral-muted); font-size: 12px; font-weight: var(--seed-font-weight-bold); cursor: pointer; }
+.ff-drawing-guide-options button[data-active="true"] { border-color: var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-weak); color: var(--seed-color-fg-brand); }
+.ff-drawing-canvas-wrap { position: relative; min-height: 0; }
+.ff-drawing-guide { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.ff-drawing-workspace .ff-canvas { position: relative; z-index: 0; height: min(56dvh, 620px); min-height: 260px; border-color: var(--seed-color-stroke-neutral-muted); border-radius: 16px; box-shadow: inset 0 1px 2px rgba(0,0,0,.025); }
 .ff-drawing-workspace .ff-drawing-actions { padding-top: 2px; }
 .ff-drawing-workspace .ff-drawing-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .ff-drawing-workspace .ff-drawing-toolbar { justify-content: flex-end; }
@@ -716,6 +725,9 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
   .ff-drawing-workspace .ff-draw-species-panel { padding: 10px 12px; border-radius: 14px; }
   .ff-drawing-workspace .ff-canvas-panel { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; padding: 16px 12px 12px; border-radius: 16px; }
   .ff-drawing-workspace .ff-canvas-panel .ff-description { font-size: 13px; }
+  .ff-drawing-guide-picker { align-items: flex-start; flex-direction: column; gap: 9px; }
+  .ff-drawing-guide-options { width: 100%; }
+  .ff-drawing-guide-options button { flex: 1 1 0; }
   .ff-drawing-workspace .ff-canvas { flex: 1 1 auto; width: 100%; height: auto; min-height: 300px; }
   .ff-drawing-bottom-actions { grid-template-columns: 40px 40px minmax(0, 1fr) minmax(0, 1.2fr); grid-template-rows: 52px; width: 100%; box-sizing: border-box; height: 68px; min-height: 68px; max-height: 68px; gap: 6px; margin-inline: 0; padding: 8px; border-radius: 16px 16px 0 0; }
   .ff-drawing-bottom-actions > button, .ff-drawing-upload-action { min-width: 0; min-height: 52px; padding-inline: 6px; font-size: 13px; }

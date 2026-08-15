@@ -181,6 +181,33 @@ test("replaces species tabs with actionable shelter-distance animal filters", as
   assert.doesNotMatch(homeFeed, /현재 조건에 맞는 친구가 없어요/);
 });
 
+test("adds cached, deferred AI animal introductions without putting image bytes in storage", async () => {
+  const [page, intro, api, worker, migration, env, vercel] = await Promise.all([
+    readFile(new URL("../app/friends/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/AnimalAiIntro.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/animal-ai/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/animal-ai.ts", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260815000100_animal_ai_summaries.sql", import.meta.url), "utf8"),
+    readFile(new URL("../.env.example", import.meta.url), "utf8"),
+    readFile(new URL("../vercel.json", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /<AnimalAiIntro animalId=\{animal\.id\} \/>/);
+  assert.match(page, /ff-detail-shelter[\s\S]*<AnimalAiIntro/);
+  assert.match(intro, /AI가 발견한 이 친구의 매력/);
+  assert.match(intro, /공개 정보와 사진을 바탕으로 작성한 참고용 소개/);
+  assert.match(api, /enqueueAnimalAiSummary/);
+  assert.match(worker, /createHash\("sha256"\)/);
+  assert.match(worker, /MAX_IMAGE_BYTES/);
+  assert.match(worker, /redirect: "error"/);
+  assert.match(worker, /OPENAI_API_KEY/);
+  assert.match(worker, /next_attempt_at/);
+  assert.doesNotMatch(worker, /insert\([^)]*image/);
+  for (const column of ["animal_id", "analysis_key", "generated_summary", "status", "model_version", "source_updated_at", "retry_count", "last_error"]) assert.match(migration, new RegExp(column));
+  assert.match(env, /OPENAI_API_KEY=/);
+  assert.match(env, /CRON_SECRET=/);
+  assert.match(vercel, /\/api\/cron\/animal-ai/);
+});
+
 test("normalizes public API weight formats before assigning size groups", async () => {
   const migration = await readFile(new URL("../supabase/migrations/20260814000300_fix_public_animal_size_groups.sql", import.meta.url), "utf8");
   assert.match(migration, /regexp_replace\(coalesce\(traits_json, ''\)/);

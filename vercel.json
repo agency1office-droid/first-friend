@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/public-lost-animals",
       "schedule": "10 19 * * *"
+    },
+    {
+      "path": "/api/cron/animal-ai",
+      "schedule": "20 19 * * *"
     }
   ]
 }

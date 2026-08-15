@@ -226,6 +226,10 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-shelter-copy p { margin: 0; overflow-wrap: anywhere; color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 18px; }
 .ff-detail-shelter-meta { margin: 0; color: var(--seed-color-fg-neutral-subtle); font-size: 12px; font-weight: 600; line-height: 17px; }
 .ff-detail-shelter-distance { color: var(--seed-color-fg-brand); }
+.ff-detail-ai-section { padding: 16px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
+.ff-detail-ai-section .seed-callout { margin: 0; }
+.ff-detail-ai-copy, .ff-detail-ai-disclaimer { display: block; }
+.ff-detail-ai-disclaimer { margin-top: 8px; color: var(--seed-color-fg-neutral-subtle); font-size: 12px; line-height: 18px; }
 .ff-detail-shelter-actions { display: flex; flex: none; align-items: center; gap: 2px; margin-left: auto; }
 .ff-detail-contact-link { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--seed-color-fg-neutral-subtle); opacity: .72; appearance: none; cursor: pointer; }
 .ff-detail-contact-link svg { width: 22px; height: 22px; }

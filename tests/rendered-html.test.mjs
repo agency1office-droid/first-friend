@@ -852,7 +852,7 @@ test("adapts an accessible board-row information pattern without mixing design t
   ]);
   assert.match(board, /seed-design\/ui\/accordion/);
   assert.match(board, /AccordionTrigger/);
-  assert.match(detail, /<InfoBoard/);
+  assert.doesNotMatch(detail, /<InfoBoard/);
   assert.match(prepare, /<InfoBoard/);
   for (const source of [draw, photo, conditions])
     assert.doesNotMatch(source, /‹ 친구 찾기/);

@@ -85,12 +85,22 @@ function isDuplicateTrait(trait: string, animal: Animal, colors: string[], publi
   });
 }
 
-function DetailInfoRow({ icon: Icon, label, value, className }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string; className?: string }) {
+function DetailInfoRow({ icon: Icon, label, value, helper, className }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string; helper?: string; className?: string }) {
   return <div className={`ff-detail-info-row${className ? ` ${className}` : ""}`}>
     <Icon className="ff-detail-info-icon" aria-hidden />
     <span>{label}</span>
-    <strong data-muted={value === "확인 필요" || undefined}>{value}</strong>
+    <strong data-muted={value === "확인 필요" || undefined}>{helper ? <span className="ff-detail-info-value"><span>{value}</span><small>{helper}</small></span> : value}</strong>
   </div>;
+}
+
+function animalKnowledge(animal: Animal) {
+  const isCat = /고양이/.test(animal.species);
+  return {
+    species: isCat ? "독립적인 면과 호기심이 함께 있어요. 성격과 생활 습관은 개체마다 달라요." : "사람과 교감하며 생활하는 동물이에요. 품종과 개체에 따라 활동량과 성향이 달라요.",
+    size: isCat ? "성묘는 보통 3~5kg 정도예요. 개체에 따라 7kg 이상까지 자랄 수 있어요." : "소형견부터 대형견까지 크기 차이가 커요. 대형견은 30kg 이상까지 자랄 수 있어요.",
+    age: isCat ? "평균 12~18년 정도 살고, 20년 이상 사는 경우도 있어요." : "평균 10~13년 정도 살고, 품종과 건강에 따라 15년 이상 사는 경우도 있어요.",
+    neutered: "발정 관련 행동과 일부 생식기 질환 위험을 줄이는 데 도움을 줄 수 있어요. 시기와 방법은 수의사와 상담해 주세요.",
+  };
 }
 
 export default async function AnimalPage({
@@ -115,6 +125,7 @@ export default async function AnimalPage({
   const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}` : null;
   const shelterMapHref = `https://map.kakao.com/link/search/${encodeURIComponent(`${animal.shelter} ${shelterAddress}`)}`;
   const weight = detailWeight(animal);
+  const knowledge = animalKnowledge(animal);
   const foundArea = animal.life.find((item) => item.startsWith("발견 지역:"))?.replace("발견 지역:", "").replace(/\s*·\s*정확한 구조 위치 비공개\s*$/, "").trim() || "확인 필요";
   const publicState = publicStatus.publicState || "보호 중";
   const visibleTraits = animal.traits.filter((trait) => !isDuplicateTrait(trait, animal, colors, publicState));
@@ -160,13 +171,13 @@ export default async function AnimalPage({
           <h2 id="detail-info-title">동물 친구 정보</h2>
           <div className="ff-detail-info-list">
             <DetailInfoRow icon={IconCalendarLine} label="공고 기간" value={publicStatus.notice?.replace(/^공고\s*/, "") || "확인 필요"} />
-            <DetailInfoRow icon={IconPawprintLine} label="종류" value={`${animal.species} · ${animal.breed}`} />
-            <DetailInfoRow icon={IconNeedleScaleLine} label="크기" value={detailSize(animal)} />
+            <DetailInfoRow icon={IconPawprintLine} label="종류" value={`${animal.species} · ${animal.breed}`} helper={knowledge.species} />
+            <DetailInfoRow icon={IconNeedleScaleLine} label="크기" value={detailSize(animal)} helper={knowledge.size} />
             <DetailInfoRow icon={IconCheckmarkScaleLine} label="체중" value={weight === undefined ? "확인 필요" : `${weight}kg`} />
             <DetailInfoRow icon={IconTagLine} label="털색" value={colors.length ? colors.join(" · ") : "확인 필요"} />
-            <DetailInfoRow icon={IconCalendarLine} label="나이" value={`${ageLabels[animal.ageGroup]} · ${animal.age}`} />
+            <DetailInfoRow icon={IconCalendarLine} label="나이" value={`${ageLabels[animal.ageGroup]} · ${animal.age}`} helper={knowledge.age} />
             <DetailInfoRow icon={IconMalesymbolFemalesymbolLine} label="성별" value={animal.sex || "확인 필요"} />
-            <DetailInfoRow icon={IconCheckmarkCircleFill} label="중성화" value={detailNeutered(animal)} />
+            <DetailInfoRow icon={IconCheckmarkCircleFill} label="중성화" value={detailNeutered(animal)} helper={knowledge.neutered} />
             <DetailInfoRow icon={IconLocationpinLine} label="발견 지역" value={foundArea} />
           </div>
         </section>

@@ -68,20 +68,31 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ratio = window.devicePixelRatio || 1;
-    const width = canvas.getBoundingClientRect().width;
-    canvas.width = width * ratio;
-    canvas.height = 280 * ratio;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-    context.scale(ratio, ratio);
-    context.fillStyle = "#ffffff";
-    context.fillRect(0, 0, width, 280);
-    context.lineCap = "round";
-    context.lineJoin = "round";
+    const resize = () => {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(1, Math.round(rect.width));
+      const height = Math.max(1, Math.round(rect.height));
+      const pixelWidth = Math.round(width * ratio);
+      const pixelHeight = Math.round(height * ratio);
+      if (canvas.width === pixelWidth && canvas.height === pixelHeight) return;
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, width, height);
+      context.lineCap = "round";
+      context.lineJoin = "round";
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
+    return () => observer.disconnect();
   }, []);
 
-  function point(event: React.PointerEvent<HTMLCanvasElement>): [number, number, number] { const rect = event.currentTarget.getBoundingClientRect(); return [event.clientX - rect.left, event.clientY - rect.top, event.pressure || 0.5]; }
+  function point(event: React.PointerEvent<HTMLCanvasElement>): [number, number, number] { const canvas = event.currentTarget; const rect = canvas.getBoundingClientRect(); const ratio = window.devicePixelRatio || 1; const logicalWidth = canvas.width / ratio; const logicalHeight = canvas.height / ratio; return [(event.clientX - rect.left) * (logicalWidth / rect.width), (event.clientY - rect.top) * (logicalHeight / rect.height), event.pressure || 0.5]; }
   function drawSmoothStroke(context: CanvasRenderingContext2D, points: [number, number, number][]) {
     if (!points.length) return;
     const outline = getStroke(points, { size: brushSize, thinning, smoothing, streamline, simulatePressure, easing: easing === "Linear" ? undefined : (value: number) => value * value, last: true, start: { cap: capStart, taper: taperStart || false }, end: { cap: capEnd, taper: taperEnd || false } });

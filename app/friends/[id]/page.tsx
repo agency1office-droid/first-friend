@@ -191,18 +191,6 @@ export default async function AnimalPage({
           lng={animal.shelterLng}
           approximate={animal.approximateShelterLocation}
         />}
-        <section className="ff-info-block">
-          <h2>구조와 보호 정보</h2>
-          <p className="ff-description">
-            정보 갱신 {animal.updated}. 공공데이터에 없는 성격·질병·접종 정보는
-            추측하지 않아요.
-          </p>
-        </section>
-        <Callout
-          tone="informative"
-          title="건강카드는 공개 정보의 요약입니다"
-          description="표시되지 않은 검사·접종·치료 여부는 보호처 상담과 실제 만남에서 반드시 다시 확인하세요. 개인 연락처와 정확한 주소는 공개하지 않습니다."
-        />
         <DeferredSection>
           <NameSuggestionBox animalId={animal.id} currentName={animal.name} />
         </DeferredSection>

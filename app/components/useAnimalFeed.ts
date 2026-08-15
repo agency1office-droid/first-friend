@@ -291,6 +291,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
       window.addEventListener("scroll", onScroll, { passive: true });
       window.addEventListener("pagehide", saveBeforeLeave);
       return () => {
+        save();
         window.removeEventListener("scroll", onScroll);
         window.removeEventListener("pagehide", saveBeforeLeave);
         if (saveTimer !== null) window.clearTimeout(saveTimer);

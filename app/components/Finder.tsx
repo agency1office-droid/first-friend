@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Animal } from "../../lib/data";
-import { analyzeVisual, animalVisualTags, type VisualAnalysis } from "../../lib/visual-analysis";
+import { analyzeVisual, animalVisualTags, preloadVisualModel, type VisualAnalysis } from "../../lib/visual-analysis";
 import { AnimalCard } from "./AnimalCard";
 import { ActionButton } from "seed-design/ui/action-button";
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
@@ -46,6 +46,10 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
 
   const breeds = useMemo(() => ["상관 없음", ...Array.from(new Set(animals.map((animal) => animal.breed))).slice(0, 30)], [animals]);
   const regions = useMemo(() => ["전국", ...Array.from(new Set(animals.map((animal) => animal.region.split(" ")[0]))).filter(Boolean)], [animals]);
+
+  useEffect(() => {
+    if (mode === "draw" || mode === "photo") preloadVisualModel();
+  }, [mode]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -136,7 +140,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     <section className="ff-search-options">
       <div className="ff-kicker">공통 조건</div><div className="ff-chip-row"><Chip.RadioRoot value={species} onValueChange={(value) => setSpecies(value as string)}>{["전체", "고양이", "강아지"].map((item) => <Chip.RadioItem value={item} key={item}><Chip.Label>{item}</Chip.Label></Chip.RadioItem>)}</Chip.RadioRoot></div>
       <div style={{ marginTop: 14 }}><TextField prefixIcon={<IconMagnifyingglassLine/>} aria-label="보호동물 검색"><TextFieldInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder="품종, 지역, 특징 검색"/></TextField></div>
-      <ActionButton size="large" className="ff-action-link" style={{ marginTop: 12 }} onClick={match} disabled={analyzing || (mode==="photo"&&!preview)}><PrefixIcon svg={mode === "photo" ? <IconCameraLine/> : <IconMagnifyingglassSparkleLine/>}/>{analyzing ? "기기에서 특징 분석 중…" : "특징을 분석해 친구 찾기"}</ActionButton>
+      <ActionButton size="large" className="ff-action-link" style={{ marginTop: 12 }} onClick={match} disabled={analyzing || (mode==="photo"&&!preview)}><PrefixIcon svg={mode === "photo" ? <IconCameraLine/> : <IconMagnifyingglassSparkleLine/>}/>{analyzing ? "AI가 그림을 살펴보고 있어요…" : "특징을 분석해 친구 찾기"}</ActionButton>
     </section>
 
     {matched && <section className="ff-section" id="match-results">

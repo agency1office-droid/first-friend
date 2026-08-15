@@ -12,6 +12,32 @@ export type VisualAnalysis = {
   usedOpenSourceModel: boolean;
 };
 
+type MobileNetModel = {
+  classify(source: HTMLCanvasElement | HTMLImageElement, topK?: number): Promise<{ className: string; probability: number }[]>;
+};
+
+let modelPromise: Promise<MobileNetModel | null> | null = null;
+
+async function loadModel() {
+  if (!modelPromise) {
+    modelPromise = (async () => {
+      try {
+        const mobilenet = await import("@tensorflow-models/mobilenet");
+        await import("@tensorflow/tfjs");
+        return await mobilenet.load({ version: 2, alpha: 0.5 });
+      } catch {
+        return null;
+      }
+    })();
+  }
+  return modelPromise;
+}
+
+/** Starts loading the on-device model without blocking the drawing UI. */
+export function preloadVisualModel() {
+  void loadModel();
+}
+
 const swatches = [
   ["검정", 35, 35, 35], ["흰색", 238, 238, 235], ["회색", 135, 135, 135],
   ["갈색", 132, 86, 50], ["치즈", 225, 145, 42], ["크림", 226, 208, 168],
@@ -37,11 +63,9 @@ function modelHints(predictions: { className: string; probability: number }[]) {
 
 async function classify(source: HTMLCanvasElement | HTMLImageElement) {
   try {
-    const mobilenet = await import("@tensorflow-models/mobilenet");
-    await import("@tensorflow/tfjs");
-    const model = await mobilenet.load({ version: 2, alpha: 0.5 });
+    const model = await loadModel();
+    if (!model) return [];
     const predictions = await model.classify(source, 5);
-    model.dispose();
     return predictions;
   } catch { return []; }
 }

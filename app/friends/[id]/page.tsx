@@ -89,7 +89,7 @@ function isDuplicateTrait(trait: string, animal: Animal, colors: string[], publi
 function formatDetailHelper(value: string): ReactNode {
   if (value.length < 42) return value;
   const sentenceIndex = value.search(/[.!?。！？](?=\s|$)/);
-  if (sentenceIndex >= 16 && sentenceIndex <= 64 && sentenceIndex < value.length - 8) {
+  if (value.length >= 32 && sentenceIndex >= 12 && sentenceIndex <= 64 && sentenceIndex < value.length - 8) {
     return <>{value.slice(0, sentenceIndex + 1)}<br />{value.slice(sentenceIndex + 1).trim()}</>;
   }
   const commaIndex = value.indexOf(",");

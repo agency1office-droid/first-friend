@@ -165,8 +165,8 @@ export default async function AnimalPage({
           <div className="ff-detail-info-list">
             <DetailInfoRow icon={IconCalendarLine} label="공고 기간" value={publicStatus.notice?.replace(/^공고\s*/, "") || "확인 필요"} />
             <DetailInfoRow icon={IconPawprintLine} label="종류" value={`${animal.species} · ${animal.breed}`} />
-            <DetailInfoRow icon={IconCheckmarkScaleLine} label="크기" value={detailSize(animal)} />
-            <DetailInfoRow icon={IconNeedleScaleLine} label="체중" value={weight === undefined ? "확인 필요" : `${weight}kg`} />
+            <DetailInfoRow icon={IconNeedleScaleLine} label="크기" value={detailSize(animal)} />
+            <DetailInfoRow icon={IconCheckmarkScaleLine} label="체중" value={weight === undefined ? "확인 필요" : `${weight}kg`} />
             <DetailInfoRow icon={IconTagLine} label="털색" value={colors.length ? colors.join(" · ") : "확인 필요"} />
             <DetailInfoRow icon={IconCalendarLine} label="나이" value={`${ageLabels[animal.ageGroup]} · ${animal.age}`} />
             <DetailInfoRow icon={IconMalesymbolFemalesymbolLine} label="성별" value={animal.sex || "확인 필요"} />

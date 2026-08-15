@@ -2,7 +2,6 @@ import { getAnimalById } from "../../../lib/public-data";
 import type { Animal } from "../../../lib/data";
 import { getAnimalPublicStatus, getNoticeDaysRemaining } from "../../../lib/animal-public-status";
 import { Callout } from "seed-design/ui/callout";
-import { Badge } from "seed-design/ui/badge";
 import {
   IconCheckmarkCircleFill,
   IconChevronRightLine,
@@ -132,6 +131,12 @@ export default async function AnimalPage({
         </a>
       </section>
       <article className="ff-detail-body">
+        <div className="ff-detail-top">
+          <div>
+            <div className="ff-kicker">{animal.source}</div>
+            <h1 className="ff-detail-name">{animal.name}</h1>
+          </div>
+        </div>
         <nav className="ff-detail-taxonomy" aria-label="동물 분류">
           <span>{animal.species}</span>
           <IconChevronRightLine aria-hidden />
@@ -143,25 +148,10 @@ export default async function AnimalPage({
           <DetailFacet label="나이" value={`${ageLabels[animal.ageGroup]} · ${animal.age}`} />
           <DetailFacet label="성별" value={animal.sex || "확인 필요"} />
           <DetailFacet label="중성화" value={detailNeutered(animal)} />
-          <DetailFacet label="보호 단계" value={publicStatus.statusLabel} />
         </section>
-        <div className="ff-detail-top">
-          <div>
-            <div className="ff-kicker">{animal.source}</div>
-            <h1 className="ff-detail-name">{animal.name}</h1>
-          </div>
-          <Badge tone={publicStatus.tone} variant="weak">
-            {publicStatus.statusLabel}
-          </Badge>
-        </div>
         <p className="ff-description" style={{ marginTop: 8 }}>
           {animal.summary}
         </p>
-        {publicStatus.detailTitle && publicStatus.description && <Callout
-          tone={publicStatus.tone}
-          title={publicStatus.detailTitle}
-          description={publicStatus.description}
-        />}
         <LifetimeCarePlanner
           species={animal.species}
           animalAge={Number(animal.age.match(/\d+/)?.[0]) || null}

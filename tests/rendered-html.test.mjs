@@ -200,6 +200,9 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(worker, /MAX_IMAGE_BYTES/);
   assert.match(worker, /redirect: "manual"/);
   assert.match(worker, /GEMINI_API_KEY/);
+  assert.match(worker, /명확하고 간결하게/);
+  assert.match(worker, /익숙한 단어/);
+  assert.match(worker, /한 문장에는 하나의 내용/);
   assert.match(worker, /next_attempt_at/);
   assert.match(worker, /status === "processing"/);
   assert.match(worker, /2 \* 60 \* 1000/);

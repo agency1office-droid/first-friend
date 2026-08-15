@@ -19,7 +19,6 @@ import {
 import { AnimalGallery } from "../../components/AnimalGallery";
 import { AnimalActions } from "../../components/AnimalActions";
 import { InfoBoard } from "../../components/InfoBoard";
-import { LifetimeCarePlanner } from "../../components/LifetimeCarePlanner";
 import { ShelterLocationCard } from "../../components/ShelterLocationCard";
 import { ShelterTravelMeta } from "../../components/ShelterTravelMeta";
 import { ShelterPhoneDialog } from "../../components/ShelterPhoneDialog";
@@ -230,12 +229,6 @@ export default async function AnimalPage({
             ]}
           />
         </section>
-        <div className="ff-detail-care-section">
-          <LifetimeCarePlanner
-            species={animal.species}
-            animalAge={Number(animal.age.match(/\d+/)?.[0]) || null}
-          />
-        </div>
       </article>
       <AnimalActions animalId={animal.id} name={animal.name} shelterPhone={animal.shelterPhone} />
     </>

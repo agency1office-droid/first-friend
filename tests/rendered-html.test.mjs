@@ -210,12 +210,11 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(styles, /\.ff-detail-info-row--memo \{ border-top: 1px solid var\(--seed-color-stroke-neutral-muted\); \}/);
   assert.match(styles, /\.ff-detail-info-row strong \{ min-width: 0;.*word-break: break-word; white-space: normal;/);
   assert.match(page, /function animalKnowledge/);
-  assert.match(page, /helper=\{knowledge\.species\}/);
-  assert.match(page, /helper=\{knowledge\.size\}/);
-  assert.match(page, /helper=\{knowledge\.age\}/);
-  assert.match(page, /helper=\{knowledge\.neutered\}/);
+  assert.match(page, /id: "species-knowledge"/);
+  assert.match(page, /id: "size-knowledge"/);
+  assert.match(page, /id: "age-knowledge"/);
+  assert.match(page, /id: "neutered-knowledge"/);
   assert.match(styles, /\.ff-detail-info-row-main \{ display: grid; grid-template-columns: 24px 76px minmax\(0, 1fr\)/);
-  assert.match(styles, /\.ff-detail-info-helper \{ display: block; margin: -2px 0 10px 32px;.*text-align: left; \}/);
   assert.match(api, /enqueueAnimalAiSummary/);
   assert.match(worker, /row\.analysis_key !== createAnimalAnalysisKey\(animal\)/);
   assert.match(worker, /createHash\("sha256"\)/);

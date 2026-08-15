@@ -85,14 +85,13 @@ function isDuplicateTrait(trait: string, animal: Animal, colors: string[], publi
   });
 }
 
-function DetailInfoRow({ icon: Icon, label, value, helper, className }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string; helper?: string; className?: string }) {
-  return <div className={`ff-detail-info-row${helper ? " ff-detail-info-row--has-helper" : ""}${className ? ` ${className}` : ""}`}>
+function DetailInfoRow({ icon: Icon, label, value, className }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string; className?: string }) {
+  return <div className={`ff-detail-info-row${className ? ` ${className}` : ""}`}>
     <div className="ff-detail-info-row-main">
       <Icon className="ff-detail-info-icon" aria-hidden />
       <span>{label}</span>
       <strong data-muted={value === "확인 필요" || undefined}>{value}</strong>
     </div>
-    {helper && <small className="ff-detail-info-helper">{helper}</small>}
   </div>;
 }
 
@@ -174,13 +173,13 @@ export default async function AnimalPage({
           <h2 id="detail-info-title">동물 친구 정보</h2>
           <div className="ff-detail-info-list">
             <DetailInfoRow icon={IconCalendarLine} label="공고 기간" value={publicStatus.notice?.replace(/^공고\s*/, "") || "확인 필요"} />
-            <DetailInfoRow icon={IconPawprintLine} label="종류" value={`${animal.species} · ${animal.breed}`} helper={knowledge.species} />
-            <DetailInfoRow icon={IconNeedleScaleLine} label="크기" value={detailSize(animal)} helper={knowledge.size} />
+            <DetailInfoRow icon={IconPawprintLine} label="종류" value={`${animal.species} · ${animal.breed}`} />
+            <DetailInfoRow icon={IconNeedleScaleLine} label="크기" value={detailSize(animal)} />
             <DetailInfoRow icon={IconCheckmarkScaleLine} label="체중" value={weight === undefined ? "확인 필요" : `${weight}kg`} />
             <DetailInfoRow icon={IconTagLine} label="털색" value={colors.length ? colors.join(" · ") : "확인 필요"} />
-            <DetailInfoRow icon={IconCalendarLine} label="나이" value={`${ageLabels[animal.ageGroup]} · ${animal.age}`} helper={knowledge.age} />
+            <DetailInfoRow icon={IconCalendarLine} label="나이" value={`${ageLabels[animal.ageGroup]} · ${animal.age}`} />
             <DetailInfoRow icon={IconMalesymbolFemalesymbolLine} label="성별" value={animal.sex || "확인 필요"} />
-            <DetailInfoRow icon={IconCheckmarkCircleFill} label="중성화" value={detailNeutered(animal)} helper={knowledge.neutered} />
+            <DetailInfoRow icon={IconCheckmarkCircleFill} label="중성화" value={detailNeutered(animal)} />
             <DetailInfoRow icon={IconLocationpinLine} label="발견 지역" value={foundArea} />
           </div>
         </section>
@@ -205,6 +204,30 @@ export default async function AnimalPage({
           <h2>만나기 전 확인할 내용</h2>
           <InfoBoard
             items={[
+              {
+                id: "species-knowledge",
+                prefix: "i",
+                title: "이 종류의 성격과 특징은 어떤가요?",
+                content: <p>{knowledge.species}</p>,
+              },
+              {
+                id: "size-knowledge",
+                prefix: "i",
+                title: "얼마나 크게 자라나요?",
+                content: <p>{knowledge.size}</p>,
+              },
+              {
+                id: "age-knowledge",
+                prefix: "i",
+                title: "얼마나 오래 사나요?",
+                content: <p>{knowledge.age}</p>,
+              },
+              {
+                id: "neutered-knowledge",
+                prefix: "i",
+                title: "중성화하면 어떤 점이 있나요?",
+                content: <p>{knowledge.neutered}</p>,
+              },
               {
                 id: "health",
                 prefix: "Q",

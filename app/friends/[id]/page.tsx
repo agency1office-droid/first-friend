@@ -7,6 +7,7 @@ import {
   IconChevronRightLine,
   IconHospitalcrossBuildingLine,
   IconMapLocationpinLine,
+  IconPhoneLine,
 } from "@karrotmarket/react-monochrome-icon";
 import { AnimalGallery } from "../../components/AnimalGallery";
 import { AnimalActions } from "../../components/AnimalActions";
@@ -126,9 +127,14 @@ export default async function AnimalPage({
           <p>{shelterAddress}</p>
           <ShelterTravelMeta distance={animal.distanceMeters} lat={animal.shelterLat} lng={animal.shelterLng} />
         </div>}
-        <a className="ff-detail-location-link" href={shelterMapHref} target="_blank" rel="noreferrer" aria-label={`${animal.shelter} 위치를 카카오맵에서 보기`}>
-          <IconMapLocationpinLine aria-hidden />
-        </a>
+        <div className="ff-detail-shelter-actions">
+          {animal.shelterPhone && <a className="ff-detail-contact-link" href={`tel:${animal.shelterPhone.replace(/[^0-9+]/g, "")}`} aria-label={`${animal.shelter}에 전화하기`}>
+            <IconPhoneLine aria-hidden />
+          </a>}
+          <a className="ff-detail-contact-link" href={shelterMapHref} target="_blank" rel="noreferrer" aria-label={`${animal.shelter} 위치를 카카오맵에서 보기`}>
+            <IconMapLocationpinLine aria-hidden />
+          </a>
+        </div>
       </section>
       <article className="ff-detail-body">
         <div className="ff-detail-top">

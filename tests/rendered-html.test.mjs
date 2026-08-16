@@ -135,6 +135,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /\{pageNumber\}\/\{totalPages\}/);
   assert.match(readinessQuiz, /필수 교육을 완료했어요/);
   const readinessStyles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(readinessStyles, /\.ff-readiness-progress-meta \{[^}]*padding: 14px 16px 0;/);
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*gap: 8px;[^}]*padding: 0 16px max\(16px, env\(safe-area-inset-bottom\)\);[^}]*background: transparent;/);
   assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button \{[^}]*flex: 1 1 0;/);
   assert.match(readinessStyles, /\.ff-readiness-back \{ grid-column: 1;/);

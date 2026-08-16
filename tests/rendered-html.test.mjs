@@ -332,10 +332,15 @@ test("keeps public sync jobs resumable and uses direct public API image URLs", a
 });
 
 test("keeps the nearby feed continuous without manual pagination copy", async () => {
-  const nearby = await readFile(new URL("../app/components/NearbyAnimalFeed.tsx", import.meta.url), "utf8");
+  const [nearby, feed] = await Promise.all([
+    readFile(new URL("../app/components/NearbyAnimalFeed.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/useAnimalFeed.ts", import.meta.url), "utf8"),
+  ]);
   assert.doesNotMatch(nearby, /친구 더 보기/);
   assert.doesNotMatch(nearby, /현재 확인 가능한 친구를 모두 봤어요/);
   assert.match(nearby, /IntersectionObserver/);
+  assert.match(feed, /pageshow/);
+  assert.match(feed, /event\.persisted/);
 });
 
 test("portals bottom sheets outside sticky navigation containers", async () => {

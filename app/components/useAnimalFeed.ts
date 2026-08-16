@@ -103,24 +103,41 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   useEffect(() => {
     const previousRestoration = window.history.scrollRestoration;
     window.history.scrollRestoration = "manual";
-    const snapshot = readFeedSnapshot();
-    if (!snapshot) {
-      return () => { window.history.scrollRestoration = previousRestoration; };
-    }
-    restorePending.current = true;
-    restoreScrollY.current = snapshot.scrollY;
-    restoreRevealTimer.current = window.setTimeout(() => {
-      restoreRevealTimer.current = null;
-      setIsRestoring(false);
-    }, 1200);
-    const timer = window.setTimeout(() => {
+    const applySnapshot = (snapshot: FeedSnapshot) => {
+      restorePending.current = true;
+      restoreScrollY.current = snapshot.scrollY;
+      restoreRevealTimer.current = window.setTimeout(() => {
+        restoreRevealTimer.current = null;
+        setIsRestoring(false);
+      }, 1200);
       setItems(snapshot.items); setTotal(snapshot.total); setCursor(snapshot.cursor);
       setSyncedAt(snapshot.syncedAt); setStale(snapshot.stale);
-    }, 0);
+    };
+    const restoreBfcacheScroll = (scrollY: number) => {
+      let attempts = 0;
+      const restore = () => {
+        attempts += 1;
+        const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        window.scrollTo(0, Math.min(scrollY, maxScroll));
+        if (attempts < 3) window.requestAnimationFrame(restore);
+      };
+      window.requestAnimationFrame(restore);
+    };
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      const snapshot = readFeedSnapshot();
+      if (!snapshot) return;
+      applySnapshot(snapshot);
+      restoreBfcacheScroll(snapshot.scrollY);
+    };
+    const snapshot = readFeedSnapshot();
+    const timer = snapshot ? window.setTimeout(() => applySnapshot(snapshot), 0) : null;
+    window.addEventListener("pageshow", handlePageShow);
     return () => {
-      window.clearTimeout(timer);
+      if (timer !== null) window.clearTimeout(timer);
       if (restoreFrame.current !== null) window.cancelAnimationFrame(restoreFrame.current);
       if (restoreRevealTimer.current !== null) window.clearTimeout(restoreRevealTimer.current);
+      window.removeEventListener("pageshow", handlePageShow);
       window.history.scrollRestoration = previousRestoration;
     };
   }, []);

@@ -274,7 +274,6 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-actions.is-intro .seed-action-button { flex-basis: 100%; }
 .ff-readiness-actions.is-single .seed-action-button { flex-basis: 100%; }
 .ff-readiness-intro .ff-readiness-actions { margin: 0; padding: 0 16px 14px; }
-.ff-readiness-intro .ff-readiness-actions .seed-action-button { color: #fff; background: #0d2424; }
 .ff-pet-cost-calculator-trigger { width: 100%; }
 .ff-pet-cost-calculator-sheet { flex: 0 1 82dvh; min-height: 0; max-height: 82dvh; }
 .ff-pet-cost-calculator-sheet .seed-bottom-sheet__header { padding-top: 28px; padding-bottom: 16px; }
@@ -365,13 +364,6 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-intro-badge { padding: 8px 14px; border-radius: 999px; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); font-size: 13px; font-weight: 700; }
 .ff-readiness-intro-content h1 { margin: 8px 0 0; font-size: 34px; line-height: 43px; letter-spacing: -.04em; }
 .ff-readiness-intro-lead { margin: 0; color: #4d5b62; font-size: 17px; line-height: 26px; }
-.ff-readiness-intro-visual { position: relative; display: grid; justify-items: center; align-content: center; width: calc(100% + 32px); min-height: 390px; margin: 18px -16px 0; padding: 26px 18px 18px; overflow: hidden; border-radius: 0; color: #263238; background: linear-gradient(180deg, #bfffa2 0%, #8be878 100%); text-align: center; }
-.ff-readiness-intro-visual::before { position: absolute; top: 0; left: -10%; width: 120%; height: 56%; border-radius: 0 0 50% 50%; background: rgba(255,255,255,.14); content: ""; }
-.ff-readiness-intro-visual span, .ff-readiness-intro-visual strong, .ff-readiness-intro-visual b, .ff-readiness-intro-visual em { position: relative; z-index: 1; }
-.ff-readiness-intro-visual span { font-size: 15px; }
-.ff-readiness-intro-visual strong { margin-top: 4px; font-size: 25px; line-height: 32px; }
-.ff-readiness-intro-visual b { display: grid; place-items: center; width: 150px; height: 150px; margin-top: 28px; border-radius: 50% 50% 46% 46%; color: #fff; background: #df7139; box-shadow: 0 16px 0 #b8d96a; font-size: 72px; line-height: 1; }
-.ff-readiness-intro-visual em { margin-top: 26px; padding: 11px 18px; border-radius: 16px; color: #34424a; background: #fff; font-size: 15px; font-style: normal; font-weight: 700; }
 .ff-readiness-intro-note { margin: 0; color: #55705e; font-size: 14px; }
 .ff-readiness-species-page { display: grid; align-content: start; gap: 18px; flex: 1; padding: 24px 16px 0; }
 .ff-readiness-species-page h1 { margin: 0; font-size: 28px; line-height: 36px; letter-spacing: -.025em; }

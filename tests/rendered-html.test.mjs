@@ -122,7 +122,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /phase, setPhase/);
   assert.match(readinessQuiz, /"intro" \| "species" \| "questions" \| "result"/);
   assert.match(readinessQuiz, /ff-readiness-intro/);
-  assert.match(readinessQuiz, /ff-readiness-intro-visual/);
+  assert.doesNotMatch(readinessQuiz, /ff-readiness-intro-visual/);
   assert.match(readinessQuiz, /ff-readiness-species-page/);
   assert.match(readinessQuiz, /ff-readiness-tip/);
   assert.match(readinessQuiz, /phase === "species" \? <ActionButton/);
@@ -138,6 +138,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /\{pageNumber\}\/\{totalPages\}/);
   assert.match(readinessQuiz, /필수 교육을 완료했어요/);
   const readinessStyles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.doesNotMatch(readinessStyles, /ff-readiness-intro-visual/);
   assert.match(readinessStyles, /\.ff-readiness-progress-meta \{[^}]*padding: 14px 16px 0;/);
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*gap: 8px;[^}]*padding: 0 16px max\(16px, env\(safe-area-inset-bottom\)\);[^}]*background: var\(--seed-color-bg-layer-default\);/);
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*position: sticky;[^}]*flex: none;[^}]*margin-top: auto;/);

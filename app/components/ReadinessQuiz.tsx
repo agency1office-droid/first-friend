@@ -6,9 +6,8 @@ import { Callout } from "seed-design/ui/callout";
 import { SegmentedControl, SegmentedControlItem } from "seed-design/ui/segmented-control";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "seed-design/ui/accordion";
 import { RadioGroup, RadioGroupItem } from "seed-design/ui/radio-group";
-import { ProgressCircle } from "seed-design/ui/progress-circle";
 import { IconCheckmarkCircleFill, IconLightbulbDot5Fill, IconCheckmarkShieldFill } from "@karrotmarket/react-monochrome-icon";
-import { educationScore as calculateEducation, readinessScore as calculateReadiness } from "../../lib/readiness-score";
+import { educationScore as calculateEducation } from "../../lib/readiness-score";
 
 type Species = "cat" | "dog";
 type Profile = { homeAllowed: string; homeType: string; household: string; absence: number; careMinutes: number; safety: string; currentPets: string; longAbsence: string; monthlyBudget: number; emergencyFund: number; experience: string };
@@ -49,7 +48,6 @@ export function ReadinessQuiz() {
   const questions = useMemo(() => [...commonQuestions, ...speciesQuestions[species]], [species]);
   const submittedAnswers = questions.map((_, index) => answers[index]);
   const educationScore = calculateEducation(submittedAnswers);
-  const readinessScore = calculateReadiness(species, profile);
   const monthlyRange = species === "cat" ? [90000, 220000] : [130000, 350000];
   const initialRange = species === "cat" ? [250000, 700000] : [300000, 900000];
   const passed = educationScore >= 80;
@@ -97,9 +95,8 @@ export function ReadinessQuiz() {
     </section>}
 
     {step === 3 && <section className="ff-result ff-readiness-result" role="status">
-      <div className="ff-score-circles"><div><ProgressCircle value={readinessScore}/><strong>{readinessScore}</strong><span>생활 준비도</span></div><div><ProgressCircle value={educationScore}/><strong>{educationScore}</strong><span>필수 시험</span></div></div>
       <h2 className="ff-section-title">{passed ? "필수 교육을 완료했어요" : "조금만 더 확인하면 돼요"}</h2>
-      <p className="ff-description" style={{ marginTop: 6 }}>이 점수는 사람의 가치나 동물의 품질을 평가하지 않으며 자동 입양 거절에 사용되지 않습니다.</p>
+      <p className="ff-description" style={{ marginTop: 6 }}>이 결과는 입양 전 필수 내용을 확인했는지 보여주는 참고 정보예요. 사람이나 동물을 평가하거나 자동 입양 거절에 사용하지 않습니다.</p>
       <div className="ff-result-groups"><div><h3><IconCheckmarkCircleFill/>잘 준비한 점</h3><p>주거, 돌봄 시간, 예산을 구체적인 숫자로 확인했어요.</p></div><div><h3><IconLightbulbDot5Fill/>입양 전 준비할 점</h3><p>{profile.homeAllowed !== "yes" ? "주거지 허용 여부를 서면으로 확인하세요. " : ""}{profile.household !== "yes" ? "동거인과 책임과 비용을 더 이야기하세요. " : ""}{profile.absence > 9 ? "긴 부재 시간에 방문 돌봄 계획이 필요해요." : "첫 일주일 적응 기간의 일정을 비워두세요."}</p></div><div><h3><IconCheckmarkShieldFill/>보호센터와 상담할 점</h3><p>기존 동물과의 합사, 혼자 있는 시간, 알려진 질환과 투약 정보를 확인하세요.</p></div></div>
       {!passed && <div className="ff-answer-review">{questions.map((question, index) => answers[index] === question.answer ? null : <Callout key={question.question} tone="warning" title={question.question} description={question.explanation}/>)}</div>}
       {saved === "saved" && <Callout tone="positive" title="결과를 안전하게 저장했어요" description="이제 입양 신청을 시작할 수 있어요."/>}

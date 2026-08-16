@@ -357,10 +357,17 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-intro-icon { display: grid; place-items: center; width: 64px; height: 64px; margin: 4px auto 6px; border-radius: 22px; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); font-size: 32px; }
 .ff-readiness-intro h1 { margin: 0; font-size: 28px; line-height: 36px; letter-spacing: -.025em; }
 .ff-readiness-intro .ff-description { max-width: 380px; }
+.ff-readiness-intro-visual { display: grid; justify-items: center; align-content: center; min-height: 180px; margin: 2px -16px 0; padding: 18px; border-radius: 24px; color: var(--seed-color-fg-neutral); background: linear-gradient(160deg, var(--seed-color-bg-brand-weak), var(--seed-color-bg-warning-weak)); text-align: center; }
+.ff-readiness-intro-visual span { color: var(--seed-color-fg-neutral-muted); font-size: 14px; }
+.ff-readiness-intro-visual strong { margin-top: 4px; font-size: 24px; line-height: 32px; }
+.ff-readiness-intro-visual b { margin-top: 18px; font-size: 58px; line-height: 1; }
 .ff-readiness-intro-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 8px 0 10px; }
 .ff-readiness-intro-details > div { display: grid; gap: 4px; padding: 14px; border-radius: 14px; background: var(--seed-color-bg-neutral-weak); }
 .ff-readiness-intro-details strong { font-size: 15px; }
 .ff-readiness-intro-details span { color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; }
+.ff-readiness-species-page { display: grid; align-content: start; gap: 14px; flex: 1; padding-top: 18px; }
+.ff-readiness-species-page h1 { margin: 0; font-size: 28px; line-height: 36px; letter-spacing: -.025em; }
+.ff-readiness-species-page .ff-readiness-species-grid { margin-top: 18px; }
 .ff-readiness-species-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 420px; }
 .ff-readiness-species-choice { display: grid; place-items: center; align-content: center; aspect-ratio: 1; min-width: 0; padding: 18px 12px; border: 1px solid var(--seed-color-stroke-neutral-weak); border-radius: 16px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-neutral-weak); cursor: pointer; transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease; }
 .ff-readiness-species-choice[data-selected="true"] { border-color: var(--seed-color-stroke-brand); background: var(--seed-color-bg-brand-weak); box-shadow: 0 0 0 2px var(--seed-color-stroke-brand); }

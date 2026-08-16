@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { IconChevronRightLine, IconDot3VerticalLine, IconExclamationmarkCircleLine } from "@karrotmarket/react-monochrome-icon";
 import { ActionButton } from "seed-design/ui/action-button";
 import { BottomSheetBody, BottomSheetContent, BottomSheetFooter, BottomSheetRoot, BottomSheetTrigger } from "seed-design/ui/bottom-sheet";
+import { List, ListButtonItem, ListDivider } from "seed-design/ui/list";
 import { TextField, TextFieldTextarea } from "seed-design/ui/text-field";
 import { useAppFeedback } from "./AppFeedback";
 
@@ -71,21 +72,27 @@ export function AnimalReportButton({ animalId }: { animalId: string }) {
         showHandle
       >
         {stage === "menu" && <BottomSheetBody>
-          <div className="ff-detail-report-menu" role="menu" aria-label="동물 정보 메뉴">
-            <button type="button" role="menuitem" onClick={() => setStage("reasons")}>
-              <IconExclamationmarkCircleLine aria-hidden />
-              <span>신고하기</span>
-              <IconChevronRightLine aria-hidden />
-            </button>
-          </div>
+          <List aria-label="동물 정보 메뉴">
+            <ListButtonItem
+              title={<span className="ff-detail-report-danger-label">신고하기</span>}
+              prefix={<IconExclamationmarkCircleLine />}
+              suffix={<IconChevronRightLine />}
+              onClick={() => setStage("reasons")}
+            />
+          </List>
         </BottomSheetBody>}
         {stage === "reasons" && <BottomSheetBody>
-          <div className="ff-detail-report-reasons" role="listbox" aria-label="신고 이유">
-            {reportReasons.map(([title, description]) => <button type="button" role="option" aria-selected={selectedReason === title} key={title} onClick={() => { setSelectedReason(title); setStage("detail"); }}>
-              <span><strong>{title}</strong><small>{description}</small></span>
-              <IconChevronRightLine aria-hidden />
-            </button>)}
-          </div>
+          <List aria-label="신고 이유">
+            {reportReasons.map(([title, description], index) => <Fragment key={title}>
+              <ListButtonItem
+                title={title}
+                detail={description}
+                suffix={<IconChevronRightLine />}
+                onClick={() => { setSelectedReason(title); setStage("detail"); }}
+              />
+              {index < reportReasons.length - 1 && <ListDivider />}
+            </Fragment>)}
+          </List>
         </BottomSheetBody>}
         {stage === "detail" && <>
           <BottomSheetBody>

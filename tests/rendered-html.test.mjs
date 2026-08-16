@@ -149,6 +149,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-adoption-test-trigger \{[^}]*color: var\(--seed-color-palette-static-white\);/);
   assert.match(readinessQuiz, /phase === "species" \? <ActionButton size="large" variant="brandSolid"/);
   assert.match(readinessQuiz, /variant="brandSolid" className="ff-grow" disabled=\{answers\[questionIndex\] === undefined\}/);
+  assert.doesNotMatch(readinessQuiz, /<ActionButton size="large" variant="neutralWeak" onClick=\{previous\}>이전<\/ActionButton>/);
   assert.match(readinessStyles, /\.ff-readiness-questions \{ gap: 0;/);
   assert.match(readinessStyles, /\.ff-readiness-chapter \{[^}]*gap: 24px;[^}]*margin-top: 0;[^}]*padding: 0 16px;/);
   assert.match(readinessStyles, /\.ff-quiz-question-single label \{[^}]*min-height: 112px;[^}]*border-radius: 16px;/);

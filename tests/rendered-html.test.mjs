@@ -144,9 +144,11 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*position: sticky;[^}]*flex: none;[^}]*margin-top: auto;/);
   assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button \{[^}]*flex: 1 1 0;/);
   assert.match(readinessStyles, /\.ff-readiness-questions \{ gap: 0;/);
-  assert.match(readinessStyles, /\.ff-readiness-chapter \{[^}]*gap: 24px;[^}]*padding: 0 16px;/);
+  assert.match(readinessStyles, /\.ff-readiness-chapter \{[^}]*gap: 24px;[^}]*margin-top: -16px;[^}]*padding: 0 16px;/);
   assert.match(readinessStyles, /\.ff-quiz-question-single label \{[^}]*min-height: 112px;[^}]*border-radius: 16px;/);
   assert.match(readinessStyles, /\.ff-readiness-questions \.ff-quiz-question-single input \{[^}]*opacity: 0;/);
+  assert.match(readinessStyles, /\.ff-readiness-species-emoji \{[^}]*margin-bottom: 18px;/);
+  assert.match(readinessStyles, /\.ff-readiness-species-description \{[^}]*font-size: 16px;[^}]*line-height: 24px;/);
   assert.match(readinessStyles, /\.ff-readiness-back \{ grid-column: 1;/);
   assert.doesNotMatch(readinessQuiz, /ff-readiness-close|IconXmarkLine/);
   assert.match(readinessStyles, /\.ff-readiness \{ display: flex; flex-direction: column;/);

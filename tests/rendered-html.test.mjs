@@ -131,6 +131,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /ff-readiness-progress-meta/);
   assert.match(readinessQuiz, /onClose/);
   assert.match(readinessQuiz, /ff-readiness-chapter/);
+  assert.doesNotMatch(readinessQuiz, /ff-readiness-chapter-kicker/);
   assert.match(readinessQuiz, /다음/);
   assert.match(readinessQuiz, /\{pageNumber\}\/\{totalPages\}/);
   assert.match(readinessQuiz, /필수 교육을 완료했어요/);
@@ -138,6 +139,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-readiness-progress-meta \{[^}]*padding: 14px 16px 0;/);
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*gap: 8px;[^}]*padding: 0 16px max\(16px, env\(safe-area-inset-bottom\)\);[^}]*background: transparent;/);
   assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button \{[^}]*flex: 1 1 0;/);
+  assert.match(readinessStyles, /\.ff-readiness-questions \.ff-readiness-progress-meta \{[^}]*padding-top: 64px;/);
+  assert.match(readinessStyles, /\.ff-quiz-question-single label \{[^}]*min-height: 112px;[^}]*border-radius: 16px;/);
   assert.match(readinessStyles, /\.ff-readiness-back \{ grid-column: 1;/);
   assert.match(readinessStyles, /\.ff-readiness-close \{ grid-column: 3; grid-row: 1; justify-self: end;/);
   assert.match(readinessStyles, /\.ff-readiness \{ display: flex; flex-direction: column;/);

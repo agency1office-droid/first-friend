@@ -225,9 +225,9 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-shelter-copy { display: grid; gap: 2px; min-width: 0; flex: 1; }
 .ff-detail-shelter-copy strong { overflow-wrap: anywhere; color: var(--seed-color-fg-neutral); font-size: 16px; line-height: 21px; }
 .ff-detail-shelter-copy p { margin: 0; overflow-wrap: anywhere; color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 18px; }
-.ff-detail-shelter-address { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ff-detail-shelter-address { display: grid; gap: 0; min-width: 0; }
 .ff-detail-shelter-address > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ff-detail-shelter-address > small { flex: none; color: var(--seed-color-fg-neutral-subtle); font-size: 11px; line-height: 16px; }
+.ff-detail-shelter-address > small { display: block; color: var(--seed-color-fg-neutral-subtle); font-size: 11px; line-height: 16px; }
 .ff-detail-shelter-meta { margin: 0; color: var(--seed-color-fg-neutral-subtle); font-size: 12px; font-weight: 600; line-height: 17px; }
 .ff-detail-shelter-distance { color: var(--seed-color-fg-brand); }
 .ff-detail-ai-section { padding: 16px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }

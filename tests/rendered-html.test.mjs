@@ -100,6 +100,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(styles, /data-route-path\^="\/friends\//);
   assert.match(styles, /\.ff-detail-image-back \{ position: absolute/);
   assert.match(styles, /\.ff-detail-shelter-address > span \{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; \}/);
+  assert.match(styles, /\.ff-detail-shelter-address \{ display: grid; gap: 0; min-width: 0; \}/);
 });
 
 test("links the bottom navigation to saved friends", async () => {

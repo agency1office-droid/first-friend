@@ -57,8 +57,11 @@ export function ReadinessQuiz() {
   function submitExam() { setStep(3); if (educationScore >= 80) void saveResult(); }
 
   return <div className="ff-readiness">
-    <div className="ff-stepper" aria-label={`입양 준비 과정 ${step + 1}/4`}><div style={{ width: `${(step + 1) * 25}%` }}/></div>
-    <div className="ff-step-label">{["생활 환경", "비용과 교육", "필수 시험", "준비 결과"][step]} · {step + 1}/4</div>
+    <header className="ff-readiness-progress">
+      <div className="ff-readiness-progress-heading"><strong>입양 전 상식시험</strong><span>{step + 1}/4</span></div>
+      <div className="ff-stepper" role="progressbar" aria-label={`입양 준비 과정 ${step + 1}/4`} aria-valuemin={1} aria-valuemax={4} aria-valuenow={step + 1}><div style={{ width: `${(step + 1) * 25}%` }}/></div>
+      <div className="ff-step-label">{["생활 환경", "비용과 교육", "필수 시험", "준비 결과"][step]}</div>
+    </header>
 
     {step === 0 && <section className="ff-form">
       <SegmentedControl value={species} onValueChange={(value) => setSpecies(value as Species)} aria-label="입양을 준비하는 동물"><SegmentedControlItem value="cat">고양이</SegmentedControlItem><SegmentedControlItem value="dog">강아지</SegmentedControlItem></SegmentedControl>

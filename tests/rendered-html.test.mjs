@@ -103,6 +103,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(planning, /수료/);
   assert.match(planning, /미수료/);
   assert.match(planning, /BottomSheetContent/);
+  assert.match(planning, /aria-label="입양 전 상식시험"/);
   assert.match(planning, /ff-adoption-test-sheet/);
   assert.match(planning, /ReadinessQuiz/);
   assert.match(planning, /PetCostCalculator/);
@@ -117,6 +118,9 @@ test("uses a contextual animal detail topbar", async () => {
   const readinessQuiz = await readFile(new URL("../app/components/ReadinessQuiz.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(readinessQuiz, /생활 준비도/);
   assert.doesNotMatch(readinessQuiz, /ProgressCircle/);
+  assert.match(readinessQuiz, /ff-readiness-progress-heading/);
+  assert.match(readinessQuiz, /role="progressbar"/);
+  assert.match(readinessQuiz, /aria-valuenow={step \+ 1}/);
   assert.match(readinessQuiz, /필수 교육을 완료했어요/);
   assert.match(page, /shelterHref = animal\.shelterId/);
   assert.match(page, /ff-detail-shelter-link/);

@@ -65,7 +65,7 @@ export function AdoptionPlanningCard(props: { species: string; breed: string; an
             {completed ? "시험 내용 다시 확인하기" : "입양 전 상식시험 시작하기"}
           </button>
         </BottomSheetTrigger>
-        <BottomSheetContent className="ff-adoption-test-sheet" title="입양 전 상식시험" description="새 가족을 맞이하기 전에 생활 환경과 기본 돌봄 내용을 확인해요." showHandle>
+        <BottomSheetContent className="ff-adoption-test-sheet" aria-label="입양 전 상식시험" showHandle>
           <BottomSheetBody>
             <ReadinessQuiz />
           </BottomSheetBody>

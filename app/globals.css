@@ -331,6 +331,10 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-progress > div { height: 100%; border-radius: inherit; background: var(--seed-color-bg-brand-solid); }
 .ff-grow { flex: 1; }
 .ff-readiness { display: grid; gap: 18px; }
+.ff-readiness-progress { display: grid; gap: 10px; padding: 2px 40px 14px 0; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
+.ff-readiness-progress-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--seed-color-fg-neutral); }
+.ff-readiness-progress-heading strong { font-size: 18px; line-height: 24px; }
+.ff-readiness-progress-heading span { color: var(--seed-color-fg-brand); font-size: 13px; font-weight: 700; }
 .ff-stepper { height: 6px; overflow: hidden; border-radius: 99px; background: var(--seed-color-bg-neutral-weak); }
 .ff-stepper > div { height: 100%; border-radius: inherit; background: var(--seed-color-bg-brand-solid); transition: width .25s ease; }
 .ff-step-label { color: var(--seed-color-fg-neutral-muted); font-size: 13px; font-weight: 700; }

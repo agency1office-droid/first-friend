@@ -3,10 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "seed-design/ui/accordion";
 import { Badge } from "seed-design/ui/badge";
-import { Callout } from "seed-design/ui/callout";
 import { ProgressCircle } from "seed-design/ui/progress-circle";
 import { SegmentedControl, SegmentedControlItem } from "seed-design/ui/segmented-control";
-import { IconCheckmarkCircleFill, IconCheckmarkShieldFill, IconClockLine, IconHouseLine, IconWonCircleLine } from "@karrotmarket/react-monochrome-icon";
+import { IconCheckmarkCircleFill, IconCheckmarkShieldFill, IconClockLine, IconHouseLine } from "@karrotmarket/react-monochrome-icon";
 import { catCosts, dogCosts } from "../../lib/care-content";
 import { readinessScore as calculateReadiness, type ReadinessProfile } from "../../lib/readiness-score";
 
@@ -72,6 +71,9 @@ export function AdoptionPlanningCard({ species, breed, animalAge }: { species: s
   const [average, maximum] = lifespan(animalSpecies, breed);
   const remaining = [Math.max(1, Math.ceil(average - ageInYears(animalAge))), Math.max(1, Math.ceil(maximum - ageInYears(animalAge)))];
   const score = assessment?.species === animalSpecies && typeof assessment.readiness_score === "number" ? assessment.readiness_score : calculateReadiness(animalSpecies, profile);
+  const education = assessment?.species === animalSpecies && typeof assessment.education_score === "number" ? assessment.education_score : null;
+  const careSummary = animalSpecies === "cat" ? "짧은 사냥놀이를 하루 여러 번 나누고 화장실을 매일 관리해요." : "나이와 건강에 맞는 산책·후각 놀이 시간을 매일 확보해요.";
+  const spaceSummary = animalSpecies === "cat" ? "방묘창·방묘문과 숨을 곳, 분리된 화장실 자리가 필요해요." : "안전한 이동 장비와 휴식 공간, 매일의 산책 동선이 필요해요.";
 
   useEffect(() => {
     let active = true;
@@ -93,16 +95,17 @@ export function AdoptionPlanningCard({ species, breed, animalAge }: { species: s
 
   return <section className="ff-adoption-planning" aria-labelledby="adoption-planning-title">
     <div className="ff-section-head"><div><div className="ff-kicker">입양 준비를 숫자로 확인해요</div><h2 className="ff-section-title" id="adoption-planning-title">이 친구와 함께할 준비를 살펴봐요</h2></div><Badge tone="neutral" variant="weak">참고용</Badge></div>
-    <Callout tone="informative" title={source === "saved" ? "내 입양 준비 결과를 반영했어요" : "내 생활에 맞춰 계산해 볼 수 있어요"} description={`${updateSource} 점수와 금액은 입양을 결정하는 기준이 아니라, 준비할 내용을 찾기 위한 참고 자료예요.`} />
+    <div className="ff-adoption-planning-intro"><strong>{source === "saved" ? "내 입양 준비 결과를 반영했어요" : "입양 전에 필요한 숫자를 한눈에 확인해요"}</strong><span>{updateSource} 입양을 결정하는 기준이 아닌 준비용 참고 자료예요.</span></div>
     <div className="ff-adoption-planning-summary">
-      <div><IconClockLine aria-hidden /><span>함께할 시간</span><strong>약 {remaining[0]}~{remaining[1]}년</strong><small>평균 {average}년 · 장수 시 {maximum}년</small></div>
-      <div><IconWonCircleLine aria-hidden /><span>월 생활비</span><strong>{formatMoney(ranges.monthly[0])}~{formatMoney(ranges.monthly[1])}</strong><small>사료·간식·모래/패드 등</small></div>
-      <div><IconHouseLine aria-hidden /><span>초기 준비비</span><strong>{formatMoney(ranges.initial[0])}~{formatMoney(ranges.initial[1])}</strong><small>용품·중성화·예방접종</small></div>
+      <div><span>함께할 시간</span><strong>약 {remaining[0]}~{remaining[1]}년</strong><small>평균 {average}년 · 장수 시 {maximum}년</small></div>
+      <div className="ff-adoption-planning-summary-primary"><span>월 생활비</span><strong>{formatMoney(ranges.monthly[0])}~{formatMoney(ranges.monthly[1])}</strong><small>사료·간식·모래/패드 등</small></div>
+      <div><span>초기 준비비</span><strong>{formatMoney(ranges.initial[0])}~{formatMoney(ranges.initial[1])}</strong><small>용품·중성화·예방접종</small></div>
     </div>
     <div className="ff-adoption-compatibility">
       <div className="ff-adoption-compatibility-score"><ProgressCircle value={score}/><strong>{score}</strong><span>생활 궁합</span></div>
-      <div><div className="ff-kicker">나와 이 친구의 생활 궁합</div><p>{compatibilityMessage(score, profile, animalSpecies)}</p><small>주거·가족 동의·부재 시간·돌봄 시간·예산을 바탕으로 계산했어요. 동물의 성격이나 입양 가능성을 판단하는 점수는 아니에요.</small></div>
+      <div><div className="ff-kicker">나와 이 친구의 생활 궁합</div><p>{compatibilityMessage(score, profile, animalSpecies)}</p><small>주거·가족 동의·부재 시간·돌봄 시간·예산을 비교한 참고 점수예요.</small>{education !== null && <div className="ff-adoption-score-meta">생활 준비도 {score}점 · 상식 시험 {education}점</div>}</div>
     </div>
+    <div className="ff-adoption-quick-check" aria-label="입양 전 핵심 생활 기준"><div><IconClockLine aria-hidden /><span><strong>하루 돌봄</strong>{careSummary}</span></div><div><IconHouseLine aria-hidden /><span><strong>집 환경</strong>{spaceSummary}</span></div></div>
     <Accordion multiple defaultValue={inputOpen ? ["profile"] : []} onValueChange={values => setInputOpen(values.includes("profile"))}>
       <AccordionItem value="profile"><AccordionTrigger title="내 생활 정보로 다시 계산하기" description={source === "saved" ? "자동으로 반영된 값을 수정할 수 있어요" : "로그인하지 않아도 입력할 수 있어요"}/><AccordionContent>
         <div className="ff-adoption-inputs">

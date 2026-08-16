@@ -101,6 +101,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(planning, /월 생활비/);
   assert.match(planning, /초기 준비비/);
   assert.match(planning, /생활 궁합/);
+  assert.match(planning, /ff-adoption-quick-check/);
+  assert.match(planning, /상식 시험/);
   assert.match(planning, /AccordionItem value="prepare"/);
   assert.match(page, /shelterHref = animal\.shelterId/);
   assert.match(page, /ff-detail-shelter-link/);

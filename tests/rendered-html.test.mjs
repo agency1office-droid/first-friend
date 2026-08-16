@@ -144,8 +144,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*position: sticky;[^}]*flex: none;[^}]*margin-top: auto;/);
   assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button \{[^}]*flex: 1 1 0;/);
   assert.match(readinessStyles, /\.ff-readiness-intro \.ff-readiness-actions \{[^}]*background: transparent;/);
-  assert.match(readinessQuiz, /phase === "species" \? <ActionButton size="large" variant="neutralWeak"/);
-  assert.match(readinessQuiz, /variant="neutralWeak" className="ff-grow" disabled=\{answers\[questionIndex\] === undefined\}/);
+  assert.match(readinessQuiz, /phase === "species" \? <ActionButton size="large" variant="brandSolid"/);
+  assert.match(readinessQuiz, /variant="brandSolid" className="ff-grow" disabled=\{answers\[questionIndex\] === undefined\}/);
   assert.match(readinessStyles, /\.ff-readiness-questions \{ gap: 0;/);
   assert.match(readinessStyles, /\.ff-readiness-chapter \{[^}]*gap: 24px;[^}]*margin-top: -40px;[^}]*padding: 0 16px;/);
   assert.match(readinessStyles, /\.ff-quiz-question-single label \{[^}]*min-height: 112px;[^}]*border-radius: 16px;/);
@@ -160,7 +160,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /disabled=\{species === null\}/);
   assert.match(readinessQuiz, /ff-readiness-species-description/);
   assert.match(readinessStyles, /\.ff-readiness-species-choice\[data-selected="true"\] \{[^}]*border: 1px dashed/);
-  assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button:disabled \{[^}]*opacity: 1;[^}]*background: var\(--seed-color-bg-neutral-solid\);/);
+  assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button:disabled \{[^}]*opacity: 1;[^}]*color: var\(--seed-color-fg-neutral-muted\);[^}]*background: var\(--seed-color-bg-neutral-weak\);/);
   assert.doesNotMatch(readinessQuiz, /<strong>💡 꿀팁<\/strong>/);
   assert.doesNotMatch(readinessQuiz, /monthlyBudget/);
   assert.doesNotMatch(readinessQuiz, /ff-readiness-support/);

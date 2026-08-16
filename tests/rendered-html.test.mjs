@@ -148,7 +148,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-quiz-question-single label \{[^}]*min-height: 112px;[^}]*border-radius: 16px;/);
   assert.match(readinessStyles, /\.ff-readiness-questions \.ff-quiz-question-single input \{[^}]*opacity: 0;/);
   assert.match(readinessStyles, /\.ff-readiness-species-emoji \{[^}]*margin-bottom: 28px;/);
-  assert.match(readinessStyles, /\.ff-readiness-species-description \{[^}]*font-size: 18px;[^}]*line-height: 28px;/);
+  assert.match(readinessStyles, /\.ff-readiness-species-description \{[^}]*font-size: 20px;[^}]*line-height: 30px;/);
   assert.match(readinessStyles, /\.ff-readiness-back \{ grid-column: 1;/);
   assert.doesNotMatch(readinessQuiz, /ff-readiness-close|IconXmarkLine/);
   assert.match(readinessStyles, /\.ff-readiness \{ display: flex; flex-direction: column;/);

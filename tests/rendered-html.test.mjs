@@ -93,10 +93,13 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(page, /AnimalDetailChromeBridge/);
   assert.match(page, /shelterHref = animal\.shelterId/);
   assert.match(page, /ff-detail-shelter-link/);
+  assert.match(page, /function splitShelterAddress/);
+  assert.match(page, /shelterAddressParts\.note/);
   assert.match(page, /\/shelters\/\$\{encodeURIComponent\(animal\.shelterId\)\}/);
   assert.match(chrome, /data-route-path=\{path\}/);
   assert.match(styles, /data-route-path\^="\/friends\//);
   assert.match(styles, /\.ff-detail-image-back \{ position: absolute/);
+  assert.match(styles, /\.ff-detail-shelter-address > span \{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; \}/);
 });
 
 test("links the bottom navigation to saved friends", async () => {

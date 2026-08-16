@@ -262,8 +262,8 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-result-icon svg { width: 30px; height: 30px; }
 .ff-readiness-result { margin: 12px 0 0; text-align: center; }
 .ff-readiness-result .ff-description { margin: 0; }
-.ff-readiness-actions { position: sticky; bottom: 0; display: flex; gap: 8px; align-items: center; margin: auto -16px 0; padding: 12px 16px max(12px, env(safe-area-inset-bottom)); background: var(--seed-color-bg-layer-default); box-shadow: 0 -8px 20px rgba(0,0,0,.05); }
-.ff-readiness-actions .seed-action-button { min-width: 0; min-height: 48px; flex: 1 1 0; }
+.ff-readiness-actions { position: sticky; bottom: 0; display: flex; gap: 0; align-items: center; margin: auto -16px calc(-24px - env(safe-area-inset-bottom)); padding: 0; background: transparent; box-shadow: none; }
+.ff-readiness-actions .seed-action-button { min-width: 0; min-height: 52px; flex: 1 1 0; border-radius: 0; }
 .ff-readiness-actions .seed-action-button svg { width: 18px; height: 18px; }
 .ff-pet-cost-calculator-trigger { width: 100%; }
 .ff-pet-cost-calculator-sheet { flex: 0 1 82dvh; min-height: 0; max-height: 82dvh; }

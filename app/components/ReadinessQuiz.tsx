@@ -25,7 +25,7 @@ const speciesSafety: Record<Species, Question["options"]> = {
   dog: ["목줄 없이 자유롭게 걸어요", "몸에 맞는 하네스·리드줄·인식표를 확인해요", "짧은 줄이면 충분해요"],
 };
 
-export function ReadinessQuiz({ onClose }: { onClose: () => void }) {
+export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) {
   const [step, setStep] = useState(0);
   const [species, setSpecies] = useState<Species>("cat");
   const [profile, setProfile] = useState(initialProfile);
@@ -33,6 +33,7 @@ export function ReadinessQuiz({ onClose }: { onClose: () => void }) {
   const [saved, setSaved] = useState<"idle" | "saved" | "signin" | "error">("idle");
   const [showResult, setShowResult] = useState(false);
   const questions = useMemo(() => commonChapters.map((question, index) => index === 2 ? { ...question, question: species === "cat" ? "고양이의 창문·방묘 안전을 위해 가장 필요한 것은 무엇인가요?" : "강아지의 산책·이동 안전을 위해 가장 필요한 것은 무엇인가요?", options: speciesSafety[species], answer: 1, explanation: species === "cat" ? "추락과 탈출은 짧은 순간에 일어날 수 있어요. 고정된 방묘 장치를 준비해 주세요." : "낯선 환경에서의 이탈을 막을 수 있도록 몸에 맞는 안전장비와 인식표를 준비해 주세요." } : question), [species]);
+  const totalSteps = questions.length + 1;
   const submittedAnswers = questions.map((_, index) => answers[index]);
   const educationScore = calculateEducation(submittedAnswers);
   const passed = educationScore >= 80;
@@ -41,33 +42,28 @@ export function ReadinessQuiz({ onClose }: { onClose: () => void }) {
 
   function update<K extends keyof Profile>(key: K, value: Profile[K]) { setProfile((current) => ({ ...current, [key]: value })); }
   async function saveResult() { setSaved("idle"); const response = await fetch("/api/readiness", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ species, profile, answers: submittedAnswers }) }); if (response.ok) setSaved("saved"); else if (response.status === 401) setSaved("signin"); else setSaved("error"); }
-  function next() { if (step < 3) setStep((current) => current + 1); else { setShowResult(true); if (passed) void saveResult(); } }
+  function next() { if (step < totalSteps - 1) setStep((current) => current + 1); else { setShowResult(true); if (passed) void saveResult(); } }
   function previous() { if (showResult) setShowResult(false); else if (step > 0) setStep((current) => current - 1); }
 
-  const question = questions[step];
+  const questionIndex = Math.max(0, step - 1);
+  const question = questions[questionIndex];
+  const progressValue = showResult ? totalSteps : step + 1;
+  const progressLabel = showResult ? "확인 결과" : step === 0 ? "반려동물 선택" : question.chapter;
   return <div className="ff-readiness">
+    <div className="ff-readiness-progress" role="progressbar" aria-label={`입양 준비 과정 ${progressValue}/${totalSteps}`} aria-valuemin={1} aria-valuemax={totalSteps} aria-valuenow={progressValue}><div style={{ width: `${progressValue / totalSteps * 100}%` }} /></div>
     <header className="ff-readiness-appbar">
       <button type="button" className="ff-readiness-close" onClick={onClose} aria-label="입양 전 상식시험 닫기"><IconXmarkLine aria-hidden /></button>
       <strong>입양 전 상식시험</strong>
       <span aria-hidden />
     </header>
-    <header className="ff-readiness-progress">
-      <div className="ff-readiness-progress-heading"><strong>{showResult ? "준비 결과" : question.chapter}</strong><span>{step + 1}/4</span></div>
-      <div className="ff-stepper" role="progressbar" aria-label={`입양 준비 과정 ${step + 1}/4`} aria-valuemin={1} aria-valuemax={4} aria-valuenow={step + 1}><div style={{ width: `${(step + 1) * 25}%` }} /></div>
-      <div className="ff-step-label">{showResult ? "확인 결과" : "챕터 " + (step + 1)}</div>
-    </header>
+    <div className="ff-readiness-progress-meta"><div className="ff-readiness-progress-heading"><strong>{progressLabel}</strong><span>{progressValue}/{totalSteps}</span></div><div className="ff-step-label">{showResult ? "모든 챕터를 확인했어요" : step === 0 ? "시작하기" : "CHAPTER " + step}</div></div>
 
     {!showResult && <section className="ff-readiness-chapter" aria-labelledby="readiness-question-title">
-      <div className="ff-readiness-chapter-kicker">CHAPTER {step + 1}</div>
-      <h2 id="readiness-question-title">{question.question}</h2>
-      {step === 0 && <SegmentedControl value={species} onValueChange={(value) => setSpecies(value as Species)} aria-label="입양을 준비하는 동물"><SegmentedControlItem value="cat">고양이</SegmentedControlItem><SegmentedControlItem value="dog">강아지</SegmentedControlItem></SegmentedControl>}
-      <fieldset className="ff-quiz-question ff-quiz-question-single"><legend className="ff-visually-hidden">{question.question}</legend>{question.options.map((option, optionIndex) => <label key={option}><input type="radio" name={`readiness-chapter-${step}`} checked={answers[step] === optionIndex} onChange={() => setAnswers((current) => ({ ...current, [step]: optionIndex }))} /><span>{option}</span></label>)}</fieldset>
-      {step === 1 && <div className="ff-readiness-support"><div className="ff-cost-card"><div><span>예상 월 고정비</span><strong>{monthlyRange[0].toLocaleString()}~{monthlyRange[1].toLocaleString()}원</strong></div><div><span>초기 준비비</span><strong>{initialRange[0].toLocaleString()}~{initialRange[1].toLocaleString()}원</strong></div></div><div className="ff-field"><label htmlFor="monthlyBudget">계획한 월 돌봄 예산: {profile.monthlyBudget.toLocaleString()}원</label><input id="monthlyBudget" type="range" min="50000" max="500000" step="10000" value={profile.monthlyBudget} onChange={(event) => update("monthlyBudget", Number(event.target.value))} /></div><div className="ff-field"><label htmlFor="emergencyFund">준비 가능한 비상자금: {profile.emergencyFund.toLocaleString()}원</label><input id="emergencyFund" type="range" min="0" max="5000000" step="100000" value={profile.emergencyFund} onChange={(event) => update("emergencyFund", Number(event.target.value))} /></div></div>}
-      {step === 0 && <div className="ff-readiness-support ff-condition-grid"><div className="ff-field"><label htmlFor="homeType">주거 형태</label><select id="homeType" className="ff-native-select" value={profile.homeType} onChange={(event) => update("homeType", event.target.value)}><option value="studio">원룸·소형 주거</option><option value="apartment">아파트·빌라</option><option value="house">단독주택</option></select></div><div className="ff-field"><label htmlFor="household">동거인 동의</label><select id="household" className="ff-native-select" value={profile.household} onChange={(event) => update("household", event.target.value)}><option value="yes">모두 동의했어요</option><option value="talk">대화가 더 필요해요</option></select></div></div>}
+      {step === 0 ? <><div className="ff-readiness-chapter-kicker">입양할 친구를 먼저 골라주세요</div><h2 id="readiness-question-title">어떤 친구를 만나고 싶나요?</h2><SegmentedControl value={species} onValueChange={(value) => setSpecies(value as Species)} aria-label="입양을 준비하는 동물"><SegmentedControlItem value="cat">고양이</SegmentedControlItem><SegmentedControlItem value="dog">강아지</SegmentedControlItem></SegmentedControl></> : <><div className="ff-readiness-chapter-kicker">CHAPTER {step}</div><h2 id="readiness-question-title">{question.question}</h2><fieldset className="ff-quiz-question ff-quiz-question-single"><legend className="ff-visually-hidden">{question.question}</legend>{question.options.map((option, optionIndex) => <label key={option}><input type="radio" name={`readiness-chapter-${questionIndex}`} checked={answers[questionIndex] === optionIndex} onChange={() => setAnswers((current) => ({ ...current, [questionIndex]: optionIndex }))} /><span>{option}</span></label>)}</fieldset>{step === 2 && <div className="ff-readiness-support"><div className="ff-cost-card"><div><span>예상 월 고정비</span><strong>{monthlyRange[0].toLocaleString()}~{monthlyRange[1].toLocaleString()}원</strong></div><div><span>초기 준비비</span><strong>{initialRange[0].toLocaleString()}~{initialRange[1].toLocaleString()}원</strong></div></div><div className="ff-field"><label htmlFor="monthlyBudget">계획한 월 돌봄 예산: {profile.monthlyBudget.toLocaleString()}원</label><input id="monthlyBudget" type="range" min="50000" max="500000" step="10000" value={profile.monthlyBudget} onChange={(event) => update("monthlyBudget", Number(event.target.value))} /></div><div className="ff-field"><label htmlFor="emergencyFund">준비 가능한 비상자금: {profile.emergencyFund.toLocaleString()}원</label><input id="emergencyFund" type="range" min="0" max="5000000" step="100000" value={profile.emergencyFund} onChange={(event) => update("emergencyFund", Number(event.target.value))} /></div></div>}</>}
     </section>}
 
     {showResult && <section className="ff-result ff-readiness-result" role="status"><div className={`ff-readiness-result-icon${passed ? " is-passed" : ""}`}>{passed ? <IconCheckmarkCircleFill /> : <IconCheckmarkShieldFill />}</div><h2 className="ff-section-title">{passed ? "필수 교육을 완료했어요" : "조금만 더 확인하면 돼요"}</h2><p className="ff-description">이 결과는 입양 전 필수 내용을 확인했는지 보여주는 참고 정보예요. 사람이나 동물을 평가하거나 자동 입양 거절에 사용하지 않습니다.</p><div className="ff-result-groups"><div><h3><IconCheckmarkCircleFill />잘 준비한 점</h3><p>주거, 돌봄 시간, 예산을 구체적인 숫자로 확인했어요.</p></div><div><h3><IconLightbulbDot5Fill />입양 전 준비할 점</h3><p>{profile.household !== "yes" ? "동거인과 책임과 비용을 더 이야기해 주세요." : "첫 일주일 적응 기간의 일정을 비워두세요."}</p></div></div>{!passed && <Callout tone="warning" title="다시 확인해 주세요" description="틀린 챕터의 해설을 확인한 뒤 다시 풀 수 있어요." />}{saved === "saved" && <Callout tone="positive" title="결과를 안전하게 저장했어요" description="이제 입양 신청을 시작할 수 있어요." />}{saved === "signin" && <Callout tone="informative" title="결과를 저장해 주세요" description="결과를 저장하려면 퍼스트프렌드 계정 로그인이 필요해요." linkProps={{ href: "/login?return_to=%2Freadiness", children: "로그인" }} />}{saved === "error" && <Callout tone="critical" description="결과를 저장하지 못했어요. 잠시 후 다시 시도해 주세요." />}</section>}
 
-    <footer className="ff-readiness-actions"><ActionButton variant="neutralWeak" onClick={previous} disabled={!showResult && step === 0}><IconChevronLeftLine aria-hidden />{showResult ? "시험으로 돌아가기" : "이전"}</ActionButton>{showResult ? passed ? <><ActionButton variant="neutralWeak" onClick={saveResult}>다시 저장</ActionButton><ActionButton className="ff-grow" asChild><a href="/find">입양할 친구 찾기</a></ActionButton></> : <ActionButton className="ff-grow" onClick={() => { setAnswers({}); setShowResult(false); setStep(0); }}>처음부터 다시 풀기</ActionButton> : <ActionButton className="ff-grow" disabled={answers[step] === undefined} onClick={next}>{step === 3 ? "결과 보기" : "다음 챕터"}</ActionButton>}</footer>
+    <footer className="ff-readiness-actions">{showResult ? <><ActionButton variant="neutralWeak" onClick={() => { setShowResult(false); setStep(0); }}><IconChevronLeftLine aria-hidden />다시 확인하기</ActionButton><ActionButton className="ff-grow" asChild><a href="/find">입양할 친구 찾기</a></ActionButton></> : <><ActionButton variant="neutralWeak" onClick={previous} disabled={step === 0}><IconChevronLeftLine aria-hidden />이전</ActionButton><ActionButton className="ff-grow" disabled={step > 0 && answers[questionIndex] === undefined} onClick={next}>{step === totalSteps - 1 ? "결과 보기" : "다음"}</ActionButton></>}</footer>
   </div>;
 }

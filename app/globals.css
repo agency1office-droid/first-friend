@@ -243,8 +243,11 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-adoption-test-trigger:focus-visible { outline: 2px solid var(--seed-color-stroke-focus); outline-offset: 2px; }
 .ff-adoption-planning-note { margin: 0; }
 .ff-adoption-test-page { position: fixed; z-index: 100; top: 0; left: 50%; display: grid; width: min(100vw, 520px); height: 100dvh; transform: translateX(-50%); overflow-y: auto; overscroll-behavior: contain; background: var(--seed-color-bg-layer-default); color: var(--seed-color-fg-neutral); }
-.ff-adoption-test-page > .ff-readiness { min-height: 100%; padding: max(12px, env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)); }
-.ff-readiness-appbar { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; min-height: 44px; margin-bottom: 12px; }
+.ff-adoption-test-page > .ff-readiness { min-height: 100%; padding: 0 16px calc(24px + env(safe-area-inset-bottom)); }
+.ff-readiness-progress { display: block; height: 6px; margin: 0 -16px; overflow: hidden; border-radius: 0; background: var(--seed-color-bg-neutral-weak); }
+.ff-readiness-progress > div { height: 100%; border-radius: 0; background: var(--seed-color-bg-brand-solid); transition: width .25s ease; }
+.ff-readiness-progress-meta { display: grid; gap: 6px; padding: 14px 0 0; }
+.ff-readiness-appbar { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; min-height: 44px; padding-top: max(12px, env(safe-area-inset-top)); margin-bottom: 0; }
 .ff-readiness-appbar strong { text-align: center; font-size: 16px; }
 .ff-readiness-close { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; color: var(--seed-color-fg-neutral); background: transparent; cursor: pointer; }
 .ff-readiness-close svg { width: 22px; height: 22px; }
@@ -259,8 +262,8 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-result-icon svg { width: 30px; height: 30px; }
 .ff-readiness-result { margin: 12px 0 0; text-align: center; }
 .ff-readiness-result .ff-description { margin: 0; }
-.ff-readiness-actions { position: sticky; bottom: 0; display: flex; gap: 8px; align-items: center; margin-top: auto; padding: 16px 0 max(8px, env(safe-area-inset-bottom)); background: linear-gradient(to bottom, transparent, var(--seed-color-bg-layer-default) 18%); }
-.ff-readiness-actions .seed-action-button { min-height: 48px; }
+.ff-readiness-actions { position: sticky; bottom: 0; display: flex; gap: 8px; align-items: center; margin: auto -16px 0; padding: 12px 16px max(12px, env(safe-area-inset-bottom)); background: var(--seed-color-bg-layer-default); box-shadow: 0 -8px 20px rgba(0,0,0,.05); }
+.ff-readiness-actions .seed-action-button { min-width: 0; min-height: 48px; flex: 1 1 0; }
 .ff-readiness-actions .seed-action-button svg { width: 18px; height: 18px; }
 .ff-pet-cost-calculator-trigger { width: 100%; }
 .ff-pet-cost-calculator-sheet { flex: 0 1 82dvh; min-height: 0; max-height: 82dvh; }
@@ -348,10 +351,6 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-progress > div { height: 100%; border-radius: inherit; background: var(--seed-color-bg-brand-solid); }
 .ff-grow { flex: 1; }
 .ff-readiness { display: grid; gap: 18px; }
-.ff-readiness-progress { display: grid; gap: 10px; padding: 2px 40px 14px 0; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
-.ff-readiness-progress-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--seed-color-fg-neutral); }
-.ff-readiness-progress-heading strong { font-size: 18px; line-height: 24px; }
-.ff-readiness-progress-heading span { color: var(--seed-color-fg-brand); font-size: 13px; font-weight: 700; }
 .ff-stepper { height: 6px; overflow: hidden; border-radius: 99px; background: var(--seed-color-bg-neutral-weak); }
 .ff-stepper > div { height: 100%; border-radius: inherit; background: var(--seed-color-bg-brand-solid); transition: width .25s ease; }
 .ff-step-label { color: var(--seed-color-fg-neutral-muted); font-size: 13px; font-weight: 700; }

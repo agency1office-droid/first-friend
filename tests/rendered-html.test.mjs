@@ -118,11 +118,12 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(readinessQuiz, /생활 준비도/);
   assert.doesNotMatch(readinessQuiz, /ProgressCircle/);
   assert.match(readinessQuiz, /ff-readiness-appbar/);
+  assert.match(readinessQuiz, /totalSteps = questions.length \+ 1/);
+  assert.match(readinessQuiz, /ff-readiness-progress-meta/);
   assert.match(readinessQuiz, /onClose/);
   assert.match(readinessQuiz, /ff-readiness-chapter/);
-  assert.match(readinessQuiz, /다음 챕터/);
+  assert.match(readinessQuiz, /다음/);
   assert.match(readinessQuiz, /role="progressbar"/);
-  assert.match(readinessQuiz, /aria-valuenow={step \+ 1}/);
   assert.match(readinessQuiz, /필수 교육을 완료했어요/);
   assert.match(page, /shelterHref = animal\.shelterId/);
   assert.match(page, /ff-detail-shelter-link/);

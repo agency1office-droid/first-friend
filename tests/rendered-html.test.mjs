@@ -143,7 +143,9 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-readiness-actions\.is-intro/);
   assert.match(readinessQuiz, /useState<Species \| null>\(null\)/);
   assert.match(readinessQuiz, /disabled=\{species === null\}/);
+  assert.match(readinessQuiz, /ff-readiness-species-description/);
   assert.match(readinessStyles, /\.ff-readiness-species-choice\[data-selected="true"\] \{[^}]*border: 1px dashed/);
+  assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button:disabled \{[^}]*opacity: 1;[^}]*background: var\(--seed-color-bg-neutral-solid\);/);
   assert.doesNotMatch(readinessQuiz, /<strong>💡 꿀팁<\/strong>/);
   assert.doesNotMatch(readinessQuiz, /monthlyBudget/);
   assert.doesNotMatch(readinessQuiz, /ff-readiness-support/);

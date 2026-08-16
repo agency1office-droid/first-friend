@@ -259,7 +259,8 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-close { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; color: var(--seed-color-fg-neutral); background: transparent; cursor: pointer; }
 .ff-readiness-close { grid-column: 3; grid-row: 1; justify-self: end; }
 .ff-readiness-close svg { width: 22px; height: 22px; }
-.ff-readiness-chapter { display: grid; gap: 24px; align-content: start; padding: 8px 16px 0; }
+.ff-readiness-questions { gap: 0; }
+.ff-readiness-chapter { display: grid; gap: 24px; align-content: start; padding: 0 16px; }
 .ff-readiness-chapter h2 { margin: 0; font-size: 24px; line-height: 32px; text-wrap: balance; }
 .ff-quiz-question-single { display: grid; gap: 12px; padding: 0; border: 0; }
 .ff-quiz-question-single label { min-height: 112px; align-items: center; justify-content: center; padding: 18px 16px; border-radius: 16px; text-align: center; }

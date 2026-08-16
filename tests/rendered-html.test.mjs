@@ -97,7 +97,10 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(page, /shelterAddressLabel/);
   assert.match(page, /AnimalDetailChromeBridge animalId=\{id\}/);
   assert.match(await readFile(new URL("../app/components/AnimalDetailChromeBridge.tsx", import.meta.url), "utf8"), /AnimalReportButton animalId=\{animalId\}/);
-  assert.match(await readFile(new URL("../app/components/AnimalReportButton.tsx", import.meta.url), "utf8"), /targetType: "animal"/);
+  const reportButton = await readFile(new URL("../app/components/AnimalReportButton.tsx", import.meta.url), "utf8");
+  assert.match(reportButton, /BottomSheetRoot/);
+  assert.match(reportButton, /targetType: "animal"/);
+  assert.match(reportButton, /신고할 이유를 선택해주세요/);
   assert.match(styles, /\.ff-detail-image-more \{ right: 12px; \}/);
   assert.match(styles, /\.ff-gallery-count \{[^}]*height: 32px;[^}]*background: rgba\(0,0,0,\.46\);[^}]*letter-spacing: \.04em;/);
   assert.match(page, /\/shelters\/\$\{encodeURIComponent\(animal\.shelterId\)\}/);

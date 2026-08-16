@@ -246,7 +246,6 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-adoption-test-page > .ff-readiness { min-height: 100%; padding: 0 16px calc(24px + env(safe-area-inset-bottom)); }
 .ff-readiness-intro { background: #e9fff3; color: #263238; }
 .ff-readiness-intro .ff-readiness-appbar { background: transparent; }
-.ff-readiness-intro .ff-readiness-close { color: #263238; }
 .ff-readiness-intro-appbar strong { display: none; }
 .ff-readiness-intro-appbar { grid-template-columns: 44px minmax(0, 1fr) 44px; }
 .ff-readiness-progress { display: block; height: 6px; margin: 0 -16px; overflow: hidden; border-radius: 0; background: var(--seed-color-bg-neutral-weak); }
@@ -256,9 +255,6 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-back { grid-column: 1; grid-row: 1; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; color: var(--seed-color-fg-neutral); background: transparent; cursor: pointer; }
 .ff-readiness-back svg { width: 26px; height: 26px; }
 .ff-readiness-appbar strong { display: block; text-align: center; font-size: 16px; line-height: 24px; }
-.ff-readiness-close { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; color: var(--seed-color-fg-neutral); background: transparent; cursor: pointer; }
-.ff-readiness-close { grid-column: 3; grid-row: 1; justify-self: end; }
-.ff-readiness-close svg { width: 22px; height: 22px; }
 .ff-readiness-questions { gap: 0; }
 .ff-readiness-chapter { display: grid; gap: 24px; align-content: start; padding: 0 16px; }
 .ff-readiness-chapter h2 { margin: 0; font-size: 24px; line-height: 32px; text-wrap: balance; }

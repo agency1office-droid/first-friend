@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Callout } from "seed-design/ui/callout";
-import { IconCheckmarkCircleFill, IconCheckmarkShieldFill, IconChevronLeftLine, IconLightbulbDot5Fill, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
+import { IconCheckmarkCircleFill, IconCheckmarkShieldFill, IconChevronLeftLine, IconLightbulbDot5Fill } from "@karrotmarket/react-monochrome-icon";
 import { educationScore as calculateEducation } from "../../lib/readiness-score";
 
 type Species = "cat" | "dog";
@@ -61,7 +61,6 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
   return <div className={`ff-readiness ff-readiness-${phase}`}>
     <header className={`ff-readiness-appbar${phase === "intro" ? " ff-readiness-intro-appbar" : ""}`}>
       <button type="button" className="ff-readiness-back" onClick={phase === "intro" ? onClose : previous} aria-label="이전으로"><IconChevronLeftLine aria-hidden /></button>
-      <button type="button" className="ff-readiness-close" onClick={onClose} aria-label="입양 전 준비 확인 닫기"><IconXmarkLine aria-hidden /></button>
       <strong>입양 전 준비 확인</strong>
     </header>
     {phase !== "intro" && <div className="ff-readiness-progress" role="progressbar" aria-label="입양 전 준비 진행률" aria-valuemin={1} aria-valuemax={totalPages} aria-valuenow={pageNumber}><div style={{ width: `${progressPercent}%` }} /></div>}

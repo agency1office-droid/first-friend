@@ -161,6 +161,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-readiness \{ display: flex; flex-direction: column;/);
   assert.match(readinessStyles, /\.ff-readiness-actions\.is-intro/);
   assert.match(readinessQuiz, /useState<Species \| null>\(null\)/);
+  assert.match(readinessQuiz, /if \(phase === "intro"\) \{ setSpecies\(null\); setAnswers\(\{\}\); setStep\(0\); setPhase\("species"\); return; \}/);
   assert.match(readinessQuiz, /disabled=\{species === null\}/);
   assert.match(readinessQuiz, /ff-readiness-species-description/);
   assert.match(readinessStyles, /\.ff-readiness-species-choice\[data-selected="true"\] \{[^}]*border: 1px dashed/);

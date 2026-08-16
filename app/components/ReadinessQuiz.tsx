@@ -39,7 +39,7 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
   const passed = educationScore >= 80;
   async function saveResult() { setSaved("idle"); const response = await fetch("/api/readiness", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ species: selectedSpecies, profile, answers: submittedAnswers }) }); if (response.ok) setSaved("saved"); else if (response.status === 401) setSaved("signin"); else setSaved("error"); }
   function next() {
-    if (phase === "intro") { setPhase("species"); return; }
+    if (phase === "intro") { setSpecies(null); setAnswers({}); setStep(0); setPhase("species"); return; }
     if (phase === "species") { setPhase("questions"); setStep(0); return; }
     if (phase === "questions" && step < questions.length - 1) { setStep((current) => current + 1); return; }
     setPhase("result");

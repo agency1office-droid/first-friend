@@ -140,6 +140,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /다음/);
   assert.match(readinessQuiz, /\{pageNumber\}\/\{totalPages\}/);
   assert.match(readinessQuiz, /필수 교육을 완료했어요/);
+  assert.match(readinessQuiz, /phase === "result" \? <ActionButton size="large" className="ff-grow" asChild>/);
+  assert.match(readinessQuiz, /size="medium" variant="neutralWeak".*다시 확인하기/);
   const readinessStyles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.doesNotMatch(readinessStyles, /ff-readiness-intro-visual/);
   assert.match(readinessStyles, /\.ff-readiness-progress-meta \{[^}]*padding: 14px 16px 0;/);

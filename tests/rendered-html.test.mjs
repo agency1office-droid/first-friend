@@ -662,14 +662,17 @@ test("preserves additional public animal photos and provides an original-size ga
 });
 
 test("explains public notice deadlines without presenting them as adoption deadlines", async () => {
-  const [detail, status, actions, apply] = await Promise.all([
+  const [detail, status, actions, apply, styles] = await Promise.all([
     readFile(new URL("../app/friends/[id]/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/animal-public-status.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/components/AnimalActions.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/apply/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
   assert.match(detail, /getAnimalPublicStatus/);
   assert.match(status, /보호자 확인 공고 중/);
+  assert.match(styles, /\.ff-detail-gallery-status \{[^}]*min-height: 44px;[^}]*padding: 10px 12px;/);
+  assert.match(styles, /\.ff-detail-gallery-status \.ff-detail-status-day \{[^}]*font-size: 11px;/);
   assert.match(status, /잃어버린 동물일 수 있어 원래 보호자를 확인하고 있어요/);
   assert.match(status, /입양 상담 가능/);
   assert.match(status, /publicOutcomeLabel/);

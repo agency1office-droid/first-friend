@@ -269,6 +269,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-result .ff-description { margin: 0; }
 .ff-readiness-actions { position: sticky; bottom: 0; z-index: 3; display: flex; flex: none; gap: 8px; align-items: center; width: 100%; box-sizing: border-box; margin-top: auto; padding: 0 16px max(16px, env(safe-area-inset-bottom)); background: var(--seed-color-bg-layer-default); box-shadow: none; }
 .ff-readiness-actions .seed-action-button { min-width: 0; flex: 1 1 0; }
+.ff-readiness-actions .seed-action-button--variant_brandSolid:not(:disabled) { color: var(--seed-color-fg-on-color); }
 .ff-readiness-actions .seed-action-button:disabled { opacity: 1; color: var(--seed-color-fg-neutral-muted); background: var(--seed-color-bg-neutral-weak); cursor: not-allowed; }
 .ff-readiness-actions .seed-action-button svg { width: 18px; height: 18px; }
 .ff-readiness-actions.is-intro .seed-action-button { flex-basis: 100%; }

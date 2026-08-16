@@ -25,6 +25,7 @@ const speciesSafety: Record<Species, Question["options"]> = {
 };
 
 export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) {
+  const [phase, setPhase] = useState<"intro" | "questions" | "result">("intro");
   const [step, setStep] = useState(0);
   const [species, setSpecies] = useState<Species>("cat");
   const profile = initialProfile;
@@ -32,33 +33,42 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
   const [saved, setSaved] = useState<"idle" | "saved" | "signin" | "error">("idle");
   const [showResult, setShowResult] = useState(false);
   const questions = useMemo(() => commonChapters.map((question, index) => index === 2 ? { ...question, question: species === "cat" ? "고양이의 창문·방묘 안전을 위해 가장 필요한 것은 무엇인가요?" : "강아지의 산책·이동 안전을 위해 가장 필요한 것은 무엇인가요?", options: speciesSafety[species], answer: 1, explanation: species === "cat" ? "추락과 탈출은 짧은 순간에 일어날 수 있어요. 고정된 방묘 장치를 준비해 주세요." : "낯선 환경에서의 이탈을 막을 수 있도록 몸에 맞는 안전장비와 인식표를 준비해 주세요." } : question), [species]);
-  const totalSteps = questions.length + 1;
   const submittedAnswers = questions.map((_, index) => answers[index]);
   const educationScore = calculateEducation(submittedAnswers);
   const passed = educationScore >= 80;
   async function saveResult() { setSaved("idle"); const response = await fetch("/api/readiness", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ species, profile, answers: submittedAnswers }) }); if (response.ok) setSaved("saved"); else if (response.status === 401) setSaved("signin"); else setSaved("error"); }
-  function next() { if (step < totalSteps - 1) setStep((current) => current + 1); else { setShowResult(true); if (passed) void saveResult(); } }
-  function previous() { if (showResult) setShowResult(false); else if (step > 0) setStep((current) => current - 1); }
+  function next() {
+    if (phase === "intro") { setPhase("questions"); setStep(0); return; }
+    if (phase === "questions" && step < questions.length - 1) { setStep((current) => current + 1); return; }
+    setPhase("result");
+    setShowResult(true);
+    if (passed) void saveResult();
+  }
+  function previous() {
+    if (phase === "result") { setPhase("questions"); setShowResult(false); setStep(questions.length - 1); return; }
+    if (phase === "questions" && step > 0) { setStep((current) => current - 1); return; }
+    setPhase("intro");
+  }
 
-  const questionIndex = Math.max(0, step - 1);
+  const questionIndex = step;
   const question = questions[questionIndex];
-  const progressValue = showResult ? totalSteps : step + 1;
-  const progressLabel = showResult ? "확인 결과" : step === 0 ? "반려동물 선택" : question.chapter;
-  return <div className="ff-readiness">
-    <div className="ff-readiness-progress" role="progressbar" aria-label={`입양 준비 과정 ${progressValue}/${totalSteps}`} aria-valuemin={1} aria-valuemax={totalSteps} aria-valuenow={progressValue}><div style={{ width: `${progressValue / totalSteps * 100}%` }} /></div>
+  const progressValue = phase === "result" ? questions.length : phase === "questions" ? step + 1 : 0;
+  const progressLabel = phase === "result" ? "확인 결과" : question?.chapter;
+  return <div className={`ff-readiness ff-readiness-${phase}`}>
+    {phase !== "intro" && <div className="ff-readiness-progress" role="progressbar" aria-label={`입양 준비 과정 ${progressValue}/${questions.length}`} aria-valuemin={1} aria-valuemax={questions.length} aria-valuenow={progressValue}><div style={{ width: `${progressValue / questions.length * 100}%` }} /></div>}
     <header className="ff-readiness-appbar">
       <button type="button" className="ff-readiness-close" onClick={onClose} aria-label="입양 전 준비 확인 닫기"><IconXmarkLine aria-hidden /></button>
       <strong>입양 전 준비 확인</strong>
       <span aria-hidden />
     </header>
-    <div className="ff-readiness-progress-meta"><div className="ff-readiness-progress-heading"><strong>{progressLabel}</strong><span>{progressValue}/{totalSteps}</span></div><div className="ff-step-label">{showResult ? "모든 챕터를 확인했어요" : step === 0 ? "시작하기" : "CHAPTER " + step}</div></div>
+    {phase !== "intro" && <div className="ff-readiness-progress-meta"><div className="ff-readiness-progress-heading"><strong>{progressLabel}</strong><span>{progressValue}/{questions.length}</span></div><div className="ff-step-label">{phase === "result" ? "모든 챕터를 확인했어요" : "CHAPTER " + progressValue}</div></div>}
 
-    {!showResult && <section className="ff-readiness-chapter" aria-labelledby="readiness-question-title">
-      {step === 0 ? <><div className="ff-readiness-chapter-kicker">입양할 친구를 먼저 골라주세요</div><h2 id="readiness-question-title">어떤 친구를 만나고 싶나요?</h2><div className="ff-readiness-species-grid" role="group" aria-label="입양을 준비하는 동물"><button type="button" className="ff-readiness-species-choice" data-selected={species === "cat" || undefined} aria-pressed={species === "cat"} onClick={() => setSpecies("cat")}><span className="ff-readiness-species-emoji" aria-hidden>🐱</span><strong>고양이</strong><small>조용한 실내 생활을 준비해요</small></button><button type="button" className="ff-readiness-species-choice" data-selected={species === "dog" || undefined} aria-pressed={species === "dog"} onClick={() => setSpecies("dog")}><span className="ff-readiness-species-emoji" aria-hidden>🐶</span><strong>강아지</strong><small>산책과 활동 시간을 준비해요</small></button></div></> : <><div className="ff-readiness-chapter-kicker">CHAPTER {step}</div><h2 id="readiness-question-title">{question.question}</h2><fieldset className="ff-quiz-question ff-quiz-question-single"><legend className="ff-visually-hidden">{question.question}</legend>{question.options.map((option, optionIndex) => <label key={option}><input type="radio" name={`readiness-chapter-${questionIndex}`} checked={answers[questionIndex] === optionIndex} onChange={() => setAnswers((current) => ({ ...current, [questionIndex]: optionIndex }))} /><span>{option}</span></label>)}</fieldset></>}
-    </section>}
+    {phase === "intro" && <section className="ff-readiness-intro" aria-labelledby="readiness-intro-title"><div className="ff-readiness-intro-icon" aria-hidden>🐾</div><div className="ff-readiness-chapter-kicker">입양 전에 꼭 확인해요</div><h1 id="readiness-intro-title">입양 전 준비 확인</h1><p className="ff-description">반려동물과 함께 살아가기 전에 꼭 알아야 할 내용을 가볍게 확인해 보세요.</p><div className="ff-readiness-intro-details"><div><strong>총 4개 챕터</strong><span>생활 환경부터 평생 책임까지</span></div><div><strong>약 2분</strong><span>한 화면에 한 문항씩 진행해요</span></div></div><div className="ff-readiness-chapter-kicker">입양할 친구를 먼저 골라주세요</div><div className="ff-readiness-species-grid" role="group" aria-label="입양을 준비하는 동물"><button type="button" className="ff-readiness-species-choice" data-selected={species === "cat" || undefined} aria-pressed={species === "cat"} onClick={() => setSpecies("cat")}><span className="ff-readiness-species-emoji" aria-hidden>🐱</span><strong>고양이</strong><small>조용한 실내 생활을 준비해요</small></button><button type="button" className="ff-readiness-species-choice" data-selected={species === "dog" || undefined} aria-pressed={species === "dog"} onClick={() => setSpecies("dog")}><span className="ff-readiness-species-emoji" aria-hidden>🐶</span><strong>강아지</strong><small>산책과 활동 시간을 준비해요</small></button></div></section>}
+
+    {phase === "questions" && <section className="ff-readiness-chapter" aria-labelledby="readiness-question-title"><div className="ff-readiness-chapter-kicker">CHAPTER {progressValue}</div><h2 id="readiness-question-title">{question.question}</h2><fieldset className="ff-quiz-question ff-quiz-question-single"><legend className="ff-visually-hidden">{question.question}</legend>{question.options.map((option, optionIndex) => <label key={option}><input type="radio" name={`readiness-chapter-${questionIndex}`} checked={answers[questionIndex] === optionIndex} onChange={() => setAnswers((current) => ({ ...current, [questionIndex]: optionIndex }))} /><span>{option}</span></label>)}</fieldset>{answers[questionIndex] !== undefined && <div className="ff-readiness-tip"><strong>💡 준비 팁</strong><p>{question.explanation}</p></div>}</section>}
 
     {showResult && <section className="ff-result ff-readiness-result" role="status"><div className={`ff-readiness-result-icon${passed ? " is-passed" : ""}`}>{passed ? <IconCheckmarkCircleFill /> : <IconCheckmarkShieldFill />}</div><h2 className="ff-section-title">{passed ? "필수 교육을 완료했어요" : "조금만 더 확인하면 돼요"}</h2><p className="ff-description">이 결과는 입양 전 필수 내용을 확인했는지 보여주는 참고 정보예요. 사람이나 동물을 평가하거나 자동 입양 거절에 사용하지 않습니다.</p><div className="ff-result-groups"><div><h3><IconCheckmarkCircleFill />잘 준비한 점</h3><p>주거와 돌봄 시간을 기준으로 입양 전 준비를 확인했어요.</p></div><div><h3><IconLightbulbDot5Fill />입양 전 준비할 점</h3><p>{profile.household !== "yes" ? "동거인과 책임과 비용을 더 이야기해 주세요." : "첫 일주일 적응 기간의 일정을 비워두세요."}</p></div></div>{!passed && <Callout tone="warning" title="다시 확인해 주세요" description="틀린 챕터의 해설을 확인한 뒤 다시 풀 수 있어요." />}{saved === "saved" && <Callout tone="positive" title="결과를 안전하게 저장했어요" description="이제 입양 신청을 시작할 수 있어요." />}{saved === "signin" && <Callout tone="informative" title="결과를 저장해 주세요" description="결과를 저장하려면 퍼스트프렌드 계정 로그인이 필요해요." linkProps={{ href: "/login?return_to=%2Freadiness", children: "로그인" }} />}{saved === "error" && <Callout tone="critical" description="결과를 저장하지 못했어요. 잠시 후 다시 시도해 주세요." />}</section>}
 
-    <footer className="ff-readiness-actions">{showResult ? <><ActionButton variant="neutralWeak" onClick={() => { setShowResult(false); setStep(0); }}><IconChevronLeftLine aria-hidden />다시 확인하기</ActionButton><ActionButton className="ff-grow" asChild><a href="/find">입양할 친구 찾기</a></ActionButton></> : <><ActionButton variant="neutralWeak" onClick={previous} disabled={step === 0}><IconChevronLeftLine aria-hidden />이전</ActionButton><ActionButton className="ff-grow" disabled={step > 0 && answers[questionIndex] === undefined} onClick={next}>{step === totalSteps - 1 ? "결과 보기" : "다음"}</ActionButton></>}</footer>
+    <footer className={`ff-readiness-actions${phase === "intro" ? " is-intro" : ""}`}>{phase === "result" ? <><ActionButton variant="neutralWeak" onClick={() => { setPhase("intro"); setShowResult(false); setStep(0); }}><IconChevronLeftLine aria-hidden />다시 확인하기</ActionButton><ActionButton className="ff-grow" asChild><a href="/find">입양할 친구 찾기</a></ActionButton></> : phase === "intro" ? <ActionButton className="ff-grow" onClick={next}>시작하기</ActionButton> : <><ActionButton variant="neutralWeak" onClick={previous}><IconChevronLeftLine aria-hidden />이전</ActionButton><ActionButton className="ff-grow" disabled={answers[questionIndex] === undefined} onClick={next}>{step === questions.length - 1 ? "결과 보기" : "다음"}</ActionButton></>}</footer>
   </div>;
 }

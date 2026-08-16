@@ -118,7 +118,9 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(readinessQuiz, /생활 준비도/);
   assert.doesNotMatch(readinessQuiz, /ProgressCircle/);
   assert.match(readinessQuiz, /ff-readiness-appbar/);
-  assert.match(readinessQuiz, /totalSteps = questions.length \+ 1/);
+  assert.match(readinessQuiz, /phase, setPhase/);
+  assert.match(readinessQuiz, /ff-readiness-intro/);
+  assert.match(readinessQuiz, /questions.length/);
   assert.match(readinessQuiz, /ff-readiness-progress-meta/);
   assert.match(readinessQuiz, /onClose/);
   assert.match(readinessQuiz, /ff-readiness-chapter/);
@@ -130,7 +132,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button \{[^}]*flex: 1 1 0;[^}]*border-radius: 0;/);
   assert.match(readinessStyles, /\.ff-readiness-appbar > span \{ grid-column: 1/);
   assert.match(readinessStyles, /\.ff-readiness-close \{ grid-column: 3; grid-row: 1; justify-self: end;/);
-  assert.match(readinessStyles, /\.ff-readiness \{ display: grid; grid-template-rows: auto auto 1fr auto;/);
+  assert.match(readinessStyles, /\.ff-readiness \{ display: flex; flex-direction: column;/);
+  assert.match(readinessStyles, /\.ff-readiness-actions\.is-intro/);
   assert.doesNotMatch(readinessQuiz, /monthlyBudget/);
   assert.doesNotMatch(readinessQuiz, /ff-readiness-support/);
   assert.match(readinessQuiz, /ff-readiness-species-grid/);

@@ -101,6 +101,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(reportButton, /BottomSheetRoot/);
   assert.match(reportButton, /targetType: "animal"/);
   assert.match(reportButton, /신고할 이유를 선택해주세요/);
+  assert.match(styles, /\.ff-detail-report-reasons button span \{[^}]*grid-column: 2;[^}]*width: 100%;/);
   assert.match(styles, /\.ff-detail-image-more \{ right: 12px; \}/);
   assert.match(styles, /\.ff-gallery-count \{[^}]*height: 32px;[^}]*background: rgba\(0,0,0,\.46\);[^}]*letter-spacing: \.04em;/);
   assert.match(page, /\/shelters\/\$\{encodeURIComponent\(animal\.shelterId\)\}/);

@@ -105,6 +105,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(styles, /\.ff-detail-report-danger-label \{ color: var\(--seed-color-fg-critical\); \}/);
   assert.match(styles, /\.ff-detail-image-more \{ right: 12px; \}/);
   assert.match(styles, /\.ff-gallery-count \{[^}]*height: 32px;[^}]*background: rgba\(0,0,0,\.36\);[^}]*letter-spacing: \.07em;/);
+  assert.doesNotMatch(styles, /\.ff-gallery-count \{[^}]*backdrop-filter:/);
+  assert.doesNotMatch(styles, /\.ff-gallery-count \{[^}]*box-shadow:/);
   assert.match(page, /\/shelters\/\$\{encodeURIComponent\(animal\.shelterId\)\}/);
   assert.match(chrome, /data-route-path=\{path\}/);
   assert.match(styles, /data-route-path\^="\/friends\//);

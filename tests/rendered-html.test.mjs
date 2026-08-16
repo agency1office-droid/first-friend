@@ -93,7 +93,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(page, /AnimalDetailChromeBridge/);
   assert.match(page, /shelterHref = animal\.shelterId/);
   assert.match(page, /ff-detail-shelter-link/);
-  assert.match(page, /<p className="ff-detail-shelter-address"><span>\{shelterAddress\}<\/span><\/p>/);
+  assert.match(page, /function displayShelterAddress/);
+  assert.match(page, /shelterAddressLabel/);
   assert.match(page, /\/shelters\/\$\{encodeURIComponent\(animal\.shelterId\)\}/);
   assert.match(chrome, /data-route-path=\{path\}/);
   assert.match(styles, /data-route-path\^="\/friends\//);

@@ -88,6 +88,10 @@ function detailAge(animal: Animal) {
   return raw;
 }
 
+function displayShelterAddress(address: string) {
+  return address.replace(/\s*\[[^\]]+\]\s*$/, "").trim() || address;
+}
+
 function isDuplicateTrait(trait: string, animal: Animal, colors: string[], publicState: string) {
   const normalizedTrait = trait.replace(/[\s()]/g, "").toLocaleLowerCase("ko-KR");
   if (/\d+(?:\.\d+)?kg/i.test(normalizedTrait) || normalizedTrait.includes("보호중")) return true;
@@ -144,6 +148,7 @@ export default async function AnimalPage({
   const noticeDaysRemaining = getNoticeDaysRemaining(publicStatus.notice);
   const colors = detailColors(animal.colors);
   const shelterAddress = animal.shelterAddress || animal.region;
+  const shelterAddressLabel = displayShelterAddress(shelterAddress);
   const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}` : null;
   const shelterMapHref = `https://map.kakao.com/link/search/${encodeURIComponent(`${animal.shelter} ${shelterAddress}`)}`;
   const weight = detailWeight(animal);
@@ -172,11 +177,11 @@ export default async function AnimalPage({
         <div className="ff-detail-shelter-icon" aria-hidden><IconHospitalcrossBuildingLine /></div>
         {shelterHref ? <a className="ff-detail-shelter-copy ff-detail-shelter-link" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>
           <strong>{animal.shelter}</strong>
-          <p className="ff-detail-shelter-address"><span>{shelterAddress}</span></p>
+          <p className="ff-detail-shelter-address"><span>{shelterAddressLabel}</span></p>
           <ShelterTravelMeta distance={animal.distanceMeters} lat={animal.shelterLat} lng={animal.shelterLng} />
         </a> : <div className="ff-detail-shelter-copy">
           <strong>{animal.shelter}</strong>
-          <p className="ff-detail-shelter-address"><span>{shelterAddress}</span></p>
+          <p className="ff-detail-shelter-address"><span>{shelterAddressLabel}</span></p>
           <ShelterTravelMeta distance={animal.distanceMeters} lat={animal.shelterLat} lng={animal.shelterLng} />
         </div>}
         <div className="ff-detail-shelter-actions">

@@ -99,6 +99,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(await readFile(new URL("../app/components/AnimalDetailChromeBridge.tsx", import.meta.url), "utf8"), /AnimalReportButton animalId=\{animalId\}/);
   assert.match(await readFile(new URL("../app/components/AnimalReportButton.tsx", import.meta.url), "utf8"), /targetType: "animal"/);
   assert.match(styles, /\.ff-detail-image-more \{ right: 12px; \}/);
+  assert.match(styles, /\.ff-gallery-count \{[^}]*height: 32px;[^}]*background: rgba\(0,0,0,\.46\);[^}]*letter-spacing: \.04em;/);
   assert.match(page, /\/shelters\/\$\{encodeURIComponent\(animal\.shelterId\)\}/);
   assert.match(chrome, /data-route-path=\{path\}/);
   assert.match(styles, /data-route-path\^="\/friends\//);

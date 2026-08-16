@@ -26,6 +26,7 @@ import { AnimalDetailChromeBridge } from "../../components/AnimalDetailChromeBri
 import { AnimalPublicStatusBanner } from "../../components/AnimalPublicStatusBanner";
 import { AnimalAiIntro } from "../../components/AnimalAiIntro";
 import { getBreedKnowledge } from "../../../lib/breed-knowledge";
+import { AdoptionPlanningCard } from "../../components/AdoptionPlanningCard";
 
 // 공개 동물 정보는 초 단위로 바뀌지 않으므로 반복 방문은 짧게 캐시합니다.
 // 즐겨찾기 등 사용자 상태는 기존 클라이언트 브리지에서 별도로 처리합니다.
@@ -192,6 +193,7 @@ export default async function AnimalPage({
         </div>
       </section>
       <AnimalAiIntro animalId={animal.id} />
+      <AdoptionPlanningCard species={animal.species} breed={animal.breed} animalAge={animal.age} />
       <article className="ff-detail-body">
         <h1 className="ff-visually-hidden">{animal.name}</h1>
         <section className="ff-detail-info-section ff-detail-animal-info" aria-labelledby="detail-info-title">

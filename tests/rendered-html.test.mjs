@@ -91,6 +91,14 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(bridge, /FavoriteButton/);
   assert.doesNotMatch(bridge, /IconAndroidshareLine/);
   assert.match(page, /AnimalDetailChromeBridge/);
+  const planning = await readFile(new URL("../app/components/AdoptionPlanningCard.tsx", import.meta.url), "utf8");
+  assert.match(page, /AdoptionPlanningCard species=\{animal\.species\}/);
+  assert.match(planning, /\/api\/readiness/);
+  assert.match(planning, /함께할 시간/);
+  assert.match(planning, /월 생활비/);
+  assert.match(planning, /초기 준비비/);
+  assert.match(planning, /생활 궁합/);
+  assert.match(planning, /AccordionItem value="prepare"/);
   assert.match(page, /shelterHref = animal\.shelterId/);
   assert.match(page, /ff-detail-shelter-link/);
   assert.match(page, /function displayShelterAddress/);

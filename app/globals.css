@@ -258,7 +258,6 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-chapter h2 { margin: 0; font-size: 24px; line-height: 32px; text-wrap: balance; }
 .ff-quiz-question-single { display: grid; gap: 10px; padding: 0; border: 0; }
 .ff-quiz-question-single label { min-height: 52px; align-items: center; }
-.ff-readiness-support { display: grid; gap: 14px; padding-top: 4px; }
 .ff-readiness-result-icon { display: grid; place-items: center; width: 56px; height: 56px; margin: 8px auto 2px; border-radius: 50%; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
 .ff-readiness-result-icon.is-passed { color: var(--seed-color-fg-positive); background: var(--seed-color-bg-positive-weak); }
 .ff-readiness-result-icon svg { width: 30px; height: 30px; }

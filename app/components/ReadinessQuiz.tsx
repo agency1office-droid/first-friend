@@ -59,7 +59,7 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
   const pageNumber = phase === "intro" ? 1 : phase === "species" ? 2 : phase === "questions" ? step + 3 : totalPages;
   const progressPercent = phase === "intro" ? 0 : Math.round((pageNumber / totalPages) * 100);
   return <div className={`ff-readiness ff-readiness-${phase}`}>
-    <header className={`ff-readiness-appbar${phase === "intro" || phase === "result" ? " ff-readiness-intro-appbar" : ""}`}>
+    <header className={`ff-readiness-appbar${phase === "intro" ? " ff-readiness-intro-appbar" : ""}`}>
       <button type="button" className="ff-readiness-back" onClick={phase === "intro" ? onClose : previous} aria-label="이전으로"><IconChevronLeftLine aria-hidden /></button>
       <strong>입양 전 준비 확인</strong>
     </header>

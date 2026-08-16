@@ -129,7 +129,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /totalPages = questions.length \+ 3/);
   assert.match(readinessQuiz, /questions.length/);
   assert.match(readinessQuiz, /ff-readiness-progress-meta/);
-  assert.match(readinessQuiz, /phase === "intro" \|\| phase === "result"/);
+  assert.match(readinessQuiz, /phase === "intro" \? " ff-readiness-intro-appbar"/);
   assert.match(readinessQuiz, /phase !== "intro" && phase !== "result" && <div className="ff-readiness-progress"/);
   assert.match(readinessQuiz, /phase !== "intro" && phase !== "result" && <div className="ff-readiness-progress-meta"/);
   assert.match(readinessQuiz, /ff-readiness-progress/);

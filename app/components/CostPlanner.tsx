@@ -8,8 +8,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "se
 import { QuantityPicker } from "seed-design/ui/quantity-picker";
 
 const money = (value:number) => `${Math.round(value / 10000).toLocaleString("ko-KR")}만원`;
-export function CostPlanner(){
-  const [species,setSpecies]=useState<"cat"|"dog">("cat"),[quality,setQuality]=useState(45),[pets,setPets]=useState(1);
+export function CostPlanner({ initialSpecies = "cat" }: { initialSpecies?: "cat" | "dog" }){
+  const [species,setSpecies]=useState<"cat"|"dog">(initialSpecies),[quality,setQuality]=useState(45),[pets,setPets]=useState(1);
   const items=species==="cat"?catCosts:dogCosts;
   const sums=useMemo(()=>Object.fromEntries(["처음","매달","매년","비상"].map(cadence=>{const rows=items.filter(i=>i.cadence===cadence);const ratio=quality/100;return [cadence,rows.reduce((s,i)=>s+i.low+(i.high-i.low)*ratio,0)*pets]})),[items,quality,pets]);
   return <div className="ff-cost-planner"><SegmentedControl aria-label="동물 종류" value={species} onValueChange={v=>setSpecies(v as "cat"|"dog")}><SegmentedControlItem value="cat">고양이</SegmentedControlItem><SegmentedControlItem value="dog">강아지</SegmentedControlItem></SegmentedControl>

@@ -5,6 +5,7 @@ import { Badge } from "seed-design/ui/badge";
 import { BottomSheetBody, BottomSheetContent, BottomSheetRoot, BottomSheetTrigger } from "seed-design/ui/bottom-sheet";
 import { IconCheckmarkCircleFill, IconCheckmarkShieldFill } from "@karrotmarket/react-monochrome-icon";
 import { ReadinessQuiz } from "./ReadinessQuiz";
+import { PetCostCalculator } from "./PetCostCalculator";
 
 type Assessment = { passed?: boolean };
 type Status = "loading" | "guest" | "incomplete" | "completed";
@@ -70,6 +71,7 @@ export function AdoptionPlanningCard(props: { species: string; breed: string; an
           </BottomSheetBody>
         </BottomSheetContent>
       </BottomSheetRoot>
+      <PetCostCalculator species={props.species} />
       <p className="ff-adoption-planning-note">시험 결과는 입양 전 준비를 돕기 위한 참고 정보예요. 최종 상담과 입양 결정은 보호소와 함께 확인해 주세요.</p>
     </section>
   );

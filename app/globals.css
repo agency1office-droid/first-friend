@@ -245,6 +245,10 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-adoption-test-sheet { flex: 0 1 82dvh; min-height: 0; max-height: 82dvh; }
 .ff-adoption-test-sheet .seed-bottom-sheet__header { padding-top: 28px; padding-bottom: 16px; }
 .ff-adoption-test-sheet .seed-bottom-sheet__body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: max(24px, var(--seed-safe-area-bottom)); }
+.ff-pet-cost-calculator-trigger { width: 100%; }
+.ff-pet-cost-calculator-sheet { flex: 0 1 82dvh; min-height: 0; max-height: 82dvh; }
+.ff-pet-cost-calculator-sheet .seed-bottom-sheet__header { padding-top: 28px; padding-bottom: 16px; }
+.ff-pet-cost-calculator-sheet .seed-bottom-sheet__body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: max(24px, var(--seed-safe-area-bottom)); }
 .ff-detail-shelter-meta { margin: 0; color: var(--seed-color-fg-neutral-subtle); font-size: 12px; font-weight: 600; line-height: 17px; }
 .ff-detail-shelter-distance { color: var(--seed-color-fg-brand); }
 .ff-detail-ai-section { padding: 16px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }

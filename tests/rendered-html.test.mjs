@@ -104,6 +104,10 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(planning, /BottomSheetContent/);
   assert.match(planning, /ff-adoption-test-sheet/);
   assert.match(planning, /ReadinessQuiz/);
+  assert.match(planning, /PetCostCalculator/);
+  const calculator = await readFile(new URL("../app/components/PetCostCalculator.tsx", import.meta.url), "utf8");
+  assert.match(calculator, /CostPlanner initialSpecies/);
+  assert.match(calculator, /반려동물 지출 계산기/);
   const readinessQuiz = await readFile(new URL("../app/components/ReadinessQuiz.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(readinessQuiz, /생활 준비도/);
   assert.doesNotMatch(readinessQuiz, /ProgressCircle/);

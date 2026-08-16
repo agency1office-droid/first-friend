@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ActionButton } from "seed-design/ui/action-button";
+import { IconChevronRightLine } from "@karrotmarket/react-monochrome-icon";
 import { distanceMeters, formatDistance, formatDrivingDuration, readHomeLocation, type HomeLocation } from "../../lib/geo";
 
 export type KakaoMaps = {
@@ -92,13 +93,19 @@ export function ShelterLocationCard({
   useEffect(() => {
     if (!visible || !mapRef.current || !jsKey) return;
     let active = true;
+    let settled = false;
+    const fallbackTimer = window.setTimeout(() => {
+      if (active && !settled) setMapFailed(true);
+    }, 5000);
     void loadKakaoMaps(jsKey).then((maps) => {
+      settled = true;
+      window.clearTimeout(fallbackTimer);
       if (!active || !mapRef.current) return;
       const shelterPoint = new maps.LatLng(lat, lng);
       const map = new maps.Map(mapRef.current, { center: shelterPoint, level: 3 });
       new maps.Marker({ map, position: shelterPoint, title: name });
-    }).catch(() => { if (active) setMapFailed(true); });
-    return () => { active = false; };
+    }).catch(() => { settled = true; window.clearTimeout(fallbackTimer); if (active) setMapFailed(true); });
+    return () => { active = false; window.clearTimeout(fallbackTimer); };
   }, [jsKey, lat, lng, name, visible]);
 
   const mapHref = `https://map.kakao.com/link/map/${encodeURIComponent(name)},${lat},${lng}`;
@@ -108,7 +115,7 @@ export function ShelterLocationCard({
     <p className="ff-shelter-distance-summary" aria-live="polite">
       {meters !== null
         ? `우리 동네에서 약 ${formatDistance(meters)}${driveDurationSeconds !== null ? ` · 차로 약 ${formatDrivingDuration(driveDurationSeconds)}` : ""}`
-        : "지도에서 보호소 위치를 확인해 보세요"}
+        : <a className="ff-shelter-map-prompt" href={mapHref} target="_blank" rel="noreferrer" aria-label={`${name} 위치를 카카오맵에서 확인하기`}>지도에서 보호소 위치를 확인해 보세요<IconChevronRightLine aria-hidden /></a>}
     </p>
     {!mapFailed && <div ref={mapRef} className="ff-kakao-map" aria-label={`${name} 카카오 지도`} />}
     {mapFailed && <Image className="ff-kakao-map" src={staticMapHref} alt={`${name} 위치를 표시한 카카오 지도`} width={640} height={360} unoptimized />}

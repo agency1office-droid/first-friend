@@ -91,6 +91,9 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(bridge, /FavoriteButton/);
   assert.doesNotMatch(bridge, /IconAndroidshareLine/);
   assert.match(page, /AnimalDetailChromeBridge/);
+  const locationCard = await readFile(new URL("../app/components/ShelterLocationCard.tsx", import.meta.url), "utf8");
+  assert.match(locationCard, /ff-shelter-map-prompt/);
+  assert.match(locationCard, /setMapFailed\(true\)/);
   const planning = await readFile(new URL("../app/components/AdoptionPlanningCard.tsx", import.meta.url), "utf8");
   assert.match(page, /AdoptionPlanningCard species=\{animal\.species\}/);
   assert.match(planning, /\/api\/readiness/);

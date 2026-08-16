@@ -134,12 +134,16 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /\{pageNumber\}\/\{totalPages\}/);
   assert.match(readinessQuiz, /필수 교육을 완료했어요/);
   const readinessStyles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
-  assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*gap: 8px;[^}]*padding: 0;[^}]*background: transparent;/);
+  assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*gap: 8px;[^}]*padding: 0 16px max\(16px, env\(safe-area-inset-bottom\)\);[^}]*background: transparent;/);
   assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button \{[^}]*flex: 1 1 0;/);
   assert.match(readinessStyles, /\.ff-readiness-back \{ grid-column: 1;/);
   assert.match(readinessStyles, /\.ff-readiness-close \{ grid-column: 3; grid-row: 1; justify-self: end;/);
   assert.match(readinessStyles, /\.ff-readiness \{ display: flex; flex-direction: column;/);
   assert.match(readinessStyles, /\.ff-readiness-actions\.is-intro/);
+  assert.match(readinessQuiz, /useState<Species \| null>\(null\)/);
+  assert.match(readinessQuiz, /disabled=\{species === null\}/);
+  assert.match(readinessStyles, /\.ff-readiness-species-choice\[data-selected="true"\] \{[^}]*border: 1px dashed/);
+  assert.doesNotMatch(readinessQuiz, /<strong>💡 꿀팁<\/strong>/);
   assert.doesNotMatch(readinessQuiz, /monthlyBudget/);
   assert.doesNotMatch(readinessQuiz, /ff-readiness-support/);
   assert.match(readinessQuiz, /ff-readiness-species-grid/);

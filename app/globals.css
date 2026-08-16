@@ -256,7 +256,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-back svg { width: 26px; height: 26px; }
 .ff-readiness-appbar strong { display: block; text-align: center; font-size: 16px; line-height: 24px; }
 .ff-readiness-questions { gap: 0; }
-.ff-readiness-chapter { display: grid; gap: 24px; align-content: start; margin-top: -16px; padding: 0 16px; }
+.ff-readiness-chapter { display: grid; gap: 24px; align-content: start; margin-top: -40px; padding: 0 16px; }
 .ff-readiness-chapter h2 { margin: 0; font-size: 24px; line-height: 32px; text-wrap: balance; }
 .ff-quiz-question-single { display: grid; gap: 12px; padding: 0; border: 0; }
 .ff-quiz-question-single label { min-height: 112px; align-items: center; justify-content: center; padding: 18px 16px; border-radius: 16px; text-align: center; }
@@ -372,9 +372,9 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-species-choice { display: grid; place-items: center; align-content: center; aspect-ratio: 1; min-width: 0; padding: 18px 12px; border: 1px solid transparent; border-radius: 16px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-neutral-weak); cursor: pointer; transition: background-color .2s ease, border-color .2s ease; }
 .ff-readiness-species-choice[data-selected="true"] { border: 1px dashed var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-weak); }
 .ff-readiness-species-choice:focus-visible { outline: 3px solid var(--seed-color-stroke-brand-weak); outline-offset: 2px; }
-.ff-readiness-species-emoji { display: block; margin-bottom: 18px; font-size: 42px; line-height: 1; }
+.ff-readiness-species-emoji { display: block; margin-bottom: 28px; font-size: 42px; line-height: 1; }
 .ff-readiness-species-choice strong { font-size: 17px; line-height: 24px; }
-.ff-readiness-species-description { margin: 0; color: var(--seed-color-fg-neutral-muted); font-size: 16px; line-height: 24px; }
+.ff-readiness-species-description { margin: 0; color: var(--seed-color-fg-neutral-muted); font-size: 18px; line-height: 28px; }
 .ff-readiness-tip { display: grid; gap: 6px; padding: 14px 16px; border-radius: 14px; background: var(--seed-color-bg-neutral-weak); }
 .ff-readiness-tip strong { color: var(--seed-color-fg-brand); font-size: 15px; }
 .ff-readiness-tip p { margin: 0; color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 21px; }

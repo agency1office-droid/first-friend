@@ -104,7 +104,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(reportButton, /신고할 이유를 선택해주세요/);
   assert.match(styles, /\.ff-detail-report-danger-label \{ color: var\(--seed-color-fg-critical\); \}/);
   assert.match(styles, /\.ff-detail-image-more \{ right: 12px; \}/);
-  assert.match(styles, /\.ff-gallery-count \{[^}]*height: 32px;[^}]*background: rgba\(0,0,0,\.46\);[^}]*letter-spacing: \.04em;/);
+  assert.match(styles, /\.ff-gallery-count \{[^}]*height: 32px;[^}]*background: rgba\(0,0,0,\.36\);[^}]*letter-spacing: \.07em;/);
   assert.match(page, /\/shelters\/\$\{encodeURIComponent\(animal\.shelterId\)\}/);
   assert.match(chrome, /data-route-path=\{path\}/);
   assert.match(styles, /data-route-path\^="\/friends\//);
@@ -676,7 +676,8 @@ test("preserves additional public animal photos and provides an original-size ga
   assert.match(gallery, /좌우로 움직여/);
   assert.doesNotMatch(gallery, /새 탭에서 원본 열기/);
   assert.doesNotMatch(gallery, /사진 \{available\.length\}장/);
-  assert.match(gallery, /\{selected \+ 1\}\/\{available\.length\}/);
+  assert.match(gallery, /ff-gallery-count/);
+  assert.match(gallery, /aria-label=\{`\$\{selected \+ 1\}\/\$\{available\.length\}`\}/);
   assert.match(detail, /AnimalGallery/);
 });
 

@@ -141,7 +141,7 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
       <span className="ff-gallery-bottom-gradient" aria-hidden="true" />
       <span className="ff-gallery-bottom-meta" aria-hidden="true">
         <strong className="ff-gallery-title">{name}</strong>
-        {available.length > 1 && <span className="ff-gallery-count">{selected + 1}/{available.length}</span>}
+        {available.length > 1 && <span className="ff-gallery-count" aria-label={`${selected + 1}/${available.length}`}><span>{selected + 1}</span><span aria-hidden="true">/</span><span>{available.length}</span></span>}
       </span>
     </button>
     <dialog ref={dialogRef} className="ff-image-dialog" tabIndex={-1} onKeyDown={handleKeyDown}>

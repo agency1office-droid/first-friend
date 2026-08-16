@@ -212,6 +212,8 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(styles, /\.ff-detail-info-row strong \{ min-width: 0;.*word-break: break-word; white-space: normal;/);
   assert.match(page, /function animalKnowledge/);
   assert.match(page, /function detailAge/);
+  assert.match(page, /생후 2개월 미만/);
+  assert.match(page, /생후 1년 미만/);
   assert.match(page, /value=\{detailAge\(animal\)\}/);
   assert.match(page, /function formatDetailHelper/);
   assert.match(page, /sentences = value\.split/);

@@ -247,11 +247,13 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-progress { display: block; height: 6px; margin: 0 -16px; overflow: hidden; border-radius: 0; background: var(--seed-color-bg-neutral-weak); }
 .ff-readiness-progress > div { height: 100%; border-radius: 0; background: var(--seed-color-bg-brand-solid); transition: width .25s ease; }
 .ff-readiness-progress-meta { display: grid; gap: 6px; padding: 14px 0 0; }
-.ff-readiness-appbar { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; min-height: 44px; padding-top: max(12px, env(safe-area-inset-top)); margin-bottom: 0; }
+.ff-readiness-appbar { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; min-height: 44px; padding-top: max(8px, env(safe-area-inset-top)); margin-bottom: 0; }
+.ff-readiness-appbar > span { grid-column: 1; grid-row: 1; }
 .ff-readiness-appbar strong { text-align: center; font-size: 16px; }
 .ff-readiness-close { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; color: var(--seed-color-fg-neutral); background: transparent; cursor: pointer; }
+.ff-readiness-close { grid-column: 3; grid-row: 1; justify-self: end; }
 .ff-readiness-close svg { width: 22px; height: 22px; }
-.ff-readiness-chapter { display: grid; gap: 18px; align-content: start; padding-top: 18px; }
+.ff-readiness-chapter { display: grid; gap: 14px; align-content: start; padding-top: 12px; }
 .ff-readiness-chapter-kicker { color: var(--seed-color-fg-brand); font-size: 13px; font-weight: 700; letter-spacing: .06em; }
 .ff-readiness-chapter h2 { margin: 0; font-size: 24px; line-height: 32px; text-wrap: balance; }
 .ff-quiz-question-single { display: grid; gap: 10px; padding: 0; border: 0; }
@@ -350,7 +352,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-progress { height: 8px; overflow: hidden; border-radius: 999px; background: var(--seed-color-bg-neutral-weak); }
 .ff-progress > div { height: 100%; border-radius: inherit; background: var(--seed-color-bg-brand-solid); }
 .ff-grow { flex: 1; }
-.ff-readiness { display: grid; gap: 18px; }
+.ff-readiness { display: grid; align-content: start; gap: 18px; }
 .ff-stepper { height: 6px; overflow: hidden; border-radius: 99px; background: var(--seed-color-bg-neutral-weak); }
 .ff-stepper > div { height: 100%; border-radius: inherit; background: var(--seed-color-bg-brand-solid); transition: width .25s ease; }
 .ff-step-label { color: var(--seed-color-fg-neutral-muted); font-size: 13px; font-weight: 700; }

@@ -128,6 +128,9 @@ test("uses a contextual animal detail topbar", async () => {
   const readinessStyles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*gap: 0;[^}]*padding: 0;[^}]*background: transparent;/);
   assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button \{[^}]*flex: 1 1 0;[^}]*border-radius: 0;/);
+  assert.match(readinessStyles, /\.ff-readiness-appbar > span \{ grid-column: 1/);
+  assert.match(readinessStyles, /\.ff-readiness-close \{ grid-column: 3; grid-row: 1; justify-self: end;/);
+  assert.match(readinessStyles, /\.ff-readiness \{ display: grid; align-content: start;/);
   assert.match(page, /shelterHref = animal\.shelterId/);
   assert.match(page, /ff-detail-shelter-link/);
   assert.match(page, /function displayShelterAddress/);

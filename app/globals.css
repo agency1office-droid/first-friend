@@ -811,10 +811,10 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-sticky-actions .ff-sticky-share svg { width: 26px; height: 26px; }
 @media (max-width: 700px) {
   .ff-sticky-actions { gap: 6px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); }
-  .ff-sticky-actions > a, .ff-sticky-actions > button:not(.ff-sticky-scrap) { min-height: 52px; border-radius: 14px; font-size: 16px; }
-  .ff-sticky-actions .ff-sticky-scrap { width: 44px; height: 52px; border-radius: 14px; }
+  .ff-sticky-actions > a, .ff-sticky-actions > button:not(.ff-sticky-scrap) { min-height: 56px; border-radius: 14px; font-size: 16px; }
+  .ff-sticky-actions .ff-sticky-scrap { width: 44px; height: 56px; border-radius: 14px; }
   .ff-sticky-actions .ff-sticky-scrap svg { width: 26px; height: 26px; }
-  .ff-sticky-actions .ff-sticky-share { width: 44px; height: 52px; border-radius: 14px; }
+  .ff-sticky-actions .ff-sticky-share { width: 44px; height: 56px; border-radius: 14px; }
   .ff-sticky-actions .ff-sticky-share svg { width: 24px; height: 24px; }
 }
 .ff-worldcup { display: grid; gap: 14px; }

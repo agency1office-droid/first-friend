@@ -76,13 +76,16 @@ test("uses consistent main and stacked app topbars", async () => {
 });
 
 test("uses a contextual animal detail topbar", async () => {
-  const [chrome, bridge, page] = await Promise.all([
+  const [chrome, bridge, page, styles] = await Promise.all([
     readFile(new URL("../app/components/AppChrome.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/AnimalDetailChromeBridge.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/friends/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
   assert.match(chrome, /title:"친구 정보",topbarTitle:""/);
   assert.match(bridge, /getBoundingClientRect\(\)\.bottom <= 56/);
+  assert.match(bridge, /ff-detail-image-back/);
+  assert.match(bridge, /slots\.gallery/);
   assert.match(bridge, /NotificationBell/);
   assert.match(bridge, /GlobalMenuButton/);
   assert.doesNotMatch(bridge, /FavoriteButton/);
@@ -91,6 +94,9 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(page, /shelterHref = animal\.shelterId/);
   assert.match(page, /ff-detail-shelter-link/);
   assert.match(page, /\/shelters\/\$\{encodeURIComponent\(animal\.shelterId\)\}/);
+  assert.match(chrome, /data-route-path=\{path\}/);
+  assert.match(styles, /data-route-path\^="\/friends\//);
+  assert.match(styles, /\.ff-detail-image-back \{ position: absolute/);
 });
 
 test("links the bottom navigation to saved friends", async () => {
@@ -941,7 +947,7 @@ test("keeps all 36 product-review pages discoverable and under the shared app-qu
   assert.match(chrome, /find\\\/worldcup/);
   assert.match(chrome, /window\.history\.back\(\)/);
   assert.match(chrome, /sessionStorage/);
-  assert.match(chrome, /<button className="ff-app-back"/);
+  assert.match(chrome, /className=\{`ff-app-back/);
   assert.match(chrome, /window\.location\.assign\(fallback\)/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /safe-area-inset-bottom/);

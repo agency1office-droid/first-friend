@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { AppBackButton } from "./AppChrome";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalMenuButton } from "./GlobalMenuButton";
 
 export function AnimalDetailChromeBridge() {
-  const [slots, setSlots] = useState<{ title: Element; actions: Element } | null>(null);
+  const [slots, setSlots] = useState<{ title: Element; actions: Element; gallery: Element } | null>(null);
   const [showTitle, setShowTitle] = useState(false);
 
   useEffect(() => {
@@ -17,7 +18,8 @@ export function AnimalDetailChromeBridge() {
     const frame = window.requestAnimationFrame(() => {
       const title = document.querySelector(".ff-stack-topbar .ff-topbar-title");
       const actions = document.querySelector(".ff-stack-topbar .ff-topbar-side-end");
-      if (title && actions) setSlots({ title, actions });
+      const gallery = document.querySelector(".ff-detail-gallery");
+      if (title && actions && gallery) setSlots({ title, actions, gallery });
       update();
     });
     window.addEventListener("scroll", update, { passive: true });
@@ -31,5 +33,6 @@ export function AnimalDetailChromeBridge() {
       <NotificationBell />
       <GlobalMenuButton />
     </div>, slots.actions)}
+    {createPortal(<AppBackButton fallback="/find" title="친구 정보" className="ff-detail-image-back" />, slots.gallery)}
   </>;
 }

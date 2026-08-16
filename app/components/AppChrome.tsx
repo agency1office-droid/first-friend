@@ -57,7 +57,7 @@ const historyKey="ff-app-navigation-history";
 function readHistory(){try{const value=JSON.parse(window.sessionStorage.getItem(historyKey)||"[]");return Array.isArray(value)?value.filter(item=>typeof item==="string").slice(-30):[]}catch{return[]}}
 function writeHistory(value:string[]){try{window.sessionStorage.setItem(historyKey,JSON.stringify(value.slice(-30)))}catch{return}}
 
-function AppBackButton({fallback,title}:{fallback:string;title:string}){
+export function AppBackButton({fallback,title,className}:{fallback:string;title:string;className?:string}){
   const goBack=()=>{
     const current=`${window.location.pathname}${window.location.search}${window.location.hash}`,stack=readHistory();
     const currentIndex=stack.lastIndexOf(current);
@@ -68,7 +68,7 @@ function AppBackButton({fallback,title}:{fallback:string;title:string}){
     if(sameOriginReferrer&&window.history.length>1){window.history.back();return}
     window.location.assign(fallback);
   };
-  return <button className="ff-app-back" type="button" onClick={goBack} aria-label={`${title}에서 이전 페이지로 돌아가기`}><IconChevronLeftLine aria-hidden/></button>;
+  return <button className={`ff-app-back${className ? ` ${className}` : ""}`} type="button" onClick={goBack} aria-label={`${title}에서 이전 페이지로 돌아가기`}><IconChevronLeftLine aria-hidden/></button>;
 }
 
 function MainTopbar({title}:{title:string}){
@@ -103,7 +103,7 @@ export function AppChrome({children}:{children:React.ReactNode}){
   if(path==="/find/draw") return <div className="ff-drawing-shell">{children}</div>;
   const hideBottom=route?.mode==="detail"||route?.mode==="form";
   const resolvedRoute=route||{rule:/.*/,title:"퍼스트 프렌드",back:"/",mode:"stack" as const};
-  return <div className="ff-shell" data-route-mode={route?.mode||"main"}>
+  return <div className="ff-shell" data-route-mode={route?.mode||"main"} data-route-path={path}>
     <a className="ff-skip-link" href="#main-content">본문으로 바로가기</a>
     {path==="/"?<HomeTopbar/>:resolvedRoute.mode==="main"?<MainTopbar title={resolvedRoute.title}/>:<StackTopbar route={resolvedRoute}/>}
     <main className="ff-main" id="main-content" tabIndex={-1}>{children}</main>

@@ -118,6 +118,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(readinessQuiz, /생활 준비도/);
   assert.doesNotMatch(readinessQuiz, /ProgressCircle/);
   assert.match(readinessQuiz, /ff-readiness-appbar/);
+  assert.match(readinessQuiz, /<strong>입양 전 준비 확인<\/strong>/);
   assert.match(readinessQuiz, /phase, setPhase/);
   assert.match(readinessQuiz, /"intro" \| "species" \| "questions" \| "result"/);
   assert.match(readinessQuiz, /ff-readiness-intro/);

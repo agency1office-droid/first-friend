@@ -147,7 +147,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /phase === "species" \? <ActionButton size="large" variant="brandSolid"/);
   assert.match(readinessQuiz, /variant="brandSolid" className="ff-grow" disabled=\{answers\[questionIndex\] === undefined\}/);
   assert.match(readinessStyles, /\.ff-readiness-questions \{ gap: 0;/);
-  assert.match(readinessStyles, /\.ff-readiness-chapter \{[^}]*gap: 24px;[^}]*margin-top: -40px;[^}]*padding: 0 16px;/);
+  assert.match(readinessStyles, /\.ff-readiness-chapter \{[^}]*gap: 24px;[^}]*margin-top: 0;[^}]*padding: 0 16px;/);
   assert.match(readinessStyles, /\.ff-quiz-question-single label \{[^}]*min-height: 112px;[^}]*border-radius: 16px;/);
   assert.match(readinessStyles, /\.ff-readiness-questions \.ff-quiz-question-single input \{[^}]*opacity: 0;/);
   assert.match(readinessStyles, /\.ff-readiness-species-emoji \{[^}]*margin-bottom: 28px;/);

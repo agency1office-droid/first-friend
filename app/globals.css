@@ -543,9 +543,15 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 @media (max-width: 520px) {
   .ff-shell[data-route-path^="/friends/"] .ff-stack-topbar { display: none; }
   .ff-shell[data-route-path^="/friends/"] .ff-detail-gallery::before { position: absolute; z-index: 2; top: 0; right: 0; left: 0; display: block; height: 88px; pointer-events: none; background: linear-gradient(to bottom, rgba(0,0,0,.42), transparent); content: ""; }
-  .ff-shell[data-route-path^="/friends/"] .ff-detail-image-back { position: absolute; z-index: 4; top: max(12px, env(safe-area-inset-top)); left: 12px; display: grid; width: 40px; height: 40px; max-width: none; place-items: center; border: 1px solid rgba(255,255,255,.28); border-radius: 999px; color: #fff; background: rgba(0,0,0,.38); box-shadow: 0 2px 10px rgba(0,0,0,.16); backdrop-filter: blur(8px); }
+  .ff-shell[data-route-path^="/friends/"] .ff-detail-image-back { position: absolute; z-index: 4; top: max(12px, env(safe-area-inset-top)); left: 12px; display: grid; width: 40px; height: 40px; max-width: none; place-items: center; border: 0; color: #fff; background: transparent; box-shadow: none; }
   .ff-shell[data-route-path^="/friends/"] .ff-detail-image-back svg { width: 24px; height: 24px; }
 }
+
+.ff-detail-image-back, .ff-detail-image-more { position: absolute; z-index: 4; top: max(12px, env(safe-area-inset-top)); display: grid; width: 40px; height: 40px; place-items: center; padding: 0; border: 0; color: #fff; background: transparent; box-shadow: none; cursor: pointer; }
+.ff-detail-image-back { left: 12px; }
+.ff-detail-image-more { right: 12px; }
+.ff-detail-image-back svg, .ff-detail-image-more svg { width: 24px; height: 24px; }
+.ff-detail-image-more:disabled { cursor: default; opacity: .72; }
 
 /* 36-route detail pass: hierarchy, touch, keyboard, safe areas and resilient content */
 html { scroll-behavior: smooth; scroll-padding-top: calc(72px + env(safe-area-inset-top)); }

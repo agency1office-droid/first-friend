@@ -5,8 +5,9 @@ import { createPortal } from "react-dom";
 import { AppBackButton } from "./AppChrome";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalMenuButton } from "./GlobalMenuButton";
+import { AnimalReportButton } from "./AnimalReportButton";
 
-export function AnimalDetailChromeBridge() {
+export function AnimalDetailChromeBridge({ animalId }: { animalId: string }) {
   const [slots, setSlots] = useState<{ title: Element; actions: Element; gallery: Element } | null>(null);
   const [showTitle, setShowTitle] = useState(false);
 
@@ -34,5 +35,6 @@ export function AnimalDetailChromeBridge() {
       <GlobalMenuButton />
     </div>, slots.actions)}
     {createPortal(<AppBackButton fallback="/find" title="친구 정보" className="ff-detail-image-back" />, slots.gallery)}
+    {createPortal(<AnimalReportButton animalId={animalId} />, slots.gallery)}
   </>;
 }

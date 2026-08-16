@@ -158,7 +158,7 @@ export default async function AnimalPage({
   const visibleTraits = animal.traits.filter((trait) => !isDuplicateTrait(trait, animal, colors, publicState));
   return (
     <>
-      <AnimalDetailChromeBridge />
+      <AnimalDetailChromeBridge animalId={id} />
       <div className="ff-detail-gallery">
         <AnimalGallery
           name={animal.name}

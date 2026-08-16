@@ -145,6 +145,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button \{[^}]*flex: 1 1 0;/);
   assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button--variant_brandSolid:not\(:disabled\) \{[^}]*color: var\(--seed-color-fg-on-color\);/);
   assert.match(readinessStyles, /\.ff-readiness-intro \.ff-readiness-actions \{[^}]*background: transparent;/);
+  assert.match(readinessStyles, /\.ff-readiness-intro \.ff-readiness-actions \.seed-action-button:not\(:disabled\) \{[^}]*color: var\(--seed-color-palette-static-white\);/);
+  assert.match(readinessStyles, /\.ff-adoption-test-trigger \{[^}]*color: var\(--seed-color-palette-static-white\);/);
   assert.match(readinessQuiz, /phase === "species" \? <ActionButton size="large" variant="brandSolid"/);
   assert.match(readinessQuiz, /variant="brandSolid" className="ff-grow" disabled=\{answers\[questionIndex\] === undefined\}/);
   assert.match(readinessStyles, /\.ff-readiness-questions \{ gap: 0;/);

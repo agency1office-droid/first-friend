@@ -239,7 +239,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-adoption-test-status strong { display: block; font-size: 16px; line-height: 22px; }
 .ff-adoption-test-status p { margin: 2px 0 4px; font-size: 14px; line-height: 20px; }
 .ff-adoption-test-status small, .ff-adoption-planning-note { color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; }
-.ff-adoption-test-trigger { width: 100%; min-height: 48px; border: 0; border-radius: 12px; color: var(--seed-color-fg-on-color); background: var(--seed-color-bg-brand-solid); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.ff-adoption-test-trigger { width: 100%; min-height: 48px; border: 0; border-radius: 12px; color: var(--seed-color-palette-static-white); background: var(--seed-color-bg-brand-solid); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 .ff-adoption-test-trigger:focus-visible { outline: 2px solid var(--seed-color-stroke-focus); outline-offset: 2px; }
 .ff-adoption-planning-note { margin: 0; }
 .ff-adoption-test-page { position: fixed; z-index: 100; top: 0; left: 50%; display: grid; width: min(100vw, 520px); height: 100dvh; transform: translateX(-50%); overflow-y: auto; overscroll-behavior: contain; background: var(--seed-color-bg-layer-default); color: var(--seed-color-fg-neutral); }
@@ -275,7 +275,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-actions.is-intro .seed-action-button { flex-basis: 100%; }
 .ff-readiness-actions.is-single .seed-action-button { flex-basis: 100%; }
 .ff-readiness-intro .ff-readiness-actions { margin: 0; padding: 0 16px 14px; background: transparent; }
-.ff-readiness-intro .ff-readiness-actions .seed-action-button:not(:disabled) { color: var(--seed-color-fg-on-color); background: var(--seed-color-bg-brand-solid); }
+.ff-readiness-intro .ff-readiness-actions .seed-action-button:not(:disabled) { color: var(--seed-color-palette-static-white); background: var(--seed-color-bg-brand-solid); }
 .ff-pet-cost-calculator-trigger { width: 100%; }
 .ff-pet-cost-calculator-sheet { flex: 0 1 82dvh; min-height: 0; max-height: 82dvh; }
 .ff-pet-cost-calculator-sheet .seed-bottom-sheet__header { padding-top: 28px; padding-bottom: 16px; }

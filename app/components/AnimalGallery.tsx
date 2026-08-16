@@ -40,7 +40,8 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
   const [dragOffset, setDragOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const pointerStart = useRef<number | null>(null);
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const pointerAxis = useRef<"pending" | "horizontal" | "vertical">("pending");
   const suppressClick = useRef(false);
   const active = available[selected] || image;
   const nextImage = available[1] ? optimizedAnimalImageUrl(available[1]) : "";
@@ -50,27 +51,43 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
   }
 
   function handlePointerDown(event: React.PointerEvent<HTMLButtonElement>) {
-    pointerStart.current = event.clientX;
+    pointerStart.current = { x: event.clientX, y: event.clientY };
+    pointerAxis.current = "pending";
     suppressClick.current = false;
-    setDragging(true);
+    setDragging(false);
     setDragOffset(0);
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLButtonElement>) {
     if (pointerStart.current === null || available.length < 2) return;
-    const delta = event.clientX - pointerStart.current;
+    const delta = event.clientX - pointerStart.current.x;
+    const verticalDelta = event.clientY - pointerStart.current.y;
+    if (pointerAxis.current === "pending" && Math.max(Math.abs(delta), Math.abs(verticalDelta)) > 8) {
+      pointerAxis.current = Math.abs(delta) > Math.abs(verticalDelta) ? "horizontal" : "vertical";
+      if (pointerAxis.current === "vertical") {
+        pointerStart.current = null;
+        setDragging(false);
+        setDragOffset(0);
+        return;
+      }
+      setDragging(true);
+    }
+    if (pointerAxis.current !== "horizontal") return;
+    event.preventDefault();
     if (Math.abs(delta) > 8) suppressClick.current = true;
     setDragOffset(delta);
   }
 
   function handlePointerUp(event: React.PointerEvent<HTMLButtonElement>) {
     if (pointerStart.current === null) return;
-    const delta = event.clientX - pointerStart.current;
+    const delta = event.clientX - pointerStart.current.x;
     pointerStart.current = null;
+    const wasHorizontal = pointerAxis.current === "horizontal";
+    pointerAxis.current = "pending";
     setDragging(false);
     setDragOffset(0);
-    if (Math.abs(delta) >= 40 && available.length > 1) {
+    if (wasHorizontal && Math.abs(delta) >= 40 && available.length > 1) {
       suppressClick.current = true;
       setSelected((current) => delta < 0 ? Math.min(current + 1, available.length - 1) : Math.max(current - 1, 0));
     }

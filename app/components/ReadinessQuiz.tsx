@@ -57,12 +57,14 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
   const question = questions[questionIndex];
   const totalPages = questions.length + 3;
   const pageNumber = phase === "intro" ? 1 : phase === "species" ? 2 : phase === "questions" ? step + 3 : totalPages;
+  const progressPercent = phase === "intro" ? 0 : Math.round((pageNumber / totalPages) * 100);
   return <div className={`ff-readiness ff-readiness-${phase}`}>
     <header className={`ff-readiness-appbar${phase === "intro" ? " ff-readiness-intro-appbar" : ""}`}>
       <button type="button" className="ff-readiness-back" onClick={phase === "intro" ? onClose : previous} aria-label="이전으로"><IconChevronLeftLine aria-hidden /></button>
       <button type="button" className="ff-readiness-close" onClick={onClose} aria-label="입양 전 준비 확인 닫기"><IconXmarkLine aria-hidden /></button>
       <strong>입양 전 준비 확인</strong>
     </header>
+    {phase !== "intro" && <div className="ff-readiness-progress" role="progressbar" aria-label="입양 전 준비 진행률" aria-valuemin={1} aria-valuemax={totalPages} aria-valuenow={pageNumber}><div style={{ width: `${progressPercent}%` }} /></div>}
     {phase !== "intro" && <div className="ff-readiness-progress-meta"><strong>{pageNumber}/{totalPages}</strong></div>}
 
     {phase === "intro" && <section className="ff-readiness-intro-content" aria-labelledby="readiness-intro-title"><div className="ff-readiness-intro-badge">퍼스트프렌드 준비 가이드</div><h1 id="readiness-intro-title">반려동물과<br />함께할 준비하기</h1><p className="ff-readiness-intro-lead">입양 전 꼭 알아야 할 내용을<br />가볍게 확인해 보세요.</p><div className="ff-readiness-intro-visual" aria-hidden><span>오늘부터 시작하는</span><strong>우리의 준비 이야기</strong><b>🐾</b><em>함께 준비해 볼까요?</em></div><p className="ff-readiness-intro-note">총 4개 챕터 · 약 2분</p></section>}

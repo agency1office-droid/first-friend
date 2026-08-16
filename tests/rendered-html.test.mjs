@@ -111,7 +111,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(chrome, /data-route-path=\{path\}/);
   assert.match(styles, /data-route-path\^="\/friends\//);
   assert.match(styles, /\.ff-detail-image-back \{ position: absolute/);
-  assert.match(styles, /\.ff-detail-shelter-address > span \{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; \}/);
+  assert.match(styles, /\.ff-detail-shelter-address > span \{ display: -webkit-box; min-width: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; line-height: 18px; \}/);
 });
 
 test("links the bottom navigation to saved friends", async () => {

@@ -102,9 +102,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(planning, /ProgressCircle/);
   assert.match(planning, /수료/);
   assert.match(planning, /미수료/);
-  assert.match(planning, /BottomSheetContent/);
-  assert.match(planning, /aria-label="입양 전 상식시험"/);
-  assert.match(planning, /ff-adoption-test-sheet/);
+  assert.doesNotMatch(planning, /BottomSheetContent/);
+  assert.match(planning, /ff-adoption-test-page/);
   assert.match(planning, /ReadinessQuiz/);
   assert.match(planning, /PetCostCalculator/);
   const calculator = await readFile(new URL("../app/components/PetCostCalculator.tsx", import.meta.url), "utf8");
@@ -118,7 +117,10 @@ test("uses a contextual animal detail topbar", async () => {
   const readinessQuiz = await readFile(new URL("../app/components/ReadinessQuiz.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(readinessQuiz, /생활 준비도/);
   assert.doesNotMatch(readinessQuiz, /ProgressCircle/);
-  assert.match(readinessQuiz, /ff-readiness-progress-heading/);
+  assert.match(readinessQuiz, /ff-readiness-appbar/);
+  assert.match(readinessQuiz, /onClose/);
+  assert.match(readinessQuiz, /ff-readiness-chapter/);
+  assert.match(readinessQuiz, /다음 챕터/);
   assert.match(readinessQuiz, /role="progressbar"/);
   assert.match(readinessQuiz, /aria-valuenow={step \+ 1}/);
   assert.match(readinessQuiz, /필수 교육을 완료했어요/);

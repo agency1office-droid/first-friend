@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "seed-design/ui/badge";
-import { BottomSheetBody, BottomSheetContent, BottomSheetRoot, BottomSheetTrigger } from "seed-design/ui/bottom-sheet";
 import { IconCheckmarkCircleFill, IconCheckmarkShieldFill } from "@karrotmarket/react-monochrome-icon";
 import { ReadinessQuiz } from "./ReadinessQuiz";
 import { PetCostCalculator } from "./PetCostCalculator";
@@ -13,6 +12,7 @@ type Status = "loading" | "guest" | "incomplete" | "completed";
 export function AdoptionPlanningCard(props: { species: string; breed: string; animalAge: string }) {
   void props;
   const [status, setStatus] = useState<Status>("loading");
+  const [quizOpen, setQuizOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -59,20 +59,12 @@ export function AdoptionPlanningCard(props: { species: string; breed: string; an
           <small>수료 여부는 입양 가능 여부나 적합도를 판단하는 기준이 아니에요.</small>
         </div>
       </div>
-      <BottomSheetRoot>
-        <BottomSheetTrigger asChild>
-          <button className="ff-adoption-test-trigger" type="button">
-            {completed ? "시험 내용 다시 확인하기" : "입양 전 상식시험 시작하기"}
-          </button>
-        </BottomSheetTrigger>
-        <BottomSheetContent className="ff-adoption-test-sheet" aria-label="입양 전 상식시험" showHandle>
-          <BottomSheetBody>
-            <ReadinessQuiz />
-          </BottomSheetBody>
-        </BottomSheetContent>
-      </BottomSheetRoot>
+      <button className="ff-adoption-test-trigger" type="button" onClick={() => setQuizOpen(true)}>
+        {completed ? "시험 내용 다시 확인하기" : "입양 전 상식시험 시작하기"}
+      </button>
       <PetCostCalculator species={props.species} />
       <p className="ff-adoption-planning-note">시험 결과는 입양 전 준비를 돕기 위한 참고 정보예요. 최종 상담과 입양 결정은 보호소와 함께 확인해 주세요.</p>
+      {quizOpen && <div className="ff-adoption-test-page"><ReadinessQuiz onClose={() => setQuizOpen(false)} /></div>}
     </section>
   );
 }

@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   const data = await request.json() as Record<string, unknown>;
   const species = clean(data.species, 10) as "cat" | "dog";
   const profile = typeof data.profile === "object" && data.profile ? data.profile : {};
-  if (!["cat", "dog"].includes(species) || !Array.isArray(data.answers) || data.answers.length !== 10) return Response.json({ error: "검사 결과를 확인해 주세요." }, { status: 400 });
+  if (!["cat", "dog"].includes(species) || !Array.isArray(data.answers) || ![4, 10].includes(data.answers.length)) return Response.json({ error: "검사 결과를 확인해 주세요." }, { status: 400 });
   const verifiedReadiness = readinessScore(species, profile), verifiedEducation = educationScore(data.answers);
   const {data:assessment,error}=await getSupabaseServerClient().from("readiness_assessments").insert({member_id:user.userId,species,profile_json:JSON.stringify(profile).slice(0,12000),readiness_score:verifiedReadiness,education_score:verifiedEducation,passed:verifiedEducation>=80}).select("*").single();if(error)return Response.json({error:"검사 결과를 저장하지 못했어요."},{status:500});
   return Response.json({ assessment }, { status: 201 });

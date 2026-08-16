@@ -83,11 +83,12 @@ test("uses a contextual animal detail topbar", async () => {
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
   assert.match(chrome, /title:"친구 정보",topbarTitle:""/);
-  assert.match(bridge, /getBoundingClientRect\(\)\.bottom <= 56/);
   assert.match(bridge, /ff-detail-image-back/);
-  assert.match(bridge, /slots\.gallery/);
-  assert.match(bridge, /NotificationBell/);
-  assert.match(bridge, /GlobalMenuButton/);
+  assert.match(bridge, /document\.querySelector\("\.ff-detail-gallery"\)/);
+  assert.doesNotMatch(bridge, /NotificationBell/);
+  assert.doesNotMatch(bridge, /GlobalMenuButton/);
+  assert.match(chrome, /const isAnimalDetail=path\.startsWith\("\/friends\/"\)/);
+  assert.match(styles, /\.ff-shell\[data-route-path\^="\/friends\/"\] \.ff-detail-image-back/);
   assert.doesNotMatch(bridge, /FavoriteButton/);
   assert.doesNotMatch(bridge, /IconAndroidshareLine/);
   assert.match(page, /AnimalDetailChromeBridge/);
@@ -163,8 +164,8 @@ test("keeps favorite add, restore, and removal consistent", async () => {
   assert.match(api, /현재 확인할 수 없는 동물이에요/);
   assert.match(api, /if \(!animalId\)[^;]+status: 400/);
   assert.match(detail, /AnimalDetailChromeBridge/);
-  assert.match(detailChrome, /<NotificationBell \/>/);
-  assert.match(detailChrome, /<GlobalMenuButton \/>/);
+  assert.doesNotMatch(detailChrome, /<NotificationBell \/>/);
+  assert.doesNotMatch(detailChrome, /<GlobalMenuButton \/>/);
 });
 
 test("keeps Kakao test login local-only and issues a real member session", async () => {

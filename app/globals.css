@@ -508,6 +508,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-cta-section { display: grid; gap: 12px; }
 .ff-detail-gallery { position: relative; }
 .ff-detail-gallery::before { display: none; }
+.ff-shell[data-route-path^="/friends/"] .ff-detail-image-back { display: grid; }
 .ff-detail-gallery > .ff-card-scrap { z-index: 2; top: 12px; right: 12px; }
 .ff-detail-body > * { min-width: 0; }
 .ff-info-cell strong { min-height: 38px; display: grid; place-items: center; word-break: keep-all; overflow-wrap: anywhere; line-height: 19px; }

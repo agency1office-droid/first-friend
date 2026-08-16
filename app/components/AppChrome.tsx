@@ -102,10 +102,11 @@ export function AppChrome({children}:{children:React.ReactNode}){
   },[path]);
   if(path==="/find/draw") return <div className="ff-drawing-shell">{children}</div>;
   const hideBottom=route?.mode==="detail"||route?.mode==="form";
+  const isAnimalDetail=path.startsWith("/friends/");
   const resolvedRoute=route||{rule:/.*/,title:"퍼스트 프렌드",back:"/",mode:"stack" as const};
   return <div className="ff-shell" data-route-mode={route?.mode||"main"} data-route-path={path}>
     <a className="ff-skip-link" href="#main-content">본문으로 바로가기</a>
-    {path==="/"?<HomeTopbar/>:resolvedRoute.mode==="main"?<MainTopbar title={resolvedRoute.title}/>:<StackTopbar route={resolvedRoute}/>}
+    {!isAnimalDetail&&(path==="/"?<HomeTopbar/>:resolvedRoute.mode==="main"?<MainTopbar title={resolvedRoute.title}/>:<StackTopbar route={resolvedRoute}/>)}
     <main className="ff-main" id="main-content" tabIndex={-1}>{children}</main>
     {!hideBottom&&<BottomNav/>}
   </div>

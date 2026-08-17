@@ -289,7 +289,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-back { grid-column: 1; grid-row: 1; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; color: var(--seed-color-fg-neutral); background: transparent; cursor: pointer; }
 .ff-readiness-back svg { width: 26px; height: 26px; }
 .ff-readiness-appbar strong { display: block; text-align: center; font-size: 16px; line-height: 24px; }
-.ff-readiness-page-number { grid-column: 3; grid-row: 1; justify-self: center; color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 20px; letter-spacing: -.01em; }
+.ff-readiness-page-number { grid-column: 3; grid-row: 1; justify-self: center; color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 20px; font-weight: 700; letter-spacing: -.01em; }
 .ff-readiness-questions { gap: 0; }
 .ff-readiness-chapter { display: grid; gap: 24px; align-content: start; margin-top: 16px; padding: 0 16px; }
 .ff-readiness-chapter h2 { width: 100%; max-width: none; margin: 0; font-size: 24px; line-height: 32px; text-wrap: pretty; word-break: keep-all; }

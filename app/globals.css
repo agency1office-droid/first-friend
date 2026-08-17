@@ -379,10 +379,6 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-species-emoji { display: block; margin-bottom: 28px; font-size: 42px; line-height: 1; }
 .ff-readiness-species-choice strong { font-size: 19px; line-height: 26px; }
 .ff-readiness-species-description { margin: 0; color: var(--seed-color-fg-neutral-muted); font-size: 19px; line-height: 29px; }
-.ff-readiness-tip { display: grid; gap: 6px; padding: 14px 16px; border-radius: 14px; background: var(--seed-color-bg-neutral-weak); }
-.ff-readiness-tip strong { color: var(--seed-color-fg-brand); font-size: 15px; }
-.ff-readiness-tip p { margin: 0; color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 21px; }
-.ff-readiness-questions .ff-readiness-tip { padding: 8px 0 0; background: transparent; }
 .ff-readiness-questions .ff-quiz-question-single { border-bottom: 0; }
 .ff-stepper { height: 6px; overflow: hidden; border-radius: 99px; background: var(--seed-color-bg-neutral-weak); }
 .ff-stepper > div { height: 100%; border-radius: inherit; background: var(--seed-color-bg-brand-solid); transition: width .25s ease; }

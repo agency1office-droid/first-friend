@@ -114,7 +114,6 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
     <header className={`ff-readiness-appbar${phase === "intro" ? " ff-readiness-intro-appbar" : ""}`}>
       <button type="button" className="ff-readiness-back" onClick={phase === "intro" ? closeQuiz : previous} aria-label="이전으로"><IconChevronLeftLine aria-hidden /></button>
       <strong>입양 전 준비 확인</strong>
-      {isProgressPage && <span className="ff-readiness-page-number" aria-label={`현재 ${pageNumber}페이지, 전체 ${totalPages}페이지`}>{pageNumber}/{totalPages}</span>}
     </header>
     {isProgressPage && <div className="ff-readiness-progress" role="progressbar" aria-label="입양 전 준비 진행률" aria-valuemin={1} aria-valuemax={totalPages} aria-valuenow={pageNumber}><div style={{ width: `${progressPercent}%` }} /></div>}
 

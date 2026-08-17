@@ -258,15 +258,17 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-questions { gap: 0; }
 .ff-readiness-chapter { display: grid; gap: 24px; align-content: start; margin-top: 0; padding: 0 16px; }
 .ff-readiness-chapter h2 { margin: 0; font-size: 24px; line-height: 32px; text-wrap: balance; }
-.ff-readiness-feedback { display: grid; align-content: center; gap: 10px; min-height: 168px; box-sizing: border-box; padding: 22px 24px; border-radius: 24px; }
+.ff-readiness-feedback { display: grid; align-content: center; gap: 8px; min-height: 200px; box-sizing: border-box; padding: 22px 24px; border-radius: 24px; }
 .ff-readiness-feedback.is-correct { background: var(--seed-color-bg-positive-weak); }
 .ff-readiness-feedback.is-incorrect { background: var(--seed-color-bg-brand-weak); }
 .ff-readiness-feedback strong { font-size: 20px; line-height: 28px; }
 .ff-readiness-feedback.is-correct strong { color: var(--seed-color-fg-positive); }
 .ff-readiness-feedback.is-incorrect strong { color: var(--seed-color-fg-brand); }
-.ff-readiness-feedback-mark { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: 8px; border-radius: 50%; color: var(--seed-color-palette-static-white); font-size: 14px; line-height: 1; vertical-align: -2px; }
-.ff-readiness-feedback.is-correct .ff-readiness-feedback-mark { background: var(--seed-color-bg-positive-solid); }
-.ff-readiness-feedback.is-incorrect .ff-readiness-feedback-mark { background: var(--seed-color-bg-brand-solid); }
+.ff-readiness-feedback-mark { display: inline-flex; width: 24px; height: 24px; margin-right: 8px; vertical-align: -6px; }
+.ff-readiness-feedback-mark svg { width: 24px; height: 24px; }
+.ff-readiness-feedback.is-correct .ff-readiness-feedback-mark { color: var(--seed-color-fg-positive); }
+.ff-readiness-feedback.is-incorrect .ff-readiness-feedback-mark { color: var(--seed-color-fg-brand); }
+.ff-readiness-feedback-answer { color: var(--seed-color-fg-neutral) !important; font-weight: 700; }
 .ff-readiness-feedback p { margin: 0; color: var(--seed-color-fg-neutral-muted); font-size: 15px; line-height: 23px; }
 .ff-quiz-question-single { display: grid; gap: 12px; padding: 0; border: 0; }
 .ff-quiz-question-single label { display: flex; min-height: 80px; align-items: center; padding: 18px 24px; border: 1px solid transparent; border-radius: 20px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-neutral-weak); font-size: 16px; font-weight: 700; line-height: 24px; text-align: left; }

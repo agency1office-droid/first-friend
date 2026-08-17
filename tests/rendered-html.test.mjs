@@ -138,6 +138,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /progressPercent/);
   assert.match(readinessQuiz, /ff-readiness-feedback/);
   assert.match(readinessQuiz, /ff-readiness-feedback-mark/);
+  assert.match(readinessQuiz, /IconXmarkCircleFill/);
+  assert.match(readinessQuiz, /내가 고른 답변/);
   assert.match(readinessQuiz, /아직 헷갈릴 수 있어요/);
   assert.match(readinessQuiz, /다음 문제/);
   assert.match(readinessQuiz, /onClose/);
@@ -150,8 +152,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /size="medium" variant="neutralWeak".*다시 확인하기/);
   const readinessStyles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.doesNotMatch(readinessStyles, /ff-readiness-intro-visual/);
-  assert.match(readinessStyles, /\.ff-readiness-feedback \{[^}]*min-height: 168px/);
-  assert.match(readinessStyles, /\.ff-readiness-feedback-mark \{[^}]*border-radius: 50%/);
+  assert.match(readinessStyles, /\.ff-readiness-feedback \{[^}]*min-height: 200px/);
+  assert.match(readinessStyles, /\.ff-readiness-feedback-mark \{[^}]*width: 24px;[^}]*height: 24px/);
   assert.match(readinessStyles, /\.ff-readiness-progress-meta \{[^}]*padding: 14px 16px 0;/);
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*gap: 8px;[^}]*padding: 0 16px max\(16px, env\(safe-area-inset-bottom\)\);[^}]*background: var\(--seed-color-bg-layer-default\);/);
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*position: sticky;[^}]*flex: none;[^}]*margin-top: auto;/);

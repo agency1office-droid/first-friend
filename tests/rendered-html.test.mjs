@@ -157,9 +157,9 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(readinessQuiz, /<ActionButton size="large" variant="neutralWeak" onClick=\{previous\}>이전<\/ActionButton>/);
   assert.match(readinessStyles, /\.ff-readiness-questions \{ gap: 0;/);
   assert.match(readinessStyles, /\.ff-readiness-chapter \{[^}]*gap: 24px;[^}]*margin-top: 0;[^}]*padding: 0 16px;/);
-  assert.match(readinessStyles, /\.ff-quiz-question-single label \{[^}]*grid-template-columns: 28px minmax\(0, 1fr\) 24px;[^}]*min-height: 72px;[^}]*border-radius: 20px;/);
-  assert.match(readinessStyles, /\.ff-quiz-option-mark \{[^}]*border-radius: 50%;/);
-  assert.match(readinessQuiz, /ff-quiz-option-check/);
+  assert.match(readinessStyles, /\.ff-quiz-question-single label \{[^}]*min-height: 80px;[^}]*padding: 18px 24px;[^}]*border-radius: 20px;[^}]*font-size: 16px;/);
+  assert.match(readinessStyles, /\.ff-readiness-questions \.ff-quiz-question-single \{ border-bottom: 0;/);
+  assert.doesNotMatch(readinessQuiz, /ff-quiz-option-mark|ff-quiz-option-check/);
   assert.match(readinessStyles, /\.ff-readiness-questions \.ff-quiz-question-single input \{[^}]*opacity: 0;/);
   assert.match(readinessStyles, /\.ff-readiness-species-emoji \{[^}]*margin-bottom: 28px;/);
   assert.match(readinessStyles, /\.ff-readiness-species-description \{[^}]*font-size: 20px;[^}]*line-height: 30px;/);

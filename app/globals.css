@@ -242,6 +242,41 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-adoption-test-trigger { width: 100%; min-height: 48px; border: 0; border-radius: 12px; color: var(--seed-color-palette-static-white); background: var(--seed-color-bg-brand-solid); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 .ff-adoption-test-trigger:focus-visible { outline: 2px solid var(--seed-color-stroke-focus); outline-offset: 2px; }
 .ff-adoption-planning-note { margin: 0; }
+.ff-pet-knowledge-trigger { width: 100%; min-height: 48px; padding: 12px 16px; border: 0; border-radius: 12px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-neutral-weak); font-size: 15px; font-weight: 700; cursor: pointer; }
+.ff-pet-knowledge-trigger:hover { background: var(--seed-color-bg-neutral-muted); }
+.ff-pet-knowledge-page { display: flex; flex-direction: column; min-height: 100%; background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral); }
+.ff-pet-knowledge-header { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; min-height: 56px; padding: max(8px, env(safe-area-inset-top)) 16px 0; background: var(--seed-color-bg-layer-default); }
+.ff-pet-knowledge-header button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; color: var(--seed-color-fg-neutral); cursor: pointer; }
+.ff-pet-knowledge-header button svg { width: 24px; height: 24px; }
+.ff-pet-knowledge-header strong { text-align: center; font-size: 16px; line-height: 24px; }
+.ff-pet-knowledge-main { display: grid; gap: 16px; flex: 1; padding: 20px 16px 24px; }
+.ff-pet-knowledge-progress-card, .ff-pet-knowledge-question, .ff-pet-knowledge-result { padding: 24px; border-radius: 24px; background: var(--seed-color-bg-layer-default); }
+.ff-pet-knowledge-progress-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; font-size: 15px; }
+.ff-pet-knowledge-progress-head span { color: var(--seed-color-fg-neutral-muted); }
+.ff-pet-knowledge-progress-track { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 22px; }
+.ff-pet-knowledge-step { display: grid; justify-items: center; gap: 6px; color: var(--seed-color-fg-neutral-muted); }
+.ff-pet-knowledge-step i { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--seed-color-bg-neutral-muted); font-style: normal; font-size: 14px; font-weight: 700; }
+.ff-pet-knowledge-step i svg { width: 20px; height: 20px; }
+.ff-pet-knowledge-step.is-current i { color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); outline: 3px solid var(--seed-color-stroke-brand-weak); }
+.ff-pet-knowledge-step.is-correct i { color: var(--seed-color-palette-static-white); background: var(--seed-color-bg-brand-solid); }
+.ff-pet-knowledge-step.is-muted i { color: var(--seed-color-fg-neutral-muted); background: var(--seed-color-bg-neutral-weak); }
+.ff-pet-knowledge-step small { font-size: 12px; }
+.ff-pet-knowledge-question { display: grid; align-content: start; gap: 16px; }
+.ff-pet-knowledge-question-number { color: var(--seed-color-fg-brand); font-size: 20px; font-weight: 800; }
+.ff-pet-knowledge-question h1 { margin: 0; font-size: 25px; line-height: 34px; letter-spacing: -.03em; }
+.ff-pet-knowledge-options { display: grid; gap: 12px; margin-top: 8px; }
+.ff-pet-knowledge-options button { display: flex; align-items: center; justify-content: space-between; min-height: 72px; padding: 18px 20px; border: 0; border-radius: 20px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-neutral-weak); font-size: 19px; font-weight: 700; text-align: left; cursor: pointer; }
+.ff-pet-knowledge-options button.is-selected { color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); outline: 2px solid var(--seed-color-stroke-brand-solid); }
+.ff-pet-knowledge-options button svg { width: 24px; height: 24px; }
+.ff-pet-knowledge-explanation { margin: 4px 0 0; color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 21px; }
+.ff-pet-knowledge-actions { position: sticky; bottom: 0; padding: 12px 16px max(16px, env(safe-area-inset-bottom)); background: var(--seed-color-bg-layer-default); }
+.ff-pet-knowledge-actions .seed-action-button { width: 100%; }
+.ff-pet-knowledge-result { display: grid; align-content: center; justify-items: center; min-height: 360px; text-align: center; }
+.ff-pet-knowledge-result-icon { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 18px; border-radius: 50%; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
+.ff-pet-knowledge-result-icon svg { width: 34px; height: 34px; }
+.ff-pet-knowledge-result h1 { margin: 0; font-size: 24px; line-height: 32px; }
+.ff-pet-knowledge-result p { margin: 10px 0 24px; color: var(--seed-color-fg-neutral-muted); font-size: 15px; line-height: 23px; }
+.ff-pet-knowledge-result .seed-action-button { width: 100%; }
 .ff-adoption-test-page { position: fixed; z-index: 100; top: 0; left: 50%; display: grid; width: min(100vw, 520px); height: 100dvh; transform: translateX(-50%); overflow-y: auto; overscroll-behavior: contain; background: var(--seed-color-bg-layer-default); color: var(--seed-color-fg-neutral); }
 .ff-adoption-test-page > .ff-readiness { min-height: 100%; padding: 0 16px calc(24px + env(safe-area-inset-bottom)); }
 .ff-readiness-intro { background: #e9fff3; color: #263238; }

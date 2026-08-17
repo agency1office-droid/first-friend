@@ -67,9 +67,21 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
   const pageNumber = phase === "species" ? 1 : phase === "questions" ? step + 2 : totalPages;
   const progressPercent = phase === "intro" ? 0 : Math.round((pageNumber / totalPages) * 100);
   const isProgressPage = phase === "species" || phase === "questions";
+  function resetQuiz() {
+    setPhase("intro");
+    setStep(0);
+    setSpecies(null);
+    setAnswers({});
+    setSaved("idle");
+    setShowResult(false);
+  }
+  function closeQuiz() {
+    resetQuiz();
+    onClose();
+  }
   return <div className={`ff-readiness ff-readiness-${phase}`}>
     <header className={`ff-readiness-appbar${phase === "intro" ? " ff-readiness-intro-appbar" : ""}`}>
-      <button type="button" className="ff-readiness-back" onClick={phase === "intro" ? onClose : previous} aria-label="이전으로"><IconChevronLeftLine aria-hidden /></button>
+      <button type="button" className="ff-readiness-back" onClick={phase === "intro" ? closeQuiz : previous} aria-label="이전으로"><IconChevronLeftLine aria-hidden /></button>
       <strong>입양 전 준비 확인</strong>
     </header>
     {isProgressPage && <div className="ff-readiness-progress" role="progressbar" aria-label="입양 전 준비 진행률" aria-valuemin={1} aria-valuemax={totalPages} aria-valuenow={pageNumber}><div style={{ width: `${progressPercent}%` }} /></div>}

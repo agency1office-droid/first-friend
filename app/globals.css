@@ -264,7 +264,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-pet-knowledge-question { display: grid; align-content: start; gap: 16px; }
 .ff-pet-knowledge-question-number { color: var(--seed-color-fg-brand); font-size: 20px; font-weight: 800; }
 .ff-pet-knowledge-question h1 { margin: 0; font-size: 25px; line-height: 34px; letter-spacing: -.03em; }
-.ff-pet-knowledge-options { display: grid; gap: 12px; margin-top: 8px; }
+.ff-pet-knowledge-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 8px; }
 .ff-pet-knowledge-options button { display: flex; align-items: center; justify-content: space-between; min-height: 72px; padding: 18px 20px; border: 0; border-radius: 20px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-neutral-weak); font-size: 19px; font-weight: 700; text-align: left; cursor: pointer; }
 .ff-pet-knowledge-options button.is-selected { color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); outline: 2px solid var(--seed-color-stroke-brand-solid); }
 .ff-pet-knowledge-options button svg { width: 24px; height: 24px; }

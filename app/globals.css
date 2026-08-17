@@ -294,8 +294,8 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-chapter h2 { margin: 0; font-size: 24px; line-height: 32px; text-wrap: balance; }
 .ff-readiness-question-label { margin-right: 8px; color: var(--seed-color-fg-brand); }
 .ff-readiness-feedback { display: grid; align-content: center; gap: 8px; min-height: 200px; box-sizing: border-box; padding: 22px 24px; border-radius: 24px; }
-.ff-readiness-feedback-overlay { position: fixed; inset: 0; z-index: 10; display: grid; align-items: end; padding: 0; background: rgb(0 0 0 / 36%); }
-.ff-readiness-feedback-overlay .ff-readiness-feedback { width: min(100%, 520px); max-height: min(78vh, 620px); overflow: auto; padding: 18px 24px max(24px, env(safe-area-inset-bottom)); border-radius: 32px 32px 0 0; background: var(--seed-color-bg-layer-default); box-shadow: 0 -12px 36px rgb(0 0 0 / 18%); }
+.ff-readiness-feedback-overlay { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px 16px; background: rgb(0 0 0 / 36%); }
+.ff-readiness-feedback-overlay .ff-readiness-feedback { width: min(100%, 520px); max-height: min(78vh, 620px); overflow: auto; padding: 20px 24px max(24px, env(safe-area-inset-bottom)); border-radius: 32px; background: var(--seed-color-bg-layer-default); box-shadow: 0 16px 40px rgb(0 0 0 / 18%); }
 .ff-readiness-feedback-handle { display: block; width: 88px; height: 8px; margin: 0 auto 32px; border-radius: 999px; background: var(--seed-color-bg-neutral-muted); }
 .ff-readiness-feedback-overlay .seed-action-button { width: 100%; margin-top: 8px; }
 .ff-readiness-feedback.is-correct { background: var(--seed-color-bg-positive-weak); }

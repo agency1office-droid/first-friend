@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Callout } from "seed-design/ui/callout";
 import { IconCheckmarkCircleFill, IconCheckmarkShieldFill, IconChevronLeftLine, IconLightbulbDot5Fill } from "@karrotmarket/react-monochrome-icon";
@@ -32,6 +32,11 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [saved, setSaved] = useState<"idle" | "saved" | "signin" | "error">("idle");
   const [showResult, setShowResult] = useState(false);
+  useEffect(() => {
+    const scroller = document.querySelector<HTMLElement>(".ff-adoption-test-page");
+    if (scroller) scroller.scrollTop = 0;
+    else window.scrollTo(0, 0);
+  }, [phase, step]);
   const selectedSpecies = species ?? "cat";
   const questions = useMemo(() => commonChapters.map((question, index) => index === 2 ? { ...question, question: selectedSpecies === "cat" ? "고양이의 창문·방묘 안전을 위해 가장 필요한 것은 무엇인가요?" : "강아지의 산책·이동 안전을 위해 가장 필요한 것은 무엇인가요?", options: speciesSafety[selectedSpecies], answer: 1, explanation: selectedSpecies === "cat" ? "추락과 탈출은 짧은 순간에 일어날 수 있어요. 고정된 방묘 장치를 준비해 주세요." : "낯선 환경에서의 이탈을 막을 수 있도록 몸에 맞는 안전장비와 인식표를 준비해 주세요." } : question), [selectedSpecies]);
   const submittedAnswers = questions.map((_, index) => answers[index]);
@@ -55,8 +60,8 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
 
   const questionIndex = step;
   const question = questions[questionIndex];
-  const totalPages = questions.length + 3;
-  const pageNumber = phase === "intro" ? 1 : phase === "species" ? 2 : phase === "questions" ? step + 3 : totalPages;
+  const totalPages = questions.length + 1;
+  const pageNumber = phase === "species" ? 1 : phase === "questions" ? step + 2 : totalPages;
   const progressPercent = phase === "intro" ? 0 : Math.round((pageNumber / totalPages) * 100);
   return <div className={`ff-readiness ff-readiness-${phase}`}>
     <header className={`ff-readiness-appbar${phase === "intro" ? " ff-readiness-intro-appbar" : ""}`}>

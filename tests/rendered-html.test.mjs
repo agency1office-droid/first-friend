@@ -120,13 +120,14 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /ff-readiness-appbar/);
   assert.match(readinessQuiz, /<strong>입양 전 준비 확인<\/strong>/);
   assert.match(readinessQuiz, /phase, setPhase/);
+  assert.match(readinessQuiz, /scroller\.scrollTop = 0/);
   assert.match(readinessQuiz, /"intro" \| "species" \| "questions" \| "result"/);
   assert.match(readinessQuiz, /ff-readiness-intro/);
   assert.doesNotMatch(readinessQuiz, /ff-readiness-intro-visual/);
   assert.match(readinessQuiz, /ff-readiness-species-page/);
   assert.match(readinessQuiz, /ff-readiness-tip/);
   assert.match(readinessQuiz, /phase === "species" \? <ActionButton/);
-  assert.match(readinessQuiz, /totalPages = questions.length \+ 3/);
+  assert.match(readinessQuiz, /totalPages = questions.length \+ 1/);
   assert.match(readinessQuiz, /questions.length/);
   assert.match(readinessQuiz, /ff-readiness-progress-meta/);
   assert.match(readinessQuiz, /phase === "intro" \? " ff-readiness-intro-appbar"/);
@@ -160,6 +161,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-quiz-question-single label \{[^}]*min-height: 80px;[^}]*padding: 18px 24px;[^}]*border-radius: 20px;[^}]*font-size: 16px;/);
   assert.match(readinessStyles, /\.ff-readiness-questions \.ff-quiz-question-single \{ border-bottom: 0;/);
   assert.match(readinessStyles, /\.ff-readiness-questions \.ff-quiz-question-single label \{[^}]*border: 0;[^}]*border-radius: 24px;/);
+  assert.match(readinessStyles, /\.ff-readiness-questions \.ff-quiz-question-single label:has\(input:checked\) \{ border: 1px dashed/);
   assert.doesNotMatch(readinessQuiz, /ff-quiz-option-mark|ff-quiz-option-check/);
   assert.match(readinessStyles, /\.ff-readiness-questions \.ff-quiz-question-single input \{[^}]*opacity: 0;/);
   assert.match(readinessStyles, /\.ff-readiness-species-emoji \{[^}]*margin-bottom: 28px;/);

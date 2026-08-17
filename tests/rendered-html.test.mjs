@@ -140,12 +140,12 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /ff-readiness-feedback-mark/);
   assert.match(readinessQuiz, /IconXmarkCircleFill/);
   assert.match(readinessQuiz, /내가 고른 답변/);
-  assert.match(readinessQuiz, /정답이에요/);
   assert.match(readinessQuiz, /아직 헷갈릴 수 있어요/);
   assert.match(readinessQuiz, /ff-readiness-feedback-overlay/);
   assert.match(readinessQuiz, /pendingAnswer/);
   assert.match(readinessQuiz, /ff-readiness-feedback-handle/);
-  assert.match(readinessQuiz, />다음<\/ActionButton>/);
+  assert.match(readinessQuiz, /ff-readiness-feedback-close/);
+  assert.match(readinessQuiz, /retryCurrentQuestion/);
   assert.match(readinessQuiz, /onClose/);
   assert.match(readinessQuiz, /function resetQuiz\(\)/);
   assert.match(readinessQuiz, /function closeQuiz\(\)/);
@@ -184,7 +184,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-readiness-species-choice strong \{ font-size: 19px;[^}]*line-height: 26px;/);
   assert.match(readinessStyles, /\.ff-readiness-species-description \{[^}]*font-size: 19px;[^}]*line-height: 29px;/);
   assert.match(readinessStyles, /\.ff-readiness-back \{ grid-column: 1;/);
-  assert.doesNotMatch(readinessQuiz, /ff-readiness-close|IconXmarkLine/);
+  assert.match(readinessQuiz, /IconXmarkLine/);
   assert.match(readinessStyles, /\.ff-readiness \{ display: flex; flex-direction: column;/);
   assert.match(readinessStyles, /\.ff-readiness-actions\.is-intro/);
   assert.match(readinessQuiz, /useState<Species \| null>\(null\)/);

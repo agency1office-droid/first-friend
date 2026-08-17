@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Callout } from "seed-design/ui/callout";
-import { IconCheckmarkCircleFill, IconCheckmarkShieldFill, IconChevronLeftLine, IconLightbulbDot5Fill, IconXmarkCircleFill } from "@karrotmarket/react-monochrome-icon";
+import { IconCheckmarkCircleFill, IconCheckmarkShieldFill, IconChevronLeftLine, IconLightbulbDot5Fill, IconXmarkCircleFill, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import { educationScore as calculateEducation } from "../../lib/readiness-score";
 
 type Species = "cat" | "dog";
@@ -43,20 +43,33 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
   const submittedAnswers = questions.map((_, index) => answers[index]);
   const educationScore = calculateEducation(submittedAnswers);
   const passed = educationScore >= 80;
-  async function saveResult() { setSaved("idle"); const response = await fetch("/api/readiness", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ species: selectedSpecies, profile, answers: submittedAnswers }) }); if (response.ok) setSaved("saved"); else if (response.status === 401) setSaved("signin"); else setSaved("error"); }
+  async function saveResult(answerValues = submittedAnswers) { setSaved("idle"); const response = await fetch("/api/readiness", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ species: selectedSpecies, profile, answers: answerValues }) }); if (response.ok) setSaved("saved"); else if (response.status === 401) setSaved("signin"); else setSaved("error"); }
   function next() {
     if (phase === "intro") { setSpecies(null); setAnswers({}); setStep(0); setPhase("species"); return; }
     if (phase === "species") { setPhase("questions"); setStep(0); return; }
-    if (phase === "questions" && answers[step] === undefined) {
+    if (phase === "questions") {
       if (pendingAnswer === null) return;
-      setAnswers((current) => ({ ...current, [step]: pendingAnswer }));
+      const nextAnswers = { ...answers, [step]: pendingAnswer };
+      setAnswers(nextAnswers);
       setPendingAnswer(null);
+      if (pendingAnswer !== question.answer) return;
+      if (step < questions.length - 1) { setStep((current) => current + 1); return; }
+      setPhase("result");
+      setShowResult(true);
+      if (calculateEducation(questions.map((_, index) => nextAnswers[index])) >= 80) void saveResult(questions.map((_, index) => nextAnswers[index]));
       return;
     }
-    if (phase === "questions" && step < questions.length - 1) { setStep((current) => current + 1); setPendingAnswer(null); return; }
     setPhase("result");
     setShowResult(true);
     if (passed) void saveResult();
+  }
+  function retryCurrentQuestion() {
+    setAnswers((current) => {
+      const nextAnswers = { ...current };
+      delete nextAnswers[step];
+      return nextAnswers;
+    });
+    setPendingAnswer(null);
   }
   function previous() {
     if (phase === "result") { setPhase("questions"); setShowResult(false); setStep(questions.length - 1); return; }
@@ -99,7 +112,7 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
 
     {phase === "species" && <section className="ff-readiness-species-page" aria-labelledby="readiness-species-title"><h1 id="readiness-species-title">어떤 친구를 만나고 싶나요?</h1><div className="ff-readiness-species-grid" role="group" aria-label="입양을 준비하는 동물"><button type="button" className="ff-readiness-species-choice" data-selected={species === "cat" || undefined} aria-pressed={species === "cat"} onClick={() => setSpecies("cat")}><span className="ff-readiness-species-emoji" aria-hidden>🐱</span><strong>고양이</strong></button><button type="button" className="ff-readiness-species-choice" data-selected={species === "dog" || undefined} aria-pressed={species === "dog"} onClick={() => setSpecies("dog")}><span className="ff-readiness-species-emoji" aria-hidden>🐶</span><strong>강아지</strong></button></div><p className="ff-readiness-species-description">선택한 친구에 맞춰 입양 전에 알아둘 내용을 확인해 볼게요.</p></section>}
 
-    {phase === "questions" && <section className="ff-readiness-chapter" aria-labelledby="readiness-question-title"><h2 id="readiness-question-title"><span className="ff-readiness-question-label" aria-hidden="true">Q.</span>{question.question}</h2>{hasAnswered && <p className="ff-readiness-selected-answer">내가 고른 답변 · {question.options[selectedAnswer]}</p>}{hasAnswered ? <div className="ff-readiness-feedback-overlay"><div className={`ff-readiness-feedback${isAnswerCorrect ? " is-correct" : " is-incorrect"}`} role="dialog" aria-modal="true" aria-live="polite" aria-label={isAnswerCorrect ? "정답 확인" : "오답 확인"}><span className="ff-readiness-feedback-handle" aria-hidden="true" /><strong><span className="ff-readiness-feedback-mark" aria-hidden>{isAnswerCorrect ? <IconCheckmarkCircleFill /> : <IconXmarkCircleFill />}</span>{isAnswerCorrect ? "정답이에요" : "아직 헷갈릴 수 있어요"}</strong><p>{isAnswerCorrect ? `잘 알고 있어요. ${question.explanation}` : `정답은 “${question.options[question.answer]}”예요. ${question.explanation}`}</p><ActionButton size="large" variant="brandSolid" onClick={next}>다음</ActionButton></div></div> : <fieldset className="ff-quiz-question ff-quiz-question-single"><legend className="ff-visually-hidden">{question.question}</legend>{question.options.map((option, optionIndex) => <label key={option}><input type="radio" name={`readiness-chapter-${questionIndex}`} checked={pendingAnswer === optionIndex} onChange={() => setPendingAnswer(optionIndex)} /><span className="ff-quiz-option-label">{option}</span></label>)}</fieldset>}</section>}
+    {phase === "questions" && <section className="ff-readiness-chapter" aria-labelledby="readiness-question-title"><h2 id="readiness-question-title"><span className="ff-readiness-question-label" aria-hidden="true">Q.</span>{question.question}</h2>{hasAnswered && <p className="ff-readiness-selected-answer">내가 고른 답변 · {question.options[selectedAnswer]}</p>}{hasAnswered ? <div className="ff-readiness-feedback-overlay"><div className={`ff-readiness-feedback${isAnswerCorrect ? " is-correct" : " is-incorrect"}`} role="dialog" aria-modal="true" aria-live="polite" aria-label="오답 확인"><button type="button" className="ff-readiness-feedback-close" onClick={retryCurrentQuestion} aria-label="다시 답하기"><IconXmarkLine aria-hidden /></button><span className="ff-readiness-feedback-handle" aria-hidden="true" /><strong><span className="ff-readiness-feedback-mark" aria-hidden><IconXmarkCircleFill /></span>아직 헷갈릴 수 있어요</strong><p>정답은 “{question.options[question.answer]}”예요. {question.explanation}</p></div></div> : <fieldset className="ff-quiz-question ff-quiz-question-single"><legend className="ff-visually-hidden">{question.question}</legend>{question.options.map((option, optionIndex) => <label key={option}><input type="radio" name={`readiness-chapter-${questionIndex}`} checked={pendingAnswer === optionIndex} onChange={() => setPendingAnswer(optionIndex)} /><span className="ff-quiz-option-label">{option}</span></label>)}</fieldset>}</section>}
 
     {showResult && <section className="ff-result ff-readiness-result" role="status"><div className={`ff-readiness-result-icon${passed ? " is-passed" : ""}`}>{passed ? <IconCheckmarkCircleFill /> : <IconCheckmarkShieldFill />}</div><h2 className="ff-section-title">{passed ? "필수 교육을 완료했어요" : "조금만 더 확인하면 돼요"}</h2><p className="ff-description">이 결과는 입양 전 필수 내용을 확인했는지 보여주는 참고 정보예요. 사람이나 동물을 평가하거나 자동 입양 거절에 사용하지 않습니다.</p><div className="ff-result-groups"><div><h3><IconCheckmarkCircleFill />잘 준비한 점</h3><p>주거와 돌봄 시간을 기준으로 입양 전 준비를 확인했어요.</p></div><div><h3><IconLightbulbDot5Fill />입양 전 준비할 점</h3><p>{profile.household !== "yes" ? "동거인과 책임과 비용을 더 이야기해 주세요." : "첫 일주일 적응 기간의 일정을 비워두세요."}</p></div></div>{!passed && <Callout tone="warning" title="다시 확인해 주세요" description="틀린 챕터의 해설을 확인한 뒤 다시 풀 수 있어요." />}{saved === "saved" && <Callout tone="positive" title="결과를 안전하게 저장했어요" description="이제 입양 신청을 시작할 수 있어요." />}{saved === "signin" && <Callout tone="informative" title="결과를 저장해 주세요" description="결과를 저장하려면 퍼스트프렌드 계정 로그인이 필요해요." linkProps={{ href: "/login?return_to=%2Freadiness", children: "로그인" }} />}{saved === "error" && <Callout tone="critical" description="결과를 저장하지 못했어요. 잠시 후 다시 시도해 주세요." />}<ActionButton size="medium" variant="neutralWeak" onClick={() => { setPhase("intro"); setShowResult(false); setStep(0); setSpecies(null); }}>다시 확인하기</ActionButton></section>}
 

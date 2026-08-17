@@ -147,6 +147,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /function resetQuiz\(\)/);
   assert.match(readinessQuiz, /function closeQuiz\(\)/);
   assert.match(readinessQuiz, /onClick=\{phase === "intro" \? closeQuiz : previous\}/);
+  assert.match(readinessQuiz, /phase === "questions" && answers\[step\] !== undefined/);
   assert.match(readinessQuiz, /ff-readiness-chapter/);
   assert.doesNotMatch(readinessQuiz, /ff-readiness-chapter-kicker/);
   assert.match(readinessQuiz, /다음/);

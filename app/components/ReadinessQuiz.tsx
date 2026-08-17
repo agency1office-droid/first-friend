@@ -53,6 +53,7 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
   }
   function previous() {
     if (phase === "result") { setPhase("questions"); setShowResult(false); setStep(questions.length - 1); return; }
+    if (phase === "questions" && answers[step] !== undefined) { setAnswers((current) => { const nextAnswers = { ...current }; delete nextAnswers[step]; return nextAnswers; }); return; }
     if (phase === "questions" && step > 0) { setStep((current) => current - 1); return; }
     if (phase === "questions") { setPhase("species"); return; }
     setPhase("intro");

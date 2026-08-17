@@ -300,14 +300,17 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-feedback-close { position: absolute; top: 12px; right: 12px; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 12px; color: var(--seed-color-fg-neutral); background: transparent; cursor: pointer; }
 .ff-readiness-feedback-close svg { width: 24px; height: 24px; }
 .ff-readiness-feedback strong { font-size: 20px; line-height: 28px; }
+.ff-readiness-feedback-title { display: block; color: var(--seed-color-fg-brand); font-size: 24px !important; line-height: 32px !important; }
 .ff-readiness-feedback.is-correct strong { color: var(--seed-color-fg-positive); }
 .ff-readiness-feedback.is-incorrect strong { color: var(--seed-color-fg-brand); }
-.ff-readiness-feedback-mark { display: inline-flex; width: 24px; height: 24px; margin-right: 8px; vertical-align: -6px; }
-.ff-readiness-feedback-mark svg { width: 24px; height: 24px; }
+.ff-readiness-feedback-mark { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 12px; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
+.ff-readiness-feedback-mark svg { width: 32px; height: 32px; }
 .ff-readiness-feedback.is-correct .ff-readiness-feedback-mark { color: var(--seed-color-fg-positive); }
 .ff-readiness-feedback.is-incorrect .ff-readiness-feedback-mark { color: var(--seed-color-fg-brand); }
 .ff-readiness-selected-answer { margin: -12px 0 0; color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 21px; }
 .ff-readiness-feedback p { margin: 0; color: var(--seed-color-fg-neutral-muted); font-size: 15px; line-height: 23px; }
+.ff-readiness-feedback-answer { color: var(--seed-color-fg-neutral) !important; font-size: 22px !important; font-weight: 700; line-height: 30px !important; }
+.ff-readiness-feedback-detail { color: var(--seed-color-fg-neutral-muted) !important; font-size: 16px !important; line-height: 24px !important; }
 .ff-quiz-question-single { display: grid; gap: 12px; padding: 0; border: 0; }
 .ff-quiz-question-single label { display: flex; min-height: 80px; align-items: center; padding: 18px 24px; border: 1px solid transparent; border-radius: 20px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-neutral-weak); font-size: 16px; font-weight: 700; line-height: 24px; text-align: left; }
 .ff-readiness-questions .ff-quiz-question-single input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }

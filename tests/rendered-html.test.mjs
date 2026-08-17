@@ -143,6 +143,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /정답이에요/);
   assert.match(readinessQuiz, /아직 헷갈릴 수 있어요/);
   assert.match(readinessQuiz, /ff-readiness-feedback-overlay/);
+  assert.match(readinessQuiz, /pendingAnswer/);
+  assert.match(readinessQuiz, /ff-readiness-feedback-handle/);
   assert.match(readinessQuiz, />다음<\/ActionButton>/);
   assert.match(readinessQuiz, /onClose/);
   assert.match(readinessQuiz, /function resetQuiz\(\)/);
@@ -168,7 +170,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-readiness-intro \.ff-readiness-actions \.seed-action-button:not\(:disabled\) \{[^}]*color: var\(--seed-color-palette-static-white\);/);
   assert.match(readinessStyles, /\.ff-adoption-test-trigger \{[^}]*color: var\(--seed-color-palette-static-white\);/);
   assert.match(readinessQuiz, /phase === "species" \? <ActionButton size="large" variant="brandSolid"/);
-  assert.match(readinessQuiz, /variant="brandSolid" className="ff-grow" disabled=\{answers\[questionIndex\] === undefined\}/);
+  assert.match(readinessQuiz, /variant="brandSolid" className="ff-grow" disabled=\{pendingAnswer === null\}/);
   assert.doesNotMatch(readinessQuiz, /<ActionButton size="large" variant="neutralWeak" onClick=\{previous\}>이전<\/ActionButton>/);
   assert.match(readinessStyles, /\.ff-readiness-questions \{ gap: 0;/);
   assert.match(readinessStyles, /\.ff-readiness-chapter \{[^}]*gap: 24px;[^}]*margin-top: 0;[^}]*padding: 0 16px;/);

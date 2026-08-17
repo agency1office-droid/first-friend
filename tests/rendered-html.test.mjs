@@ -90,6 +90,9 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(chrome, /const isAnimalDetail=path\.startsWith\("\/friends\/"\)/);
   assert.match(chrome, /path\.startsWith\("\/quiz\/"\)/);
   assert.match(styles, /\.ff-quiz-shell \.ff-main \{ min-height: 100dvh; padding: 0 16px/);
+  const adoptionQuizPage = await readFile(new URL("../app/quiz/adoption-prep/page.tsx", import.meta.url), "utf8");
+  assert.match(adoptionQuizPage, /return <ReadinessQuiz \/>/);
+  assert.doesNotMatch(adoptionQuizPage, /from "\.\.\/\.\.\/readiness\/page"/);
   assert.match(styles, /\.ff-shell\[data-route-path\^="\/friends\/"\] \.ff-detail-image-back/);
   assert.doesNotMatch(bridge, /FavoriteButton/);
   assert.doesNotMatch(bridge, /IconAndroidshareLine/);

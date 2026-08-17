@@ -36,6 +36,7 @@ const routes:RouteChrome[]=[
   {rule:/^\/adoption-verification/,title:"외부 입양 인증",back:"/mypage",mode:"form"},
   {rule:/^\/appeal/,title:"제재 이의제기",back:"/mypage",mode:"form"},
   {rule:/^\/login/,title:"로그인·회원가입",back:"/",mode:"form"},
+  {rule:/^\/quiz\/adoption-prep/,title:"입양 준비도",back:"/guide"},
   {rule:/^\/readiness/,title:"입양 준비도",back:"/guide"},
   {rule:/^\/prepare/,title:"입양 전 준비",back:"/guide"},
   {rule:/^\/encyclopedia/,title:"함께살이 백과",back:"/guide"},

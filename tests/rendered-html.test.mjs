@@ -88,6 +88,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(bridge, /NotificationBell/);
   assert.doesNotMatch(bridge, /GlobalMenuButton/);
   assert.match(chrome, /const isAnimalDetail=path\.startsWith\("\/friends\/"\)/);
+  assert.match(chrome, /path\.startsWith\("\/quiz\/"\)/);
+  assert.match(styles, /\.ff-quiz-shell \.ff-main \{ min-height: 100dvh; padding: 0 16px/);
   assert.match(styles, /\.ff-shell\[data-route-path\^="\/friends\/"\] \.ff-detail-image-back/);
   assert.doesNotMatch(bridge, /FavoriteButton/);
   assert.doesNotMatch(bridge, /IconAndroidshareLine/);

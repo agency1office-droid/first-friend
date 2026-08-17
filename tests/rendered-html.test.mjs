@@ -173,7 +173,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /variant="brandSolid" className="ff-grow" disabled=\{pendingAnswer === null\}/);
   assert.doesNotMatch(readinessQuiz, /<ActionButton size="large" variant="neutralWeak" onClick=\{previous\}>이전<\/ActionButton>/);
   assert.match(readinessStyles, /\.ff-readiness-questions \{ gap: 0;/);
-  assert.match(readinessStyles, /\.ff-readiness-chapter \{[^}]*gap: 24px;[^}]*margin-top: 0;[^}]*padding: 0 16px;/);
+  assert.match(readinessStyles, /\.ff-readiness-chapter \{[^}]*gap: 24px;[^}]*margin-top: 16px;[^}]*padding: 0 16px;/);
   assert.match(readinessStyles, /\.ff-quiz-question-single label \{[^}]*min-height: 80px;[^}]*padding: 18px 24px;[^}]*border-radius: 20px;[^}]*font-size: 16px;/);
   assert.match(readinessStyles, /\.ff-readiness-questions \.ff-quiz-question-single \{ border-bottom: 0;/);
   assert.match(readinessStyles, /\.ff-readiness-questions \.ff-quiz-question-single label \{[^}]*box-sizing: border-box;[^}]*border: 1px solid transparent;[^}]*border-radius: 24px;/);

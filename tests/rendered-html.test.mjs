@@ -139,15 +139,13 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /ff-readiness-feedback/);
   assert.match(readinessQuiz, /ff-readiness-feedback-mark/);
   assert.match(readinessQuiz, /ff-readiness-feedback-title/);
-  assert.match(readinessQuiz, /ff-readiness-feedback-answer/);
   assert.match(readinessQuiz, /내가 고른 답변/);
   assert.match(readinessQuiz, /ff-readiness-feedback-detail/);
   assert.match(readinessQuiz, /IconXmarkLine/);
-  assert.match(readinessQuiz, /ff-readiness-feedback-answer/);
   assert.match(readinessQuiz, /오답이에요!/);
   assert.match(readinessQuiz, /ff-readiness-feedback-page/);
   assert.match(readinessQuiz, /pendingAnswer/);
-  assert.match(readinessQuiz, /힌트/);
+  assert.doesNotMatch(readinessQuiz, />힌트</);
   assert.match(readinessQuiz, /다음/);
   assert.match(readinessQuiz, /이전/);
   assert.match(readinessQuiz, /ff-readiness-page-number/);
@@ -168,8 +166,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(readinessStyles, /ff-readiness-intro-visual/);
   assert.match(readinessStyles, /\.ff-readiness-feedback \{[^}]*min-height: 0[^}]*border: 0[^}]*border-radius: 0/);
   assert.match(readinessStyles, /\.ff-readiness-feedback-mark \{[^}]*width: 56px;[^}]*height: 56px/);
-  assert.match(readinessStyles, /\.ff-readiness-feedback-answer \{[^}]*font-size: 22px/);
-  assert.match(readinessStyles, /\.ff-readiness-feedback-detail \{[^}]*font-size: 16px/);
+  assert.match(readinessStyles, /\.ff-readiness-feedback-selected \{[^}]*fg-neutral-muted[^}]*font-size: 16px/);
+  assert.match(readinessStyles, /\.ff-readiness-feedback-detail \{[^}]*fg-neutral[^}]*font-size: 18px/);
   assert.match(readinessStyles, /\.ff-readiness-question-label \{[^}]*color: var\(--seed-color-fg-brand\);/);
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*gap: 8px;[^}]*padding: 0 16px max\(16px, env\(safe-area-inset-bottom\)\);[^}]*background: var\(--seed-color-bg-layer-default\);/);
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*position: sticky;[^}]*flex: none;[^}]*margin-top: auto;/);

@@ -142,7 +142,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /내가 고른 답변/);
   assert.match(readinessQuiz, /정답이에요/);
   assert.match(readinessQuiz, /아직 헷갈릴 수 있어요/);
-  assert.match(readinessQuiz, /다음 문제/);
+  assert.match(readinessQuiz, /ff-readiness-feedback-overlay/);
+  assert.match(readinessQuiz, />다음<\/ActionButton>/);
   assert.match(readinessQuiz, /onClose/);
   assert.match(readinessQuiz, /function resetQuiz\(\)/);
   assert.match(readinessQuiz, /function closeQuiz\(\)/);

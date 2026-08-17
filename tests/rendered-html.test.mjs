@@ -129,11 +129,11 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /phase === "species" \? <ActionButton/);
   assert.match(readinessQuiz, /totalPages = questions.length \+ 1/);
   assert.match(readinessQuiz, /questions.length/);
-  assert.match(readinessQuiz, /ff-readiness-progress-meta/);
   assert.match(readinessQuiz, /phase === "intro" \? " ff-readiness-intro-appbar"/);
   assert.match(readinessQuiz, /const isProgressPage = phase === "species" \|\| phase === "questions"/);
   assert.match(readinessQuiz, /isProgressPage && <div className="ff-readiness-progress"/);
-  assert.match(readinessQuiz, /isProgressPage && <div className="ff-readiness-progress-meta"/);
+  assert.doesNotMatch(readinessQuiz, /ff-readiness-progress-meta/);
+  assert.match(readinessQuiz, /ff-readiness-question-label/);
   assert.match(readinessQuiz, /ff-readiness-progress/);
   assert.match(readinessQuiz, /progressPercent/);
   assert.match(readinessQuiz, /ff-readiness-feedback/);
@@ -152,7 +152,6 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /ff-readiness-chapter/);
   assert.doesNotMatch(readinessQuiz, /ff-readiness-chapter-kicker/);
   assert.match(readinessQuiz, /다음/);
-  assert.match(readinessQuiz, /\{pageNumber\}\/\{totalPages\}/);
   assert.match(readinessQuiz, /필수 교육을 완료했어요/);
   assert.match(readinessQuiz, /phase === "result" \? <ActionButton size="large" className="ff-grow" asChild>/);
   assert.match(readinessQuiz, /size="medium" variant="neutralWeak".*다시 확인하기/);
@@ -160,7 +159,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(readinessStyles, /ff-readiness-intro-visual/);
   assert.match(readinessStyles, /\.ff-readiness-feedback \{[^}]*min-height: 200px/);
   assert.match(readinessStyles, /\.ff-readiness-feedback-mark \{[^}]*width: 24px;[^}]*height: 24px/);
-  assert.match(readinessStyles, /\.ff-readiness-progress-meta \{[^}]*padding: 14px 16px 0;/);
+  assert.match(readinessStyles, /\.ff-readiness-question-label \{[^}]*color: var\(--seed-color-fg-brand\);/);
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*gap: 8px;[^}]*padding: 0 16px max\(16px, env\(safe-area-inset-bottom\)\);[^}]*background: var\(--seed-color-bg-layer-default\);/);
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*position: sticky;[^}]*flex: none;[^}]*margin-top: auto;/);
   assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button \{[^}]*flex: 1 1 0;/);

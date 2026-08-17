@@ -107,7 +107,7 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
       return <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={species === null} onClick={next}>다음</ActionButton>;
     }
     if (hasAnswered) {
-      return <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={isAnswerCorrect ? next : previous}>{isAnswerCorrect ? "다음으로" : "이전으로"}</ActionButton>;
+      return <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={isAnswerCorrect ? next : previous}>{isAnswerCorrect ? "다음" : "이전으로"}</ActionButton>;
     }
     return <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={pendingAnswer === null} onClick={next}>다음</ActionButton>;
   }

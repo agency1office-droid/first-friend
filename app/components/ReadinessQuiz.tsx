@@ -66,18 +66,8 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
   const isAnswerCorrect = selectedAnswer === question?.answer;
   const totalPages = questions.length + 1;
   const pageNumber = phase === "species" ? 1 : phase === "questions" ? step + 2 : totalPages;
+  const progressPercent = phase === "intro" ? 0 : Math.round((pageNumber / totalPages) * 100);
   const isProgressPage = phase === "species" || phase === "questions";
-  function progressSegmentState(segmentIndex: number) {
-    if (segmentIndex === 0) return phase === "species" ? "current" : "complete";
-    const answerIndex = segmentIndex - 1;
-    const answer = answers[answerIndex];
-    if (phase === "questions" && answerIndex === step) {
-      if (answer === undefined) return "current";
-      return answer === questions[answerIndex].answer ? "correct" : "incorrect";
-    }
-    if (answer !== undefined) return answer === questions[answerIndex].answer ? "correct" : "incorrect";
-    return "upcoming";
-  }
   function resetQuiz() {
     setPhase("intro");
     setStep(0);
@@ -95,7 +85,7 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
       <button type="button" className="ff-readiness-back" onClick={phase === "intro" ? closeQuiz : previous} aria-label="이전으로"><IconChevronLeftLine aria-hidden /></button>
       <strong>입양 전 준비 확인</strong>
     </header>
-    {isProgressPage && <div className="ff-readiness-progress" role="progressbar" aria-label="입양 전 준비 진행률" aria-valuemin={1} aria-valuemax={totalPages} aria-valuenow={pageNumber}>{Array.from({ length: totalPages }, (_, segmentIndex) => <span key={segmentIndex} className="ff-readiness-progress-segment" data-state={progressSegmentState(segmentIndex)} aria-label={`${segmentIndex + 1}번째 단계 ${progressSegmentState(segmentIndex)}`} />)}</div>}
+    {isProgressPage && <div className="ff-readiness-progress" role="progressbar" aria-label="입양 전 준비 진행률" aria-valuemin={1} aria-valuemax={totalPages} aria-valuenow={pageNumber}><div style={{ width: `${progressPercent}%` }} /></div>}
     {isProgressPage && <div className="ff-readiness-progress-meta"><strong>{pageNumber}/{totalPages}</strong></div>}
 
     {phase === "intro" && <section className="ff-readiness-intro-content" aria-labelledby="readiness-intro-title"><div className="ff-readiness-intro-badge">퍼스트프렌드 준비 가이드</div><h1 id="readiness-intro-title">반려동물과<br />함께할 준비하기</h1><p className="ff-readiness-intro-lead">입양 전 꼭 알아야 할 내용을<br />가볍게 확인해 보세요.</p><p className="ff-readiness-intro-note">총 4개 챕터 · 약 2분</p></section>}

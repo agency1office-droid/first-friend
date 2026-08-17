@@ -248,11 +248,8 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-intro .ff-readiness-appbar { background: transparent; }
 .ff-readiness-intro-appbar strong { display: none; }
 .ff-readiness-intro-appbar { grid-template-columns: 44px minmax(0, 1fr) 44px; }
-.ff-readiness-progress { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; height: 6px; margin: 0 -16px; overflow: hidden; border-radius: 0; background: transparent; }
-.ff-readiness-progress-segment { min-width: 0; background: var(--seed-color-bg-neutral-weak); transition: background-color .25s ease; }
-.ff-readiness-progress-segment[data-state="current"] { background: var(--seed-color-bg-brand-solid); }
-.ff-readiness-progress-segment[data-state="complete"], .ff-readiness-progress-segment[data-state="correct"] { background: var(--seed-color-bg-positive-solid); }
-.ff-readiness-progress-segment[data-state="incorrect"] { background: var(--seed-color-fg-critical); }
+.ff-readiness-progress { display: block; height: 6px; margin: 0 -16px; overflow: hidden; border-radius: 0; background: var(--seed-color-bg-neutral-weak); }
+.ff-readiness-progress > div { height: 100%; border-radius: 0; background: var(--seed-color-bg-brand-solid); transition: width .25s ease; }
 .ff-readiness-progress-meta { display: block; padding: 14px 16px 0; color: var(--seed-color-fg-brand); font-size: 28px; line-height: 36px; letter-spacing: -.03em; }
 .ff-readiness-appbar { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; min-height: 44px; padding-top: max(8px, env(safe-area-inset-top)); margin-bottom: 0; }
 .ff-readiness-back { grid-column: 1; grid-row: 1; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; color: var(--seed-color-fg-neutral); background: transparent; cursor: pointer; }

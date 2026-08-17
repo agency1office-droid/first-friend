@@ -142,7 +142,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /ff-readiness-feedback-answer/);
   assert.match(readinessQuiz, /내가 고른 답변/);
   assert.match(readinessQuiz, /ff-readiness-feedback-detail/);
-  assert.match(readinessQuiz, /IconCheckmarkLine/);
+  assert.match(readinessQuiz, /ff-readiness-feedback-mark-symbol/);
   assert.match(readinessQuiz, /IconXmarkLine/);
   assert.match(readinessQuiz, /ff-readiness-feedback-answer/);
   assert.match(readinessQuiz, /오답이에요!/);
@@ -165,7 +165,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /size="medium" variant="neutralWeak".*다시 확인하기/);
   const readinessStyles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.doesNotMatch(readinessStyles, /ff-readiness-intro-visual/);
-  assert.match(readinessStyles, /\.ff-readiness-feedback \{[^}]*min-height: 0/);
+  assert.match(readinessStyles, /\.ff-readiness-feedback \{[^}]*min-height: 0[^}]*border: 0[^}]*border-radius: 0/);
   assert.match(readinessStyles, /\.ff-readiness-feedback-mark \{[^}]*width: 56px;[^}]*height: 56px/);
   assert.match(readinessStyles, /\.ff-readiness-feedback-answer \{[^}]*font-size: 22px/);
   assert.match(readinessStyles, /\.ff-readiness-feedback-detail \{[^}]*font-size: 16px/);

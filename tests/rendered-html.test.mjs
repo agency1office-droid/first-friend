@@ -135,7 +135,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /isProgressPage && <div className="ff-readiness-progress"/);
   assert.match(readinessQuiz, /isProgressPage && <div className="ff-readiness-progress-meta"/);
   assert.match(readinessQuiz, /ff-readiness-progress/);
-  assert.match(readinessQuiz, /progressPercent/);
+  assert.match(readinessQuiz, /function progressSegmentState\(segmentIndex: number\)/);
+  assert.match(readinessQuiz, /data-state=\{progressSegmentState\(segmentIndex\)\}/);
   assert.match(readinessQuiz, /ff-readiness-feedback/);
   assert.match(readinessQuiz, /ff-readiness-feedback-mark/);
   assert.match(readinessQuiz, /IconXmarkCircleFill/);
@@ -160,6 +161,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-readiness-feedback \{[^}]*min-height: 200px/);
   assert.match(readinessStyles, /\.ff-readiness-feedback-mark \{[^}]*width: 24px;[^}]*height: 24px/);
   assert.match(readinessStyles, /\.ff-readiness-progress-meta \{[^}]*padding: 14px 16px 0;/);
+  assert.match(readinessStyles, /\.ff-readiness-progress-segment\[data-state="correct"\]/);
+  assert.match(readinessStyles, /\.ff-readiness-progress-segment\[data-state="incorrect"\]/);
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*gap: 8px;[^}]*padding: 0 16px max\(16px, env\(safe-area-inset-bottom\)\);[^}]*background: var\(--seed-color-bg-layer-default\);/);
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*position: sticky;[^}]*flex: none;[^}]*margin-top: auto;/);
   assert.match(readinessStyles, /\.ff-readiness-actions \.seed-action-button \{[^}]*flex: 1 1 0;/);

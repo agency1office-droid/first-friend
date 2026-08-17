@@ -142,14 +142,15 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /ff-readiness-feedback-answer/);
   assert.match(readinessQuiz, /내가 고른 답변/);
   assert.match(readinessQuiz, /ff-readiness-feedback-detail/);
-  assert.match(readinessQuiz, /ff-readiness-feedback-mark-symbol/);
   assert.match(readinessQuiz, /IconXmarkLine/);
   assert.match(readinessQuiz, /ff-readiness-feedback-answer/);
   assert.match(readinessQuiz, /오답이에요!/);
   assert.match(readinessQuiz, /ff-readiness-feedback-page/);
   assert.match(readinessQuiz, /pendingAnswer/);
-  assert.match(readinessQuiz, /isAnswerCorrect \? "다음" : "이전으로"/);
-  assert.match(readinessQuiz, /이전으로/);
+  assert.match(readinessQuiz, /힌트/);
+  assert.match(readinessQuiz, /다음/);
+  assert.match(readinessQuiz, /이전/);
+  assert.match(readinessQuiz, /ff-readiness-page-number/);
   assert.doesNotMatch(readinessQuiz, /ff-readiness-feedback-overlay|ff-readiness-feedback-close|retryCurrentQuestion/);
   assert.match(readinessQuiz, /delete nextAnswers\[step - 1\]/);
   assert.match(readinessQuiz, /onClose/);

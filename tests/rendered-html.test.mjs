@@ -166,7 +166,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(readinessStyles, /ff-readiness-intro-visual/);
   assert.match(readinessStyles, /\.ff-readiness-feedback \{[^}]*min-height: 0[^}]*border: 0[^}]*border-radius: 0/);
   assert.match(readinessStyles, /\.ff-readiness-feedback-mark \{[^}]*width: 56px;[^}]*height: 56px/);
-  assert.match(readinessStyles, /\.ff-readiness-feedback-selected \{[^}]*fg-neutral-muted[^}]*font-size: 15px/);
+  assert.match(readinessStyles, /\.ff-readiness-feedback-selected \{[^}]*fg-neutral-subtle[^}]*font-size: 15px/);
   assert.match(readinessStyles, /\.ff-readiness-feedback-detail \{[^}]*fg-neutral[^}]*font-size: 18px/);
   assert.match(readinessStyles, /\.ff-readiness-question-label \{[^}]*color: var\(--seed-color-fg-brand\);/);
   assert.match(readinessStyles, /\.ff-readiness-actions \{[^}]*gap: 8px;[^}]*padding: 0 16px max\(16px, env\(safe-area-inset-bottom\)\);[^}]*background: var\(--seed-color-bg-layer-default\);/);

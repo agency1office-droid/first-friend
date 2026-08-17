@@ -149,6 +149,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /ff-readiness-feedback-handle/);
   assert.match(readinessQuiz, /ff-readiness-feedback-close/);
   assert.match(readinessQuiz, /retryCurrentQuestion/);
+  assert.match(readinessQuiz, /const isFeedbackOpen = hasAnswered && !isAnswerCorrect/);
+  assert.match(readinessQuiz, /delete nextAnswers\[step - 1\]/);
   assert.match(readinessQuiz, /onClose/);
   assert.match(readinessQuiz, /function resetQuiz\(\)/);
   assert.match(readinessQuiz, /function closeQuiz\(\)/);

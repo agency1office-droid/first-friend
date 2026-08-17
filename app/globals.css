@@ -259,9 +259,14 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-chapter { display: grid; gap: 24px; align-content: start; margin-top: 0; padding: 0 16px; }
 .ff-readiness-chapter h2 { margin: 0; font-size: 24px; line-height: 32px; text-wrap: balance; }
 .ff-quiz-question-single { display: grid; gap: 12px; padding: 0; border: 0; }
-.ff-quiz-question-single label { min-height: 112px; align-items: center; justify-content: center; padding: 18px 16px; border-radius: 16px; text-align: center; }
+.ff-quiz-question-single label { display: grid; grid-template-columns: 28px minmax(0, 1fr) 24px; min-height: 72px; align-items: center; column-gap: 12px; padding: 16px 20px; border: 0; border-radius: 20px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-neutral-weak); text-align: left; }
 .ff-readiness-questions .ff-quiz-question-single input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.ff-readiness-questions .ff-quiz-question-single label:has(input:checked) { border-style: dashed; }
+.ff-quiz-option-mark { display: block; width: 24px; height: 24px; box-sizing: border-box; border: 2px solid var(--seed-color-stroke-neutral-solid); border-radius: 50%; background: var(--seed-color-bg-layer-default); }
+.ff-quiz-option-label { min-width: 0; font-size: 15px; line-height: 22px; }
+.ff-quiz-option-check { color: var(--seed-color-fg-neutral-subtle); font-size: 22px; font-weight: 700; line-height: 24px; text-align: center; opacity: .45; }
+.ff-readiness-questions .ff-quiz-question-single label:has(input:checked) { color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-brand-weak); }
+.ff-readiness-questions .ff-quiz-question-single label:has(input:checked) .ff-quiz-option-mark { border-color: var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-solid); box-shadow: inset 0 0 0 5px var(--seed-color-bg-brand-weak); }
+.ff-readiness-questions .ff-quiz-question-single label:has(input:checked) .ff-quiz-option-check { color: var(--seed-color-fg-brand); opacity: 1; }
 .ff-readiness-result-icon { display: grid; place-items: center; width: 56px; height: 56px; margin: 8px auto 2px; border-radius: 50%; color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); }
 .ff-readiness-result-icon.is-passed { color: var(--seed-color-fg-positive); background: var(--seed-color-bg-positive-weak); }
 .ff-readiness-result-icon svg { width: 30px; height: 30px; }

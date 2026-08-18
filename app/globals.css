@@ -284,7 +284,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-pet-knowledge-result .seed-action-button { width: 100%; }
 .ff-adoption-test-page { position: fixed; z-index: 100; top: 0; left: 50%; display: grid; width: min(100vw, 520px); height: 100dvh; transform: translateX(-50%); overflow-y: auto; overscroll-behavior: contain; background: var(--seed-color-bg-layer-default); color: var(--seed-color-fg-neutral); }
 .ff-adoption-test-page > .ff-readiness { min-height: 100%; padding: 0 16px calc(24px + env(safe-area-inset-bottom)); }
-.ff-readiness-intro { background: #e9fff3; color: #263238; }
+.ff-readiness-intro { background-color: #ffe4d3; background-image: url("/readiness-intro.webp"); background-position: center bottom; background-repeat: no-repeat; background-size: cover; color: #263238; }
 .ff-readiness-intro .ff-readiness-appbar { background: transparent; }
 .ff-readiness-intro-appbar strong { display: none; }
 .ff-readiness-intro-appbar { grid-template-columns: 44px minmax(0, 1fr) 44px; }

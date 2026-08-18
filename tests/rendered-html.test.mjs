@@ -169,6 +169,9 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /if \(phase === "result"\)/);
   assert.match(readinessQuiz, /size="medium" variant="neutralWeak".*다시 확인하기/);
   const readinessStyles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const readinessIntroAsset = await readFile(new URL("../public/readiness-intro.webp", import.meta.url));
+  assert.ok(readinessIntroAsset.byteLength > 0);
+  assert.match(readinessStyles, /\.ff-readiness-intro \{[^}]*background-image: url\("\/readiness-intro\.webp"\);[^}]*background-position: center bottom;/);
   assert.doesNotMatch(readinessStyles, /ff-readiness-intro-visual/);
   assert.match(readinessStyles, /\.ff-readiness-feedback \{[^}]*min-height: 0[^}]*border: 0[^}]*border-radius: 0/);
   assert.match(readinessStyles, /\.ff-readiness-feedback-mark \{[^}]*width: 56px;[^}]*height: 56px/);

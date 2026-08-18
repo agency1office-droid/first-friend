@@ -13,7 +13,10 @@ img { display: block; max-width: 100%; }
 
 .ff-shell { width: 100%; max-width: 520px; min-height: 100vh; margin: 0 auto; background: var(--seed-color-bg-layer-default); padding-bottom: 76px; }
 .ff-quiz-shell { width: 100%; max-width: 520px; min-height: 100dvh; margin: 0 auto; background: var(--seed-color-bg-layer-default); }
-.ff-quiz-shell .ff-main { min-height: 100dvh; padding: 0 16px calc(24px + env(safe-area-inset-bottom)); }
+.ff-quiz-shell .ff-main { display: flex; height: 100dvh; min-height: 100dvh; overflow: hidden; padding: 0; }
+.ff-quiz-shell .ff-readiness { width: 100%; height: 100%; min-height: 0; padding: 0 16px calc(24px + env(safe-area-inset-bottom)); gap: 0; overflow: hidden; }
+.ff-quiz-shell .ff-readiness > section { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.ff-quiz-shell .ff-readiness-actions { position: relative; bottom: auto; flex: 0 0 auto; margin-top: 0; }
 .ff-topbar { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--seed-color-bg-layer-default) 92%, transparent); border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); backdrop-filter: blur(16px); }
 .ff-brand { font-size: var(--seed-font-size-t7); line-height: var(--seed-line-height-t7); font-weight: var(--seed-font-weight-bold); }
 .ff-top-actions { display: flex; align-items: center; gap: 4px; }

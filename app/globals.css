@@ -258,8 +258,8 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-adoption-badge, .ff-adoption-planning-row-icon { display: grid; place-items: center; width: 32px; height: 32px; color: var(--seed-color-fg-neutral-subtle); }
 .ff-adoption-badge.is-completed { color: var(--seed-color-fg-positive); }
 .ff-adoption-badge svg, .ff-adoption-planning-row-icon svg { width: 24px; height: 24px; }
-.ff-pet-cost-calculator-trigger { grid-template-columns: 32px minmax(0, 1fr) 24px; justify-content: initial; color: var(--seed-color-fg-neutral); font-size: 15px; font-weight: 700; }
-.ff-pet-knowledge-trigger { grid-template-columns: 32px minmax(0, 1fr) 24px; min-height: 64px; padding: 12px 0; border: 0; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); color: var(--seed-color-fg-neutral); background: transparent; font-size: 15px; font-weight: 700; text-align: left; }
+.ff-pet-cost-calculator-trigger { grid-template-columns: minmax(0, 1fr) 24px; justify-content: initial; color: var(--seed-color-fg-neutral); font-size: 15px; font-weight: 700; }
+.ff-pet-knowledge-trigger { display: grid; grid-template-columns: minmax(0, 1fr) 24px; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 12px 0; border: 0; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); color: var(--seed-color-fg-neutral); background: transparent; font-size: 15px; font-weight: 700; text-align: left; }
 .ff-pet-knowledge-page { display: flex; flex-direction: column; min-height: 100%; background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral); }
 .ff-pet-knowledge-header { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; min-height: 56px; padding: max(8px, env(safe-area-inset-top)) 16px 0; background: var(--seed-color-bg-layer-default); }
 .ff-pet-knowledge-header button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; color: var(--seed-color-fg-neutral); cursor: pointer; }

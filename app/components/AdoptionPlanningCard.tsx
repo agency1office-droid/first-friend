@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "seed-design/ui/badge";
-import { IconCheckmarkBadgeFill, IconCheckmarkBadgeLine, IconQuestionmarkCircleLine, IconPlusLine } from "@karrotmarket/react-monochrome-icon";
+import { IconCheckmarkBadgeFill, IconCheckmarkBadgeLine, IconPlusLine } from "@karrotmarket/react-monochrome-icon";
 import { PetCostCalculator } from "./PetCostCalculator";
 import { PetKnowledgeQuiz } from "./PetKnowledgeQuiz";
 
@@ -53,7 +53,7 @@ export function AdoptionPlanningCard(props: { species: string; breed: string; an
           </span>
         </a>
         <PetCostCalculator species={props.species} />
-        <button className="ff-pet-knowledge-trigger" type="button" onClick={() => setKnowledgeQuizOpen(true)}><span className="ff-adoption-planning-row-icon" aria-hidden><IconQuestionmarkCircleLine /></span><span>반려동물 상식 퀴즈</span><IconPlusLine aria-hidden /></button>
+        <button className="ff-pet-knowledge-trigger" type="button" onClick={() => setKnowledgeQuizOpen(true)}><span>반려동물 상식 퀴즈</span><IconPlusLine aria-hidden /></button>
       </div>
       <p className="ff-adoption-planning-note">시험 결과는 입양 전 준비를 돕기 위한 참고 정보예요. 최종 상담과 입양 결정은 보호소와 함께 확인해 주세요.</p>
       {knowledgeQuizOpen && <div className="ff-adoption-test-page"><PetKnowledgeQuiz species={props.species} onClose={() => setKnowledgeQuizOpen(false)} /></div>}

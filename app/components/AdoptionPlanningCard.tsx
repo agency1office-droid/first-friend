@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "seed-design/ui/badge";
-import { IconCheckmarkCircleFill, IconCheckmarkShieldFill } from "@karrotmarket/react-monochrome-icon";
+import { IconCheckmarkBadgeFill, IconCheckmarkBadgeLine, IconQuestionmarkCircleLine, IconPlusLine } from "@karrotmarket/react-monochrome-icon";
 import { PetCostCalculator } from "./PetCostCalculator";
 import { PetKnowledgeQuiz } from "./PetKnowledgeQuiz";
 
@@ -34,11 +34,7 @@ export function AdoptionPlanningCard(props: { species: string; breed: string; an
   const loading = status === "loading";
   const completed = status === "completed";
   const statusLabel = loading ? "확인 중" : completed ? "수료" : "미수료";
-  const statusDescription = loading
-    ? "입양 전 준비 확인 수료 여부를 확인하고 있어요."
-    : completed
-      ? "입양 전 준비 확인 4단계를 모두 확인했어요."
-      : "입양 전 준비 내용을 아직 모두 확인하지 않았어요.";
+  const statusDescription = loading ? "수료 여부를 확인하고 있어요" : completed ? "입양 전 준비 확인을 수료했어요" : "아직 수료하지 않았어요";
 
   return (
     <section className="ff-adoption-planning" aria-labelledby="adoption-planning-title">
@@ -49,21 +45,16 @@ export function AdoptionPlanningCard(props: { species: string; breed: string; an
         </div>
         <Badge tone={completed ? "positive" : "neutral"} variant="weak">참고용</Badge>
       </div>
-      <div className={`ff-adoption-test-status${completed ? " is-completed" : ""}`} role="status" aria-live="polite">
-        <div className="ff-adoption-test-status-icon" aria-hidden>
-          {completed ? <IconCheckmarkCircleFill /> : <IconCheckmarkShieldFill />}
-        </div>
-        <div>
-          <strong>{statusLabel}</strong>
-          <p>{statusDescription}</p>
-          <small>수료 여부는 입양 가능 여부나 적합도를 판단하는 기준이 아니에요.</small>
-        </div>
+      <div className="ff-adoption-planning-list">
+        <a className="ff-adoption-planning-row" href="/quiz/adoption-prep">
+          <span className="ff-adoption-planning-row-copy"><strong>입양 전 준비 확인</strong><small>{statusLabel} · {statusDescription}</small></span>
+          <span className={`ff-adoption-badge${completed ? " is-completed" : ""}`} aria-label={completed ? "수료 배지" : "미수료 배지"}>
+            {completed ? <IconCheckmarkBadgeFill /> : <IconCheckmarkBadgeLine />}
+          </span>
+        </a>
+        <PetCostCalculator species={props.species} />
+        <button className="ff-pet-knowledge-trigger" type="button" onClick={() => setKnowledgeQuizOpen(true)}><span className="ff-adoption-planning-row-icon" aria-hidden><IconQuestionmarkCircleLine /></span><span>반려동물 상식 퀴즈</span><IconPlusLine aria-hidden /></button>
       </div>
-      <a className="ff-adoption-test-trigger" href="/quiz/adoption-prep">
-        {completed ? "준비 내용 다시 확인하기" : "입양 전 준비 확인 시작하기"}
-      </a>
-      <PetCostCalculator species={props.species} />
-      <button className="ff-pet-knowledge-trigger" type="button" onClick={() => setKnowledgeQuizOpen(true)}>반려동물 상식 퀴즈</button>
       <p className="ff-adoption-planning-note">시험 결과는 입양 전 준비를 돕기 위한 참고 정보예요. 최종 상담과 입양 결정은 보호소와 함께 확인해 주세요.</p>
       {knowledgeQuizOpen && <div className="ff-adoption-test-page"><PetKnowledgeQuiz species={props.species} onClose={() => setKnowledgeQuizOpen(false)} /></div>}
     </section>

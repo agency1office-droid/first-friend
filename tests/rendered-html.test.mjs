@@ -209,7 +209,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessStyles, /\.ff-readiness-questions \.ff-quiz-question-single label:has\(input:checked\) \{ border: 1px dashed/);
   assert.doesNotMatch(readinessQuiz, /ff-quiz-option-mark|ff-quiz-option-check/);
   assert.match(readinessStyles, /\.ff-readiness-questions \.ff-quiz-question-single input \{[^}]*opacity: 0;/);
-  assert.match(readinessStyles, /\.ff-readiness-species-image \{[^}]*margin-bottom: 28px;/);
+  assert.match(readinessStyles, /\.ff-readiness-species-image \{[^}]*width: clamp\(76px, 23vw, 104px\);[^}]*margin-bottom: clamp\(12px, 4vw, 28px\);/);
   assert.match(readinessStyles, /\.ff-readiness-species-choice strong \{ font-size: 19px;[^}]*line-height: 26px;/);
   assert.match(readinessStyles, /\.ff-readiness-species-description \{[^}]*font-size: 19px;[^}]*line-height: 29px;/);
   assert.match(readinessStyles, /\.ff-readiness-back \{ grid-column: 1;/);

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import "./globals.css";
 import { AppChrome } from "./components/AppChrome";
 import { AppFeedbackProvider } from "./components/AppFeedback";
+import { ThemePreviewSwitcher } from "./components/ThemePreviewSwitcher";
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
@@ -19,5 +20,5 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="ko" data-seed data-seed-color-mode="light-only"><head><meta name="color-scheme" content="light" /></head><body><AppFeedbackProvider><AppChrome>{children}</AppChrome></AppFeedbackProvider></body></html>;
+  return <html lang="ko" data-seed data-seed-color-mode="light-only"><head><meta name="color-scheme" content="light" /></head><body><AppFeedbackProvider><AppChrome>{children}</AppChrome><ThemePreviewSwitcher /></AppFeedbackProvider></body></html>;
 }

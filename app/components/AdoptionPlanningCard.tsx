@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "seed-design/ui/badge";
-import { IconCheckmarkBadgeFill, IconCheckmarkBadgeLine, IconPlusLine } from "@karrotmarket/react-monochrome-icon";
+import { IconPlusLine } from "@karrotmarket/react-monochrome-icon";
 import { PetCostCalculator } from "./PetCostCalculator";
 import { PetKnowledgeQuiz } from "./PetKnowledgeQuiz";
 
@@ -48,9 +48,7 @@ export function AdoptionPlanningCard(props: { species: string; breed: string; an
       <div className="ff-adoption-planning-list">
         <a className="ff-adoption-planning-row" href="/quiz/adoption-prep">
           <span className="ff-adoption-planning-row-copy"><strong>입양 전 준비 확인</strong><small>{statusLabel} · {statusDescription}</small></span>
-          <span className={`ff-adoption-badge${completed ? " is-completed" : ""}`} aria-label={completed ? "수료 배지" : "미수료 배지"}>
-            {completed ? <IconCheckmarkBadgeFill /> : <IconCheckmarkBadgeLine />}
-          </span>
+          <IconPlusLine aria-hidden />
         </a>
         <PetCostCalculator species={props.species} />
         <button className="ff-pet-knowledge-trigger" type="button" onClick={() => setKnowledgeQuizOpen(true)}><span>반려동물 상식 퀴즈</span><IconPlusLine aria-hidden /></button>

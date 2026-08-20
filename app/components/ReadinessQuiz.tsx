@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ActionButton } from "seed-design/ui/action-button";
-import { IconChevronLeftLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
+import { BottomSheetBody, BottomSheetContent, BottomSheetFooter, BottomSheetRoot, BottomSheetTrigger } from "seed-design/ui/bottom-sheet";
+import { IconChevronLeftLine, IconPawprintFill, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import { educationScore as calculateEducation } from "../../lib/readiness-score";
 
 type Species = "cat" | "dog";
+type PreviewResult = "success" | "failure" | "";
 type Profile = { homeAllowed: string; homeType: string; household: string; absence: number; careMinutes: number; safety: string; currentPets: string; longAbsence: string; experience: string };
 type Question = { chapter: string; question: string; options: string[]; answer: number; explanation: string };
 
@@ -36,57 +38,146 @@ const speciesSafety: Record<Species, Question["options"]> = {
   dog: ["몸에 맞는 하네스·리드줄·인식표를 확인해요", "목줄 없이 자유롭게 걸어요", "짧은 줄이면 충분해요"],
 };
 
-export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) {
+export function ReadinessQuiz({ onClose }: { onClose?: () => void }) {
   const [phase, setPhase] = useState<"intro" | "species" | "questions" | "result">("intro");
   const [step, setStep] = useState(0);
   const [species, setSpecies] = useState<Species | null>(null);
   const profile = initialProfile;
   const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [firstAnswers, setFirstAnswers] = useState<Record<number, number>>({});
   const [pendingAnswer, setPendingAnswer] = useState<number | null>(null);
   const [feedbackAnswer, setFeedbackAnswer] = useState<number | null>(null);
-  const [, setSaved] = useState<"idle" | "saved" | "signin" | "error">("idle");
+  const [retryCorrectAnswerVisible, setRetryCorrectAnswerVisible] = useState(false);
+  const [revealedAnswer, setRevealedAnswer] = useState<number | null>(null);
+  const [saved, setSaved] = useState<"idle" | "saved" | "signin" | "error">("idle");
+  const [authState, setAuthState] = useState<"checking" | "authenticated" | "anonymous">("checking");
+  const [certificateOpen, setCertificateOpen] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [previewResult, setPreviewResult] = useState<PreviewResult>("");
   useEffect(() => {
     const scroller = document.querySelector<HTMLElement>(".ff-adoption-test-page");
     if (scroller) scroller.scrollTop = 0;
     else window.scrollTo(0, 0);
-  }, [phase, step]);
+  }, [phase, step, feedbackAnswer, retryCorrectAnswerVisible, revealedAnswer]);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/readiness", { cache: "no-store" })
+      .then((response) => {
+        if (!active) return;
+        setAuthState(response.ok ? "authenticated" : "anonymous");
+      })
+      .catch(() => {
+        if (active) setAuthState("anonymous");
+      });
+    return () => { active = false; };
+  }, []);
   const selectedSpecies = species ?? "cat";
   const questions = useMemo(() => commonChapters.map((question, index) => index === 8 ? { ...question, question: selectedSpecies === "cat" ? "고양이에게 필요한 안전 준비는 무엇인가요?" : "강아지에게 필요한 안전 준비는 무엇인가요?", options: speciesSafety[selectedSpecies], answer: 0, explanation: selectedSpecies === "cat" ? "추락과 탈출은 짧은 순간에 일어날 수 있어요. 고정된 방묘 장치를 준비해 주세요." : "낯선 환경에서의 이탈을 막을 수 있도록 몸에 맞는 안전장비와 인식표를 준비해 주세요." } : question), [selectedSpecies]);
-  const submittedAnswers = questions.map((_, index) => answers[index]);
+  const submittedAnswers = questions.map((_, index) => firstAnswers[index]);
   const educationScore = calculateEducation(submittedAnswers);
   const correctCount = submittedAnswers.filter((answer, index) => answer === questions[index].answer).length;
+  const passingCount = Math.ceil(questions.length * 0.8);
   const passed = educationScore >= 80;
+  const certificatePraise = useMemo(() => {
+    if (correctCount === questions.length) return { title: "준비를 완벽하게 마쳤어요", description: "입양 전 필요한 내용을 빠짐없이 확인했어요." };
+    if (correctCount === questions.length - 1) return { title: "꼼꼼하게 잘 확인했어요", description: "입양 전 필요한 내용을 대부분 꼼꼼하게 확인했어요." };
+    if (correctCount >= passingCount + 1) return { title: "든든하게 준비했어요", description: "필요한 내용을 잘 확인했어요. 반려동물 친구를 만날 준비가 되었어요." };
+    return { title: "차근차근 잘 확인했어요", description: "입양 전 기본 내용을 차근차근 확인했어요." };
+  }, [correctCount, passingCount, questions.length]);
   async function saveResult(answerValues = submittedAnswers) { setSaved("idle"); const response = await fetch("/api/readiness", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ species: selectedSpecies, profile, answers: answerValues }) }); if (response.ok) setSaved("saved"); else if (response.status === 401) setSaved("signin"); else setSaved("error"); }
-  function next() {
-    if (phase === "intro") { setSpecies(null); setAnswers({}); setFeedbackAnswer(null); setStep(0); setPhase("species"); return; }
-    if (phase === "species") { setPhase("questions"); setStep(0); return; }
+  async function shareCertificate() {
+    if (authState !== "authenticated") {
+      window.location.href = "/login?return_to=%2Fquiz%2Fadoption-prep";
+      return;
+    }
+    const shareData = { title: `퍼스트프렌드 ${certificatePraise.title}`, text: `${correctCount}/${questions.length} 문제를 맞히고 입양 전 준비 확인을 마쳤어요.`, url: window.location.href };
+    try {
+      if (navigator.share) await navigator.share(shareData);
+      else await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
+    } catch (error) {
+      if ((error as DOMException).name !== "AbortError") return;
+    }
+  }
+  async function next() {
+    if (phase === "intro") { setSpecies(null); setAnswers({}); setFirstAnswers({}); setFeedbackAnswer(null); setRetryCorrectAnswerVisible(false); setStep(0); setPhase("species"); return; }
+    if (phase === "species") { setRetryCorrectAnswerVisible(false); setPhase("questions"); setStep(0); return; }
     if (phase === "questions") {
+      if (revealedAnswer !== null) {
+        setRevealedAnswer(null);
+        if (step < questions.length - 1) { setStep((current) => current + 1); return; }
+        setPhase("result");
+        setShowResult(true);
+        return;
+      }
       if (answers[step] !== undefined || feedbackAnswer !== null) return;
       if (pendingAnswer === null) return;
       const answer = pendingAnswer;
       setPendingAnswer(null);
+      const nextFirstAnswers = firstAnswers[step] === undefined ? { ...firstAnswers, [step]: answer } : firstAnswers;
+      if (firstAnswers[step] === undefined) setFirstAnswers(nextFirstAnswers);
       if (answer !== question.answer) { setFeedbackAnswer(answer); return; }
       const nextAnswers = { ...answers, [step]: answer };
+      setAnswers(nextAnswers);
       if (step < questions.length - 1) { setStep((current) => current + 1); return; }
       setPhase("result");
       setShowResult(true);
-      if (calculateEducation(questions.map((_, index) => nextAnswers[index])) >= 80) void saveResult(questions.map((_, index) => nextAnswers[index]));
+      if (calculateEducation(questions.map((_, index) => nextFirstAnswers[index])) >= 80) await saveResult(questions.map((_, index) => nextFirstAnswers[index]));
       return;
     }
     setPhase("result");
     setShowResult(true);
-    if (passed) void saveResult();
+    if (passed) await saveResult();
   }
   function previous() {
-    if (phase === "result") { setPhase("questions"); setShowResult(false); setStep(questions.length - 1); return; }
-    if (phase === "questions" && feedbackAnswer !== null) { setFeedbackAnswer(null); setPendingAnswer(null); return; }
-    if (phase === "questions" && answers[step] !== undefined) { setAnswers((current) => { const nextAnswers = { ...current }; delete nextAnswers[step]; return nextAnswers; }); setPendingAnswer(null); return; }
-    if (phase === "questions" && step > 0) { setAnswers((current) => { const nextAnswers = { ...current }; delete nextAnswers[step - 1]; return nextAnswers; }); setStep((current) => current - 1); setPendingAnswer(null); setFeedbackAnswer(null); return; }
-    if (phase === "questions") { setPhase("species"); return; }
+    if (phase === "result") { setRetryCorrectAnswerVisible(false); setRevealedAnswer(null); setPhase("questions"); setShowResult(false); setStep(questions.length - 1); return; }
+    if (phase === "questions" && feedbackAnswer !== null) { setFeedbackAnswer(null); setPendingAnswer(null); setRetryCorrectAnswerVisible(true); setRevealedAnswer(null); return; }
+    if (phase === "questions" && revealedAnswer !== null) { setRevealedAnswer(null); setRetryCorrectAnswerVisible(false); return; }
+    if (phase === "questions" && answers[step] !== undefined) { setAnswers((current) => { const nextAnswers = { ...current }; delete nextAnswers[step]; return nextAnswers; }); setPendingAnswer(null); setRetryCorrectAnswerVisible(false); setRevealedAnswer(null); return; }
+    if (phase === "questions" && step > 0) { setAnswers((current) => { const nextAnswers = { ...current }; delete nextAnswers[step - 1]; return nextAnswers; }); setStep((current) => current - 1); setPendingAnswer(null); setFeedbackAnswer(null); setRetryCorrectAnswerVisible(false); setRevealedAnswer(null); return; }
+    if (phase === "questions") { setRetryCorrectAnswerVisible(false); setRevealedAnswer(null); setPhase("species"); return; }
     setPhase("intro");
     setPendingAnswer(null);
     setFeedbackAnswer(null);
+    setRetryCorrectAnswerVisible(false);
+    setRevealedAnswer(null);
+  }
+  function skipFeedback() {
+    setFeedbackAnswer(null);
+    setPendingAnswer(null);
+    setRetryCorrectAnswerVisible(false);
+    setRevealedAnswer(question.answer);
+  }
+  function restartQuiz() {
+    setPhase("questions");
+    setStep(0);
+    setAnswers({});
+    setFirstAnswers({});
+    setPendingAnswer(null);
+    setFeedbackAnswer(null);
+    setRetryCorrectAnswerVisible(true);
+    setRevealedAnswer(null);
+    setSaved("idle");
+    setShowResult(false);
+    setCertificateOpen(false);
+  }
+  function preview(value: PreviewResult) {
+    if (!value) { resetQuiz(); return; }
+    const previewAnswers = questions.reduce<Record<number, number>>((result, currentQuestion, index) => {
+      result[index] = value === "success" ? currentQuestion.answer : (currentQuestion.answer + 1) % currentQuestion.options.length;
+      return result;
+    }, {});
+    setPreviewResult(value);
+    setSpecies("cat");
+    setAnswers(previewAnswers);
+    setFirstAnswers(previewAnswers);
+    setPendingAnswer(null);
+    setFeedbackAnswer(null);
+    setRetryCorrectAnswerVisible(false);
+    setRevealedAnswer(null);
+    setSaved(value === "success" ? "signin" : "idle");
+    setStep(questions.length - 1);
+    setPhase("result");
+    setShowResult(true);
   }
 
   const questionIndex = step;
@@ -102,17 +193,37 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
     setStep(0);
     setSpecies(null);
     setAnswers({});
+    setFirstAnswers({});
     setFeedbackAnswer(null);
+    setRetryCorrectAnswerVisible(false);
+    setRevealedAnswer(null);
     setSaved("idle");
+    setPreviewResult("");
     setShowResult(false);
   }
+  const previewEnabled = process.env.NODE_ENV !== "production";
   function closeQuiz() {
     resetQuiz();
-    onClose();
+    if (onClose) {
+      onClose();
+      return;
+    }
+    const sameOriginReferrer = (() => {
+      try {
+        return Boolean(document.referrer && new URL(document.referrer).origin === window.location.origin);
+      } catch {
+        return false;
+      }
+    })();
+    if (sameOriginReferrer && window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    window.location.replace("/");
   }
   function renderFooter() {
     if (phase === "result") {
-      return <ActionButton size="large" className="ff-grow" asChild><a href="/find">입양할 친구 찾기</a></ActionButton>;
+      return passed ? <BottomSheetTrigger asChild><ActionButton size="large" variant="brandSolid" className="ff-grow">수료증 받기</ActionButton></BottomSheetTrigger> : <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={restartQuiz}>다시 풀기</ActionButton>;
     }
     if (phase === "intro") {
       return <ActionButton size="large" className="ff-grow" onClick={next}>시작하기</ActionButton>;
@@ -121,17 +232,22 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
       return <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={species === null} onClick={next}>다음</ActionButton>;
     }
     if (feedbackAnswer !== null) {
-      return <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={previous}>다시 선택</ActionButton>;
+      return <><ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={skipFeedback}>넘어가기</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={previous}>다시 풀기</ActionButton></>;
+    }
+    if (revealedAnswer !== null) {
+      return <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={next}>다음</ActionButton>;
     }
     if (hasAnswered) {
       return <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={previous}>이전</ActionButton>;
     }
     return <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={pendingAnswer === null} onClick={next}>다음</ActionButton>;
   }
-  return <div className={`ff-readiness ff-readiness-${phase}`}>
+  const certificateActionLabel = authState === "authenticated" ? "공유하기" : authState === "checking" ? "확인 중" : "로그인";
+  return <BottomSheetRoot open={certificateOpen} onOpenChange={setCertificateOpen}><div className={`ff-readiness ff-readiness-${phase}`}>
     <header className={`ff-readiness-appbar${phase === "intro" ? " ff-readiness-intro-appbar" : ""}`}>
       <button type="button" className="ff-readiness-back" onClick={phase === "intro" ? closeQuiz : previous} aria-label="이전으로"><IconChevronLeftLine aria-hidden /></button>
       <strong>입양 전 준비 확인</strong>
+      {previewEnabled && <label className="ff-readiness-preview-control"><span className="ff-visually-hidden">결과 미리보기</span><select value={previewResult} onChange={(event) => preview(event.target.value as PreviewResult)} aria-label="결과 미리보기"><option value="">결과 보기</option><option value="success">성공</option><option value="failure">실패</option></select></label>}
     </header>
     {isProgressPage && <div className="ff-readiness-progress" role="progressbar" aria-label="입양 전 준비 진행률" aria-valuemin={1} aria-valuemax={totalPages} aria-valuenow={pageNumber}><div style={{ width: `${progressPercent}%` }} /></div>}
 
@@ -139,10 +255,10 @@ export function ReadinessQuiz({ onClose = () => {} }: { onClose?: () => void }) 
 
     {phase === "species" && <section className="ff-readiness-species-page" aria-labelledby="readiness-species-title"><h2 id="readiness-species-title"><span className="ff-readiness-question-label" aria-hidden="true">Q.</span>어떤 친구를 만나고 싶나요?</h2><div className="ff-readiness-species-grid" role="group" aria-label="입양을 준비하는 동물"><button type="button" className="ff-readiness-species-choice" data-selected={species === "cat" || undefined} aria-pressed={species === "cat"} onClick={() => setSpecies("cat")}><img className="ff-readiness-species-image" src="/cat-selection.webp" alt="" aria-hidden="true" /><strong>고양이</strong></button><button type="button" className="ff-readiness-species-choice" data-selected={species === "dog" || undefined} aria-pressed={species === "dog"} onClick={() => setSpecies("dog")}><img className="ff-readiness-species-image" src="/dog-selection.webp" alt="" aria-hidden="true" /><strong>강아지</strong></button></div><p className="ff-readiness-species-description">선택한 친구에 맞춰 입양 전에 알아둘 내용을 확인해 볼게요.</p></section>}
 
-    {phase === "questions" && <section className={`ff-readiness-chapter${hasAnswered ? " is-feedback" : ""}`} aria-labelledby="readiness-question-title">{hasAnswered ? <div className="ff-readiness-feedback-page"><div className="ff-readiness-feedback is-incorrect" role="status" aria-live="polite" aria-label="오답 확인"><span className="ff-readiness-feedback-mark" aria-hidden><IconXmarkLine /></span><strong className="ff-readiness-feedback-title">오답이에요!</strong><p className="ff-readiness-feedback-selected" aria-label="내가 고른 답변"><span>내가 고른 답변:</span><span>{question.options[selectedAnswer as number]}</span></p><p className="ff-readiness-feedback-detail">{question.explanation}</p></div></div> : <><h2 id="readiness-question-title"><span className="ff-readiness-question-label" aria-hidden="true">Q.</span>{question.question}</h2><fieldset className="ff-quiz-question ff-quiz-question-single"><legend className="ff-visually-hidden">{question.question}</legend>{question.options.map((option, optionIndex) => <label key={option}><input type="radio" name={`readiness-chapter-${questionIndex}`} checked={pendingAnswer === optionIndex} onChange={() => setPendingAnswer(optionIndex)} /><span className="ff-quiz-option-label">{option}</span></label>)}</fieldset></>}</section>}
+    {phase === "questions" && <section className={`ff-readiness-chapter${hasAnswered ? " is-feedback" : ""}`} aria-labelledby="readiness-question-title">{hasAnswered ? <div className="ff-readiness-feedback-page"><div className="ff-readiness-feedback is-incorrect" role="status" aria-live="polite" aria-label="오답 확인"><span className="ff-readiness-feedback-mark" aria-hidden><IconXmarkLine /></span><strong className="ff-readiness-feedback-title">오답이에요!</strong><p className="ff-readiness-feedback-selected" aria-label="내가 고른 답변"><span>내가 고른 답변:</span><span>{question.options[selectedAnswer as number]}</span></p><p className="ff-readiness-feedback-detail">{question.explanation}</p></div></div> : <><h2 id="readiness-question-title"><span className="ff-readiness-question-label" aria-hidden="true">Q.</span>{question.question}</h2><fieldset className="ff-quiz-question ff-quiz-question-single"><legend className="ff-visually-hidden">{question.question}</legend>{question.options.map((option, optionIndex) => { const correctVisible = revealedAnswer === optionIndex || (retryCorrectAnswerVisible && question.answer === optionIndex); const showCorrectPaw = correctVisible && pendingAnswer !== optionIndex; return <label key={option} data-correct={correctVisible || undefined}><input type="radio" name={`readiness-chapter-${questionIndex}`} checked={pendingAnswer === optionIndex} onChange={() => setPendingAnswer(optionIndex)} /><span className="ff-quiz-option-label">{option}{showCorrectPaw && <span className="ff-readiness-correct-label" aria-label="정답"><IconPawprintFill aria-hidden /></span>}</span></label>; })}</fieldset></>}</section>}
 
-    {showResult && <section className="ff-readiness-result" role="status"><img className="ff-readiness-result-illustration" src="/readiness-result.webp" alt="강아지와 고양이 캐릭터" /><h2><span className="ff-readiness-result-count">{correctCount}문제</span> 모두 정답이에요</h2><p>준비를 마쳤어요.<br />이제 반려동물 친구를 만나러 가볼까요?</p></section>}
+    {showResult && <section className="ff-readiness-result" role="status"><img className="ff-readiness-result-illustration" src={passed ? "/readiness-result.webp" : "/readiness-result-failed.webp"} alt={passed ? "강아지와 고양이 캐릭터" : "아쉬워하는 강아지와 고양이 캐릭터"} /><h2><span className="ff-readiness-result-count">{correctCount}/{questions.length}</span> 문제 정답이에요</h2><p>{passed ? <>준비를 마쳤어요.<br />이제 반려동물 친구를 만나러 가볼까요?</> : <>조금 더 확인해 볼 내용이 있어요.<br />{passingCount - correctCount}문제를 더 맞히면 통과할 수 있어요.</>}</p></section>}
 
-    <footer className={`ff-readiness-actions${phase === "intro" || phase === "species" || phase === "questions" || phase === "result" ? " is-single" : ""}`}>{renderFooter()}</footer>
-  </div>;
+    <footer className={`ff-readiness-actions${phase === "intro" || phase === "species" || phase === "questions" || phase === "result" ? " is-single" : ""}${feedbackAnswer !== null ? " is-feedback" : ""}`}>{renderFooter()}</footer>
+  </div><BottomSheetContent layerIndex={100} className="ff-readiness-certificate-sheet" aria-label="수료증 내용" showHandle showCloseButton={false}><BottomSheetBody><div className="ff-readiness-certificate"><div className="ff-readiness-certificate-mark" aria-hidden="true">✓</div><h3>{certificatePraise.title}</h3><strong>{questions.length}문제 중 {correctCount}문제를 맞혔어요</strong>{saved === "saved" ? <p>수료 기록을 계정에 안전하게 보관했어요.</p> : saved === "signin" ? <p>로그인하면 수료 기록과 결과를 저장할 수 있어요.</p> : saved === "error" ? <p>수료 기록을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.</p> : <p>수료 기록을 확인하고 있어요. 잠시만 기다려 주세요.</p>}</div></BottomSheetBody><BottomSheetFooter><ActionButton variant="neutralWeak" onClick={() => setCertificateOpen(false)}>닫기</ActionButton><ActionButton variant="brandSolid" disabled={authState === "checking"} onClick={shareCertificate}>{certificateActionLabel}</ActionButton></BottomSheetFooter></BottomSheetContent></BottomSheetRoot>;
 }

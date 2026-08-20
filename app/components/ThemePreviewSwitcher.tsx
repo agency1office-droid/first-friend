@@ -12,6 +12,36 @@ const themes: { id: ThemeId; label: string; color: string }[] = [
   { id: "beige", label: "베이지", color: "#c99d62" },
 ];
 
+const themeTokens: Record<ThemeId, Record<string, string>> = {
+  default: {},
+  terracotta: {
+    "--seed-color-bg-brand-solid": "#a9684b",
+    "--seed-color-bg-brand-weak": "#f8eee8",
+    "--seed-color-bg-brand-weak-pressed": "#f1dfd6",
+    "--seed-color-fg-brand": "#92543b",
+    "--seed-color-stroke-brand-solid": "#a9684b",
+    "--seed-color-stroke-brand-weak": "#e4b9a7",
+  },
+  latte: {
+    "--seed-color-bg-brand-solid": "#b58b70",
+    "--seed-color-bg-brand-weak": "#f7f0eb",
+    "--seed-color-bg-brand-weak-pressed": "#eee2d8",
+    "--seed-color-fg-brand": "#8e6349",
+    "--seed-color-stroke-brand-solid": "#b58b70",
+    "--seed-color-stroke-brand-weak": "#ddc5b4",
+  },
+  beige: {
+    "--seed-color-bg-brand-solid": "#c08a4a",
+    "--seed-color-bg-brand-weak": "#faf2e4",
+    "--seed-color-bg-brand-weak-pressed": "#f2e2c8",
+    "--seed-color-fg-brand": "#926326",
+    "--seed-color-stroke-brand-solid": "#c08a4a",
+    "--seed-color-stroke-brand-weak": "#e6c896",
+  },
+};
+
+const themeTokenKeys = Object.keys(themeTokens.terracotta);
+
 const storageKey = "ff-theme-preview";
 
 export function ThemePreviewSwitcher() {
@@ -23,7 +53,14 @@ export function ThemePreviewSwitcher() {
   });
 
   useEffect(() => {
-    document.documentElement.dataset.ffTheme = theme;
+    const root = document.documentElement;
+    themeTokenKeys.forEach((key) => root.style.removeProperty(key));
+    Object.entries(themeTokens[theme]).forEach(([key, value]) => root.style.setProperty(key, value));
+    if (theme === "default") {
+      root.removeAttribute("data-ff-theme");
+    } else {
+      root.dataset.ffTheme = theme;
+    }
   }, [theme]);
 
   function selectTheme(next: ThemeId) {

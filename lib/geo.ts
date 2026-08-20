@@ -1,6 +1,11 @@
 export type HomeLocation = { label: string; address?: string; lat: number; lng: number; source?: "ip" | "manual" };
 export type GeoPoint = { lat: number; lng: number };
 
+export function isKoreaPoint(value: Partial<GeoPoint> | null | undefined): value is GeoPoint {
+  return Boolean(value && Number.isFinite(value.lat) && Number.isFinite(value.lng)
+    && value.lat >= 30 && value.lat <= 40 && value.lng >= 120 && value.lng <= 135);
+}
+
 export function distanceMeters(a: GeoPoint, b: GeoPoint) {
   const radians = Math.PI / 180;
   const latitude = (b.lat - a.lat) * radians;
@@ -30,7 +35,7 @@ export function readHomeLocation(): HomeLocation | null {
   if (typeof window === "undefined") return null;
   try {
     const value = JSON.parse(window.localStorage.getItem("ff-home-location") || window.localStorage.getItem("ff-ip-location") || "null") as HomeLocation | null;
-    return value && Number.isFinite(value.lat) && Number.isFinite(value.lng) ? value : null;
+    return isKoreaPoint(value) ? value : null;
   } catch {
     return null;
   }

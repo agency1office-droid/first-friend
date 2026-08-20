@@ -27,6 +27,8 @@ function text(value: string | null) {
 
 export async function GET() {
   const requestHeaders = await headers();
+  const country = text(requestHeaders.get("x-vercel-ip-country")).toUpperCase();
+  if (country && country !== "KR") return Response.json({ location: null }, { headers: { "cache-control": "no-store" } });
   const city = text(requestHeaders.get("x-vercel-ip-city"));
   const regionCode = text(requestHeaders.get("x-vercel-ip-country-region"));
   const latitude = Number(requestHeaders.get("x-vercel-ip-latitude"));

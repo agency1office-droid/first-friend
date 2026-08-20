@@ -5,7 +5,7 @@ import { BottomSheetBody, BottomSheetContent, BottomSheetRoot, BottomSheetTrigge
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
 import { IconChevronDownLine, IconChevronLeftLine, IconChevronRightLine, IconLocationpinFill, IconLocationpinLine, IconPlusLine, IconQuestionmarkCircleLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import type { HomeLocation } from "../../lib/geo";
-import { readHomeLocation } from "../../lib/geo";
+import { isKoreaPoint, readHomeLocation } from "../../lib/geo";
 import { useAppFeedback } from "./AppFeedback";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalMenuButton } from "./GlobalMenuButton";
@@ -13,7 +13,7 @@ import { GlobalMenuButton } from "./GlobalMenuButton";
 function savedLocations() {
   try {
     const rows = JSON.parse(window.localStorage.getItem("ff-home-locations") || "[]") as HomeLocation[];
-    if (Array.isArray(rows) && rows.length) return rows.filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lng)).slice(0, 2);
+    if (Array.isArray(rows) && rows.length) return rows.filter((row) => isKoreaPoint(row)).slice(0, 2);
   } catch { /* 이전 단일 동네 저장값으로 복구합니다. */ }
   const legacy = readHomeLocation();
   return legacy ? [legacy] : [];

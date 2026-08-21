@@ -92,7 +92,13 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(styles, /\.ff-quiz-shell \.ff-main \{ display: flex; height: 100dvh; min-height: 100dvh; overflow: hidden; padding: 0;/);
   assert.match(styles, /\.ff-quiz-shell \.ff-readiness \{ width: 100%; height: 100%; min-height: 0; padding: 0 16px/);
   const adoptionQuizPage = await readFile(new URL("../app/quiz/adoption-prep/page.tsx", import.meta.url), "utf8");
-  assert.match(adoptionQuizPage, /return <ReadinessQuiz \/>/);
+  const quizRegistry = await readFile(new URL("../lib/quiz/registry.ts", import.meta.url), "utf8");
+  const quizRoute = await readFile(new URL("../app/quiz/[slug]/page.tsx", import.meta.url), "utf8");
+  assert.match(adoptionQuizPage, /getQuizDefinition\("adoption-prep"\)/);
+  assert.match(adoptionQuizPage, /<ReadinessQuiz quizId=\{definition\?\.slug \?\? "adoption-prep"\} \/>/);
+  assert.match(quizRegistry, /"adoption-prep"/);
+  assert.match(quizRoute, /getQuizDefinition\(params\.slug\)/);
+  assert.match(quizRoute, /<ReadinessQuiz quizId=\{definition\.slug\} \/>/);
   assert.doesNotMatch(adoptionQuizPage, /from "\.\.\/\.\.\/readiness\/page"/);
   assert.match(styles, /\.ff-shell\[data-route-path\^="\/friends\/"\] \.ff-detail-image-back/);
   assert.doesNotMatch(bridge, /FavoriteButton/);
@@ -115,8 +121,11 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(planning, /ReadinessQuiz/);
   assert.match(planning, /PetCostCalculator/);
   const calculator = await readFile(new URL("../app/components/PetCostCalculator.tsx", import.meta.url), "utf8");
-  assert.match(calculator, /CostPlanner initialSpecies/);
+  const costPage = await readFile(new URL("../app/quiz/pet-cost/page.tsx", import.meta.url), "utf8");
+  assert.match(calculator, /href=\{`\/quiz\/pet-cost\?species=\$\{initialSpecies\}`\}/);
   assert.match(calculator, /반려동물 지출 계산기/);
+  assert.match(costPage, /title: "반려동물 지출 계산기"/);
+  assert.match(costPage, /<CostPlanner initialSpecies=\{initialSpecies\} \/>/);
   const costPlanner = await readFile(new URL("../app/components/CostPlanner.tsx", import.meta.url), "utf8");
   assert.match(costPlanner, /firstYear/);
   assert.match(costPlanner, /clamp/);
@@ -128,7 +137,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(readinessQuiz, /생활 준비도/);
   assert.doesNotMatch(readinessQuiz, /ProgressCircle/);
   assert.match(readinessQuiz, /ff-readiness-appbar/);
-  assert.match(readinessQuiz, /<strong>입양 전 준비 확인<\/strong>/);
+  assert.match(readinessQuiz, /<strong>\{quizDefinition\?\.title \?\? "입양 전 준비 확인"\}<\/strong>/);
   assert.match(readinessQuiz, /ff-readiness-question-count/);
   assert.match(readinessQuiz, /\{questionIndex \+ 1\}\/\{questions\.length\}/);
   assert.match(readinessQuiz, /phase, setPhase/);

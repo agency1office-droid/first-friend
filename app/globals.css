@@ -17,6 +17,12 @@ img { display: block; max-width: 100%; }
 .ff-quiz-shell .ff-readiness { width: 100%; height: 100%; min-height: 0; padding: 0 16px calc(24px + env(safe-area-inset-bottom)); gap: 0; overflow: hidden; }
 .ff-quiz-shell .ff-readiness > section { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .ff-quiz-shell .ff-readiness-actions { position: relative; bottom: auto; flex: 0 0 auto; margin-top: 0; }
+.ff-quiz-shell .ff-cost-page { width: 100%; height: 100dvh; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.ff-cost-page-header { position: sticky; z-index: 2; top: 0; display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; align-items: center; min-height: 56px; padding: 0 16px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: color-mix(in srgb, var(--seed-color-bg-layer-default) 94%, transparent); backdrop-filter: blur(14px); }
+.ff-cost-page-header strong { overflow: hidden; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.ff-cost-page-back { display: grid; place-items: center; width: 40px; height: 40px; color: var(--seed-color-fg-neutral); font-size: 32px; line-height: 1; text-decoration: none; }
+.ff-cost-page-content { padding: 24px 16px calc(32px + env(safe-area-inset-bottom)); }
+.ff-cost-page-content .ff-page-header { margin-bottom: 24px; }
 .ff-topbar { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--seed-color-bg-layer-default) 92%, transparent); border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); backdrop-filter: blur(16px); }
 .ff-brand { font-size: var(--seed-font-size-t7); line-height: var(--seed-line-height-t7); font-weight: var(--seed-font-weight-bold); }
 .ff-top-actions { display: flex; align-items: center; gap: 4px; }

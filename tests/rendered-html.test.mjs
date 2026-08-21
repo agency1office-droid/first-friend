@@ -197,6 +197,9 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /완벽한 반려인/);
   assert.match(readinessQuiz, /ff-readiness-result-praise/);
   assert.match(readinessQuiz, /if \(phase === "result"\)/);
+  assert.match(readinessQuiz, /const shareUrl = new URL\(createReadinessSharePath/);
+  assert.doesNotMatch(readinessQuiz, /window\.location\.href = "\/login\?return_to=%2Fquiz%2Fadoption-prep"/);
+  assert.doesNotMatch(readinessQuiz, /onClick=\{shareCertificate\} disabled=\{authState === "checking"\}/);
   assert.doesNotMatch(readinessQuiz, /수료증 받기/);
   const readinessStyles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   const readinessIntroAsset = await readFile(new URL("../public/readiness-intro.webp", import.meta.url));
@@ -270,7 +273,6 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessShare, /ff-readiness-share-page/);
   assert.match(readinessShare, /robots: \{ index: false, follow: false \}/);
   assert.match(readinessStyles, /\.ff-readiness-share-page \{/);
-  assert.match(readinessQuiz, /disabled=\{authState === "checking"\}/);
   assert.match(readinessQuiz, /완벽한 반려인/);
   assert.match(readinessQuiz, /className="ff-readiness-result-score"> · \{correctCount\}\/\{questions\.length\}/);
   assert.doesNotMatch(readinessQuiz, /입양 전 준비 확인을 완료한 기록이에요/);

@@ -50,7 +50,6 @@ export function ReadinessQuiz({ onClose }: { onClose?: () => void }) {
   const [feedbackAnswer, setFeedbackAnswer] = useState<number | null>(null);
   const [retryAnswerHintsVisible, setRetryAnswerHintsVisible] = useState(false);
   const [revealedAnswer, setRevealedAnswer] = useState<number | null>(null);
-  const [authState, setAuthState] = useState<"checking" | "authenticated" | "anonymous">("checking");
   const [showResult, setShowResult] = useState(false);
   const [previewResult, setPreviewResult] = useState<PreviewResult>("");
   useEffect(() => {
@@ -58,18 +57,6 @@ export function ReadinessQuiz({ onClose }: { onClose?: () => void }) {
     if (scroller) scroller.scrollTop = 0;
     else window.scrollTo(0, 0);
   }, [phase, step, feedbackAnswer, retryAnswerHintsVisible, revealedAnswer]);
-  useEffect(() => {
-    let active = true;
-    fetch("/api/readiness", { cache: "no-store" })
-      .then((response) => {
-        if (!active) return;
-        setAuthState(response.ok ? "authenticated" : "anonymous");
-      })
-      .catch(() => {
-        if (active) setAuthState("anonymous");
-      });
-    return () => { active = false; };
-  }, []);
   const selectedSpecies = species ?? "cat";
   const questions = useMemo(() => commonChapters.map((question, index) => index === 8 ? { ...question, question: selectedSpecies === "cat" ? "고양이에게 필요한 안전 준비는 무엇인가요?" : "강아지에게 필요한 안전 준비는 무엇인가요?", options: speciesSafety[selectedSpecies], answer: 0, explanation: selectedSpecies === "cat" ? "추락과 탈출은 짧은 순간에 일어날 수 있어요. 고정된 방묘 장치를 준비해 주세요." : "낯선 환경에서의 이탈을 막을 수 있도록 몸에 맞는 안전장비와 인식표를 준비해 주세요." } : question), [selectedSpecies]);
   const submittedAnswers = questions.map((_, index) => firstAnswers[index]);
@@ -93,10 +80,6 @@ export function ReadinessQuiz({ onClose }: { onClose?: () => void }) {
     }
   }
   async function shareCertificate() {
-    if (authState !== "authenticated") {
-      window.location.href = "/login?return_to=%2Fquiz%2Fadoption-prep";
-      return;
-    }
     const shareUrl = new URL(createReadinessSharePath(correctCount, questions.length), window.location.origin).toString();
     const shareData = { title: `퍼스트프렌드 ${certificatePraise.title}`, text: `${questions.length}문제 중 ${correctCount}문제 정답이에요. 입양 전 준비 확인을 마쳤어요.`, url: shareUrl };
     try {
@@ -241,7 +224,7 @@ export function ReadinessQuiz({ onClose }: { onClose?: () => void }) {
   }
   function renderFooter() {
     if (phase === "result") {
-      return passed ? <><ActionButton key="result-close-passed" size="large" variant="neutralWeak" className="ff-grow" onClick={closeQuiz}>닫기</ActionButton><ActionButton key="result-share" size="large" variant="brandSolid" className="ff-grow" onClick={shareCertificate} disabled={authState === "checking"}>공유하기</ActionButton></> : <><ActionButton key="result-close-failed" size="large" variant="neutralWeak" className="ff-grow" onClick={closeQuiz}>닫기</ActionButton><ActionButton key="result-retry" size="large" variant="brandSolid" className="ff-grow" onClick={restartQuiz}>다시 풀기</ActionButton></>;
+      return passed ? <><ActionButton key="result-close-passed" size="large" variant="neutralWeak" className="ff-grow" onClick={closeQuiz}>닫기</ActionButton><ActionButton key="result-share" size="large" variant="brandSolid" className="ff-grow" onClick={shareCertificate}>공유하기</ActionButton></> : <><ActionButton key="result-close-failed" size="large" variant="neutralWeak" className="ff-grow" onClick={closeQuiz}>닫기</ActionButton><ActionButton key="result-retry" size="large" variant="brandSolid" className="ff-grow" onClick={restartQuiz}>다시 풀기</ActionButton></>;
     }
     if (phase === "intro") {
       return <ActionButton key="intro-start" size="large" className="ff-grow" onClick={next}>시작하기</ActionButton>;

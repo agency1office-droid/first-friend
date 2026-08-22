@@ -72,21 +72,23 @@ function detailNeutered(animal: Animal) {
 
 function detailAge(animal: Animal) {
   const raw = String(animal.age || "").trim();
-  if (!raw || raw === "나이 미상") return "확인 필요";
-  if (raw.includes("60일미만")) return "생후 2개월 미만 · 0살";
+  if (!raw || raw === "나이 미상") return { value: "확인 필요" };
+  if (raw.includes("60일미만")) return { value: "생후 2개월 미만", actualAge: "0살" };
   const birthYear = raw.match(/((?:19|20)\d{2})\s*(?:\([^)]*\))?\s*년생/);
   if (birthYear) {
     const age = Math.max(0, new Date().getFullYear() - Number(birthYear[1]));
-    return `${birthYear[1]}년생 · ${age}살`;
+    return { value: `${birthYear[1]}년생`, actualAge: `${age}살` };
   }
   const months = raw.match(/(\d+(?:\.\d+)?)\s*개월/);
   if (months) {
     const ageInMonths = Number(months[1]);
-    return ageInMonths < 12 ? `생후 ${Math.floor(ageInMonths)}개월 · 0살` : `생후 ${Math.floor(ageInMonths / 12)}년 · ${Math.floor(ageInMonths / 12)}살`;
+    return ageInMonths < 12
+      ? { value: `생후 ${Math.floor(ageInMonths)}개월`, actualAge: "0살" }
+      : { value: `생후 ${Math.floor(ageInMonths / 12)}년`, actualAge: `${Math.floor(ageInMonths / 12)}살` };
   }
   const years = raw.match(/(\d+(?:\.\d+)?)\s*살/);
-  if (years) return `${Math.floor(Number(years[1]))}살`;
-  return raw;
+  if (years) return { value: `${Math.floor(Number(years[1]))}살` };
+  return { value: raw };
 }
 
 function displayShelterAddress(address: string) {
@@ -108,12 +110,12 @@ function formatDetailHelper(value: string): ReactNode {
   return <>{sentences.map((sentence, index) => <span key={`${sentence}-${index}`}>{sentence}{index < sentences.length - 1 && <br />}</span>)}</>;
 }
 
-function DetailInfoRow({ icon: Icon, label, value, helper, className }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string; helper?: string; className?: string }) {
+function DetailInfoRow({ icon: Icon, label, value, secondaryValue, helper, className }: { icon: ComponentType<SVGProps<SVGSVGElement>>; label: string; value: string; secondaryValue?: string; helper?: string; className?: string }) {
   if (helper) return <details className={`ff-detail-info-row ff-detail-info-row--accordion${className ? ` ${className}` : ""}`}>
     <summary className="ff-detail-info-row-main">
       <Icon className="ff-detail-info-icon" aria-hidden />
       <span>{label}</span>
-      <strong data-muted={value === "확인 필요" || undefined}>{value}</strong>
+      <strong data-muted={value === "확인 필요" || undefined}>{value}{secondaryValue && <small className="ff-detail-info-secondary">{secondaryValue}</small>}</strong>
     </summary>
     <div className="ff-detail-info-helper">{formatDetailHelper(helper)}</div>
   </details>;
@@ -121,7 +123,7 @@ function DetailInfoRow({ icon: Icon, label, value, helper, className }: { icon: 
     <div className="ff-detail-info-row-main">
       <Icon className="ff-detail-info-icon" aria-hidden />
       <span>{label}</span>
-      <strong data-muted={value === "확인 필요" || undefined}>{value}</strong>
+      <strong data-muted={value === "확인 필요" || undefined}>{value}{secondaryValue && <small className="ff-detail-info-secondary">{secondaryValue}</small>}</strong>
     </div>
   </div>;
 }
@@ -204,7 +206,7 @@ export default async function AnimalPage({
             <DetailInfoRow icon={IconNeedleScaleLine} label="크기" value={detailSize(animal)} helper={knowledge.size} />
             <DetailInfoRow icon={IconCheckmarkScaleLine} label="체중" value={weight === undefined ? "확인 필요" : `${weight}kg`} />
             <DetailInfoRow icon={IconTagLine} label="털색" value={colors.length ? colors.join(" · ") : "확인 필요"} />
-            <DetailInfoRow icon={IconCalendarLine} label="나이" value={detailAge(animal)} helper={knowledge.age} />
+            <DetailInfoRow icon={IconCalendarLine} label="나이" value={detailAge(animal).value} secondaryValue={detailAge(animal).actualAge} helper={knowledge.age} />
             <DetailInfoRow icon={IconMalesymbolFemalesymbolLine} label="성별" value={animal.sex || "확인 필요"} />
             <DetailInfoRow icon={IconCheckmarkCircleFill} label="중성화" value={detailNeutered(animal)} helper={knowledge.neutered} />
             <DetailInfoRow icon={IconLocationpinLine} label="발견 지역" value={foundArea} />

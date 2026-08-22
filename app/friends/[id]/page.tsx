@@ -74,7 +74,7 @@ function detailAge(animal: Animal) {
   const raw = String(animal.age || "").trim();
   if (!raw || raw === "나이 미상") return { value: "확인 필요" };
   if (raw.includes("60일미만")) return { value: "생후 2개월 미만", actualAge: "0살" };
-  const birthYear = raw.match(/((?:19|20)\d{2})\s*(?:\([^)]*\))?\s*년생/);
+  const birthYear = raw.match(/((?:19|20)\d{2})\s*(?:\(\s*년생\s*\)|년생)/);
   if (birthYear) {
     const age = Math.max(0, new Date().getFullYear() - Number(birthYear[1]));
     return { value: `${birthYear[1]}년생`, actualAge: `${age}살` };

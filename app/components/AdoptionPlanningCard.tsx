@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Badge } from "seed-design/ui/badge";
 import { IconPlusLine } from "@karrotmarket/react-monochrome-icon";
 import { PetCostCalculator } from "./PetCostCalculator";
 import { PetKnowledgeQuiz } from "./PetKnowledgeQuiz";
@@ -43,7 +42,6 @@ export function AdoptionPlanningCard(props: { species: string; breed: string; an
           <div className="ff-kicker">입양 전에 꼭 확인해요</div>
           <h2 className="ff-section-title" id="adoption-planning-title">입양 전 준비 확인</h2>
         </div>
-        <Badge tone={completed ? "positive" : "neutral"} variant="weak">참고용</Badge>
       </div>
       <div className="ff-adoption-planning-list">
         <a className="ff-adoption-planning-row" href="/quiz/adoption-prep">

@@ -73,16 +73,16 @@ function detailNeutered(animal: Animal) {
 function detailAge(animal: Animal) {
   const raw = String(animal.age || "").trim();
   if (!raw || raw === "나이 미상") return "확인 필요";
-  if (raw.includes("60일미만")) return "생후 2개월 미만";
+  if (raw.includes("60일미만")) return "생후 2개월 미만 · 0살";
   const birthYear = raw.match(/((?:19|20)\d{2})\s*(?:\([^)]*\))?\s*년생/);
   if (birthYear) {
     const age = Math.max(0, new Date().getFullYear() - Number(birthYear[1]));
-    return age === 0 ? "생후 1년 미만" : `${age}살`;
+    return `${birthYear[1]}년생 · ${age}살`;
   }
   const months = raw.match(/(\d+(?:\.\d+)?)\s*개월/);
   if (months) {
     const ageInMonths = Number(months[1]);
-    return ageInMonths < 12 ? `생후 ${Math.floor(ageInMonths)}개월` : `${Math.floor(ageInMonths / 12)}살`;
+    return ageInMonths < 12 ? `생후 ${Math.floor(ageInMonths)}개월 · 0살` : `생후 ${Math.floor(ageInMonths / 12)}년 · ${Math.floor(ageInMonths / 12)}살`;
   }
   const years = raw.match(/(\d+(?:\.\d+)?)\s*살/);
   if (years) return `${Math.floor(Number(years[1]))}살`;

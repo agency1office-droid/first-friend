@@ -1102,7 +1102,9 @@ test("keeps draw, photo, and condition journeys independent while draw uses perf
   assert.match(finder, /AI로 친구 찾기/);
   assert.match(finder, /지우기/);
   assert.match(finder, /특징을 분석해 친구 찾기/);
-  assert.match(drawPage, /<Finder animals={await getAnimalsWithPhotoCounts\(30\)} modeOnly="draw"\/>/);
+  assert.match(drawPage, /<Finder animals={\[\]} modeOnly="draw"\/>/);
+  assert.doesNotMatch(drawPage, /getAnimalsWithPhotoCounts\(30\)/);
+  assert.match(finder, /fetch\("\/api\/animals\?limit=30"/);
   assert.doesNotMatch(drawPage, /PerfectFreehandCanvas/);
   assert.match(await draw.text(), /마음속 친구를 그려보세요/);
 });

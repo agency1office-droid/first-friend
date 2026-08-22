@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getStroke } from "perfect-freehand";
 import type { Animal } from "../../lib/data";
-import { analyzeVisual, animalVisualTags, preloadVisualModel, type VisualAnalysis } from "../../lib/visual-analysis";
+import { analyzeVisual, animalVisualTags, type VisualAnalysis } from "../../lib/visual-analysis";
 import { AnimalCard } from "./AnimalCard";
 import { ActionButton } from "seed-design/ui/action-button";
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
@@ -46,6 +46,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const strokeBaseImage = useRef<ImageData | null>(null);
   const undoStack = useRef<ImageData[]>([]);
   const redoStack = useRef<ImageData[]>([]);
+  const animalsLoadPromise = useRef<Promise<Animal[]> | null>(null);
   const mode = modeOnly || "draw";
   const [brushColor, setBrushColor] = useState(palette[0]);
   const [colorInput, setColorInput] = useState(palette[0].hex);
@@ -76,13 +77,14 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const [gender, setGender] = useState("상관 없음");
   const [region, setRegion] = useState("전국");
   const [matched, setMatched] = useState(false);
+  const [availableAnimals, setAvailableAnimals] = useState(animals);
   const [ranked, setRanked] = useState(animals);
   const [analysis, setAnalysis] = useState<VisualAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [saveState, setSaveState] = useState("");
 
-  const breeds = useMemo(() => ["상관 없음", ...Array.from(new Set(animals.map((animal) => animal.breed))).slice(0, 30)], [animals]);
-  const regions = useMemo(() => ["전국", ...Array.from(new Set(animals.map((animal) => animal.region.split(" ")[0]))).filter(Boolean)], [animals]);
+  const breeds = useMemo(() => ["상관 없음", ...Array.from(new Set(availableAnimals.map((animal) => animal.breed))).slice(0, 30)], [availableAnimals]);
+  const regions = useMemo(() => ["전국", ...Array.from(new Set(availableAnimals.map((animal) => animal.region.split(" ")[0]))).filter(Boolean)], [availableAnimals]);
 
   function chooseColor(value: string) {
     const hex = normalizeHex(value);
@@ -93,8 +95,45 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   }
 
   useEffect(() => {
-    if (mode === "draw" || mode === "photo") preloadVisualModel();
-  }, [mode]);
+    if (animals.length || (mode !== "draw" && mode !== "photo")) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const response = await fetch("/api/animals?limit=30", { cache: "force-cache" });
+        if (!response.ok) return;
+        const payload = await response.json() as { items?: Animal[] };
+        const next = Array.isArray(payload.items) ? payload.items : [];
+        if (!cancelled && next.length) {
+          setAvailableAnimals(next);
+          setRanked(next);
+        }
+      } catch {
+        // The drawing canvas remains usable even when the optional result data is unavailable.
+      }
+    };
+    const schedule = "requestIdleCallback" in window
+      ? window.requestIdleCallback(load, { timeout: 800 })
+      : window.setTimeout(load, 0);
+    return () => {
+      cancelled = true;
+      if (typeof schedule === "number") window.clearTimeout(schedule);
+      else window.cancelIdleCallback?.(schedule);
+    };
+  }, [animals, mode]);
+
+  function ensureAnimals() {
+    if (availableAnimals.length) return Promise.resolve(availableAnimals);
+    if (!animalsLoadPromise.current) {
+      animalsLoadPromise.current = fetch("/api/animals?limit=30", { cache: "force-cache" })
+        .then(async (response) => {
+          if (!response.ok) return [];
+          const payload = await response.json() as { items?: Animal[] };
+          return Array.isArray(payload.items) ? payload.items : [];
+        })
+        .catch(() => []);
+    }
+    return animalsLoadPromise.current;
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -228,7 +267,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     event.currentTarget.value = "";
   }
 
-  function score(animal: Animal, visual = analysis) {
+  function score(animal: Animal, visual = analysis, source = availableAnimals) {
     let value = 0;
     const haystack = `${animal.name} ${animal.breed} ${animal.species} ${animal.ageGroup} ${animal.sex} ${animal.region} ${animal.colors.join(" ")} ${animal.traits.join(" ")}`.toLowerCase();
     if (species !== "전체") value += animal.species.includes(species) ? 30 : -50;
@@ -246,24 +285,26 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
       for (const hint of visual.breedHints) if (animal.breed.includes(hint) || hint.includes(animal.breed)) value += 16;
       for (const tag of [visual.size, visual.eyes, visual.fur, visual.pattern]) if (animalTags.includes(tag)) value += 6;
     }
-    value += Math.max(0, 6 - animals.indexOf(animal) * 0.1);
+    value += Math.max(0, 6 - source.indexOf(animal) * 0.1);
     return value;
   }
 
   async function match() {
     setAnalyzing(true); setSaveState(""); let visual: VisualAnalysis | null = null;
     try {
+      const sourceAnimals = await ensureAnimals();
+      if (!sourceAnimals.length) throw new Error("동물 정보를 불러오지 못했어요.");
       if (mode === "draw" && canvasRef.current) visual = await analyzeVisual(canvasRef.current, true);
       if (mode === "photo" && imageRef.current) visual = await analyzeVisual(imageRef.current, false);
       if (visual) { setAnalysis(visual); if (species === "전체" && visual.species !== "전체") setSpecies(visual.species); if (visual.colors[0]) setCoat(visual.colors[0]); }
-      const result = [...animals].sort((a, b) => score(b, visual) - score(a, visual)); setRanked(result); setMatched(true); document.getElementById("match-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const result = [...sourceAnimals].sort((a, b) => score(b, visual, sourceAnimals) - score(a, visual, sourceAnimals)); setAvailableAnimals(sourceAnimals); setRanked(result); setMatched(true); document.getElementById("match-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch {
       feedback.error("그림을 분석하지 못했어요. 잠시 후 다시 시도해 주세요.");
     } finally { setAnalyzing(false); }
   }
   async function saveSearch() { const response = await fetch("/api/saved-searches", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ name:analysis ? analysis.tags.slice(0,3).join(" · ") : `${species} ${region}`, criteria:{species,breed,coat,age,gender,region,query,tags:analysis?.tags||[]} }) }); if(response.status===401){setSaveState("로그인하면 이 조건과 신규 등록 알림을 저장할 수 있어요.");return;} if(response.ok){setSaveState("");feedback.success("검색 조건과 새 친구 알림을 저장했어요",{actionLabel:"알림관리",onAction:()=>{location.href="/mypage/searches"}})}else feedback.error("검색 조건을 저장하지 못했어요"); }
 
-  const visible = (matched ? ranked : animals).filter((animal) => !query || `${animal.name} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
+  const visible = (matched ? ranked : availableAnimals).filter((animal) => !query || `${animal.name} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
 
   function guideOutline() {
     if (guideSpecies === "none") return null;
@@ -322,7 +363,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
       {analysis && <div className="ff-analysis-card"><div className="ff-analysis-head"><div><span>온디바이스 시각 분석</span><strong>그림에서 찾은 검색 태그</strong></div><span className="ff-analysis-badge">{analysis.usedOpenSourceModel ? "기기 안에서 분석" : "특징 분석"}</span></div><div className="ff-tags">{analysis.tags.map(tag=><span className="ff-tag" key={tag}>{tag}</span>)}</div><p>색상·그림이 차지하는 면적·어두운 눈 영역·경계 밀도를 태그로 바꿨어요. 그림은 서버에 저장하지 않고 공개된 보호동물 정보와 비교합니다.</p></div>}
       {matched && visible[0] && <Callout tone="positive" title={`${visible[0].name} 친구가 가장 가까워요`} description={`${visible[0].matchReason} 분석 태그와 공개된 품종·털색·체중 단서를 비교했으며 건강·성격·입양 성공은 추측하지 않았어요.`}/>}
       <div className="ff-animal-grid" style={{ marginTop: 14 }}>{visible.map((animal) => <AnimalCard animal={animal} key={animal.id}/>)}</div>
-      {!visible.length && <div className="ff-empty"><strong>조건에 맞는 친구가 아직 없어요.</strong><p>지역이나 나이를 넓히거나, 같은 털색의 다른 품종을 살펴보세요.</p><ActionButton variant="neutralWeak" size="small" onClick={()=>{setRegion("전국");setAge("상관 없음");setQuery("");setRanked(animals);}}>조건 넓히기</ActionButton></div>}
+      {!visible.length && <div className="ff-empty"><strong>조건에 맞는 친구가 아직 없어요.</strong><p>지역이나 나이를 넓히거나, 같은 털색의 다른 품종을 살펴보세요.</p><ActionButton variant="neutralWeak" size="small" onClick={()=>{setRegion("전국");setAge("상관 없음");setQuery("");setRanked(availableAnimals);}}>조건 넓히기</ActionButton></div>}
       {matched && visible[0] && <div className="ff-result-shortcut"><a href={`/friends/${visible[0].id}`}>첫 번째 친구 자세히 보기</a></div>}
       {matched && <div className="ff-save-search"><ActionButton variant="neutralWeak" onClick={saveSearch}>이 조건과 신규 등록 알림 저장</ActionButton>{saveState&&<p className="ff-meta">{saveState}</p>}</div>}
     </section>}

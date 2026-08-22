@@ -2,19 +2,28 @@
 
 import { ActionButton } from "seed-design/ui/action-button";
 import {
+  BottomSheetBody,
+  BottomSheetContent,
+  BottomSheetRoot,
+  BottomSheetTrigger,
+} from "seed-design/ui/bottom-sheet";
+import {
   IconAndroidshareLine,
 } from "@karrotmarket/react-monochrome-icon";
 import { useAppFeedback } from "./AppFeedback";
 import { FavoriteButton } from "./FavoriteButton";
+import { CostPlanner, type CalculatorAnimal } from "./CostPlanner";
 
 export function AnimalActions({
   animalId,
   name,
   shelterPhone,
+  animal,
 }: {
   animalId: string;
   name: string;
   shelterPhone?: string;
+  animal: CalculatorAnimal;
 }) {
   const feedback = useAppFeedback();
 
@@ -39,10 +48,19 @@ export function AnimalActions({
     ? `tel:${shelterPhone.replace(/[^0-9+]/g, "")}`
     : "#shelter-contact";
 
+  const calculator = <BottomSheetRoot>
+    <BottomSheetTrigger asChild>
+      <ActionButton variant="neutralWeak">돌봄 계산기</ActionButton>
+    </BottomSheetTrigger>
+    <BottomSheetContent aria-label="반려동물 지출 계산기" className="ff-pet-cost-calculator-sheet">
+      <BottomSheetBody><CostPlanner flow="sheet" animal={animal} /></BottomSheetBody>
+    </BottomSheetContent>
+  </BottomSheetRoot>;
+
   return <div className="ff-sticky-actions">
     <FavoriteButton animalId={animalId} animalName={name} className="ff-sticky-scrap" />
     <button className="ff-sticky-share" type="button" onClick={share} aria-label="공유하기"><IconAndroidshareLine aria-hidden /></button>
-    <ActionButton asChild variant="neutralWeak"><a href="/pet-cost-calculator">돌봄 계산기</a></ActionButton>
+    {calculator}
     <ActionButton asChild><a href={inquiryHref}>연락하기</a></ActionButton>
   </div>;
 }

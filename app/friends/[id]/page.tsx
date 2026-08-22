@@ -270,7 +270,7 @@ export default async function AnimalPage({
           />
         </section>
       </article>
-      <AnimalActions animalId={animal.id} name={animal.name} shelterPhone={animal.shelterPhone} />
+      <AnimalActions animalId={animal.id} name={animal.name} shelterPhone={animal.shelterPhone} animal={animal} />
     </>
   );
 }

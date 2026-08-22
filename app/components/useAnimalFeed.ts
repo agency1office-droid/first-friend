@@ -94,7 +94,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   const [filtersReady, setFiltersReady] = useState(false);
   const [userEngaged, setUserEngaged] = useState(false);
   const requestId = useRef(0);
-  const prefetchedPage = useRef<Promise<Record<string, unknown>> | null>(null);
+  const prefetchedPage = useRef<Promise<Record<string, unknown> | null> | null>(null);
   const prefetchedUrl = useRef<string | null>(null);
   const loadMoreController = useRef<AbortController | null>(null);
 
@@ -283,7 +283,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
       if (Array.isArray(body.items)) preloadAnimalImages(body.items as Animal[]);
       return body;
     }).catch(errorValue => {
-      if (controller.signal.aborted) throw errorValue;
+      if (controller.signal.aborted) return null;
       prefetchedPage.current = null;
       prefetchedUrl.current = null;
       throw errorValue;
@@ -358,6 +358,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
           if (!response.ok) throw new Error(typeof result.error === "string" ? result.error : "다음 친구를 불러오지 못했어요.");
           return result;
         });
+      if (!body) return;
       if (requestVersion !== requestId.current || controller.signal.aborted) return;
       prefetchedPage.current = null; prefetchedUrl.current = null;
       setItems(current => {

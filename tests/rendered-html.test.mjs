@@ -926,7 +926,7 @@ test("explains public notice deadlines without presenting them as adoption deadl
   assert.match(status, /publicOutcomeLabel/);
   assert.match(status, /현재 처리 상태/);
   assert.match(status, /상담 이후 실제 입양 가능 여부와 절차는 보호소가 확인합니다/);
-  assert.match(actions, /질문하기/);
+  assert.match(actions, /돌봄 계산기/);
   assert.match(actions, /연락하기/);
   assert.match(styles, /@media \(max-width: 700px\) \{\s+\.ff-sticky-actions \{ gap: 6px; padding: 8px 12px/);
   assert.match(styles, /\.ff-sticky-actions > a, \.ff-sticky-actions > button:not\(\.ff-sticky-scrap\) \{ min-height: 56px;[^}]*font-size: 16px;/);

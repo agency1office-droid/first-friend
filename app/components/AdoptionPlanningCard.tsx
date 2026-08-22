@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { IconPlusLine } from "@karrotmarket/react-monochrome-icon";
 import { PetCostCalculator } from "./PetCostCalculator";
 import { PetKnowledgeQuiz } from "./PetKnowledgeQuiz";
+import type { Animal } from "../../lib/data";
 
 type Assessment = { passed?: boolean };
 type Status = "loading" | "guest" | "incomplete" | "completed";
 
-export function AdoptionPlanningCard(props: { species: string; breed: string; animalAge: string }) {
-  void props;
+export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "breed" | "age" | "sex" | "traits" | "health">) {
   const [status, setStatus] = useState<Status>("loading");
   const [knowledgeQuizOpen, setKnowledgeQuizOpen] = useState(false);
 
@@ -44,11 +45,11 @@ export function AdoptionPlanningCard(props: { species: string; breed: string; an
         </div>
       </div>
       <div className="ff-adoption-planning-list">
-        <a className="ff-adoption-planning-row" href="/quiz/adoption-prep">
+        <Link className="ff-adoption-planning-row" href="/quiz/adoption-prep">
           <span className="ff-adoption-planning-row-copy"><strong>입양 전 준비 확인</strong><small>{statusLabel} · {statusDescription}</small></span>
           <IconPlusLine aria-hidden />
-        </a>
-        <PetCostCalculator species={props.species} />
+        </Link>
+        <PetCostCalculator animal={props} />
         <button className="ff-pet-knowledge-trigger" type="button" onClick={() => setKnowledgeQuizOpen(true)}><span>반려동물 상식 퀴즈</span><IconPlusLine aria-hidden /></button>
       </div>
       <p className="ff-adoption-planning-note">시험 결과는 입양 전 준비를 돕기 위한 참고 정보예요. 최종 상담과 입양 결정은 보호소와 함께 확인해 주세요.</p>

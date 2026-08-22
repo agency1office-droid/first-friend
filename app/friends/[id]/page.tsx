@@ -193,7 +193,7 @@ export default async function AnimalPage({
         </div>
       </section>
       <AnimalAiIntro animalId={animal.id} />
-      <AdoptionPlanningCard species={animal.species} breed={animal.breed} animalAge={animal.age} />
+      <AdoptionPlanningCard species={animal.species} name={animal.name} breed={animal.breed} age={animal.age} sex={animal.sex} traits={animal.traits} health={animal.health} />
       <article className="ff-detail-body">
         <h1 className="ff-visually-hidden">{animal.name}</h1>
         <section className="ff-detail-info-section ff-detail-animal-info" aria-labelledby="detail-info-title">

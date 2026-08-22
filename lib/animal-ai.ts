@@ -155,17 +155,30 @@ async function readImage(url: string) {
 }
 
 function extractText(payload: { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }) {
-  return payload.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("") || "";
+  return payload.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("").trim() || "";
 }
 
-function validateSummary(value: string) {
-  const summary = value.trim().replace(/^```(?:json)?|```$/g, "").trim();
-  if (summary.length < 30 || summary.length > 500) return null;
-  const sentenceCount = summary.split(/[.!?。！？]+/).map(value => value.trim()).filter(Boolean).length;
-  if (sentenceCount < 2 || sentenceCount > 3) return null;
-  if (/건강|순해요|순합니다|온순|얌전|친화|사나워요|사납|활발|성격|입양 성공|입양 가능|입양을 기다|보호소에서|질병|치료|회복|불쌍|애타게|반드시 입양|입니다|합니다|하십시오/.test(summary)) return null;
-  if (!/귀여|예쁘|매력|사랑스럽|포인트/.test(summary)) return null;
-  return summary;
+type SummaryValidation = { summary: string | null; reason?: string };
+
+function validateSummary(value: string): SummaryValidation {
+  const summary = value.replace(/^```(?:json)?\s*|```$/g, "").replace(/\s+/g, " ").trim();
+  if (summary.length < 20) return { summary: null, reason: "문구가 너무 짧아요." };
+  if (summary.length > 600) return { summary: null, reason: "문구가 너무 길어요." };
+  const sentenceCount = summary.split(/[.!?。！？]+/).map(item => item.trim()).filter(Boolean).length;
+  if (sentenceCount < 1 || sentenceCount > 4) return { summary: null, reason: "문장 수가 기준을 벗어났어요." };
+  if (/01[016789][-\s]?\d{3,4}[-\s]?\d{4}|https?:\/\/|www\.|@[\w.-]+/.test(summary)) return { summary: null, reason: "연락처나 외부 주소가 포함됐어요." };
+  if (/건강|순해요|순합니다|온순|얌전|친화|사나워요|사납|활발|성격|입양 성공|입양 가능|입양을 기다|보호소에서|질병|치료|회복|불쌍|애타게|반드시 입양/.test(summary)) return { summary: null, reason: "건강·성격·입양을 추측하는 표현이 포함됐어요." };
+  return { summary };
+}
+
+function parseSummary(value: string) {
+  const raw = value.trim().replace(/^```(?:json)?\s*|```$/g, "").trim();
+  try {
+    const parsed = JSON.parse(raw) as { summary?: unknown };
+    return typeof parsed.summary === "string" ? parsed.summary : raw;
+  } catch {
+    return raw;
+  }
 }
 
 async function generateSummary(animal: Animal) {
@@ -186,11 +199,9 @@ async function generateSummary(animal: Animal) {
   });
   if (!response.ok) throw new Error(`AI 응답 오류(${response.status})`);
   const payload = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-  let parsed: { summary?: string };
-  try { parsed = JSON.parse(extractText(payload)) as { summary?: string }; } catch { throw new Error("AI 응답 형식을 확인하지 못했어요."); }
-  const summary = validateSummary(String(parsed.summary || ""));
-  if (!summary) throw new Error("AI 소개 문구를 안전하게 확인하지 못했어요.");
-  return summary;
+  const validation = validateSummary(parseSummary(extractText(payload)));
+  if (!validation.summary) throw new Error(`AI 소개 검증 실패: ${validation.reason || "문구를 확인하지 못했어요."}`);
+  return validation.summary;
 }
 
 export async function processAnimalAiJob(animalId: string, expectedKey?: string) {

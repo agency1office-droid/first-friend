@@ -21,7 +21,7 @@ export function AnimalAiIntro({ animalId }: { animalId: string }) {
       const next = await response.json() as State;
       if (!active) return;
       setState(next);
-      if (next.status === "missing") {
+      if (next.status === "missing" || next.status === "failed") {
         const queuedResponse = await fetch("/api/animal-ai", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ animalId }) });
         if (active && queuedResponse.ok) setState(await queuedResponse.json() as State);
       }

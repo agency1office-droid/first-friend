@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { parseReadinessShareResult, getReadinessShareContent } from "../../../../../lib/readiness-share";
 
@@ -33,5 +34,5 @@ export default async function ReadinessSharePage({ params }: PageProps) {
   if (!result) notFound();
   const content = getReadinessShareContent(result);
   const passed = result.correct >= Math.ceil(result.total * 0.8);
-  return <main className="ff-readiness-share-page"><Image className="ff-readiness-share-illustration" src={passed ? "/readiness-result.webp" : "/readiness-result-failed.webp"} alt="강아지와 고양이 캐릭터" width={224} height={180} priority unoptimized /><h1><span className="ff-readiness-share-count">{content.title}</span></h1><h2>{content.praise}<span> · {result.correct}/{result.total}</span></h2><p>{content.description}</p><a className="ff-readiness-share-cta" href="/quiz/adoption-prep">입양 전 준비 확인 해보기</a></main>;
+  return <main className="ff-readiness-share-page"><Image className="ff-readiness-share-illustration" src={passed ? "/readiness-result.webp" : "/readiness-result-failed.webp"} alt="강아지와 고양이 캐릭터" width={224} height={180} priority unoptimized /><h1><span className="ff-readiness-share-count">{content.title}</span></h1><h2>{content.praise}<span> · {result.correct}/{result.total}</span></h2><p>{content.description}</p><Link className="ff-readiness-share-cta" href="/quiz/adoption-prep">입양 전 준비 확인 해보기</Link></main>;
 }

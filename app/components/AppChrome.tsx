@@ -103,6 +103,7 @@ export function AppChrome({children}:{children:React.ReactNode}){
   },[path]);
   if(path==="/find/draw") return <div className="ff-drawing-shell">{children}</div>;
   if(path.startsWith("/quiz/")) return <div className="ff-quiz-shell" data-route-path={path}><main className="ff-main" id="main-content" tabIndex={-1}>{children}</main></div>;
+  if(path.startsWith("/pet-cost-calculator")) return <div className="ff-cost-shell" data-route-path={path}><main className="ff-main" id="main-content" tabIndex={-1}>{children}</main></div>;
   const hideBottom=route?.mode==="detail"||route?.mode==="form";
   const isAnimalDetail=path.startsWith("/friends/");
   const resolvedRoute=route||{rule:/.*/,title:"퍼스트 프렌드",back:"/",mode:"stack" as const};

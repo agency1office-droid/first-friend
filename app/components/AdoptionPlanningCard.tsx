@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { IconPlusLine } from "@karrotmarket/react-monochrome-icon";
 import { PetCostCalculator } from "./PetCostCalculator";
-import { PetKnowledgeQuiz } from "./PetKnowledgeQuiz";
+import { ReadinessQuiz } from "./ReadinessQuiz";
 import type { Animal } from "../../lib/data";
 
 type Assessment = { passed?: boolean };
@@ -53,7 +53,7 @@ export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "b
         <button className="ff-pet-knowledge-trigger" type="button" onClick={() => setKnowledgeQuizOpen(true)}><span>반려동물 상식 퀴즈</span><IconPlusLine aria-hidden /></button>
       </div>
       <p className="ff-adoption-planning-note">시험 결과는 입양 전 준비를 돕기 위한 참고 정보예요. 최종 상담과 입양 결정은 보호소와 함께 확인해 주세요.</p>
-      {knowledgeQuizOpen && <div className="ff-adoption-test-page"><PetKnowledgeQuiz species={props.species} onClose={() => setKnowledgeQuizOpen(false)} /></div>}
+      {knowledgeQuizOpen && <div className="ff-adoption-test-page"><ReadinessQuiz quizId="pet-knowledge" onClose={() => setKnowledgeQuizOpen(false)} /></div>}
     </section>
   );
 }

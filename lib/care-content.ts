@@ -1,4 +1,4 @@
-export type CostItem = { name: string; cadence: "처음" | "매달" | "매년" | "비상"; low: number; high: number; note: string };
+export type CostItem = { name: string; cadence: "처음" | "매달" | "매년" | "비상" | "기타"; low: number; high: number; note: string };
 
 export const catCosts: CostItem[] = [
   { name: "이동장·화장실·식기", cadence: "처음", low: 90000, high: 260000, note: "안전한 이동장과 몸길이 1.5배 이상 화장실을 우선해요." },

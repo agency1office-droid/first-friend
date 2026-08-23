@@ -134,7 +134,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(planning, /\/quiz\/adoption-prep/);
   assert.match(planning, /\/quiz\/care-readiness/);
   assert.match(planning, /openDetailFlow/);
-  assert.match(planning, /함께할 수 있는 생활인지 확인/);
+  assert.match(planning, /입양 환경 점검하기/);
   assert.doesNotMatch(planning, /ReadinessQuiz quizId="pet-knowledge"/);
   assert.match(planning, /PetCostCalculator/);
   const calculator = await readFile(new URL("../app/components/PetCostCalculator.tsx", import.meta.url), "utf8");

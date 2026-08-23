@@ -25,7 +25,7 @@ export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "b
       <div className="ff-adoption-planning-list">
         <Link className="ff-adoption-planning-row" href="/quiz/care-readiness" onClick={openQuiz}>
           <span className="ff-adoption-planning-step">STEP 1</span>
-          <span className="ff-adoption-planning-row-copy"><strong>함께할 수 있는 생활인지 확인</strong></span>
+          <span className="ff-adoption-planning-row-copy"><strong>입양 환경 점검하기</strong></span>
           <IconArrowUpRightLine aria-hidden />
         </Link>
         <PetCostCalculator animal={props} step={2} />

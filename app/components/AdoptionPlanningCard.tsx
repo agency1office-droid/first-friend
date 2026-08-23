@@ -41,7 +41,6 @@ export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "b
         <PetCostCalculator animal={props} step={3} />
         <button className="ff-pet-knowledge-trigger" type="button" onClick={() => setKnowledgeQuizOpen(true)}><span className="ff-adoption-planning-step">STEP 4</span><span className="ff-adoption-planning-row-copy"><strong>반려동물 상식 퀴즈</strong></span><IconArrowUpRightLine aria-hidden /></button>
       </div>
-      <p className="ff-adoption-planning-note">시험 결과는 입양 전 준비를 돕기 위한 참고 정보예요. 최종 상담과 입양 결정은 보호소와 함께 확인해 주세요.</p>
       {knowledgeQuizOpen && <div className="ff-adoption-test-page"><ReadinessQuiz quizId="pet-knowledge" onClose={() => setKnowledgeQuizOpen(false)} /></div>}
     </section>
   );

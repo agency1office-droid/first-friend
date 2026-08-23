@@ -33,14 +33,17 @@ const COMMON_PROFILES: Record<string, BreedProfile> = {
   "한국 고양이": { aliases: ["코리안숏헤어", "한국고양이"], species: "한국에서 흔히 만나는 집고양이로, 털 색과 무늬, 눈매와 체형이 매우 다양해요. 특정 품종의 성격으로 단정하기보다 이 친구의 실제 모습과 생활 습관을 살펴보는 것이 좋아요.", size: "성묘는 보통 3~6kg 정도예요. 성별과 개체에 따라 체형과 체중이 달라질 수 있어요.", age: "일반적으로 12~18년 정도 함께하는 경우가 있어요. 건강 관리와 생활 환경에 따라 달라질 수 있어요.", neutered: "원치 않는 번식을 예방하고 일부 질환·행동 위험을 줄이는 데 도움을 줄 수 있어요. 시기는 수의사와 상담해 주세요." },
 };
 
+const MIXED_PROFILES: Record<"dog" | "cat", BreedProfile> = {
+  dog: { species: "믹스견은 부모 품종과 개체에 따라 외형과 성향의 차이가 커요. 현재 모습과 보호소에서 확인한 생활 습관을 함께 살펴보는 것이 좋아요.", size: "소형부터 대형까지 크기 범위가 넓어요. 현재 체중과 성장 상태를 보호소에 확인해 주세요.", age: "개체의 건강 상태와 생활 환경에 따라 달라요. 정기 검진 계획을 보호소와 상담해 주세요.", neutered: COMMON_PROFILES["푸들"].neutered },
+  cat: { species: "믹스묘는 털 색과 무늬, 체형이 매우 다양한 고양이예요. 성격과 활동량은 개체마다 차이가 커요.", size: "성묘는 보통 3~6kg 정도지만 성별과 개체에 따라 달라질 수 있어요.", age: "일반적으로 12~18년 정도 함께하는 경우가 있어요. 건강 관리와 생활 환경에 따라 달라질 수 있어요.", neutered: COMMON_PROFILES["푸들"].neutered },
+};
+
 const GROUP_PROFILES: Array<[RegExp, BreedProfile]> = [
   [/푸들/, COMMON_PROFILES["푸들"]],
   [/(리트리버|레트리버)/, { species: "사람과 함께 움직이고 배우는 활동을 좋아하는 경향이 있는 견종군이에요. 실제 성격과 활동량은 개체마다 달라요.", size: "중형부터 대형까지 품종에 따라 크기 차이가 커요. 성견 체중은 품종별 기준을 확인해 주세요.", age: "일반적으로 10~14년 정도 함께하는 경우가 있어요. 품종과 건강 관리에 따라 달라질 수 있어요.", neutered: COMMON_PROFILES["푸들"].neutered }],
   [/(테리어|테리어)/, { species: "작은 체구부터 중형 체구까지 다양하며 호기심과 활동성이 특징으로 소개되는 견종군이에요. 실제 성격은 개체마다 달라요.", size: "품종에 따라 소형부터 중형까지 크기 차이가 커요.", age: "일반적으로 10~15년 정도 함께하는 경우가 있어요. 품종과 건강 관리에 따라 달라질 수 있어요.", neutered: COMMON_PROFILES["푸들"].neutered }],
   [/(스피츠|사모예드|말라뮤트|허스키)/, { species: "풍성한 이중 털과 뾰족한 귀, 활기찬 움직임이 특징으로 소개되는 견종군이에요. 활동량과 털 관리가 품종마다 달라요.", size: "소형부터 대형까지 품종에 따라 크기 차이가 커요.", age: "일반적으로 10~15년 정도 함께하는 경우가 있어요. 품종과 건강 관리에 따라 달라질 수 있어요.", neutered: COMMON_PROFILES["푸들"].neutered }],
   [/(불독|불도그|퍼그|페키니즈)/, { species: "짧은 주둥이와 독특한 표정, 단단한 체형이 특징으로 소개되는 품종군이에요. 더위와 호흡 상태 등 개체별 관리가 필요할 수 있어요.", size: "소형부터 중형까지 품종에 따라 크기 차이가 있어요.", age: "일반적으로 8~13년 정도 함께하는 경우가 있어요. 건강 상태에 따라 달라질 수 있어요.", neutered: COMMON_PROFILES["푸들"].neutered }],
-  [/(믹스|기타|품종 미상)/, { species: "믹스견은 부모 품종과 개체에 따라 외형과 성향의 차이가 커요. 현재 모습과 보호소에서 확인한 생활 습관을 함께 살펴보는 것이 좋아요.", size: "소형부터 대형까지 크기 범위가 넓어요. 현재 체중과 성장 상태를 보호소에 확인해 주세요.", age: "개체의 건강 상태와 생활 환경에 따라 달라요. 정기 검진 계획을 보호소와 상담해 주세요.", neutered: COMMON_PROFILES["푸들"].neutered }],
-  [/(한국고양이|코리안숏헤어|믹스묘)/, { species: "털 색과 무늬, 체형이 매우 다양한 고양이예요. 성격과 활동량은 개체마다 차이가 커요.", size: "성묘는 보통 3~6kg 정도지만 성별과 개체에 따라 달라질 수 있어요.", age: "일반적으로 12~18년 정도 함께하는 경우가 있어요. 건강 관리와 생활 환경에 따라 달라질 수 있어요.", neutered: COMMON_PROFILES["푸들"].neutered }],
 ];
 
 const SPECIES_PROFILES: Record<"dog" | "cat", BreedProfile> = {
@@ -91,7 +94,11 @@ export function getBreedKnowledge(input: { species: string; breed: string; upKin
   const normalized = normalize(breed);
   const direct = Object.entries(COMMON_PROFILES).find(([name, profile]) => [name, ...(profile.aliases || [])].some(value => normalize(value) === normalized));
   if (direct) return polishKnowledge(direct[1], input.sex, input.species);
+  const speciesKey = /고양이/.test(input.species) ? "cat" : "dog";
+  if (/(믹스|기타|품종 미상)/.test(breed) || (speciesKey === "cat" && /한국고양이|코리안숏헤어|믹스묘/.test(breed))) {
+    return { ...polishKnowledge(MIXED_PROFILES[speciesKey], input.sex, input.species), source: "group" };
+  }
   const group = GROUP_PROFILES.find(([pattern]) => pattern.test(breed) || pattern.test(normalized));
   if (group) return { ...polishKnowledge(group[1], input.sex, input.species), source: "group" };
-  return { ...polishKnowledge(SPECIES_PROFILES[/고양이/.test(input.species) ? "cat" : "dog"], input.sex, input.species), source: "species" };
+  return { ...polishKnowledge(SPECIES_PROFILES[speciesKey], input.sex, input.species), source: "species" };
 }

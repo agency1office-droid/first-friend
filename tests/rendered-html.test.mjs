@@ -499,6 +499,9 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(page, /function formatDetailHelper/);
   assert.match(page, /sentences = value\.split/);
   assert.match(breedKnowledge, /function polishKnowledge/);
+  assert.match(breedKnowledge, /const MIXED_PROFILES/);
+  assert.match(breedKnowledge, /speciesKey === "cat"/);
+  assert.doesNotMatch(breedKnowledge, /\[\/\(믹스\|기타\|품종 미상\)\//);
   assert.match(breedKnowledge, /function neuterGuidance/);
   assert.match(breedKnowledge, /유선 종양/);
   assert.match(breedKnowledge, /자궁축농증/);

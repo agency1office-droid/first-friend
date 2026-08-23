@@ -240,6 +240,10 @@ export function ReadinessQuiz({ onClose, quizId = "adoption-prep" }: { onClose?:
       }
     })();
     if (detailReferrer) {
+      if (window.history.length > 1) {
+        window.history.back();
+        return;
+      }
       window.location.assign(detailReferrer);
       return;
     }

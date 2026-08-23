@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { IconArrowUpRightLine } from "@karrotmarket/react-monochrome-icon";
 import { PetCostCalculator } from "./PetCostCalculator";
@@ -9,6 +9,15 @@ import type { Animal } from "../../lib/data";
 
 export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "breed" | "age" | "sex" | "traits" | "health">) {
   const [knowledgeQuizOpen, setKnowledgeQuizOpen] = useState(false);
+
+  function openQuiz(event: MouseEvent<HTMLAnchorElement>) {
+    if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    const isMobile = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+    if (isMobile) return;
+    event.preventDefault();
+    const quizWindow = window.open(event.currentTarget.href, "_blank", "noopener,noreferrer");
+    if (!quizWindow) window.location.assign(event.currentTarget.href);
+  }
 
   return (
     <section className="ff-adoption-planning" aria-labelledby="adoption-planning-title">
@@ -19,12 +28,12 @@ export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "b
         </div>
       </div>
       <div className="ff-adoption-planning-list">
-        <Link className="ff-adoption-planning-row" href="/quiz/care-readiness">
+        <Link className="ff-adoption-planning-row" href="/quiz/care-readiness" onClick={openQuiz}>
           <span className="ff-adoption-planning-step">STEP 1</span>
           <span className="ff-adoption-planning-row-copy"><strong>함께할 수 있는 생활인지 확인</strong></span>
           <IconArrowUpRightLine aria-hidden />
         </Link>
-        <Link className="ff-adoption-planning-row" href="/quiz/adoption-prep">
+        <Link className="ff-adoption-planning-row" href="/quiz/adoption-prep" onClick={openQuiz}>
           <span className="ff-adoption-planning-step">STEP 2</span>
           <span className="ff-adoption-planning-row-copy"><strong>입양 전 준비 확인</strong></span>
           <IconArrowUpRightLine aria-hidden />

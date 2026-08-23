@@ -133,6 +133,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(planning, /BottomSheetContent/);
   assert.match(planning, /\/quiz\/adoption-prep/);
   assert.match(planning, /\/quiz\/care-readiness/);
+  assert.match(planning, /window\.matchMedia\("\(max-width: 767px\), \(pointer: coarse\)"\)/);
+  assert.match(planning, /window\.open\(event\.currentTarget\.href, "_blank"/);
   assert.match(planning, /함께할 수 있는 생활인지 확인/);
   assert.match(planning, /ReadinessQuiz quizId="pet-knowledge"/);
   assert.match(planning, /PetCostCalculator/);
@@ -207,13 +209,13 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(readinessQuiz, /ff-readiness-feedback-overlay|ff-readiness-feedback-close|retryCurrentQuestion/);
   assert.match(readinessQuiz, /delete nextAnswers\[step - 1\]/);
   assert.match(readinessQuiz, /onClose/);
+  assert.match(readinessQuiz, /window\.history\.back\(\)/);
   assert.match(readinessQuiz, /function resetQuiz\(\)/);
   assert.match(readinessQuiz, /function closeQuiz\(\)/);
   assert.match(readinessQuiz, /returnTo\.startsWith\("\/friends\/"\)/);
   assert.match(readinessQuiz, /referrer\.pathname\.startsWith\("\/friends\/"\)/);
   assert.match(readinessQuiz, /window\.location\.assign\(detailReferrer\)/);
   assert.match(readinessQuiz, /window\.location\.replace\("\/"\)/);
-  assert.doesNotMatch(readinessQuiz, /window\.history\.back\(\)/);
   assert.doesNotMatch(readinessQuiz, /new URL\(document\.referrer\)\.origin === window\.location\.origin/);
   assert.match(readinessQuiz, /window\.location\.replace\("\/"\)/);
   assert.match(readinessQuiz, /onClick=\{phase === "intro" \? closeQuiz : previous\}/);

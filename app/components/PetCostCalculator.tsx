@@ -16,7 +16,7 @@ export function PetCostCalculator({ animal, step = 3 }: { animal: CalculatorAnim
   return <BottomSheetRoot open={open} onOpenChange={setOpen} handleOnly>
     <BottomSheetTrigger asChild>
       <button className="ff-pet-cost-calculator-trigger ff-adoption-planning-row" type="button">
-        <span className="ff-adoption-planning-step" aria-hidden="true">{step}</span>
+        <span className="ff-adoption-planning-step">STEP {step}</span>
         <span className="ff-adoption-planning-row-copy"><strong>반려동물 돌봄 계산기</strong></span>
         <IconArrowUpRightLine aria-hidden />
       </button>

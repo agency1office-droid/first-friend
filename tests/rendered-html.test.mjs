@@ -122,11 +122,10 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(locationCard, /setMapFailed\(true\)/);
   const planning = await readFile(new URL("../app/components/AdoptionPlanningCard.tsx", import.meta.url), "utf8");
   assert.match(page, /AdoptionPlanningCard species=\{animal\.species\}/);
-  assert.match(planning, /\/api\/readiness/);
+  assert.match(planning, /STEP 1/);
   assert.doesNotMatch(planning, /생활 궁합/);
   assert.doesNotMatch(planning, /ProgressCircle/);
-  assert.match(planning, /수료/);
-  assert.match(planning, /미수료/);
+  assert.doesNotMatch(planning, /<small>/);
   assert.match(planning, /IconArrowUpRightLine/);
   assert.match(planning, /ff-adoption-planning-step/);
   assert.match(planning, /PetCostCalculator animal=\{props\} step=\{3\}/);

@@ -39,12 +39,12 @@ export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "b
           <span className="ff-adoption-planning-row-copy"><strong>함께할 수 있는 생활인지 확인</strong></span>
           <IconArrowUpRightLine aria-hidden />
         </Link>
+        <PetCostCalculator animal={props} step={2} />
         <Link className="ff-adoption-planning-row" href="/quiz/adoption-prep" onClick={openQuiz}>
-          <span className="ff-adoption-planning-step">STEP 2</span>
+          <span className="ff-adoption-planning-step">STEP 3</span>
           <span className="ff-adoption-planning-row-copy"><strong>입양 전 준비 확인</strong></span>
           <IconArrowUpRightLine aria-hidden />
         </Link>
-        <PetCostCalculator animal={props} step={3} />
         <button className="ff-pet-knowledge-trigger" type="button" onClick={() => setKnowledgeQuizOpen(true)}><span className="ff-adoption-planning-step">STEP 4</span><span className="ff-adoption-planning-row-copy"><strong>반려동물 상식 퀴즈</strong></span><IconArrowUpRightLine aria-hidden /></button>
       </div>
       {knowledgeQuizOpen && <div className="ff-adoption-test-page"><ReadinessQuiz quizId="pet-knowledge" onClose={() => setKnowledgeQuizOpen(false)} /></div>}

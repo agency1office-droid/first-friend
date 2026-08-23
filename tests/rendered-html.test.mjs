@@ -128,7 +128,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(planning, /<small>/);
   assert.match(planning, /IconArrowUpRightLine/);
   assert.match(planning, /ff-adoption-planning-step/);
-  assert.match(planning, /PetCostCalculator animal=\{props\} step=\{3\}/);
+  assert.match(planning, /PetCostCalculator animal=\{props\} step=\{2\}/);
   assert.doesNotMatch(planning, /IconPawprint(?:Fill|Line)/);
   assert.doesNotMatch(planning, /BottomSheetContent/);
   assert.match(planning, /\/quiz\/adoption-prep/);

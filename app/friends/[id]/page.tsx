@@ -232,6 +232,7 @@ export default async function AnimalPage({
         <section className="ff-info-block">
           <h2>만나기 전 확인할 내용</h2>
           <InfoBoard
+            showPrefix={false}
             items={[
               {
                 id: "home",

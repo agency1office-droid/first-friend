@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from "./supabase/server";
+import { logError } from "./observability";
 
 type GuardResult =
   | { kind: "none" }
@@ -29,7 +30,7 @@ export async function enforceRateLimit(scope: string, subject: string, windowSec
     if (error) throw error;
     return Boolean(data);
   } catch (error) {
-    console.error("[api-rate-limit] unavailable", error instanceof Error ? error.message : error);
+    logError("api.rate_limit_unavailable", error, { scope });
     return true;
   }
 }

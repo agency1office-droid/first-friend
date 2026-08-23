@@ -1,6 +1,7 @@
 import { enqueueAnimalAiSummary, getAnimalAiState } from "../../../lib/animal-ai";
 import { getAnimalById } from "../../../lib/public-data";
 import { beginIdempotentRequest, completeIdempotentRequest, enforceRateLimit, releaseIdempotentRequest, requestSubject } from "../../../lib/api-guards";
+import { logError, requestId } from "../../../lib/observability";
 
 export const maxDuration = 30;
 
@@ -13,7 +14,7 @@ export async function GET(request: Request) {
   const id = animalId(request);
   if (!id) return Response.json({ error: "동물 정보를 확인하지 못했어요." }, { status: 400 });
   try { return Response.json(await getAnimalAiState(id), { headers: { "cache-control": "no-store" } }); }
-  catch (error) { console.error("[animal-ai-state]", error); return Response.json({ status: "missing", summary: null, available: false }, { headers: { "cache-control": "no-store" } }); }
+  catch (error) { logError("animal_ai.state_read_failed", error, { requestId: requestId(request), animalId: id }); return Response.json({ status: "missing", summary: null, available: false }, { headers: { "cache-control": "no-store" } }); }
 }
 
 export async function POST(request: Request) {
@@ -30,5 +31,5 @@ export async function POST(request: Request) {
     const queued = await enqueueAnimalAiSummary(animal);
     if (guard.kind === "started") await completeIdempotentRequest(guard, queued.state, 200);
     return Response.json(queued.state, { headers: { "cache-control": "no-store" } });
-  } catch (error) { if (guard.kind === "started") await releaseIdempotentRequest(guard); console.error("[animal-ai-enqueue]", error); return Response.json({ status: "failed", summary: null, available: false }, { headers: { "cache-control": "no-store" } }); }
+  } catch (error) { if (guard.kind === "started") await releaseIdempotentRequest(guard); logError("animal_ai.enqueue_failed", error, { requestId: requestId(request), animalId: id }); return Response.json({ status: "failed", summary: null, available: false }, { headers: { "cache-control": "no-store" } }); }
 }

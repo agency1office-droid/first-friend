@@ -586,6 +586,9 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-question-count { display: inline-block; margin-left: 8px; color: var(--seed-color-fg-neutral-subtle); font-size: 14px; font-weight: 600; line-height: 20px; letter-spacing: 0; white-space: nowrap; vertical-align: baseline; }
 .ff-readiness-preview-control { display: flex; align-items: center; }
 .ff-readiness-preview-control select { min-height: 32px; padding: 0 26px 0 10px; border: 1px solid var(--seed-color-border-neutral-weak); border-radius: 8px; color: var(--seed-color-fg-neutral-muted); background: var(--seed-color-bg-neutral-weak); font: inherit; font-size: 12px; }
+.ff-readiness-home { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; color: var(--seed-color-fg-neutral); background: transparent; cursor: pointer; }
+.ff-readiness-home svg { width: 22px; height: 22px; }
+.ff-readiness-preview-control-intro { margin-top: 4px; }
 .ff-readiness-intro .ff-readiness-actions { margin: 0; padding: 0 16px 14px; background: transparent; }
 .ff-readiness-intro .ff-readiness-actions .seed-action-button:not(:disabled) { color: var(--seed-color-palette-static-white); background: var(--seed-color-bg-brand-solid); }
 .ff-pet-cost-calculator-trigger { width: 100%; }

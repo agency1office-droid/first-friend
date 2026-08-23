@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { ActionButton } from "seed-design/ui/action-button";
-import { IconChevronLeftLine, IconPawprintFill, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
+import { IconChevronLeftLine, IconHouseLine, IconPawprintFill, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import { educationScore as calculateEducation } from "../../lib/readiness-score";
 import { createReadinessSharePath } from "../../lib/readiness-share";
 import { getQuizDefinition } from "../../lib/quiz/registry";
@@ -76,12 +76,22 @@ export function ReadinessQuiz({ onClose, quizId = "adoption-prep" }: { onClose?:
   // This keeps a 15/15 knowledge result from being treated as a failed result.
   const passed = correctCount >= passingCount;
   const certificatePraise = useMemo(() => {
+    if (quizDefinition?.slug === "care-readiness") {
+      if (correctCount === questions.length) return { title: "함께할 준비가 잘 되어 있어요", description: "시간·공간·비용을 현실적으로 살펴봤어요. 보호소 상담에서 우리 생활에 맞는 부분도 함께 확인해 보세요." };
+      if (correctCount >= passingCount) return { title: "조금 더 확인해 보면 좋아요", description: "함께하기 전에 몇 가지 조건을 더 살펴보면 생활을 준비하는 데 도움이 될 거예요." };
+      return { title: "아직 확인할 내용이 있어요", description: "시간·공간·비용을 한 번 더 점검한 뒤 입양을 결정해 주세요." };
+    }
+    if (quizDefinition?.slug === "pet-knowledge") {
+      if (correctCount === questions.length) return { title: "최고의 반려인", description: "반려동물의 하루와 마음을 정말 잘 이해하고 있어요. 이제 함께하는 일상을 더 즐겁게 만들어 가면 돼요." };
+      if (correctCount >= passingCount) return { title: "든든한 반려인", description: "함께 살아가는 데 필요한 내용을 잘 확인했어요. 몇 가지를 더 알아두면 함께하는 생활이 한층 편해질 거예요." };
+      return { title: "배워가는 반려인", description: "함께 지내며 알아두면 좋은 내용이 조금 남아 있어요. 틀린 문제를 다시 살펴보면 함께하는 생활에 도움이 될 거예요." };
+    }
     if (correctCount === questions.length) return { title: "완벽한 반려인", description: "모든 문제를 맞히다니, 정말 잘 해냈어요. 이 결과는 마음껏 자랑해도 좋아요." };
     if (correctCount >= questions.length - 1) return { title: "든든한 반려인", description: "입양 전에 필요한 내용을 거의 모두 확인했어요. 반려동물 친구를 맞이할 준비가 든든해지고 있어요." };
     if (correctCount >= passingCount + 1) return { title: "세심한 반려인", description: "반려동물 친구와 함께하기 전에 알아야 할 내용을 잘 확인했어요. 남은 내용도 살펴보면 더 든든해질 거예요." };
     if (correctCount >= passingCount) return { title: "따뜻한 반려인", description: "입양 전에 필요한 기본 내용을 확인했어요. 보호소 상담에서 남은 내용도 함께 살펴보면 좋아요." };
     return { title: "배워가는 반려인", description: "반려동물 친구를 맞이하기 전에 몇 가지 내용을 더 확인해 보면 좋아요. 틀린 문제를 다시 살펴보며 천천히 준비해 보세요." };
-  }, [correctCount, passingCount, questions.length]);
+  }, [correctCount, passingCount, questions.length, quizDefinition?.slug]);
   async function saveResult(answerValues = submittedAnswers) {
     try {
       const response = await fetch("/api/readiness", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ species: selectedSpecies, profile, answers: answerValues }) });
@@ -260,13 +270,11 @@ export function ReadinessQuiz({ onClose, quizId = "adoption-prep" }: { onClose?:
     <header className={`ff-readiness-appbar${phase === "intro" ? " ff-readiness-intro-appbar" : ""}`}>
       <button type="button" className="ff-readiness-back" onClick={phase === "intro" ? closeQuiz : previous} aria-label="이전으로"><IconChevronLeftLine aria-hidden /></button>
       <strong>{quizDefinition?.title ?? "입양 전 준비 확인"}</strong>
-      <div className="ff-readiness-header-actions">
-        {previewEnabled && <label className="ff-readiness-preview-control"><span className="ff-visually-hidden">결과 미리보기</span><select value={previewResult} onChange={(event) => preview(event.target.value as PreviewResult)} aria-label="결과 미리보기"><option value="">결과 보기</option><option value="success">성공</option><option value="failure">실패</option></select></label>}
-      </div>
+      <div className="ff-readiness-header-actions"><button type="button" className="ff-readiness-home" onClick={() => window.location.assign("/")} aria-label="홈으로 이동"><IconHouseLine aria-hidden /></button></div>
     </header>
     {isProgressPage && <div className="ff-readiness-progress" role="progressbar" aria-label="입양 전 준비 진행률" aria-valuemin={1} aria-valuemax={totalPages} aria-valuenow={pageNumber}><div style={{ width: `${progressPercent}%` }} /></div>}
 
-    {phase === "intro" && <section className="ff-readiness-intro-content" aria-labelledby="readiness-intro-title"><div className="ff-readiness-intro-badge">{quizDefinition?.intro.badge ?? "퍼스트프렌드 준비 가이드"}</div><h1 id="readiness-intro-title">{quizDefinition?.intro.title ?? "반려동물과 함께할 준비하기"}</h1><p className="ff-readiness-intro-lead">{quizDefinition?.intro.lead ?? "입양 전 필요한 내용을 확인해 보세요."}</p></section>}
+    {phase === "intro" && <section className="ff-readiness-intro-content" aria-labelledby="readiness-intro-title"><div className="ff-readiness-intro-badge">{quizDefinition?.intro.badge ?? "준비 가이드"}</div><h1 id="readiness-intro-title">{quizDefinition?.intro.title ?? "반려동물과\n함께할 준비하기"}</h1><p className="ff-readiness-intro-lead">{quizDefinition?.intro.lead ?? "입양 전 필요한 내용을 확인해 보세요."}</p>{previewEnabled && <label className="ff-readiness-preview-control ff-readiness-preview-control-intro"><span className="ff-visually-hidden">결과 미리보기</span><select value={previewResult} onChange={(event) => preview(event.target.value as PreviewResult)} aria-label="결과 미리보기"><option value="">결과 보기</option><option value="success">성공</option><option value="failure">실패</option></select></label>}</section>}
 
     {phase === "species" && <section className="ff-readiness-species-page" aria-labelledby="readiness-species-title"><h2 id="readiness-species-title"><span className="ff-readiness-question-label" aria-hidden="true">Q.</span>어떤 친구를 만나고 싶나요?</h2><div className="ff-readiness-species-grid" role="group" aria-label="입양을 준비하는 동물"><button type="button" className="ff-readiness-species-choice" data-selected={species === "cat" || undefined} aria-pressed={species === "cat"} onClick={() => setSpecies("cat")}><Image className="ff-readiness-species-image" src="/cat-selection.webp" alt="" aria-hidden="true" width={104} height={104} unoptimized /><strong>고양이</strong></button><button type="button" className="ff-readiness-species-choice" data-selected={species === "dog" || undefined} aria-pressed={species === "dog"} onClick={() => setSpecies("dog")}><Image className="ff-readiness-species-image" src="/dog-selection.webp" alt="" aria-hidden="true" width={104} height={104} unoptimized /><strong>강아지</strong></button></div><p className="ff-readiness-species-description">선택한 친구에 맞춰 입양 전에 알아둘 내용을 확인해 볼게요.</p></section>}
 

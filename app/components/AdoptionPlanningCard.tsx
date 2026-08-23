@@ -45,6 +45,10 @@ export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "b
         </div>
       </div>
       <div className="ff-adoption-planning-list">
+        <Link className="ff-adoption-planning-row" href="/quiz/care-readiness">
+          <span className="ff-adoption-planning-row-copy"><strong>함께할 수 있는 생활인지 확인</strong><small>시간·공간·비용을 먼저 점검해요</small></span>
+          <IconPlusLine aria-hidden />
+        </Link>
         <Link className="ff-adoption-planning-row" href="/quiz/adoption-prep">
           <span className="ff-adoption-planning-row-copy"><strong>입양 전 준비 확인</strong><small>{statusLabel} · {statusDescription}</small></span>
           <IconPlusLine aria-hidden />

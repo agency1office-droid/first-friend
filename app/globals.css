@@ -661,7 +661,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-info-cell { padding: 12px 6px; text-align: center; font-size: 12px; line-height: 17px; color: var(--seed-color-fg-neutral-muted); }
 .ff-info-cell + .ff-info-cell { border-left: 1px solid var(--seed-color-stroke-neutral-muted); }
 .ff-info-cell strong { display: block; color: var(--seed-color-fg-neutral); font-size: 14px; }
-.ff-info-block { margin-inline: -16px; padding: 20px 16px; border-top: 1px solid var(--seed-color-stroke-neutral-muted); border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
+.ff-info-block { margin-inline: -16px; padding: 24px 16px 20px; border-top: 1px solid var(--seed-color-stroke-neutral-muted); border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
 .ff-info-block h2 { margin: 0 0 12px; font-size: 18px; line-height: 25px; }
 .ff-checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .ff-checklist li { display: flex; gap: 8px; font-size: 14px; line-height: 21px; }

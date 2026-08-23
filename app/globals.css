@@ -459,7 +459,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-adoption-planning-list { display: grid; gap: 8px; }
 .ff-adoption-planning-row { min-width: 0; min-height: 68px; box-sizing: border-box; display: grid; grid-template-columns: 28px minmax(0, 1fr) 24px; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 16px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-layer-default); font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
 .ff-adoption-planning-row:hover, .ff-pet-knowledge-trigger:hover { background: transparent; }
-.ff-adoption-planning-row > svg:last-child, .ff-pet-knowledge-trigger > svg:last-child { width: 20px; height: 20px; color: var(--seed-color-fg-neutral-muted); justify-self: end; }
+.ff-adoption-planning-row > svg:last-child, .ff-pet-knowledge-trigger > svg:last-child { width: 14px; height: 14px; color: var(--seed-color-fg-neutral-muted); justify-self: end; }
 .ff-adoption-planning-step { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--seed-color-palette-static-white); background: var(--seed-color-bg-neutral-solid); font-size: 12px; font-weight: 700; line-height: 1; }
 .ff-adoption-planning-row-copy { min-width: 0; display: grid; gap: 2px; }
 .ff-adoption-planning-row-copy strong { font-size: 15px; line-height: 22px; }

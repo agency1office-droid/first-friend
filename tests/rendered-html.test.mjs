@@ -140,11 +140,10 @@ test("uses a contextual animal detail topbar", async () => {
   const calculator = await readFile(new URL("../app/components/PetCostCalculator.tsx", import.meta.url), "utf8");
   const costPage = await readFile(new URL("../app/pet-cost-calculator/page.tsx", import.meta.url), "utf8");
   const legacyCostPage = await readFile(new URL("../app/quiz/pet-cost/page.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(calculator, /BottomSheetRoot/);
-  assert.match(calculator, /sessionStorage\.setItem/);
-  assert.match(calculator, /openDetailFlow/);
+  assert.match(calculator, /BottomSheetRoot/);
+  assert.match(calculator, /<CostPlanner flow="sheet" animal=\{animal\} \/>/);
   assert.match(calculator, /반려동물 돌봄 계산기/);
-  assert.match(costPage, /PetCostCalculatorFlow/);
+  assert.match(costPage, /redirect\("\/"\)/);
   assert.match(legacyCostPage, /redirect\("\/"\)/);
   const costPlanner = await readFile(new URL("../app/components/CostPlanner.tsx", import.meta.url), "utf8");
   assert.match(costPlanner, /firstYear/);

@@ -122,7 +122,7 @@ export function ShelterLocationCard({
     {approximate && <p className="ff-meta">공공데이터에 정확한 좌표가 없어 관할 지역 중심을 표시합니다. 방문 전 보호소에 위치를 확인하세요.</p>}
     <div className="ff-map-actions">
       <ActionButton asChild variant="neutralWeak"><a href={mapHref} target="_blank" rel="noreferrer" aria-label="카카오맵에서 보기, 새 창">카카오맵에서 보기</a></ActionButton>
-      <ActionButton asChild><a href={routeHref} target="_blank" rel="noreferrer" aria-label="길찾기, 새 창">길찾기</a></ActionButton>
+      <ActionButton asChild variant="neutralSolid"><a href={routeHref} target="_blank" rel="noreferrer" aria-label="길찾기, 새 창">길찾기</a></ActionButton>
     </div>
   </section>;
 }

@@ -1385,7 +1385,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-animal-distance { width: fit-content; max-width: 100%; margin-top: 7px; padding: 5px 8px; border-radius: 8px; background: var(--seed-color-bg-brand-weak); color: var(--seed-color-fg-brand); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .ff-shelter-location { display: grid; gap: 12px; margin: 16px -16px 20px; padding: 0 16px 20px; background: var(--seed-color-bg-layer-default); border: 0; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
 .ff-shelter-location h2,.ff-shelter-location p { margin: 0; }
-.ff-shelter-map-prompt { display: inline-flex; align-items: center; gap: 2px; width: fit-content; color: var(--seed-color-fg-neutral); font-weight: 700; text-decoration: none; }
+.ff-shelter-map-prompt { display: inline-flex; align-items: center; gap: 2px; width: fit-content; margin-top: 4px; color: var(--seed-color-fg-neutral); font-weight: 700; text-decoration: none; }
 .ff-shelter-map-prompt svg { width: 18px; height: 18px; color: var(--seed-color-fg-neutral-muted); }
 .ff-shelter-distance-summary { color: var(--seed-color-fg-neutral); font-size: var(--seed-font-size-t6); line-height: var(--seed-line-height-t6); font-weight: var(--seed-font-weight-bold); }
 .ff-shelter-location .ff-kakao-map { height: 236px; border-radius: 12px; }

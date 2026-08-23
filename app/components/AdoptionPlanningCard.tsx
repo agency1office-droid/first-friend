@@ -31,7 +31,7 @@ export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "b
         <PetCostCalculator animal={props} step={2} />
         <Link className="ff-adoption-planning-row" href="/quiz/adoption-prep" onClick={openQuiz}>
           <span className="ff-adoption-planning-step">STEP 3</span>
-          <span className="ff-adoption-planning-row-copy"><strong>입양 전 준비 확인</strong></span>
+          <span className="ff-adoption-planning-row-copy"><strong>입양 전 준비 테스트</strong></span>
           <IconArrowUpRightLine aria-hidden />
         </Link>
         <button className="ff-pet-knowledge-trigger" type="button" onClick={() => openDetailFlow("/quiz/pet-knowledge")}><span className="ff-adoption-planning-step">STEP 4</span><span className="ff-adoption-planning-row-copy"><strong>반려동물 상식 퀴즈</strong></span><IconArrowUpRightLine aria-hidden /></button>

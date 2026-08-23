@@ -12,7 +12,7 @@ export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "b
 
   function openQuiz(event: MouseEvent<HTMLAnchorElement>) {
     if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-    const isMobile = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
     if (isMobile) return;
     event.preventDefault();
     const quizWindow = window.open(event.currentTarget.href, "_blank", "noopener,noreferrer");

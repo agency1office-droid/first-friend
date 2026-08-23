@@ -133,7 +133,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(planning, /BottomSheetContent/);
   assert.match(planning, /\/quiz\/adoption-prep/);
   assert.match(planning, /\/quiz\/care-readiness/);
-  assert.match(planning, /window\.matchMedia\("\(max-width: 767px\), \(pointer: coarse\)"\)/);
+  assert.match(planning, /window\.matchMedia\("\(max-width: 767px\)"\)/);
   assert.match(planning, /window\.open\(event\.currentTarget\.href, "_blank"/);
   assert.match(planning, /함께할 수 있는 생활인지 확인/);
   assert.match(planning, /ReadinessQuiz quizId="pet-knowledge"/);

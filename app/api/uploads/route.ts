@@ -1,5 +1,5 @@
 import { getChatGPTUser } from "../../chatgpt-auth";
-import { uploadStoredFile } from "../../../lib/supabase/storage";
+import { hasAllowedFileSignature, PRIVATE_EVIDENCE_BUCKET, PUBLIC_MEDIA_BUCKET, uploadStoredFile } from "../../../lib/supabase/storage";
 
 const allowed = new Set(["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"]);
 
@@ -13,9 +13,12 @@ export async function POST(request: Request) {
   if (!(file instanceof File) || !allowed.has(file.type) || file.size > max) return Response.json({ error: "사진은 8MB 이하 JPG·PNG·WEBP, 영상은 30MB 이하 MP4·WEBM만 가능해요." }, { status: 400 });
   const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : file.type === "video/mp4" ? "mp4" : file.type === "video/webm" ? "webm" : "jpg";
   const privateEvidence = ["role-verification", "adoption-verification"].includes(purpose);
-  const key = `${privateEvidence ? "private-evidence" : "uploads"}/${user.userId}/${crypto.randomUUID()}.${extension}`;
+  const content = await file.arrayBuffer();
+  if (!hasAllowedFileSignature(file.type, new Uint8Array(content))) return Response.json({ error: "파일 형식을 확인할 수 없어요." }, { status: 400 });
+  const bucket = privateEvidence ? PRIVATE_EVIDENCE_BUCKET : PUBLIC_MEDIA_BUCKET;
+  const key = `${privateEvidence ? "private-evidence" : "public-media"}/${user.userId}/${crypto.randomUUID()}.${extension}`;
   try {
-    await uploadStoredFile(key, await file.arrayBuffer(), file.type);
+    await uploadStoredFile(bucket, key, content, file.type);
   } catch {
     return Response.json({ error: "파일을 저장하지 못했어요. 잠시 후 다시 시도해 주세요." }, { status: 503 });
   }

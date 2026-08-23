@@ -1,5 +1,5 @@
 import { getChatGPTUser } from "../../chatgpt-auth";
-import { uploadStoredFile } from "../../../lib/supabase/storage";
+import { hasAllowedFileSignature, PRIVATE_EVIDENCE_BUCKET, uploadStoredFile } from "../../../lib/supabase/storage";
 
 const allowed = new Set(["image/jpeg", "image/png", "image/webp"]);
 const purpose = "sanction-appeal";
@@ -16,7 +16,9 @@ export async function POST(request: Request) {
   const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
   const key = `${purpose}/${user.userId}/${crypto.randomUUID()}.${extension}`;
   try {
-    await uploadStoredFile(key, await file.arrayBuffer(), file.type);
+    const content = await file.arrayBuffer();
+    if (!hasAllowedFileSignature(file.type, new Uint8Array(content))) return Response.json({ error: "파일 형식을 확인할 수 없어요." }, { status: 400 });
+    await uploadStoredFile(PRIVATE_EVIDENCE_BUCKET, key, content, file.type);
   } catch {
     return Response.json({ error: "증빙 파일을 저장하지 못했어요. 잠시 후 다시 시도해 주세요." }, { status: 503 });
   }

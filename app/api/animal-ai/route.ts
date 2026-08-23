@@ -1,4 +1,4 @@
-import { enqueueAnimalAiSummary, getAnimalAiState, processAnimalAiJob } from "../../../lib/animal-ai";
+import { enqueueAnimalAiSummary, getAnimalAiState } from "../../../lib/animal-ai";
 import { getAnimalById } from "../../../lib/public-data";
 
 export const maxDuration = 30;
@@ -23,7 +23,6 @@ export async function POST(request: Request) {
     const animal = await getAnimalById(id);
     if (!animal) return Response.json({ error: "현재 확인할 수 없는 동물이에요." }, { status: 404 });
     const queued = await enqueueAnimalAiSummary(animal);
-    if (queued.analysisKey) await processAnimalAiJob(id, queued.analysisKey);
-    return Response.json(await getAnimalAiState(id), { headers: { "cache-control": "no-store" } });
+    return Response.json(queued.state, { headers: { "cache-control": "no-store" } });
   } catch (error) { console.error("[animal-ai-enqueue]", error); return Response.json({ status: "failed", summary: null, available: false }, { headers: { "cache-control": "no-store" } }); }
 }

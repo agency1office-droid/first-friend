@@ -16,15 +16,29 @@ export function AnimalAiIntro({ animalId }: { animalId: string }) {
 
   useEffect(() => {
     let active = true;
+    const wait = (milliseconds: number) => new Promise(resolve => window.setTimeout(resolve, milliseconds));
+    const poll = async () => {
+      for (let attempt = 0; attempt < 6 && active; attempt += 1) {
+        await wait(2500);
+        const response = await fetch(`/api/animal-ai?animalId=${encodeURIComponent(animalId)}`, { cache: "no-store" });
+        const next = await response.json() as State;
+        if (!active) return;
+        setState(next);
+        if (!["pending", "processing"].includes(next.status)) return;
+      }
+    };
     const load = async () => {
       const response = await fetch(`/api/animal-ai?animalId=${encodeURIComponent(animalId)}`, { cache: "no-store" });
       const next = await response.json() as State;
       if (!active) return;
-      setState(next);
+      let current = next;
       if (next.status === "missing" || next.status === "failed") {
         const queuedResponse = await fetch("/api/animal-ai", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ animalId }) });
-        if (active && queuedResponse.ok) setState(await queuedResponse.json() as State);
+        if (active && queuedResponse.ok) current = await queuedResponse.json() as State;
       }
+      if (!active) return;
+      setState(current);
+      if (["pending", "processing"].includes(current.status)) await poll();
     };
     void load().catch(() => active && setState({ status: "failed", summary: null, available: false }));
     return () => { active = false; };

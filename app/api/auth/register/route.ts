@@ -1,11 +1,13 @@
 import { createSession, hashPassword, safeReturnTo, sessionCookie } from "../../../../lib/app-auth";
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
+import { enforceRateLimit, requestSubject } from "../../../../lib/api-guards";
 
 export async function POST(request: Request) {
   const data = await request.json() as Record<string, unknown>;
   const email = String(data.email || "").trim().toLowerCase();
   const password = String(data.password || "");
   const displayName = String(data.displayName || "").trim().slice(0, 60);
+  if (!await enforceRateLimit("auth-register", requestSubject(request), 3600, 5)) return Response.json({ error: "가입 시도가 너무 많아요. 잠시 후 다시 시도해 주세요." }, { status: 429, headers: { "retry-after": "3600" } });
   if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 10 || !displayName) return Response.json({ error: "이름, 이메일, 10자 이상의 비밀번호를 확인해 주세요." }, { status: 400 });
   if (data.termsAccepted !== true) return Response.json({ error: "필수 약관에 동의해 주세요." }, { status: 400 });
   const supabase = getSupabaseServerClient();

@@ -178,6 +178,9 @@ request id
 - 업로드 API는 서버 MIME과 파일 signature를 함께 확인한다.
 - AI 요청은 화면 요청에서 외부 모델을 직접 호출하지 않고 enqueue 후 cron worker가 처리하도록 바꾸었다.
 - AI 상세 화면은 pending/processing 상태를 짧게 조회한다.
+- 로그인·회원가입·업로드·AI enqueue에는 DB 기반 rate limit을 적용했다.
+- 업로드·AI enqueue는 `Idempotency-Key`를 지원해 재시도 중복을 방지한다.
+- 동일 키에 다른 요청 본문을 보내면 409로 거절하고, 처리 중인 요청은 재실행하지 않는다.
 
 ## 다음 승인 필요 작업
 

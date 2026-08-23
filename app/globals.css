@@ -456,19 +456,19 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-adoption-test-trigger { display: flex; width: 100%; min-height: 48px; align-items: center; justify-content: center; border: 0; border-radius: 12px; color: var(--seed-color-palette-static-white); background: var(--seed-color-bg-brand-solid); font: inherit; font-size: 15px; font-weight: 700; text-decoration: none; cursor: pointer; }
 .ff-adoption-test-trigger:focus-visible { outline: 2px solid var(--seed-color-stroke-focus); outline-offset: 2px; }
 .ff-adoption-planning-note { margin: 0; }
-.ff-adoption-planning-list { display: grid; border-top: 1px solid var(--seed-color-stroke-neutral-muted); border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
-.ff-adoption-planning-row { min-width: 0; min-height: 64px; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 24px; align-items: center; gap: 12px; width: 100%; padding: 12px 0; border: 0; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 0; color: var(--seed-color-fg-neutral); background: transparent; font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
-.ff-adoption-planning-list > .ff-adoption-planning-row:last-child, .ff-adoption-planning-list > .ff-pet-knowledge-trigger:last-child { border-bottom: 0; }
+.ff-adoption-planning-list { display: grid; gap: 8px; }
+.ff-adoption-planning-row { min-width: 0; min-height: 68px; box-sizing: border-box; display: grid; grid-template-columns: 28px minmax(0, 1fr) 24px; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 16px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-layer-default); font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
 .ff-adoption-planning-row:hover, .ff-pet-knowledge-trigger:hover { background: transparent; }
 .ff-adoption-planning-row > svg:last-child, .ff-pet-knowledge-trigger > svg:last-child { width: 20px; height: 20px; color: var(--seed-color-fg-neutral-muted); justify-self: end; }
+.ff-adoption-planning-step { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--seed-color-palette-static-white); background: var(--seed-color-bg-neutral-solid); font-size: 12px; font-weight: 700; line-height: 1; }
 .ff-adoption-planning-row-copy { min-width: 0; display: grid; gap: 2px; }
 .ff-adoption-planning-row-copy strong { font-size: 15px; line-height: 22px; }
 .ff-adoption-planning-row-copy small { overflow: hidden; color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; text-overflow: ellipsis; white-space: nowrap; }
 .ff-adoption-badge, .ff-adoption-planning-row-icon { display: grid; place-items: center; width: 32px; height: 32px; color: var(--seed-color-fg-neutral-subtle); }
 .ff-adoption-badge.is-completed { color: var(--seed-color-fg-positive); }
 .ff-adoption-badge svg, .ff-adoption-planning-row-icon svg { width: 24px; height: 24px; }
-.ff-pet-cost-calculator-trigger { grid-template-columns: minmax(0, 1fr) 24px; justify-content: initial; color: var(--seed-color-fg-neutral); font-size: 15px; font-weight: 700; }
-.ff-pet-knowledge-trigger { display: grid; grid-template-columns: minmax(0, 1fr) 24px; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 12px 0; border: 0; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); color: var(--seed-color-fg-neutral); background: transparent; font-size: 15px; font-weight: 700; text-align: left; }
+.ff-pet-cost-calculator-trigger { justify-content: initial; color: var(--seed-color-fg-neutral); font-size: 15px; font-weight: 700; }
+.ff-pet-knowledge-trigger { display: grid; grid-template-columns: 28px minmax(0, 1fr) 24px; align-items: center; gap: 10px; width: 100%; min-height: 68px; padding: 12px 14px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 16px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-layer-default); font: inherit; text-align: left; cursor: pointer; }
 .ff-pet-knowledge-page { display: flex; flex-direction: column; min-height: 100%; background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral); }
 .ff-pet-knowledge-header { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; min-height: 56px; padding: max(8px, env(safe-area-inset-top)) 16px 0; background: var(--seed-color-bg-layer-default); }
 .ff-pet-knowledge-header button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; color: var(--seed-color-fg-neutral); cursor: pointer; }

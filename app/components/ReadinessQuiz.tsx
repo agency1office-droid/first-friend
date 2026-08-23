@@ -7,6 +7,7 @@ import { IconChevronLeftLine, IconHouseLine, IconPawprintFill, IconXmarkLine } f
 import { educationScore as calculateEducation } from "../../lib/readiness-score";
 import { createReadinessSharePath } from "../../lib/readiness-share";
 import { getQuizDefinition } from "../../lib/quiz/registry";
+import { closeToDetail } from "./detailReturn";
 import type { QuizQuestion } from "../../lib/quiz/types";
 
 type Species = "cat" | "dog";
@@ -225,29 +226,7 @@ export function ReadinessQuiz({ onClose, quizId = "adoption-prep" }: { onClose?:
       onClose();
       return;
     }
-    const returnTo = new URLSearchParams(window.location.search).get("return_to");
-    if (returnTo && returnTo.startsWith("/friends/") && !returnTo.startsWith("//")) {
-      window.location.assign(returnTo);
-      return;
-    }
-    const detailReferrer = (() => {
-      try {
-        const referrer = new URL(document.referrer);
-        if (referrer.origin !== window.location.origin || !referrer.pathname.startsWith("/friends/")) return "";
-        return `${referrer.pathname}${referrer.search}${referrer.hash}`;
-      } catch {
-        return "";
-      }
-    })();
-    if (detailReferrer) {
-      if (window.history.length > 1) {
-        window.history.back();
-        return;
-      }
-      window.location.assign(detailReferrer);
-      return;
-    }
-    window.location.replace("/");
+    closeToDetail();
   }
   function renderFooter() {
     if (phase === "result") {

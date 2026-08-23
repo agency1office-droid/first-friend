@@ -6,6 +6,7 @@ import { IconArrowUpRightLine } from "@karrotmarket/react-monochrome-icon";
 import { PetCostCalculator } from "./PetCostCalculator";
 import { ReadinessQuiz } from "./ReadinessQuiz";
 import type { Animal } from "../../lib/data";
+import { buildQuizHref } from "./detailReturn";
 
 export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "breed" | "age" | "sex" | "traits" | "health">) {
   const [knowledgeQuizOpen, setKnowledgeQuizOpen] = useState(false);
@@ -13,10 +14,15 @@ export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "b
   function openQuiz(event: MouseEvent<HTMLAnchorElement>) {
     if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
     const isMobile = window.matchMedia("(max-width: 767px)").matches;
-    if (isMobile) return;
     event.preventDefault();
-    const quizWindow = window.open(event.currentTarget.href, "_blank", "noopener,noreferrer");
-    if (!quizWindow) window.location.assign(event.currentTarget.href);
+    const href = buildQuizHref(event.currentTarget.href);
+    if (isMobile) {
+      window.location.assign(href);
+      return;
+    }
+    event.currentTarget.href = href;
+    const quizWindow = window.open(event.currentTarget.href, "_blank");
+    if (!quizWindow) window.location.assign(href);
   }
 
   return (

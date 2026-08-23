@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { PetCostCalculatorPage as PetCostCalculatorFlow } from "./PetCostCalculatorPage";
 
 export default function PetCostCalculatorPage() {
-  redirect("/");
+  return <PetCostCalculatorFlow />;
 }

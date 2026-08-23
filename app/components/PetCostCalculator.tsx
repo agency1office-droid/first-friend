@@ -1,34 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { IconArrowUpRightLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
-import {
-  BottomSheetBody,
-  BottomSheetContent,
-  BottomSheetRoot,
-  BottomSheetTrigger,
-} from "seed-design/ui/bottom-sheet";
-import { CostPlanner, type CalculatorAnimal } from "./CostPlanner";
+import { IconArrowUpRightLine } from "@karrotmarket/react-monochrome-icon";
+import type { CalculatorAnimal } from "./CostPlanner";
+import { openDetailFlow } from "./detailReturn";
+
+export const PET_COST_ANIMAL_KEY = "ff-pet-cost-animal-v1";
 
 export function PetCostCalculator({ animal, step = 3 }: { animal: CalculatorAnimal; step?: number }) {
-  const [open, setOpen] = useState(false);
+  function openCalculator() {
+    try { window.sessionStorage.setItem(PET_COST_ANIMAL_KEY, JSON.stringify(animal)); } catch { /* storage can be unavailable */ }
+    openDetailFlow("/pet-cost-calculator");
+  }
 
-  return <BottomSheetRoot open={open} onOpenChange={setOpen} handleOnly>
-    <BottomSheetTrigger asChild>
-      <button className="ff-pet-cost-calculator-trigger ff-adoption-planning-row" type="button">
-        <span className="ff-adoption-planning-step">STEP {step}</span>
-        <span className="ff-adoption-planning-row-copy"><strong>반려동물 돌봄 계산기</strong></span>
-        <IconArrowUpRightLine aria-hidden />
-      </button>
-    </BottomSheetTrigger>
-    <BottomSheetContent
-      aria-label="반려동물 돌봄 계산기"
-      className="ff-pet-cost-calculator-sheet"
-    >
-      <button className="seed-bottom-sheet__closeButton" type="button" aria-label="계산기 닫기" data-no-drag onClick={() => setOpen(false)}><IconXmarkLine aria-hidden /></button>
-      <BottomSheetBody>
-        <CostPlanner flow="sheet" animal={animal} />
-      </BottomSheetBody>
-    </BottomSheetContent>
-  </BottomSheetRoot>;
+  return <button className="ff-pet-cost-calculator-trigger ff-adoption-planning-row" type="button" onClick={openCalculator}>
+    <span className="ff-adoption-planning-step">STEP {step}</span>
+    <span className="ff-adoption-planning-row-copy"><strong>반려동물 돌봄 계산기</strong></span>
+    <IconArrowUpRightLine aria-hidden />
+  </button>;
 }

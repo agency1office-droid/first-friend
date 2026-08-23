@@ -13,6 +13,17 @@ export function buildQuizHref(href: string) {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
+export function openDetailFlow(href: string) {
+  const destination = buildQuizHref(href);
+  const isMobile = window.matchMedia("(max-width: 767px)").matches;
+  if (isMobile) {
+    window.location.assign(destination);
+    return;
+  }
+  const flowWindow = window.open(destination, "_blank");
+  if (!flowWindow) window.location.assign(destination);
+}
+
 export function closeToDetail() {
   if (typeof window === "undefined") return;
   const params = new URLSearchParams(window.location.search);

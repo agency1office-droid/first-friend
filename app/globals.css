@@ -885,11 +885,11 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-info-board-content > :last-child { margin-bottom: 0; }
 .ff-info-board-content ul { display: grid; gap: 8px; margin: 0; padding-left: 18px; }
 .ff-info-board--plain { margin-top: 12px; }
-.ff-info-board--plain .seed-accordion__trigger { min-height: 60px; padding-inline: 0; }
+.ff-info-board--plain .seed-accordion__trigger { min-height: 60px; padding-inline: 12px; }
 .ff-info-board--plain .seed-accordion__trigger > span { min-width: 0; }
 .ff-info-board--plain .seed-accordion__trigger > span:last-child { margin-left: auto; }
 .ff-info-board--plain .seed-accordion__title { color: var(--seed-color-fg-neutral); font-size: 16px; font-weight: 500; line-height: 24px; }
-.ff-info-board--plain .ff-info-board-content { padding: 0 0 18px; color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 22px; }
+.ff-info-board--plain .ff-info-board-content { padding: 0 12px 18px; color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 22px; }
 .ff-story-actions { flex-wrap: wrap; align-items: center; }
 .ff-sticky-actions > * { min-width: 0; }
 .ff-manage-list article > div, .ff-ops-list article > div { min-width: 0; }

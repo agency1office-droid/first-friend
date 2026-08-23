@@ -25,6 +25,7 @@ export type AnimalAiState = {
   status: SummaryRow["status"] | "unavailable" | "missing";
   summary: string | null;
   available: boolean;
+  source?: "ai" | "public-data";
 };
 
 function hasAiKey() { return Boolean(process.env.GEMINI_API_KEY?.trim()); }
@@ -55,7 +56,7 @@ export function createAnimalAnalysisKey(animal: Animal) {
 function toState(row: SummaryRow | null): AnimalAiState {
   if (!hasAiKey()) return { status: "unavailable", summary: null, available: false };
   if (!row) return { status: "missing", summary: null, available: true };
-  return { status: row.status, summary: row.status === "completed" ? row.generated_summary : null, available: true };
+  return { status: row.status, summary: row.status === "completed" ? row.generated_summary : null, available: true, source: row.model_version === "public-data-fallback-v1" ? "public-data" : "ai" };
 }
 
 export async function getAnimalAiState(animalId: string): Promise<AnimalAiState> {
@@ -204,6 +205,12 @@ async function generateSummary(animal: Animal) {
   return validation.summary;
 }
 
+function createPublicDataFallback(animal: Animal) {
+  const appearance = [animal.colors.filter(Boolean).join("·"), animal.breed !== "품종 미상" ? animal.breed : ""].filter(Boolean).join(" 털과 ");
+  const detail = appearance ? `${appearance}이 눈에 띄고` : "사진 속 모습이 인상적이고";
+  return `${detail} 사진 속 표정과 자세에서 이 친구만의 매력이 느껴져요. 공개된 정보와 사진을 천천히 살펴보며 함께할 모습을 상상해 보세요.`;
+}
+
 export async function processAnimalAiJob(animalId: string, expectedKey?: string) {
   if (!hasAiKey()) return { status: "unavailable" as const };
   const client = getSupabaseServerClient();
@@ -226,9 +233,10 @@ export async function processAnimalAiJob(animalId: string, expectedKey?: string)
     const message = error instanceof Error ? error.message.slice(0, 240) : "AI 소개를 만들지 못했어요.";
     const retryCount = row.retry_count + 1;
     const nextAttemptAt = retryCount < MAX_RETRIES ? new Date(Date.now() + Math.min(60 * 60 * 1000, 2 ** retryCount * 60 * 1000)).toISOString() : null;
-    await client.from("public_animal_ai_summaries").update({ status: "failed", retry_count: retryCount, next_attempt_at: nextAttemptAt, last_error: message, updated_at: new Date().toISOString() }).eq("animal_id", animalId).eq("analysis_key", key).eq("status", "processing");
+    const fallback = createPublicDataFallback(animal);
+    await client.from("public_animal_ai_summaries").update({ status: "completed", generated_summary: fallback, model_version: "public-data-fallback-v1", retry_count: retryCount, next_attempt_at: nextAttemptAt, last_error: message, updated_at: new Date().toISOString() }).eq("animal_id", animalId).eq("analysis_key", key).eq("status", "processing");
     console.error("[animal-ai]", animalId, message);
-    return { status: "failed" as const };
+    return { status: "completed" as const, summary: fallback, source: "public-data" as const };
   }
 }
 

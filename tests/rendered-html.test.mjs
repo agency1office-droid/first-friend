@@ -476,6 +476,7 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(page, /<AnimalAiIntro animalId=\{animal\.id\} \/>/);
   assert.match(page, /ff-detail-shelter[\s\S]*<AnimalAiIntro/);
   assert.match(intro, /AI가 살펴본 이 친구의 매력/);
+  assert.match(intro, /사진과 공개 정보로 살펴본 이 친구의 매력/);
   assert.match(intro, /IconSparkle2Fill/);
   assert.match(intro, /사진을 바탕으로 AI가 살펴본 내용/);
   assert.match(intro, /LoadingIndicator/);
@@ -536,6 +537,7 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(worker, /입니다/);
   assert.match(worker, /next_attempt_at/);
   assert.match(worker, /status === "processing"/);
+  assert.match(worker, /public-data-fallback-v1/);
   assert.match(worker, /2 \* 60 \* 1000/);
   assert.doesNotMatch(worker, /insert\([^)]*image/);
   for (const column of ["animal_id", "analysis_key", "generated_summary", "status", "model_version", "source_updated_at", "retry_count", "last_error"]) assert.match(migration, new RegExp(column));

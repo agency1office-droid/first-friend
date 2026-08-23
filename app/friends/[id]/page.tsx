@@ -198,6 +198,7 @@ export default async function AnimalPage({
       <AdoptionPlanningCard species={animal.species} name={animal.name} breed={animal.breed} age={animal.age} sex={animal.sex} traits={animal.traits} health={animal.health} />
       <article className="ff-detail-body">
         <h1 className="ff-visually-hidden">{animal.name}</h1>
+        <div className="ff-detail-animal-info-group">
         <section className="ff-detail-info-section ff-detail-animal-info" aria-labelledby="detail-info-title">
           <h2 id="detail-info-title">동물 친구 정보</h2>
           <div className="ff-detail-info-list">
@@ -220,6 +221,7 @@ export default async function AnimalPage({
             </span>
           ))}
         </div>}
+        </div>
         {animal.shelterLat !== undefined && animal.shelterLng !== undefined && <ShelterLocationCard
           jsKey={process.env.NEXT_PUBLIC_KAKAO_JS_KEY || ""}
           name={animal.shelter}

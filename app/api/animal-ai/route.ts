@@ -1,4 +1,5 @@
-import { enqueueAnimalAiSummary, getAnimalAiState } from "../../../lib/animal-ai";
+import { after } from "next/server";
+import { enqueueAnimalAiSummary, getAnimalAiState, processAnimalAiJob } from "../../../lib/animal-ai";
 import { getAnimalById } from "../../../lib/public-data";
 import { beginIdempotentRequest, completeIdempotentRequest, enforceRateLimit, releaseIdempotentRequest, requestSubject } from "../../../lib/api-guards";
 import { logError, requestId } from "../../../lib/observability";
@@ -29,6 +30,12 @@ export async function POST(request: Request) {
     const animal = await getAnimalById(id);
     if (!animal) return Response.json({ error: "현재 확인할 수 없는 동물이에요." }, { status: 404 });
     const queued = await enqueueAnimalAiSummary(animal);
+    if (queued.state.status === "pending") {
+      after(async () => {
+        try { await processAnimalAiJob(id, queued.analysisKey || undefined); }
+        catch (error) { logError("animal_ai.requested_job_failed", error, { requestId: requestId(request), animalId: id }); }
+      });
+    }
     if (guard.kind === "started") await completeIdempotentRequest(guard, queued.state, 200);
     return Response.json(queued.state, { headers: { "cache-control": "no-store" } });
   } catch (error) { if (guard.kind === "started") await releaseIdempotentRequest(guard); logError("animal_ai.enqueue_failed", error, { requestId: requestId(request), animalId: id }); return Response.json({ status: "failed", summary: null, available: false }, { headers: { "cache-control": "no-store" } }); }

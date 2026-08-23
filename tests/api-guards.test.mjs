@@ -20,4 +20,6 @@ test("protects high-cost API mutations with shared rate limits and idempotency",
   assert.match(uploads, /beginIdempotentRequest\("uploads"/);
   assert.match(animalAi, /beginIdempotentRequest\("animal-ai-enqueue"/);
   assert.match(animalAi, /completeIdempotentRequest/);
+  assert.match(animalAi, /after\(async \(\) =>/);
+  assert.match(animalAi, /processAnimalAiJob\(id, queued\.analysisKey \|\| undefined\)/);
 });

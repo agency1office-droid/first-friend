@@ -142,7 +142,7 @@ test("uses a contextual animal detail topbar", async () => {
   const legacyCostPage = await readFile(new URL("../app/quiz/pet-cost/page.tsx", import.meta.url), "utf8");
   assert.match(calculator, /BottomSheetRoot/);
   assert.match(calculator, /<CostPlanner flow="sheet" animal=\{animal\} \/>/);
-  assert.match(calculator, /반려동물 돌봄 계산기/);
+  assert.match(calculator, /돌봄 계산기/);
   assert.match(costPage, /redirect\("\/"\)/);
   assert.match(legacyCostPage, /redirect\("\/"\)/);
   const costPlanner = await readFile(new URL("../app/components/CostPlanner.tsx", import.meta.url), "utf8");

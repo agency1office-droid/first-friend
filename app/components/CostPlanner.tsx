@@ -147,7 +147,7 @@ function CostReceipt({ species, animal, selections, quality, items }: { species:
   const matching = items.filter(item => activePeriod.cadence.includes(item.cadence));
   const periodTotal = matching.reduce((sum, item) => sum + item.low + (item.high - item.low) * clamp(Number(quality), 0, 100) / 100, 0);
   return <div className="ff-cost-conversation ff-cost-receipt">
-    <div className="ff-cost-chat-bubble ff-cost-chat-bubble-result"><h2>반려동물 돌봄 계산기</h2><p className="ff-cost-receipt-subtitle"><span>{animal?.name || "이름 미상"}</span><span className="ff-cost-receipt-animal-tag">{basis}</span></p></div>
+    <div className="ff-cost-chat-bubble ff-cost-chat-bubble-result"><h2>돌봄 계산기</h2><p className="ff-cost-receipt-subtitle"><span>{animal?.name || "이름 미상"}</span><span className="ff-cost-receipt-animal-tag">{basis}</span></p></div>
     <section className="ff-cost-receipt-content" aria-live="polite" aria-label="반려동물 비용 영수증">
       <ChipTabsRoot value={period} onValueChange={value => setPeriod(value as CostPeriod)}>
         <ChipTabsList aria-label="비용 시기 선택">
@@ -190,7 +190,7 @@ function CalculatorCostPlanner({ quality, animal }: { quality: number; animal?: 
   if (step === totalSteps) return <CostReceipt species={selectedSpecies} animal={animal} selections={selections} quality={quality} items={items}/>;
 
   const titles = [
-    ["반려동물 돌봄 계산기", "어떤 반려동물의 비용을 계산할까요?", "동물 정보를 바탕으로 먼저 선택했어요."],
+    ["돌봄 계산기", "어떤 반려동물의 비용을 계산할까요?", "동물 정보를 바탕으로 먼저 선택했어요."],
     ["중성화", "중성화 상태를 확인해 주세요", `${/암컷|여아|female/i.test(animal?.sex || "") ? "암컷" : /수컷|남아|male/i.test(animal?.sex || "") ? "수컷" : "성별 미상"} 기준으로 확인해요.`],
     ["예방접종", "예방접종 상태를 확인해 주세요", "완료 여부에 따라 처음 준비 비용이 달라져요."],
     ["건강검진", "건강검진 비용을 포함할까요?", "정기 검진을 아직 확인하지 않았다면 비용을 포함해요."],

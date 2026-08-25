@@ -52,7 +52,7 @@ export function AnimalActions({
     <BottomSheetTrigger asChild>
       <ActionButton variant="neutralWeak">돌봄 계산기</ActionButton>
     </BottomSheetTrigger>
-    <BottomSheetContent aria-label="반려동물 돌봄 계산기" className="ff-pet-cost-calculator-sheet">
+    <BottomSheetContent aria-label="돌봄 계산기" className="ff-pet-cost-calculator-sheet">
       <BottomSheetBody><CostPlanner flow="sheet" animal={animal} /></BottomSheetBody>
     </BottomSheetContent>
   </BottomSheetRoot>;

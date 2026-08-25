@@ -17,11 +17,11 @@ export function PetCostCalculator({ animal, step = 3 }: { animal: CalculatorAnim
     <BottomSheetTrigger asChild>
       <button className="ff-pet-cost-calculator-trigger ff-adoption-planning-row" type="button">
         <span className="ff-adoption-planning-step">STEP {step}</span>
-        <span className="ff-adoption-planning-row-copy"><strong>반려동물 돌봄 계산기</strong></span>
+        <span className="ff-adoption-planning-row-copy"><strong>돌봄 계산기</strong></span>
         <IconArrowUpRightLine aria-hidden />
       </button>
     </BottomSheetTrigger>
-    <BottomSheetContent aria-label="반려동물 돌봄 계산기" className="ff-pet-cost-calculator-sheet">
+    <BottomSheetContent aria-label="돌봄 계산기" className="ff-pet-cost-calculator-sheet">
       <button className="seed-bottom-sheet__closeButton" type="button" aria-label="계산기 닫기" data-no-drag onClick={() => setOpen(false)}><IconXmarkLine aria-hidden /></button>
       <BottomSheetBody><CostPlanner flow="sheet" animal={animal} /></BottomSheetBody>
     </BottomSheetContent>

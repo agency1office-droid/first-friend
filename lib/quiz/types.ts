@@ -1,4 +1,4 @@
-export type QuizRenderer = "adoption-readiness";
+export type QuizRenderer = "adoption-readiness" | "care-readiness";
 
 export type QuizQuestion = {
   chapter: string;

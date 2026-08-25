@@ -78,6 +78,7 @@ const preparationCategoriesFor = (items: PreparationItem[]): PreparationCategory
 ];
 
 export function CareReadinessFlow() {
+  const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [species, setSpecies] = useState<Species | null>(null);
   const [timeIndex, setTimeIndex] = useState(2);
@@ -126,8 +127,13 @@ export function CareReadinessFlow() {
   }
 
   function previous() {
+    if (!started) return closeToDetail();
     if (step === 0) return closeToDetail();
     setStep(value => value - 1);
+  }
+
+  function start() {
+    setStarted(true);
   }
 
   function retry() {
@@ -144,14 +150,14 @@ export function CareReadinessFlow() {
     setPreparations({});
   }
 
-  return <div className="ff-readiness ff-care-readiness" data-care-step={isResult ? "result" : currentStep}>
-    <header className="ff-readiness-appbar">
+  return <div className={`ff-readiness ff-care-readiness${!started ? " ff-readiness-intro" : ""}`} data-quiz-id="care-readiness" data-care-step={!started ? "intro" : isResult ? "result" : currentStep}>
+    <header className={`ff-readiness-appbar${!started ? " ff-readiness-intro-appbar" : ""}`}>
       <button type="button" className="ff-readiness-back" onClick={previous} aria-label="이전으로"><IconChevronLeftLine aria-hidden /></button>
-      <strong>함께할 생활 확인</strong>
-      <button type="button" className="ff-readiness-home" onClick={() => window.location.assign("/")} aria-label="홈으로 이동"><IconHouseLine aria-hidden /></button>
+      <strong>입양 환경 점검</strong>
+      <div className="ff-readiness-header-actions"><button type="button" className="ff-readiness-home" onClick={() => window.location.assign("/")} aria-label="홈으로 이동"><IconHouseLine aria-hidden /></button></div>
     </header>
-    <div className="ff-readiness-progress" role="progressbar" aria-label="생활 점검 진행률" aria-valuemin={1} aria-valuemax={totalSteps} aria-valuenow={isResult ? totalSteps : step + 1}><div style={{ width: `${isResult ? 100 : Math.max(progress, 6.25)}%` }} /></div>
-    {isResult ? <section className="ff-care-result" aria-labelledby="care-result-title">
+    {started && <div className="ff-readiness-progress" role="progressbar" aria-label="생활 점검 진행률" aria-valuemin={1} aria-valuemax={totalSteps} aria-valuenow={isResult ? totalSteps : step + 1}><div style={{ width: `${isResult ? 100 : Math.max(progress, 6.25)}%` }} /></div>}
+    {!started ? <section className="ff-readiness-intro-content" aria-labelledby="care-readiness-intro-title"><div className="ff-readiness-intro-badge">입양 환경 점검</div><h1 id="care-readiness-intro-title">반려동물과<br />함께할 수 있을까요?</h1></section> : isResult ? <section className="ff-care-result" aria-labelledby="care-result-title">
       <h1 id="care-result-title">함께할 생활 준비도</h1>
       <div className="ff-care-result-score" style={{ background: `conic-gradient(var(--seed-color-bg-brand-solid) ${Math.round((readyCount / results.length) * 100)}%, var(--seed-color-bg-neutral-weak) 0)` }}>
         <div><strong>{Math.round((readyCount / results.length) * 100)}</strong><span>%</span></div>
@@ -176,8 +182,8 @@ export function CareReadinessFlow() {
       {currentStep === "budget" && <><h1 id="care-step-title">매달 필요한 비용과<br />병원비를 준비할 수 있나요?</h1><div className="ff-care-option-list">{[["planned", "월 비용과 비상 진료비까지 계획했어요"], ["basic", "기본 비용은 가능하지만 더 알아봐야 해요"], ["unknown", "비용은 아직 계산해 보지 않았어요"]].map(([value, label]) => <button type="button" className="ff-care-option" data-selected={budget === value || undefined} key={value} onClick={() => setBudget(value as Budget)}><strong>{label}</strong></button>)}</div></>}
       {isChecklist && currentChecklist && <><h1 id="care-step-title">{currentChecklist.title}</h1><p className="ff-care-helper">준비했거나 준비할 예정인 항목을 확인해요.</p><p className="ff-care-helper ff-care-helper-detail">{currentChecklist.description}</p><div className="ff-care-checklist" aria-label={`${currentChecklist.title} 준비 목록`}>{currentChecklist.items.map(item => <div className="ff-care-checklist-row" key={item.id}><Checkbox checked={Boolean(preparations[item.id])} onCheckedChange={checked => setPreparations(current => ({ ...current, [item.id]: Boolean(checked) }))} label={<><strong>{item.label}</strong><small>{item.detail}</small></>} /></div>)}</div></>}
     </section>}
-    <div className={`ff-readiness-actions ${isResult ? "is-result" : "is-single"}`}>
-      {isResult ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={retry}>다시 확인하기</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={closeToDetail}>닫기</ActionButton></> : <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!canContinue} onClick={next}>{step === totalSteps - 1 ? "결과 보기" : "다음"}</ActionButton>}
+    <div className={`ff-readiness-actions ${!started ? "is-single" : isResult ? "is-result" : "is-single"}`}>
+      {!started ? <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={start}>시작하기</ActionButton> : isResult ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={retry}>다시 확인하기</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={closeToDetail}>닫기</ActionButton></> : <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!canContinue} onClick={next}>{step === totalSteps - 1 ? "결과 보기" : "다음"}</ActionButton>}
     </div>
   </div>;
 }

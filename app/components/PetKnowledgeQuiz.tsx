@@ -45,7 +45,7 @@ export function PetKnowledgeQuiz({ species, onClose }: { species: string; onClos
   return <div className="ff-pet-knowledge-page" role="dialog" aria-modal="true" aria-labelledby="pet-knowledge-title">
     <header className="ff-pet-knowledge-header">
       <button type="button" onClick={onClose} aria-label="퀴즈 닫기"><IconChevronLeftLine aria-hidden /></button>
-      <strong id="pet-knowledge-title">반려동물 상식 퀴즈</strong>
+      <strong id="pet-knowledge-title">상식 퀴즈</strong>
     </header>
 
     <main className="ff-pet-knowledge-main">

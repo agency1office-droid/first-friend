@@ -8,6 +8,7 @@ import { Callout } from "seed-design/ui/callout";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "seed-design/ui/accordion";
 import { QuantityPicker } from "seed-design/ui/quantity-picker";
 import { ChipTabsList, ChipTabsRoot, ChipTabsTrigger } from "seed-design/ui/chip-tabs";
+import { IconInfoCircle } from "@tabler/icons-react";
 import { IconChevronDownSmallLine } from "@karrotmarket/react-monochrome-icon";
 
 type Species = "cat" | "dog";
@@ -156,6 +157,7 @@ function CostReceipt({ species, animal, selections, quality, items }: { species:
       </ChipTabsRoot>
       <div className="ff-cost-receipt-period-content">
         <div className={`ff-cost-receipt-period-heading${period === "routine" ? " is-without-total" : ""}`}><div><small>{activePeriod.description}</small></div>{period !== "routine" && <strong>{money(periodTotal)}</strong>}</div>
+        {period !== "routine" && <p className="ff-cost-receipt-estimate-note"><IconInfoCircle aria-hidden="true" />평균값을 바탕으로 한 예상 비용이에요. 실제 비용은 더 높거나 낮을 수 있어요.</p>}
         {matching.length > 0 ? <CostDetails items={matching} showNotice={false} flat/> : <p className="ff-cost-receipt-empty">이 시기에 포함된 비용이 없어요.</p>}
       </div>
     </section>
@@ -164,7 +166,7 @@ function CostReceipt({ species, animal, selections, quality, items }: { species:
 
 function InlineCostPlanner({ species, quality, pets, setSpecies, setQuality, setPets }: { species: Species; quality: number; pets: number; setSpecies: (value: Species) => void; setQuality: (value: number) => void; setPets: (value: number) => void }) {
   const { items, totals } = useCostTotals(species, quality, pets);
-  return <><SegmentedControl aria-label="동물 종류" value={species} onValueChange={value => setSpecies(value as Species)}><SegmentedControlItem value="cat">고양이</SegmentedControlItem><SegmentedControlItem value="dog">강아지</SegmentedControlItem></SegmentedControl><div className="ff-cost-controls"><Slider label="제품·돌봄 선택 수준" indicator={quality < 34 ? "기본" : quality < 67 ? "균형" : "여유"} min={0} max={100} values={[clamp(quality, 0, 100)]} onValueChange={value => setQuality(clamp(Number(value[0]), 0, 100))}/><div className="ff-quantity-row"><strong>함께할 동물 수</strong><QuantityPicker value={clamp(Math.floor(pets), 1, 3)} min={1} max={3} onValueChange={value => setPets(clamp(Math.floor(Number(value)), 1, 3))} getValueText={(_, value) => `${value}마리`}/></div></div><CostSummary totals={totals}/><CostDetails items={items}/></>;
+  return <><SegmentedControl aria-label="동물 종류" value={species} onValueChange={value => setSpecies(value as Species)}><SegmentedControlItem value="cat">고양이</SegmentedControlItem><SegmentedControlItem value="dog">강아지</SegmentedControlItem></SegmentedControl><div className="ff-cost-controls"><Slider label="제품·돌봄 선택 수준" indicator={quality < 34 ? "기본" : quality < 67 ? "균형" : "여유"} min={0} max={100} values={[clamp(quality, 0, 100)]} onValuesChange={value => setQuality(clamp(Number(value[0]), 0, 100))}/><div className="ff-quantity-row"><strong>함께할 동물 수</strong><QuantityPicker value={clamp(Math.floor(pets), 1, 3)} min={1} max={3} onValueChange={value => setPets(clamp(Math.floor(Number(value)), 1, 3))} getValueText={(_, value) => `${value}마리`}/></div></div><CostSummary totals={totals}/><CostDetails items={items}/></>;
 }
 
 function CalculatorCostPlanner({ quality, animal }: { quality: number; animal?: CalculatorAnimal }) {

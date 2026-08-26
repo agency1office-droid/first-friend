@@ -57,6 +57,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       </div>
       <Callout tone="informative" title="도움이 필요하다면" description="직접 연락처를 공개하거나 현장으로 찾아가기보다, 실종·발견 제보를 통해 안전하게 알려 주세요." />
     </article>
-    <LostAnimalActions name={displayName} />
+    <LostAnimalActions />
   </>;
 }

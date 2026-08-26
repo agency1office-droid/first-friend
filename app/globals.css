@@ -1209,9 +1209,9 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-sticky-actions .ff-sticky-share { width: 44px; height: 56px; border-radius: 14px; }
 .ff-sticky-actions .ff-sticky-share svg { width: 24px; height: 24px; }
 }
-.ff-sticky-actions.ff-lost-sticky-actions { grid-template-columns: 52px minmax(0, 1fr); }
+.ff-sticky-actions.ff-lost-sticky-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 @media (max-width: 700px) {
-  .ff-sticky-actions.ff-lost-sticky-actions { grid-template-columns: 44px minmax(0, 1fr); }
+  .ff-sticky-actions.ff-lost-sticky-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }
 .ff-worldcup { display: grid; gap: 14px; }
 .ff-worldcup-progress { height: 6px; overflow: hidden; border-radius: 99px; background: var(--seed-color-bg-neutral-weak); }

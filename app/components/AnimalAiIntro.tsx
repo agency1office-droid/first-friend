@@ -48,7 +48,7 @@ export function AnimalAiIntro({ animalId }: { animalId: string }) {
   const description = state.summary || (isPending ? waitingCopy : state.status === "unavailable" ? unavailableCopy : failedCopy);
   const title = state.source === "public-data" ? "사진과 공개 정보로 살펴본 이 친구의 매력" : "AI가 살펴본 이 친구의 매력";
   const disclaimer = state.source === "public-data" ? "AI 소개를 준비하지 못해 공개된 정보와 사진을 바탕으로 안내해요. 정확한 건강·성격 정보와 입양 가능 여부는 보호소에 확인해 주세요." : "사진을 바탕으로 AI가 살펴본 내용이에요. 정확한 건강·성격 정보와 입양 가능 여부는 보호소에 확인해 주세요.";
-  return <section className="ff-detail-ai-section" aria-labelledby="animal-ai-title">
+  return <section className="ff-detail-container ff-detail-ai-section" aria-labelledby="animal-ai-title">
     <Callout
       tone="neutral"
       title={<span id="animal-ai-title"><IconSparkle2Fill aria-hidden="true" focusable="false" /> <span>{title}</span></span>}

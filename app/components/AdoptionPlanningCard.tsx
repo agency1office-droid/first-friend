@@ -15,7 +15,7 @@ export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "b
   }
 
   return (
-    <section className="ff-adoption-planning" aria-labelledby="adoption-planning-title">
+    <section className="ff-detail-container ff-adoption-planning" aria-labelledby="adoption-planning-title">
       <div className="ff-section-head">
         <div>
           <div className="ff-kicker">입양 전에 꼭 확인해요</div>

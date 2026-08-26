@@ -176,7 +176,7 @@ export default async function AnimalPage({
         description={publicStatus.description}
         noticeDaysRemaining={noticeDaysRemaining}
       />
-      <section className="ff-detail-shelter" aria-label="보호소 정보">
+      <section className="ff-detail-container ff-detail-shelter" aria-label="보호소 정보">
         <div className="ff-detail-shelter-icon" aria-hidden><IconHospitalcrossBuildingLine /></div>
         {shelterHref ? <a className="ff-detail-shelter-copy ff-detail-shelter-link" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>
           <strong>{animal.shelter}</strong>
@@ -196,7 +196,7 @@ export default async function AnimalPage({
       </section>
       <AnimalAiIntro animalId={animal.id} />
       <AdoptionPlanningCard species={animal.species} name={animal.name} breed={animal.breed} age={animal.age} sex={animal.sex} traits={animal.traits} health={animal.health} />
-      <article className="ff-detail-body">
+      <article className="ff-detail-container ff-detail-body">
         <h1 className="ff-visually-hidden">{animal.name}</h1>
         <div className="ff-detail-animal-info-group">
         <section className="ff-detail-info-section ff-detail-animal-info" aria-labelledby="detail-info-title">

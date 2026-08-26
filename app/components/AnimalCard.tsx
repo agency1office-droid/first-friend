@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { Animal } from "../../lib/data";
 import { FavoriteButton } from "./FavoriteButton";
 import { IconPicture2StackedLine } from "@karrotmarket/react-monochrome-icon";
@@ -19,13 +22,15 @@ function displayAge(age: string) {
 }
 
 export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,showShelter=true,priority=false }: { animal: Animal;layout?:"grid"|"row";initialSaved?:boolean;onFavoriteChange?:(saved:boolean)=>void;showShelter?:boolean;priority?:boolean }) {
+  const [imageUnavailable, setImageUnavailable] = useState(false);
   const publicStatus = getAnimalPublicStatus(animal);
   const animalHref = `/friends/${animal.id}`;
   const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}` : "/shelters";
+  if (imageUnavailable || !animal.image.trim()) return null;
   return <article className={`ff-animal-card${layout==="row"?" ff-animal-card-row":""}`}>
     {layout === "row" ? <div className="ff-animal-card-row-main">
       <a className="ff-animal-row-image-link" href={animalHref} aria-label={`${animal.name} 상세 보기`}>
-        <div className="ff-animal-image-wrap"><AnimalThumbnail src={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail/>{(animal.photoCount || 1) > 1 && <span className="ff-card-photo-count" role="img" aria-label={`사진 ${animal.photoCount}장`}><IconPicture2StackedLine aria-hidden="true"/></span>}</div>
+        <div className="ff-animal-image-wrap"><AnimalThumbnail src={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail onUnavailable={() => setImageUnavailable(true)}/>{(animal.photoCount || 1) > 1 && <span className="ff-card-photo-count" role="img" aria-label={`사진 ${animal.photoCount}장`}><IconPicture2StackedLine aria-hidden="true"/></span>}</div>
       </a>
       <div className="ff-animal-info ff-animal-row-info">
         {showShelter && <a className="ff-animal-row-shelter" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>{animal.shelter}</a>}
@@ -38,7 +43,7 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
       </div>
     </div> : <div className="ff-animal-grid-main">
       <a href={animalHref} aria-label={`${animal.name} 상세 보기`}>
-        <div className="ff-animal-image-wrap"><AnimalThumbnail src={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail/>{(animal.photoCount || 1) > 1 && <span className="ff-card-photo-count" role="img" aria-label={`사진 ${animal.photoCount}장`}><IconPicture2StackedLine aria-hidden="true"/></span>}</div>
+        <div className="ff-animal-image-wrap"><AnimalThumbnail src={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail onUnavailable={() => setImageUnavailable(true)}/>{(animal.photoCount || 1) > 1 && <span className="ff-card-photo-count" role="img" aria-label={`사진 ${animal.photoCount}장`}><IconPicture2StackedLine aria-hidden="true"/></span>}</div>
       </a>
       <div className="ff-animal-info">
         {showShelter && <a className="ff-animal-row-shelter" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>{animal.shelter}</a>}

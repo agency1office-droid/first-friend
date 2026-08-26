@@ -85,6 +85,9 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(chrome, /title:"친구 정보",topbarTitle:""/);
   assert.match(bridge, /ff-detail-image-back/);
   assert.match(bridge, /document\.querySelector\("\.ff-detail-gallery"\)/);
+  assert.match(bridge, /HOME_FEED_SNAPSHOT_KEY/);
+  assert.match(bridge, /window\.location\.assign\(readHomeFeedUrl\(\)\)/);
+  assert.match(bridge, /aria-label="홈 목록으로 돌아가기"/);
   assert.doesNotMatch(bridge, /NotificationBell/);
   assert.doesNotMatch(bridge, /GlobalMenuButton/);
   assert.match(chrome, /const isAnimalDetail=path\.startsWith\("\/friends\/"\)/);

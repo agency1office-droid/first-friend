@@ -2,9 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { AppBackButton } from "./AppChrome";
+import { IconChevronLeftLine } from "@karrotmarket/react-monochrome-icon";
 import { AnimalReportButton } from "./AnimalReportButton";
 import { DETAIL_RETURN_SNAPSHOT_KEY } from "./detailReturn";
+import { HOME_FEED_SNAPSHOT_KEY } from "./homeFeedSnapshot";
+
+function readHomeFeedUrl() {
+  try {
+    const snapshot = JSON.parse(window.sessionStorage.getItem(HOME_FEED_SNAPSHOT_KEY) || "null") as { url?: unknown } | null;
+    const url = typeof snapshot?.url === "string" ? snapshot.url : "";
+    return url.startsWith("/") && !url.startsWith("//") && new URL(url, window.location.origin).pathname === "/" ? url : "/";
+  } catch {
+    return "/";
+  }
+}
+
+function HomeFeedBackButton() {
+  return <button className="ff-app-back ff-detail-image-back" type="button" onClick={() => window.location.assign(readHomeFeedUrl())} aria-label="홈 목록으로 돌아가기"><IconChevronLeftLine aria-hidden /></button>;
+}
 
 export function AnimalDetailChromeBridge({ animalId }: { animalId: string }) {
   const [gallery, setGallery] = useState<Element | null>(null);
@@ -37,7 +52,7 @@ export function AnimalDetailChromeBridge({ animalId }: { animalId: string }) {
 
   if (!gallery) return null;
   return <>
-    {createPortal(<AppBackButton fallback="/find" title="친구 정보" className="ff-detail-image-back" />, gallery)}
+    {createPortal(<HomeFeedBackButton />, gallery)}
     {createPortal(<AnimalReportButton animalId={animalId} />, gallery)}
   </>;
 }

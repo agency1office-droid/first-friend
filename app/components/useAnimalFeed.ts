@@ -7,6 +7,7 @@ import { readHomeLocation } from "../../lib/geo";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
 import { PUBLIC_ANIMAL_AGE_MAX } from "../../lib/animal-filter-ranges";
+import { HOME_FEED_SNAPSHOT_KEY } from "./homeFeedSnapshot";
 
 export type AnimalFeedFilters = {
   sort: "distance" | "recent";
@@ -23,8 +24,6 @@ export type AnimalFeedFilters = {
 };
 
 const defaultFilters: AnimalFeedFilters = { sort: "distance", species: "all", publicStatus: "all", breedKeys: [], sex: "all", neutered: "all", color: "all", ageGroup: "all", sizeGroup: "all", ageMin: 0, ageMax: PUBLIC_ANIMAL_AGE_MAX };
-export const HOME_FEED_SNAPSHOT_KEY = "ff-home-feed-snapshot-v2";
-
 type FeedSnapshot = { url: string; items: Animal[]; total: number; cursor: string | null; syncedAt: string | null; stale: boolean; scrollY: number };
 const preloadedAnimalImages = new Set<string>();
 

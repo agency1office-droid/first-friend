@@ -889,6 +889,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-info-board-content > :first-child { margin-top: 0; }
 .ff-info-board-content > :last-child { margin-bottom: 0; }
 .ff-info-board-action-name { color: var(--seed-color-fg-brand); font-weight: 600; }
+.ff-info-board-emphasis { color: var(--seed-color-fg-brand); font-weight: 600; }
 .ff-info-board-content ul { display: grid; gap: 8px; margin: 0; padding-left: 18px; }
 .ff-info-board-steps { display: grid; gap: 8px; margin: 0; padding: 0 0 0 22px; list-style: decimal; }
 .ff-info-board-steps li { padding: 0; border-bottom: 0; }

@@ -243,9 +243,9 @@ export default async function AnimalPage({
                 title: "보호소에 어떻게 연락하면 되나요?",
                 content: (
                   <ol className="ff-info-board-steps">
-                    <li>동물의 기본 정보와 보호소 메모를 꼼꼼히 읽고 확인하세요.</li>
-                    <li>보호소 채널에서 운영시간을 확인하고, 전화 전에 공고번호와 동물 이름을 정확히 확인한 뒤 연락하세요.</li>
-                    <li>통화가 어려우면 공개된 정보와 다를 수 있으니 카카오맵에서 업체 정보를 확인한 뒤 다시 연락하세요.</li>
+                    <li><strong className="ff-info-board-emphasis">동물의 기본 정보와 보호소 메모</strong>를 꼼꼼히 읽고 확인하세요.</li>
+                    <li>보호소 채널에서 <strong className="ff-info-board-emphasis">운영시간</strong>을 확인하고, 전화 전에 <strong className="ff-info-board-emphasis">공고번호와 동물 이름</strong>을 정확히 확인한 뒤 연락하세요.</li>
+                    <li>통화가 어려우면 공개된 정보와 다를 수 있으니 <strong className="ff-info-board-emphasis">카카오맵에서 업체 정보</strong>를 확인한 뒤 다시 연락하세요.</li>
                   </ol>
                 ),
               },
@@ -255,9 +255,9 @@ export default async function AnimalPage({
                 title: "상담 전에 무엇을 확인해야 하나요?",
                 content: (
                   <p>
-                    입양 가능 여부, 방문 예약, 필요한 서류와 비용을 먼저
-                    확인하세요. 건강·성격·중성화·예방접종·특이사항은 보호소에
-                    직접 묻고, 사진과 공개 정보만으로 결정하지 않습니다.
+                    <strong className="ff-info-board-emphasis">입양 가능 여부, 방문 예약, 필요한 서류와 비용</strong>을 먼저
+                    확인하세요. 건강·성격·중성화·예방접종·특이사항은 <strong className="ff-info-board-emphasis">보호소에 직접</strong>
+                    묻고, 사진과 공개 정보만으로 결정하지 않습니다.
                   </p>
                 ),
               },
@@ -280,8 +280,8 @@ export default async function AnimalPage({
                 title: "보호소에서 데려올 때 무엇을 준비하나요?",
                 content: (
                   <p>
-                    고양이와 강아지 모두 체형에 맞는 이동장을 준비하세요. 강아지는
-                    필요하다면 하네스와 리드줄도 함께 준비하세요. 인계 서류와 진료·접종 기록을 확인하고,
+                    고양이와 강아지 모두 체형에 맞는 <strong className="ff-info-board-emphasis">이동장</strong>을 준비하세요. 강아지는
+                    필요하다면 하네스와 리드줄도 함께 준비하세요. <strong className="ff-info-board-emphasis">인계 서류와 진료·접종 기록</strong>을 확인하고,
                     이동 중 문이 열리지 않도록 안전하게 고정합니다.
                   </p>
                 ),
@@ -292,9 +292,9 @@ export default async function AnimalPage({
                 title: "집에 온 첫날은 어떻게 맞이하나요?",
                 content: (
                   <p>
-                    바로 만지거나 여러 사람에게 소개하기보다 조용한 공간에서
-                    스스로 둘러볼 시간을 주세요. 먹는 양과 배변을 살피고,
-                    이상이 있거나 기록이 필요하면 보호소와 동물병원에
+                    바로 만지거나 여러 사람에게 소개하기보다 <strong className="ff-info-board-emphasis">조용한 공간</strong>에서
+                    스스로 둘러볼 시간을 주세요. <strong className="ff-info-board-emphasis">먹는 양과 배변</strong>을 살피고,
+                    이상이 있거나 기록이 필요하면 <strong className="ff-info-board-emphasis">보호소와 동물병원</strong>에
                     상담하세요.
                   </p>
                 ),

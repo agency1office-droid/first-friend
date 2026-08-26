@@ -764,11 +764,8 @@ export async function getStoredAnimalById(id: string) {
     return undefined;
   }
   const animal = fromStored(storedAnimal(data[0] as Record<string, unknown>));
-  const shelter = animal.shelterId
-    ? await getSupabaseServerClient().from("public_shelters").select("hours").eq("id", animal.shelterId).maybeSingle()
-    : { data: null };
   const images = Array.from(new Set(animal.images || [animal.image].filter(Boolean)));
-  const result = { ...animal, shelterHours: shelter.data?.hours || undefined, image: images[0] || animal.image, images, photoCount: images.length };
+  const result = { ...animal, image: images[0] || animal.image, images, photoCount: images.length };
   storedAnimalDetailCache.set(id, { at: Date.now(), data: result });
   return result;
 }

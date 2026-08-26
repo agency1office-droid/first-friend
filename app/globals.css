@@ -443,9 +443,6 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-shelter-copy p { margin: 0; overflow-wrap: anywhere; color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 18px; }
 .ff-detail-shelter-address { display: grid; gap: 0; min-width: 0; }
 .ff-detail-shelter-address > span { display: -webkit-box; min-width: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; line-height: 18px; }
-.ff-detail-shelter-hours { display: flex; align-items: flex-start; gap: 5px; }
-.ff-detail-shelter-hours svg { flex: none; width: 15px; height: 15px; margin-top: 1px; color: var(--seed-color-fg-neutral-subtle); }
-.ff-detail-shelter-hours span { min-width: 0; overflow-wrap: anywhere; }
 .ff-adoption-planning { display: grid; gap: 16px; margin: 0; padding: 24px 16px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
 .ff-adoption-planning .ff-section-head { margin: 0; }
 .ff-adoption-planning .ff-section-title { margin-top: 4px; }

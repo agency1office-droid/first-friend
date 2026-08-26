@@ -375,11 +375,9 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(page, /ff-detail-shelter-link/);
   assert.match(page, /function displayShelterAddress/);
   assert.match(page, /shelterAddressLabel/);
-  assert.match(page, /IconClockLine/);
-  assert.match(page, /운영시간은 보호소에 확인해 주세요/);
-  assert.match(page, /ff-detail-shelter-hours/);
-  assert.match(await readFile(new URL("../lib/data.ts", import.meta.url), "utf8"), /shelterHours\?: string/);
-  assert.match(await readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8"), /public_shelters.*select\("hours"\)/s);
+  assert.doesNotMatch(page, /ff-detail-shelter-hours/);
+  assert.doesNotMatch(await readFile(new URL("../lib/data.ts", import.meta.url), "utf8"), /shelterHours\?: string/);
+  assert.doesNotMatch(await readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8"), /public_shelters.*select\("hours"\)/s);
   assert.match(page, /AnimalDetailChromeBridge animalId=\{id\}/);
   assert.match(await readFile(new URL("../app/components/AnimalDetailChromeBridge.tsx", import.meta.url), "utf8"), /AnimalReportButton animalId=\{animalId\}/);
   const reportButton = await readFile(new URL("../app/components/AnimalReportButton.tsx", import.meta.url), "utf8");

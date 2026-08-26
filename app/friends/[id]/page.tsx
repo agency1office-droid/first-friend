@@ -7,7 +7,6 @@ import {
   IconCalendarLine,
   IconCheckmarkCircleFill,
   IconCheckmarkScaleLine,
-  IconClockLine,
   IconDocumentLine,
   IconHospitalcrossBuildingLine,
   IconLocationpinLine,
@@ -182,12 +181,10 @@ export default async function AnimalPage({
         {shelterHref ? <a className="ff-detail-shelter-copy ff-detail-shelter-link" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>
           <strong>{animal.shelter}</strong>
           <p className="ff-detail-shelter-address"><span>{shelterAddressLabel}</span></p>
-          <p className="ff-detail-shelter-hours"><IconClockLine aria-hidden /><span>{animal.shelterHours ? `운영시간 ${animal.shelterHours} · 연락 전 확인해 주세요.` : "운영시간은 보호소에 확인해 주세요."}</span></p>
           <ShelterTravelMeta distance={animal.distanceMeters} lat={animal.shelterLat} lng={animal.shelterLng} />
         </a> : <div className="ff-detail-shelter-copy">
           <strong>{animal.shelter}</strong>
           <p className="ff-detail-shelter-address"><span>{shelterAddressLabel}</span></p>
-          <p className="ff-detail-shelter-hours"><IconClockLine aria-hidden /><span>{animal.shelterHours ? `운영시간 ${animal.shelterHours} · 연락 전 확인해 주세요.` : "운영시간은 보호소에 확인해 주세요."}</span></p>
           <ShelterTravelMeta distance={animal.distanceMeters} lat={animal.shelterLat} lng={animal.shelterLng} />
         </div>}
         <div className="ff-detail-shelter-actions">

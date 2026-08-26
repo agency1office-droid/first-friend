@@ -13,7 +13,6 @@ export type Animal = {
   shelterId?: string;
   shelterAddress?: string;
   shelterPhone?: string;
-  shelterHours?: string;
   shelterLat?: number;
   shelterLng?: number;
   approximateShelterLocation?: boolean;

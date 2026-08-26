@@ -176,7 +176,7 @@ export default async function AnimalPage({
         description={publicStatus.description}
         noticeDaysRemaining={noticeDaysRemaining}
       />
-      <section className="ff-detail-container ff-detail-shelter" aria-label="보호소 정보">
+      <section className="ff-detail-container ff-detail-shelter" id="shelter-info" aria-label="보호소 정보">
         <div className="ff-detail-shelter-icon" aria-hidden><IconHospitalcrossBuildingLine /></div>
         {shelterHref ? <a className="ff-detail-shelter-copy ff-detail-shelter-link" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>
           <strong>{animal.shelter}</strong>
@@ -221,6 +221,7 @@ export default async function AnimalPage({
             </span>
           ))}
         </div>}
+        <p className="ff-detail-data-meta">공공데이터 기준 · {animal.updated} 확인</p>
         </div>
         {animal.shelterLat !== undefined && animal.shelterLng !== undefined && <ShelterLocationCard
           jsKey={process.env.NEXT_PUBLIC_KAKAO_JS_KEY || ""}
@@ -266,7 +267,7 @@ export default async function AnimalPage({
                 title: "입양 전 준비는 어떻게 하나요?",
                 content: (
                   <p>
-                    상세페이지의 ‘입양 준비 체크’ STEP 3과 ‘상식 퀴즈’ STEP
+                    입양 전 준비 메뉴의 ‘입양 준비 체크’ STEP 3과 ‘상식 퀴즈’ STEP
                     4에서 입양 전 준비와 함께 살며 알아둘 내용을 확인해
                     보세요. 퀴즈 결과는 판단 기준이 아니라 상담을 준비하는
                     참고 자료예요.
@@ -302,7 +303,7 @@ export default async function AnimalPage({
           />
         </section>
       </article>
-      <AnimalActions animalId={animal.id} name={animal.name} shelterPhone={animal.shelterPhone} animal={animal} />
+      <AnimalActions animalId={animal.id} name={animal.name} shelterPhone={animal.shelterPhone} shelterHref={shelterHref} hasShelterLocation={animal.shelterLat !== undefined && animal.shelterLng !== undefined} animal={animal} />
     </>
   );
 }

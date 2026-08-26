@@ -18,11 +18,15 @@ export function AnimalActions({
   animalId,
   name,
   shelterPhone,
+  shelterHref,
+  hasShelterLocation,
   animal,
 }: {
   animalId: string;
   name: string;
   shelterPhone?: string;
+  shelterHref?: string | null;
+  hasShelterLocation?: boolean;
   animal: CalculatorAnimal;
 }) {
   const feedback = useAppFeedback();
@@ -46,7 +50,7 @@ export function AnimalActions({
 
   const inquiryHref = shelterPhone
     ? `tel:${shelterPhone.replace(/[^0-9+]/g, "")}`
-    : "#shelter-contact";
+    : shelterHref || (hasShelterLocation ? "#shelter-contact" : "#shelter-info");
 
   const calculator = <BottomSheetRoot>
     <BottomSheetTrigger asChild>

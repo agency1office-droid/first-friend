@@ -267,7 +267,7 @@ export default async function AnimalPage({
                 title: "입양 전 준비는 어떻게 하나요?",
                 content: (
                   <p>
-                    입양 전 준비 메뉴의 ‘입양 준비 체크’ STEP 3과 ‘상식 퀴즈’ STEP
+                    입양 전 준비 메뉴의 <span className="ff-info-board-action-name">‘입양 준비 체크’</span> STEP 3과 <span className="ff-info-board-action-name">‘상식 퀴즈’</span> STEP
                     4에서 입양 전 준비와 함께 살며 알아둘 내용을 확인해
                     보세요. 퀴즈 결과는 판단 기준이 아니라 상담을 준비하는
                     참고 자료예요.

@@ -960,6 +960,14 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-image-back svg, .ff-detail-image-more svg { width: 24px; height: 24px; }
 .ff-detail-image-more:disabled { cursor: default; opacity: .72; }
 .ff-detail-report-danger-label { color: var(--seed-color-fg-critical); }
+.ff-shell[data-route-path^="/lost-found/animals/"] .ff-stack-topbar { display: none; }
+.ff-shell[data-route-path^="/lost-found/animals/"] .ff-detail-gallery::before { position: absolute; z-index: 2; top: 0; right: 0; left: 0; display: block; height: 88px; pointer-events: none; background: linear-gradient(to bottom, rgba(0,0,0,.42), transparent); content: ""; }
+.ff-lost-detail-body { padding-bottom: calc(24px + 76px + env(safe-area-inset-bottom)); }
+.ff-lost-detail-body .ff-detail-animal-info-group { padding-top: 4px; }
+.ff-lost-detail-body .ff-detail-name { margin-top: 8px; }
+.ff-lost-detail-note, .ff-lost-detail-place { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--seed-color-stroke-neutral-muted); }
+.ff-lost-detail-note h2, .ff-lost-detail-place h2 { margin: 0 0 8px; color: var(--seed-color-fg-neutral); font-size: 18px; line-height: 25px; }
+.ff-lost-detail-note p, .ff-lost-detail-place p { margin: 0; color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 22px; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 /* 36-route detail pass: hierarchy, touch, keyboard, safe areas and resilient content */
 html { scroll-behavior: smooth; scroll-padding-top: calc(72px + env(safe-area-inset-top)); }
@@ -1199,7 +1207,11 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
   .ff-sticky-actions .ff-sticky-scrap { width: 44px; height: 56px; border-radius: 14px; }
   .ff-sticky-actions .ff-sticky-scrap svg { width: 26px; height: 26px; }
   .ff-sticky-actions .ff-sticky-share { width: 44px; height: 56px; border-radius: 14px; }
-  .ff-sticky-actions .ff-sticky-share svg { width: 24px; height: 24px; }
+.ff-sticky-actions .ff-sticky-share svg { width: 24px; height: 24px; }
+.ff-sticky-actions.ff-lost-sticky-actions { grid-template-columns: 52px minmax(0, 1fr); }
+@media (max-width: 520px) {
+  .ff-sticky-actions.ff-lost-sticky-actions { grid-template-columns: 44px minmax(0, 1fr); }
+}
 }
 .ff-worldcup { display: grid; gap: 14px; }
 .ff-worldcup-progress { height: 6px; overflow: hidden; border-radius: 99px; background: var(--seed-color-bg-neutral-weak); }

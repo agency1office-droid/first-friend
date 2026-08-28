@@ -330,8 +330,10 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     if (visual) {
       const animalTags = animalVisualTags(animal);
       if (visual.species !== "전체") value += animal.species.includes(visual.species) ? 38 : -55;
-      if (visual.source === "photo") {
+      if (visual.source === "photo" || visual.source === "drawing") {
         for (const color of visual.colors) if (animal.colors.some((item) => item.includes(color) || color.includes(item))) value += 10;
+      }
+      if (visual.source === "photo") {
         for (const hint of visual.breedHints) if (animal.breed.includes(hint) || hint.includes(animal.breed)) value += 16;
         for (const tag of [visual.size, visual.eyes, visual.fur, visual.pattern]) if (animalTags.includes(tag)) value += 6;
       }
@@ -347,7 +349,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
       if (!sourceAnimals.length) throw new Error("동물 정보를 불러오지 못했어요.");
       if (mode === "draw" && canvasRef.current) visual = await analyzeVisual(canvasRef.current, true);
       if (mode === "photo" && imageRef.current) visual = await analyzeVisual(imageRef.current, false);
-      if (visual) { setAnalysis(visual); if (species === "전체" && visual.species !== "전체") setSpecies(visual.species); if (visual.colors[0]) setCoat(visual.colors[0]); }
+      if (visual) { setAnalysis(visual); if (species === "전체" && visual.species !== "전체") setSpecies(visual.species); }
       const result = [...sourceAnimals].sort((a, b) => score(b, visual, sourceAnimals) - score(a, visual, sourceAnimals)); setAvailableAnimals(sourceAnimals); setRanked(result); setMatched(true); document.getElementById("match-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch {
       feedback.error("그림을 분석하지 못했어요. 잠시 후 다시 시도해 주세요.");

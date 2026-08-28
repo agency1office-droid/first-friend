@@ -363,14 +363,14 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const visible = (matched ? ranked : availableAnimals).filter((animal) => !query || `${animal.name} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
 
   if (mode === "draw" && !drawSpeciesConfirmed) {
-    return <div className="ff-drawing-workspace ff-species-gate">
-      <div className="ff-drawing-topbar ff-modern-drawing-topbar">
-        <a href="/find" aria-label="찾기 메뉴로 돌아가기"><ChevronLeft size={28} strokeWidth={2} aria-hidden="true" /></a>
-        <strong className="ff-species-gate-title">그림으로 찾기</strong>
-        <Link href="/" aria-label="홈으로 가기"><House size={22} strokeWidth={2} aria-hidden="true" /></Link>
-      </div>
+    return <div className="ff-readiness ff-species-gate" data-species-gate>
+      <header className="ff-readiness-appbar ff-species-gate-appbar">
+        <a className="ff-readiness-back" href="/find" aria-label="찾기 메뉴로 돌아가기"><ChevronLeft size={26} strokeWidth={2} aria-hidden="true" /></a>
+        <strong>그림으로 찾기</strong>
+        <div className="ff-readiness-header-actions"><Link className="ff-readiness-home" href="/" aria-label="홈으로 가기"><House size={22} strokeWidth={2} aria-hidden="true" /></Link></div>
+      </header>
       <main className="ff-species-gate-content ff-readiness-species-page">
-        <h1><span className="ff-species-gate-question-label">Q.</span> 어떤 친구를 그려볼까요?</h1>
+        <h2 dangerouslySetInnerHTML={{ __html: '<span class="ff-readiness-question-label">Q.</span> 어떤 친구를 그려볼까요?' }} />
         <p className="ff-description">먼저 만나고 싶은 친구를 골라주세요.<br />선택한 친구를 기준으로 그림을 살펴볼게요.</p>
         <div className="ff-species-gate-options ff-readiness-species-grid" role="group" aria-label="찾고 싶은 동물 선택">
           <button type="button" className="ff-species-gate-option ff-readiness-species-choice" aria-pressed={drawSpecies === "고양이"} data-selected={drawSpecies === "고양이" || undefined} onClick={() => { setDrawSpecies("고양이"); setSpecies("고양이"); }}>
@@ -385,9 +385,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
           </button>
         </div>
       </main>
-      <div className="ff-species-gate-actions">
-        <button type="button" className="ff-species-gate-next seed-action-button" disabled={!drawSpecies} onClick={() => setDrawSpeciesConfirmed(true)}>다음</button>
-      </div>
+      <footer className="ff-readiness-actions is-single ff-species-gate-actions"><ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!drawSpecies} onClick={() => setDrawSpeciesConfirmed(true)}>다음</ActionButton></footer>
     </div>;
   }
 

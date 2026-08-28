@@ -373,11 +373,11 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
         <h2 dangerouslySetInnerHTML={{ __html: '<span class="ff-readiness-question-label">Q.</span> 어떤 친구를 그려볼까요?' }} />
         <div className="ff-species-gate-options ff-readiness-species-grid" role="group" aria-label="찾고 싶은 동물 선택">
           <button type="button" className="ff-species-gate-option ff-readiness-species-choice" aria-pressed={drawSpecies === "고양이"} data-selected={drawSpecies === "고양이" || undefined} onClick={() => { setDrawSpecies("고양이"); setSpecies("고양이"); }}>
-            <img className="ff-readiness-species-image" src="/cat-selection.webp" alt="" aria-hidden="true" />
+            <img className="ff-readiness-species-image" src="/cat-artist.webp" alt="" aria-hidden="true" />
             <strong>고양이</strong>
           </button>
           <button type="button" className="ff-species-gate-option ff-readiness-species-choice" aria-pressed={drawSpecies === "강아지"} data-selected={drawSpecies === "강아지" || undefined} onClick={() => { setDrawSpecies("강아지"); setSpecies("강아지"); }}>
-            <img className="ff-readiness-species-image" src="/dog-selection.webp" alt="" aria-hidden="true" />
+            <img className="ff-readiness-species-image" src="/dog-artist.webp" alt="" aria-hidden="true" />
             <strong>강아지</strong>
           </button>
         </div>

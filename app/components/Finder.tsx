@@ -371,19 +371,17 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
       </header>
       <main className="ff-species-gate-content ff-readiness-species-page">
         <h2 dangerouslySetInnerHTML={{ __html: '<span class="ff-readiness-question-label">Q.</span> 어떤 친구를 그려볼까요?' }} />
-        <p className="ff-description">먼저 만나고 싶은 친구를 골라주세요.<br />선택한 친구를 기준으로 그림을 살펴볼게요.</p>
         <div className="ff-species-gate-options ff-readiness-species-grid" role="group" aria-label="찾고 싶은 동물 선택">
           <button type="button" className="ff-species-gate-option ff-readiness-species-choice" aria-pressed={drawSpecies === "고양이"} data-selected={drawSpecies === "고양이" || undefined} onClick={() => { setDrawSpecies("고양이"); setSpecies("고양이"); }}>
             <img className="ff-readiness-species-image" src="/cat-selection.webp" alt="" aria-hidden="true" />
             <strong>고양이</strong>
-            <small>고양이 친구를 찾을게요</small>
           </button>
           <button type="button" className="ff-species-gate-option ff-readiness-species-choice" aria-pressed={drawSpecies === "강아지"} data-selected={drawSpecies === "강아지" || undefined} onClick={() => { setDrawSpecies("강아지"); setSpecies("강아지"); }}>
             <img className="ff-readiness-species-image" src="/dog-selection.webp" alt="" aria-hidden="true" />
             <strong>강아지</strong>
-            <small>강아지 친구를 찾을게요</small>
           </button>
         </div>
+        <p className="ff-readiness-species-description">먼저 만나고 싶은 친구를 골라주세요.<br />선택한 친구를 기준으로 그림을 살펴볼게요.</p>
       </main>
       <footer className="ff-readiness-actions is-single ff-species-gate-actions"><ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!drawSpecies} onClick={() => setDrawSpeciesConfirmed(true)}>다음</ActionButton></footer>
     </div>;

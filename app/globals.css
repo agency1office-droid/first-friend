@@ -1171,12 +1171,13 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-species-gate[data-species-gate] .ff-readiness-question-label { margin-right: 8px; color: var(--seed-color-fg-brand); }
 .ff-species-gate[data-species-gate] .ff-description { margin: 0; color: var(--seed-color-fg-neutral-muted); font-size: 15px; line-height: 23px; }
 .ff-species-gate[data-species-gate] .ff-species-gate-options { gap: 12px; margin-top: 24px; }
-.ff-species-gate[data-species-gate] .ff-species-gate-option { display: grid; place-items: center; align-content: center; aspect-ratio: 1; min-height: 0; padding: 18px 12px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 16px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-layer-default); font: inherit; transition: none; }
+.ff-species-gate[data-species-gate] .ff-species-gate-option { display: grid; place-items: center; align-content: center; aspect-ratio: 1; min-height: 0; padding: 18px 12px; border: 1px solid transparent; border-radius: 16px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-neutral-weak); font: inherit; transition: none; }
 .ff-species-gate[data-species-gate] .ff-species-gate-option:hover { border-color: var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
 .ff-species-gate[data-species-gate] .ff-species-gate-option[data-selected="true"] { border: 1px dashed var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-weak); }
 .ff-species-gate[data-species-gate] .ff-species-gate-option img { width: clamp(76px, 23vw, 104px); height: auto; aspect-ratio: 1; margin-bottom: 14px; object-fit: contain; mix-blend-mode: darken; }
 .ff-species-gate[data-species-gate] .ff-species-gate-option strong { font-size: 19px; line-height: 26px; }
-.ff-species-gate[data-species-gate] .ff-species-gate-option small { margin-top: 2px; color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 20px; }
+.ff-species-gate[data-species-gate] .ff-species-gate-option small { display: none; }
+.ff-species-gate[data-species-gate] .ff-readiness-species-description { margin: 18px 0 0; }
 .ff-species-gate[data-species-gate] .ff-species-gate-actions { position: relative; bottom: auto; z-index: 1; flex: 0 0 auto; width: 100%; margin: 0; padding: 0 16px max(16px, env(safe-area-inset-bottom)); border-top: 0; background: var(--seed-color-bg-layer-default); }
 .ff-species-gate[data-species-gate] .ff-species-gate-actions .seed-action-button { width: 100%; min-height: 48px; }
 

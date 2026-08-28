@@ -1127,8 +1127,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-size-picker small { min-width: 28px; color: var(--seed-color-fg-neutral-muted); text-align: right; }
 .ff-freehand-demo-tools { display: none !important; }
 .ff-drawing-workspace { position: relative; }
-.ff-species-gate { display: flex; flex-direction: column; min-height: 100dvh; background: var(--seed-color-bg-layer-default); }
-.ff-species-gate-content { display: grid; align-content: start; gap: 12px; flex: 1 1 auto; padding: 32px 24px 40px; }
+.ff-species-gate { display: flex; flex-direction: column; box-sizing: border-box; width: 100%; height: 100dvh; min-height: 100dvh; overflow: hidden; padding: 0; background: var(--seed-color-bg-layer-default); }
+.ff-species-gate-content { display: grid; align-content: start; gap: 12px; flex: 1 1 auto; min-height: 0; padding: 32px 16px 24px; }
 .ff-species-gate-content .ff-kicker { margin: 0; color: var(--seed-color-fg-brand); font-size: 14px; font-weight: var(--seed-font-weight-bold); line-height: 20px; }
 .ff-species-gate-content h1 { margin: 0; color: var(--seed-color-fg-neutral); font-size: clamp(24px, 5vw, 32px); line-height: 1.3; letter-spacing: -.03em; }
 .ff-species-gate-content .ff-description { margin: 0; color: var(--seed-color-fg-neutral-muted); font-size: 15px; line-height: 23px; }
@@ -1139,22 +1139,23 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-species-gate-option img { width: clamp(92px, 26vw, 132px); height: clamp(92px, 26vw, 132px); object-fit: contain; mix-blend-mode: darken; }
 .ff-species-gate-option strong { font-size: 18px; line-height: 26px; }
 .ff-species-gate-option small { color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; }
-.ff-species-gate-content.ff-readiness-species-page { display: grid; align-content: start; gap: 0; flex: 1 1 auto; margin-top: 0; padding: 32px 24px 40px; }
+.ff-species-gate .ff-modern-drawing-topbar { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; flex: 0 0 auto; min-height: 56px; padding: 4px 8px 4px 4px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
+.ff-species-gate .ff-modern-drawing-topbar > a { display: grid; place-items: center; width: 44px; height: 44px; }
+.ff-species-gate-content.ff-readiness-species-page { display: grid; align-content: start; gap: 0; flex: 1 1 auto; min-height: 0; margin: 0; overflow-y: auto; overscroll-behavior: contain; padding: 56px 24px 24px; }
 .ff-species-gate-content.ff-readiness-species-page h1 { margin: 0 0 10px; font-size: 28px; line-height: 36px; letter-spacing: -.03em; }
 .ff-species-gate-content.ff-readiness-species-page .ff-description { margin: 0; font-size: 15px; line-height: 24px; }
 .ff-species-gate-options.ff-readiness-species-grid { gap: 12px; margin-top: 24px; }
-.ff-species-gate-option.ff-readiness-species-choice { display: grid; place-items: center; align-content: center; aspect-ratio: 1; min-height: 0; padding: 18px 12px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 20px; background: var(--seed-color-bg-layer-default); transition: none; }
+.ff-species-gate-option.ff-readiness-species-choice { display: grid; place-items: center; align-content: center; aspect-ratio: 1; min-height: 0; padding: 18px 12px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 16px; background: var(--seed-color-bg-layer-default); transition: none; }
 .ff-species-gate-option.ff-readiness-species-choice:hover { border-color: var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
-.ff-species-gate-option.ff-readiness-species-choice img.ff-readiness-species-image { width: 112px; height: 112px; margin-bottom: 14px; }
+.ff-species-gate-option.ff-readiness-species-choice img.ff-readiness-species-image { width: clamp(96px, 23vw, 112px); height: clamp(96px, 23vw, 112px); margin-bottom: 14px; }
 .ff-species-gate-option.ff-readiness-species-choice strong { font-size: 19px; line-height: 26px; }
 .ff-species-gate-option.ff-readiness-species-choice small { font-size: 13px; line-height: 20px; }
-.ff-species-gate .ff-modern-drawing-topbar { grid-template-columns: 44px minmax(0, 1fr) 44px; }
 .ff-species-gate-title { justify-self: center; color: var(--seed-color-fg-neutral); font-size: 16px; line-height: 24px; }
 .ff-species-gate .ff-modern-drawing-topbar > a:last-child { justify-self: end; }
 .ff-species-gate-question-label { color: var(--seed-color-fg-brand); }
 .ff-species-gate-option.ff-readiness-species-choice[data-selected="true"] { border: 1px dashed var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-weak); }
-.ff-species-gate-actions { flex: 0 0 auto; padding: 0 24px max(20px, env(safe-area-inset-bottom)); background: var(--seed-color-bg-layer-default); }
-.ff-species-gate-next { width: 100%; min-height: 48px; margin: 0; border: 0; border-radius: 12px; color: var(--seed-color-fg-on-color); background: var(--seed-color-bg-brand-solid); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.ff-species-gate-actions { flex: 0 0 auto; box-sizing: border-box; width: 100%; padding: 16px 24px max(24px, env(safe-area-inset-bottom)); border-top: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
+.ff-species-gate-next { width: 100%; min-height: 48px; margin: 0; border: 0; border-radius: 12px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-brand-solid); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
 .ff-species-gate-next:disabled { color: var(--seed-color-fg-neutral-muted); background: var(--seed-color-bg-neutral-weak); cursor: not-allowed; }
 .ff-drawing-workspace .ff-draw-species-panel, .ff-drawing-workspace .ff-canvas-panel, .ff-drawing-workspace .ff-search-options { min-width: 0; border: 0; border-radius: 18px; }
 .ff-drawing-workspace .ff-draw-species-panel { padding: 14px 18px; background: var(--seed-color-bg-layer-default); }
@@ -1229,11 +1230,11 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
   .ff-species-gate-options { gap: 10px; margin-top: 8px; }
   .ff-species-gate-option { min-height: 190px; border-radius: 18px; }
   .ff-species-gate-option img { width: 96px; height: 96px; }
-  .ff-species-gate-content.ff-readiness-species-page { padding: 28px 16px 32px; }
+   .ff-species-gate-content.ff-readiness-species-page { padding: 40px 16px 24px; }
   .ff-species-gate-options.ff-readiness-species-grid { gap: 10px; margin-top: 24px; }
-  .ff-species-gate-option.ff-readiness-species-choice { min-height: 0; border-radius: 18px; }
+   .ff-species-gate-option.ff-readiness-species-choice { min-height: 0; border-radius: 16px; }
   .ff-species-gate-option.ff-readiness-species-choice img.ff-readiness-species-image { width: 96px; height: 96px; margin-bottom: 12px; }
-  .ff-species-gate-actions { padding-inline: 16px; }
+   .ff-species-gate-actions { padding: 16px 16px max(16px, env(safe-area-inset-bottom)); }
   .ff-species-gate-title { font-size: 15px; }
 }
 .ff-sticky-actions { bottom: env(safe-area-inset-bottom); box-shadow: 0 -10px 30px rgba(0,0,0,.05); }

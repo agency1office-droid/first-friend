@@ -363,6 +363,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     {mode === "draw" &&
         <section className="ff-canvas-panel">
           <h2 className="ff-section-title">마음속 친구를 그려보세요</h2>
+          <p className="ff-description">사진을 올리거나, 그림을 그리면 AI가 마음속 친구를 찾아줘요.</p>
           <div className="ff-freehand-demo-tools">
             <button type="button" className="ff-demo-menu-button" aria-expanded={settingsOpen} aria-label="그림 도구 설정 열기" onClick={() => setSettingsOpen((value) => !value)}><PrefixIcon svg={<IconSlider2HorizontalLine/>}/><span>그림 도구</span><small>{settingsOpen ? "접기" : "펼치기"}</small></button>
             {settingsOpen && <div className="ff-freehand-demo-panel" aria-label="perfect-freehand 그림 설정">

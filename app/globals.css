@@ -1607,6 +1607,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-species-gate[data-species-gate] {
   position: fixed;
   left: 50%;
+  top: 0;
   width: min(100%, 520px);
   height: 100dvh;
   min-height: 100dvh;
@@ -1633,6 +1634,22 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 }
 .ff-species-gate[data-species-gate] > .ff-readiness-species-page .ff-readiness-species-grid {
   margin-top: 10px;
+}
+.ff-species-gate[data-species-gate] .ff-readiness-species-choice {
+  border: 1px solid transparent;
+  background: #f4f4f5;
+}
+.ff-species-gate[data-species-gate] .ff-readiness-species-choice[data-selected="true"] {
+  border-color: var(--seed-color-stroke-brand-solid);
+  background: var(--seed-color-bg-brand-weak);
+}
+.ff-species-gate[data-species-gate] .ff-readiness-species-choice:hover {
+  border-color: transparent;
+  background: #f4f4f5;
+}
+.ff-species-gate[data-species-gate] .ff-readiness-species-choice[data-selected="true"]:hover {
+  border-color: var(--seed-color-stroke-brand-solid);
+  background: var(--seed-color-bg-brand-weak);
 }
 .ff-species-gate[data-species-gate] > .ff-readiness-actions {
   position: relative;

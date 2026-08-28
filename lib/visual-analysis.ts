@@ -118,10 +118,12 @@ export async function analyzeVisual(source: HTMLCanvasElement | HTMLImageElement
   const { data } = context.getImageData(0, 0, 224, 224);
   const counts = new Map<string, number>(); let minX = 224, minY = 224, maxX = 0, maxY = 0, active = 0, edges = 0;
   const gray = new Uint8Array(224 * 224), mask = new Uint8Array(224 * 224);
-  for (let y=0;y<224;y++) for (let x=0;x<224;x++) { const p=(y*224+x)*4, r=data[p],g=data[p+1],b=data[p+2], brightness=(r+g+b)/3; gray[y*224+x]=brightness; const foreground=!isDrawing || Math.abs(255-r)+Math.abs(255-g)+Math.abs(255-b)>55; if (!foreground) continue; active++; mask[y*224+x]=1; minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);const name=nearestColor(r,g,b).name;counts.set(name,(counts.get(name)||0)+1); }
+  for (let y=0;y<224;y++) for (let x=0;x<224;x++) { const p=(y*224+x)*4, r=data[p],g=data[p+1],b=data[p+2], brightness=(r+g+b)/3; gray[y*224+x]=brightness; const foreground=!isDrawing || Math.abs(255-r)+Math.abs(255-g)+Math.abs(255-b)>55; if (!foreground) continue; active++; mask[y*224+x]=1; minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);const nearest=nearestColor(r,g,b); if (nearest.distance <= 70 ** 2) counts.set(nearest.name,(counts.get(nearest.name)||0)+1); }
   for (let y=1;y<223;y++) for (let x=1;x<223;x++) { const i=y*224+x; if (mask[i] && Math.abs(gray[i]-gray[i-1])+Math.abs(gray[i]-gray[i-224])>75) edges++; }
   const boxArea=Math.max(1,(maxX-minX+1)*(maxY-minY+1)), fillRatio=active/(224*224), edgeRatio=edges/Math.max(1,active);
-  const detectedColors=[...counts.entries()].sort((a,b)=>b[1]-a[1]).filter(([,value])=>value/Math.max(1,active)>.03).map(([name])=>name);
+  // 색상 가장자리의 반투명 혼합 픽셀은 별도 색으로 세지 않습니다.
+  // 실제로 칠한 색으로 볼 수 있는 면적만 남겨 검정·흰색 그림이 잡색으로 늘어나는 것을 막습니다.
+  const detectedColors=[...counts.entries()].sort((a,b)=>b[1]-a[1]).filter(([,value])=>value>=Math.max(12,active*.05)).map(([name])=>name);
   // Drawing outlines are usually black, so ignore black when the canvas also has a filled color.
   // Keep it when it is the only detected color because an all-black drawing is still meaningful.
   const colors=isDrawing && detectedColors.length>1 ? detectedColors.filter((name)=>name!=="검정") : detectedColors;
@@ -136,7 +138,7 @@ export async function analyzeVisual(source: HTMLCanvasElement | HTMLImageElement
   // 손그림은 칠한 대표 색상과 선택된 종만 확실한 검색 단서로 사용합니다.
   // 눈·털 길이·체형은 그림의 선 굵기와 캔버스 비율에 크게 좌우되므로 태그에서 제외합니다.
   const tags=isDrawing
-    ? [species,...colors].filter((value,index,array)=>value!=="전체"&&array.indexOf(value)===index)
+    ? [species !== "전체" ? `종류: ${species}` : "종류: 판별 어려움", hints.breeds.length ? `품종: ${hints.breeds.join(" · ")}` : "품종: 판별 어려움", colors.length ? `털색: ${colors.join(" · ")}` : "털색: 판별 어려움", `무늬: ${pattern}`, `형태: ${size}`]
     : [species,...colors,size,eyes,fur,pattern,...hints.breeds].filter((value,index,array)=>value!=="전체"&&array.indexOf(value)===index);
   return { source:isDrawing ? "drawing" : "photo", species,speciesConfidence:hints.confidence,colors:colors.length ? colors : isDrawing ? [] : ["회색"],size,eyes,fur,pattern,breedHints:isDrawing ? [] : hints.breeds,modelLabels:predictions.map(item=>item.className),tags,usedOpenSourceModel:predictions.length>0 };
 }

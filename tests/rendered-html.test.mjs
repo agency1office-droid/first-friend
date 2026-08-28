@@ -1144,7 +1144,7 @@ test("keeps draw, photo, and condition journeys independent while draw uses perf
   for (const option of ["브러시 크기", "지우개 크기", "색상 선택", "그림 저장", "PNG 이미지", "JPG 이미지", "WEBP 이미지", "그림 공유"])
     assert.match(finder, new RegExp(option));
   assert.match(finder, /ff-modern-drawing-topbar/);
-  assert.match(finder, /ff-drawing-guide-picker|그리기 가이드/);
+  assert.doesNotMatch(finder, /ff-drawing-guide-picker|그리기 가이드/);
   assert.match(finder, /강아지.*고양이|고양이.*강아지/);
   assert.match(finder, /되돌리기/);
   assert.match(finder, /다시 되돌리기/);

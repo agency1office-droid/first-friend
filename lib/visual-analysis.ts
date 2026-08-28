@@ -138,7 +138,7 @@ export async function analyzeVisual(source: HTMLCanvasElement | HTMLImageElement
   const tags=isDrawing
     ? [species,...colors].filter((value,index,array)=>value!=="전체"&&array.indexOf(value)===index)
     : [species,...colors,size,eyes,fur,pattern,...hints.breeds].filter((value,index,array)=>value!=="전체"&&array.indexOf(value)===index);
-  return { source:isDrawing ? "drawing" : "photo", species,speciesConfidence:hints.confidence,colors:colors.length?colors:["회색"],size,eyes,fur,pattern,breedHints:isDrawing ? [] : hints.breeds,modelLabels:predictions.map(item=>item.className),tags,usedOpenSourceModel:predictions.length>0 };
+  return { source:isDrawing ? "drawing" : "photo", species,speciesConfidence:hints.confidence,colors:colors.length ? colors : isDrawing ? [] : ["회색"],size,eyes,fur,pattern,breedHints:isDrawing ? [] : hints.breeds,modelLabels:predictions.map(item=>item.className),tags,usedOpenSourceModel:predictions.length>0 };
 }
 
 export function animalVisualTags(animal: { breed:string; colors:string[]; traits:string[] }) {

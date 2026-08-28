@@ -362,7 +362,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     {mode === "draw" && <div className="ff-drawing-quick-actions" aria-label="그림 편집 메뉴"><button type="button" aria-label="되돌리기" onClick={undo}><RotateCcw size={24} strokeWidth={2.1} /></button><button type="button" aria-label="다시 되돌리기" onClick={redo}><RotateCw size={24} strokeWidth={2.1} /></button><button type="button" aria-label="전체 지우기" onClick={clear}><Trash2 size={24} strokeWidth={2.1} /></button></div>}
     {mode === "draw" &&
         <section className="ff-canvas-panel">
-          <h2 className="ff-section-title">마음속 친구를 그려보세요</h2><p className="ff-description" style={{ margin: "5px 0 14px" }}>지금 그린 그림이나 예전에 그린 낙서·스케치북 그림을 올리면 AI가 비슷한 친구를 찾아드려요.</p>
+          <h2 className="ff-section-title">마음속 친구를 그려보세요</h2>
           <div className="ff-freehand-demo-tools">
             <button type="button" className="ff-demo-menu-button" aria-expanded={settingsOpen} aria-label="그림 도구 설정 열기" onClick={() => setSettingsOpen((value) => !value)}><PrefixIcon svg={<IconSlider2HorizontalLine/>}/><span>그림 도구</span><small>{settingsOpen ? "접기" : "펼치기"}</small></button>
             {settingsOpen && <div className="ff-freehand-demo-panel" aria-label="perfect-freehand 그림 설정">

@@ -1139,6 +1139,15 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-species-gate-option img { width: clamp(92px, 26vw, 132px); height: clamp(92px, 26vw, 132px); object-fit: contain; mix-blend-mode: darken; }
 .ff-species-gate-option strong { font-size: 18px; line-height: 26px; }
 .ff-species-gate-option small { color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; }
+.ff-species-gate-content.ff-readiness-species-page { display: grid; align-content: start; gap: 0; flex: 1 1 auto; margin-top: 0; padding: 32px 24px 40px; }
+.ff-species-gate-content.ff-readiness-species-page h1 { margin: 0 0 10px; font-size: 28px; line-height: 36px; letter-spacing: -.03em; }
+.ff-species-gate-content.ff-readiness-species-page .ff-description { margin: 0; font-size: 15px; line-height: 24px; }
+.ff-species-gate-options.ff-readiness-species-grid { gap: 12px; margin-top: 24px; }
+.ff-species-gate-option.ff-readiness-species-choice { display: grid; place-items: center; align-content: center; aspect-ratio: 1; min-height: 0; padding: 18px 12px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 20px; background: var(--seed-color-bg-layer-default); transition: none; }
+.ff-species-gate-option.ff-readiness-species-choice:hover { border-color: var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
+.ff-species-gate-option.ff-readiness-species-choice img.ff-readiness-species-image { width: 112px; height: 112px; margin-bottom: 14px; }
+.ff-species-gate-option.ff-readiness-species-choice strong { font-size: 19px; line-height: 26px; }
+.ff-species-gate-option.ff-readiness-species-choice small { font-size: 13px; line-height: 20px; }
 .ff-drawing-workspace .ff-draw-species-panel, .ff-drawing-workspace .ff-canvas-panel, .ff-drawing-workspace .ff-search-options { min-width: 0; border: 0; border-radius: 18px; }
 .ff-drawing-workspace .ff-draw-species-panel { padding: 14px 18px; background: var(--seed-color-bg-layer-default); }
 .ff-drawing-workspace .ff-draw-species-panel .ff-section-title { margin: 0; font-size: 18px; }
@@ -1212,6 +1221,10 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
   .ff-species-gate-options { gap: 10px; margin-top: 8px; }
   .ff-species-gate-option { min-height: 190px; border-radius: 18px; }
   .ff-species-gate-option img { width: 96px; height: 96px; }
+  .ff-species-gate-content.ff-readiness-species-page { padding: 28px 16px 32px; }
+  .ff-species-gate-options.ff-readiness-species-grid { gap: 10px; margin-top: 24px; }
+  .ff-species-gate-option.ff-readiness-species-choice { min-height: 0; border-radius: 18px; }
+  .ff-species-gate-option.ff-readiness-species-choice img.ff-readiness-species-image { width: 96px; height: 96px; margin-bottom: 12px; }
 }
 .ff-sticky-actions { bottom: env(safe-area-inset-bottom); box-shadow: 0 -10px 30px rgba(0,0,0,.05); }
 .ff-sticky-actions { position: fixed; z-index: 40; right: max(0px, calc((100vw - 520px) / 2)); bottom: env(safe-area-inset-bottom); left: max(0px, calc((100vw - 520px) / 2)); grid-template-columns: 52px 52px minmax(0, 1.1fr) minmax(0, 1fr); box-shadow: 0 -10px 30px rgba(0,0,0,.05); }

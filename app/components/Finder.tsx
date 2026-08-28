@@ -365,18 +365,18 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
       <div className="ff-drawing-topbar ff-modern-drawing-topbar">
         <a href="/find" aria-label="찾기 메뉴로 돌아가기"><ChevronLeft size={28} strokeWidth={2} aria-hidden="true" /></a>
       </div>
-      <main className="ff-species-gate-content">
+      <main className="ff-species-gate-content ff-readiness-species-page">
         <p className="ff-kicker">그림으로 찾기</p>
         <h1>어떤 친구를 만나고 싶나요?</h1>
         <p className="ff-description">먼저 만나고 싶은 친구를 골라주세요.<br />선택한 친구를 기준으로 그림을 살펴볼게요.</p>
-        <div className="ff-species-gate-options" role="group" aria-label="찾고 싶은 동물 선택">
-          <button type="button" className="ff-species-gate-option" onClick={() => { setDrawSpecies("강아지"); setSpecies("강아지"); }}>
-            <img src="/dog-selection.webp" alt="" aria-hidden="true" />
+        <div className="ff-species-gate-options ff-readiness-species-grid" role="group" aria-label="찾고 싶은 동물 선택">
+          <button type="button" className="ff-species-gate-option ff-readiness-species-choice" onClick={() => { setDrawSpecies("강아지"); setSpecies("강아지"); }}>
+            <img className="ff-readiness-species-image" src="/dog-selection.webp" alt="" aria-hidden="true" />
             <strong>강아지</strong>
             <small>강아지 친구를 찾을게요</small>
           </button>
-          <button type="button" className="ff-species-gate-option" onClick={() => { setDrawSpecies("고양이"); setSpecies("고양이"); }}>
-            <img src="/cat-selection.webp" alt="" aria-hidden="true" />
+          <button type="button" className="ff-species-gate-option ff-readiness-species-choice" onClick={() => { setDrawSpecies("고양이"); setSpecies("고양이"); }}>
+            <img className="ff-readiness-species-image" src="/cat-selection.webp" alt="" aria-hidden="true" />
             <strong>고양이</strong>
             <small>고양이 친구를 찾을게요</small>
           </button>

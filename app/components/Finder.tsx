@@ -381,7 +381,6 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
             <strong>강아지</strong>
           </button>
         </div>
-        <p className="ff-readiness-species-description">먼저 만나고 싶은 친구를 골라주세요.<br />선택한 친구를 기준으로 그림을 살펴볼게요.</p>
       </main>
       <footer className="ff-readiness-actions is-single ff-species-gate-actions"><ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!drawSpecies} onClick={() => setDrawSpeciesConfirmed(true)}>다음</ActionButton></footer>
     </div>;

@@ -16,6 +16,7 @@ import { BottomSheetBody, BottomSheetContent, BottomSheetRoot } from "seed-desig
 import { IconCameraLine, IconChevronLeftLine, IconHouseLine, IconMagnifyingglassLine, IconMagnifyingglassSparkleLine, IconPictureLine, IconSlider2HorizontalLine } from "@karrotmarket/react-monochrome-icon";
 import { ChevronLeft, Download, Eraser, PaintBucket, Pencil, RotateCcw, RotateCw, Share2, Trash2 } from "lucide-react";
 import { useAppFeedback } from "./AppFeedback";
+import { SpeciesSelectionStep } from "./SpeciesSelectionStep";
 
 const palette = [
   { name: "검정", hex: "#242424" }, { name: "흰색", hex: "#ffffff" }, { name: "회색", hex: "#8b8b8b" },
@@ -363,25 +364,24 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const visible = (matched ? ranked : availableAnimals).filter((animal) => !query || `${animal.name} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
 
   if (mode === "draw" && !drawSpeciesConfirmed) {
-    return <div className="ff-readiness ff-species-gate" data-species-gate>
+    // 그림으로 찾기 동물 선택: 고양이, 강아지
+    return <div className="ff-readiness ff-readiness-species">
       <header className="ff-readiness-appbar ff-species-gate-appbar">
         <button type="button" className="ff-readiness-back" onClick={() => window.location.assign("/find")} aria-label="이전으로"><IconChevronLeftLine aria-hidden="true" /></button>
         <strong>그림으로 찾기</strong>
         <div className="ff-readiness-header-actions"><button type="button" className="ff-readiness-home" onClick={() => window.location.assign("/")} aria-label="홈으로 이동"><IconHouseLine aria-hidden="true" /></button></div>
       </header>
-      <section className="ff-readiness-species-page" aria-labelledby="drawing-species-title">
-        <h2 id="drawing-species-title"><span className="ff-readiness-question-label" aria-hidden="true">Q.</span> 어떤 친구를 그려볼까요?</h2>
-        <div className="ff-readiness-species-grid" role="group" aria-label="찾고 싶은 동물 선택">
-          <button type="button" className="ff-readiness-species-choice" aria-pressed={drawSpecies === "고양이"} data-selected={drawSpecies === "고양이" || undefined} onClick={() => { setDrawSpecies("고양이"); setSpecies("고양이"); }}>
-            <Image className="ff-readiness-species-image" src="/cat-selection.webp" alt="" aria-hidden="true" width={104} height={104} unoptimized />
-            <strong>고양이</strong>
-          </button>
-          <button type="button" className="ff-readiness-species-choice" aria-pressed={drawSpecies === "강아지"} data-selected={drawSpecies === "강아지" || undefined} onClick={() => { setDrawSpecies("강아지"); setSpecies("강아지"); }}>
-            <Image className="ff-readiness-species-image" src="/dog-selection.webp" alt="" aria-hidden="true" width={104} height={104} unoptimized />
-            <strong>강아지</strong>
-          </button>
-        </div>
-      </section>
+      <SpeciesSelectionStep
+        titleId="drawing-species-title"
+        question="어떤 친구를 그려볼까요?"
+        groupLabel="찾고 싶은 동물 선택"
+        species={drawSpecies === "고양이" ? "cat" : drawSpecies === "강아지" ? "dog" : null}
+        onSpeciesChange={(selectedSpecies) => {
+          const label = selectedSpecies === "cat" ? "고양이" : "강아지";
+          setDrawSpecies(label);
+          setSpecies(label);
+        }}
+      />
       <footer className="ff-readiness-actions is-single"><ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!drawSpecies} onClick={() => setDrawSpeciesConfirmed(true)}>다음</ActionButton></footer>
     </div>;
   }

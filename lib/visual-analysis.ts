@@ -121,7 +121,7 @@ export async function analyzeVisual(source: HTMLCanvasElement | HTMLImageElement
   for (let y=0;y<224;y++) for (let x=0;x<224;x++) { const p=(y*224+x)*4, r=data[p],g=data[p+1],b=data[p+2], brightness=(r+g+b)/3; gray[y*224+x]=brightness; const foreground=!isDrawing || Math.abs(255-r)+Math.abs(255-g)+Math.abs(255-b)>55; if (!foreground) continue; active++; mask[y*224+x]=1; minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);const name=nearestColor(r,g,b).name;counts.set(name,(counts.get(name)||0)+1); }
   for (let y=1;y<223;y++) for (let x=1;x<223;x++) { const i=y*224+x; if (mask[i] && Math.abs(gray[i]-gray[i-1])+Math.abs(gray[i]-gray[i-224])>75) edges++; }
   const boxArea=Math.max(1,(maxX-minX+1)*(maxY-minY+1)), fillRatio=active/(224*224), edgeRatio=edges/Math.max(1,active);
-  const detectedColors=[...counts.entries()].sort((a,b)=>b[1]-a[1]).filter(([,value])=>value/Math.max(1,active)>.08).slice(0,3).map(([name])=>name);
+  const detectedColors=[...counts.entries()].sort((a,b)=>b[1]-a[1]).filter(([,value])=>value/Math.max(1,active)>.03).map(([name])=>name);
   // Drawing outlines are usually black, so ignore black when the canvas also has a filled color.
   // Keep it when it is the only detected color because an all-black drawing is still meaningful.
   const colors=isDrawing && detectedColors.length>1 ? detectedColors.filter((name)=>name!=="검정") : detectedColors;

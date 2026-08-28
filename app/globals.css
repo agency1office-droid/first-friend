@@ -1174,6 +1174,10 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 
 @media(max-width:700px){
   .ff-drawing-shell { max-width: none; box-shadow: none; }
+  /* The species gate shares the readiness-quiz canvas. Keep its 520px
+     container on wider mobile/tablet viewports so the outer basement margin
+     remains visible, just like the adoption-prep flow. */
+  .ff-drawing-shell.ff-quiz-shell { max-width: 520px; box-shadow: 0 0 0 1px var(--seed-color-stroke-neutral-muted); }
   .ff-drawing-workspace { display: flex; flex-direction: column; gap: 0; padding-inline: 0; }
   .ff-drawing-topbar { flex: none; grid-template-columns: 36px 1fr 86px; }
   .ff-modern-drawing-topbar { width: 100%; box-sizing: border-box; grid-template-columns: 44px minmax(0, 1fr); padding-inline: 4px; }

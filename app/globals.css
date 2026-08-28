@@ -1607,6 +1607,6 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-care-result-note { margin: 4px 0 0; color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; word-break: keep-all; }
 
 .ff-drawing-shell.ff-quiz-shell { background: var(--seed-color-bg-layer-default); }
-.ff-drawing-shell.ff-quiz-shell .ff-species-gate-appbar { border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
+.ff-drawing-shell.ff-quiz-shell .ff-species-gate-appbar { box-sizing: border-box; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: color-mix(in srgb, var(--seed-color-bg-layer-default) 92%, transparent); backdrop-filter: blur(16px); }
 .ff-species-gate[data-species-gate] { width: 100%; }
 .ff-species-gate[data-species-gate] .ff-readiness-species-choice { border-color: transparent; }

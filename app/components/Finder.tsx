@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { getStroke } from "perfect-freehand";
 import type { Animal } from "../../lib/data";
 import { analyzeVisual, animalVisualTags, type VisualAnalysis } from "../../lib/visual-analysis";
@@ -13,7 +14,7 @@ import { Callout } from "seed-design/ui/callout";
 import { PrefixIcon } from "@seed-design/react";
 import { BottomSheetBody, BottomSheetContent, BottomSheetRoot } from "seed-design/ui/bottom-sheet";
 import { IconCameraLine, IconMagnifyingglassLine, IconMagnifyingglassSparkleLine, IconPictureLine, IconSlider2HorizontalLine } from "@karrotmarket/react-monochrome-icon";
-import { ChevronLeft, Download, Eraser, PaintBucket, Pencil, RotateCcw, RotateCw, Share2, Trash2 } from "lucide-react";
+import { ChevronLeft, Download, Eraser, House, PaintBucket, Pencil, RotateCcw, RotateCw, Share2, Trash2 } from "lucide-react";
 import { useAppFeedback } from "./AppFeedback";
 
 const palette = [
@@ -80,6 +81,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const [query, setQuery] = useState(initialTags.split(",")[0] || "");
   const [species, setSpecies] = useState("전체");
   const [drawSpecies, setDrawSpecies] = useState<"강아지" | "고양이" | null>(null);
+  const [drawSpeciesConfirmed, setDrawSpeciesConfirmed] = useState(false);
   const [breed, setBreed] = useState("상관 없음");
   const [coat, setCoat] = useState("상관 없음");
   const [age, setAge] = useState("상관 없음");
@@ -360,28 +362,32 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
 
   const visible = (matched ? ranked : availableAnimals).filter((animal) => !query || `${animal.name} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
 
-  if (mode === "draw" && !drawSpecies) {
+  if (mode === "draw" && !drawSpeciesConfirmed) {
     return <div className="ff-drawing-workspace ff-species-gate">
       <div className="ff-drawing-topbar ff-modern-drawing-topbar">
         <a href="/find" aria-label="찾기 메뉴로 돌아가기"><ChevronLeft size={28} strokeWidth={2} aria-hidden="true" /></a>
+        <strong className="ff-species-gate-title">그림으로 찾기</strong>
+        <Link href="/" aria-label="홈으로 가기"><House size={22} strokeWidth={2} aria-hidden="true" /></Link>
       </div>
       <main className="ff-species-gate-content ff-readiness-species-page">
-        <p className="ff-kicker">그림으로 찾기</p>
-        <h1>어떤 친구를 만나고 싶나요?</h1>
+        <h1><span className="ff-species-gate-question-label">Q.</span> 어떤 친구를 그려볼까요?</h1>
         <p className="ff-description">먼저 만나고 싶은 친구를 골라주세요.<br />선택한 친구를 기준으로 그림을 살펴볼게요.</p>
         <div className="ff-species-gate-options ff-readiness-species-grid" role="group" aria-label="찾고 싶은 동물 선택">
-          <button type="button" className="ff-species-gate-option ff-readiness-species-choice" onClick={() => { setDrawSpecies("강아지"); setSpecies("강아지"); }}>
-            <img className="ff-readiness-species-image" src="/dog-selection.webp" alt="" aria-hidden="true" />
-            <strong>강아지</strong>
-            <small>강아지 친구를 찾을게요</small>
-          </button>
-          <button type="button" className="ff-species-gate-option ff-readiness-species-choice" onClick={() => { setDrawSpecies("고양이"); setSpecies("고양이"); }}>
+          <button type="button" className="ff-species-gate-option ff-readiness-species-choice" aria-pressed={drawSpecies === "고양이"} data-selected={drawSpecies === "고양이" || undefined} onClick={() => { setDrawSpecies("고양이"); setSpecies("고양이"); }}>
             <img className="ff-readiness-species-image" src="/cat-selection.webp" alt="" aria-hidden="true" />
             <strong>고양이</strong>
             <small>고양이 친구를 찾을게요</small>
           </button>
+          <button type="button" className="ff-species-gate-option ff-readiness-species-choice" aria-pressed={drawSpecies === "강아지"} data-selected={drawSpecies === "강아지" || undefined} onClick={() => { setDrawSpecies("강아지"); setSpecies("강아지"); }}>
+            <img className="ff-readiness-species-image" src="/dog-selection.webp" alt="" aria-hidden="true" />
+            <strong>강아지</strong>
+            <small>강아지 친구를 찾을게요</small>
+          </button>
         </div>
       </main>
+      <div className="ff-species-gate-actions">
+        <button type="button" className="ff-species-gate-next seed-action-button" disabled={!drawSpecies} onClick={() => setDrawSpeciesConfirmed(true)}>다음</button>
+      </div>
     </div>;
   }
 

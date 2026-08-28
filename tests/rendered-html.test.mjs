@@ -763,7 +763,7 @@ test("renders independent matching, care cost, encyclopedia, TNR, and support jo
   ])
     assert.equal(response.status, 200);
   const drawHtml = await draw.text();
-  assert.match(drawHtml, /어떤 친구를 만나고 싶나요\?/);
+  assert.match(drawHtml, /Q\.<\/span> 어떤 친구를 그려볼까요\?/);
   assert.match(drawHtml, /강아지.*고양이|고양이.*강아지/);
   assert.match(await photo.text(), /업로드한 사진은 기기에서 특징만 분석/);
   assert.match(await conditions.text(), /품종·털색·나이·성별·지역/);
@@ -1158,7 +1158,7 @@ test("keeps draw, photo, and condition journeys independent while draw uses perf
   assert.match(finder, /fetch\("\/api\/animals\?limit=30"/);
   assert.doesNotMatch(drawPage, /PerfectFreehandCanvas/);
   const drawHtml = await draw.text();
-  assert.match(drawHtml, /어떤 친구를 만나고 싶나요\?/);
+  assert.match(drawHtml, /Q\.<\/span> 어떤 친구를 그려볼까요\?/);
   assert.match(drawHtml, /찾고 싶은 동물 선택/);
 });
 

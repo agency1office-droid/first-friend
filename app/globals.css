@@ -1025,9 +1025,9 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-result, .ff-play-card, .ff-lifetime-card, .ff-fund-panel, .ff-auth-card { box-shadow: 0 1px 2px rgba(0,0,0,.025); }
 
 /* The drawing journey is a focused workspace, separate from the product chrome. */
-.ff-drawing-shell { box-sizing: border-box; min-height: 100dvh; width: 100%; max-width: 1200px; margin: 0 auto; background: #f5f5f5; color: var(--seed-color-fg-neutral); box-shadow: 0 0 0 1px var(--seed-color-stroke-neutral-muted); }
+.ff-drawing-shell { box-sizing: border-box; min-height: 100dvh; width: 100%; max-width: 520px; margin: 0 auto; background: #f5f5f5; color: var(--seed-color-fg-neutral); box-shadow: 0 0 0 1px var(--seed-color-stroke-neutral-muted); }
 .ff-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-.ff-drawing-workspace { box-sizing: border-box; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 12px; min-height: 100dvh; max-width: 1180px; margin: 0 auto; padding: max(12px, env(safe-area-inset-top)) clamp(14px, 3vw, 40px) max(16px, env(safe-area-inset-bottom)); }
+.ff-drawing-workspace { box-sizing: border-box; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 12px; min-height: 100dvh; max-width: 520px; margin: 0 auto; padding: max(12px, env(safe-area-inset-top)) clamp(14px, 3vw, 40px) max(16px, env(safe-area-inset-bottom)); }
 .ff-drawing-topbar { display: grid; grid-template-columns: 42px 1fr 110px; align-items: center; min-height: 46px; color: var(--seed-color-fg-neutral-muted); }
 .ff-drawing-topbar a { display: grid; place-items: center; width: 40px; height: 40px; color: var(--seed-color-fg-neutral); text-decoration: none; font-size: 38px; font-weight: 300; line-height: 1; }
 .ff-drawing-topbar h1 { justify-self: center; margin: 0; color: var(--seed-color-fg-neutral); font-size: 16px; }
@@ -1049,7 +1049,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-modern-drawing-topbar a { width: 44px; height: 44px; font-size: 0; }
 .ff-modern-drawing-topbar .ff-drawing-toolbar { justify-content: flex-end; margin-left: auto; gap: 8px; }
 .ff-modern-drawing-topbar .ff-drawing-toolbar { height: 44px; padding-right: 148px; }
-.ff-drawing-quick-actions { position: absolute; top: max(16px, calc(env(safe-area-inset-top) + 4px)); right: 8px; z-index: 2; display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; width: max-content; }
+.ff-drawing-quick-actions { position: absolute; top: 50%; right: 8px; z-index: 2; display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; width: max-content; transform: translateY(-50%); }
 .ff-modern-drawing-topbar { position: relative; }
 .ff-drawing-quick-actions button { display: grid; place-items: center; box-sizing: border-box; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; background: transparent; color: var(--seed-color-fg-neutral-muted); cursor: pointer; }
 .ff-drawing-quick-actions button svg { width: 24px; height: 24px; }
@@ -1148,7 +1148,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-drawing-workspace .ff-search-options .ff-action-link { margin: 0 !important; min-width: 210px; }
 .ff-drawing-workspace .ff-search-options .ff-action-link svg { flex: none; }
 .ff-drawing-workspace > .ff-section { grid-column: 1 / -1; }
-.ff-drawing-bottom-actions { position: fixed; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 40; display: grid; grid-column: 1 / -1; grid-template-columns: 52px 52px 52px minmax(150px, 1fr); grid-template-rows: 56px; align-items: center; gap: 8px; width: min(calc(100% - 24px), 1180px); height: 76px; min-height: 76px; max-height: 76px; box-sizing: border-box; overflow: hidden; margin: 0; padding: 10px; transform: translateX(-50%); border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 16px; background: var(--seed-color-bg-layer-default); box-shadow: 0 4px 18px rgba(0,0,0,.08); }
+.ff-drawing-bottom-actions { position: fixed; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 40; display: grid; grid-column: 1 / -1; grid-template-columns: 52px 52px 52px minmax(150px, 1fr); grid-template-rows: 56px; align-items: center; gap: 8px; width: min(calc(100% - 24px), 520px); height: 76px; min-height: 76px; max-height: 76px; box-sizing: border-box; overflow: hidden; margin: 0; padding: 10px; transform: translateX(-50%); border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 16px; background: var(--seed-color-bg-layer-default); box-shadow: 0 4px 18px rgba(0,0,0,.08); }
 .ff-drawing-bottom-actions > button,
 .ff-drawing-upload-action { min-width: 0; min-height: 56px; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 0 10px; border: 0; border-radius: 14px; background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral-muted); font-size: 14px; font-weight: var(--seed-font-weight-bold); cursor: pointer; }
 .ff-drawing-bottom-actions > button,
@@ -1178,7 +1178,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
   .ff-drawing-topbar { flex: none; grid-template-columns: 36px 1fr 86px; }
   .ff-modern-drawing-topbar { width: 100%; box-sizing: border-box; grid-template-columns: 44px minmax(0, 1fr); padding-inline: 4px; }
   .ff-modern-drawing-topbar .ff-drawing-toolbar { padding-right: 148px; }
-  .ff-drawing-quick-actions { top: max(16px, calc(env(safe-area-inset-top) + 4px)); right: 8px; }
+  .ff-drawing-quick-actions { top: 50%; right: 8px; transform: translateY(-50%); }
   .ff-drawing-toolbar { gap: 8px; }
   .ff-toolbar-color, .ff-toolbar-tool { width: 36px; height: 36px; }
   .ff-drawing-workspace .ff-draw-species-panel { padding: 10px 12px; border-radius: 14px; }

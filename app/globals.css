@@ -1157,7 +1157,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-drawing-upload-action:focus-within { background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral); }
 .ff-drawing-bottom-actions > button:nth-child(-n+2) { padding: 0; background: transparent; }
 .ff-drawing-bottom-actions > button:nth-child(-n+2) span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.ff-drawing-upload-action { position: relative; }
+.ff-drawing-upload-action { position: relative; padding: 0; background: transparent; border-radius: 0; }
+.ff-drawing-upload-action span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .ff-drawing-upload-action input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 .ff-drawing-match-action { min-width: 0; height: 56px !important; margin: 0 !important; border-radius: 14px !important; white-space: nowrap; }
 .ff-drawing-bottom-actions .ff-drawing-match-action:not(:disabled) { color: var(--seed-color-palette-static-white); background: var(--seed-color-bg-brand-solid); }

@@ -1047,9 +1047,9 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-drawing-topbar:not(.ff-modern-drawing-topbar) { display: none !important; }
 .ff-modern-drawing-topbar { grid-template-columns: 44px minmax(0, 1fr); min-height: 56px; padding: 4px 8px 4px 4px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); background: var(--seed-color-bg-layer-default); }
 .ff-modern-drawing-topbar a { width: 44px; height: 44px; font-size: 0; }
-.ff-modern-drawing-topbar .ff-drawing-toolbar { justify-content: flex-end; margin-left: auto; }
-.ff-modern-drawing-topbar .ff-drawing-toolbar { height: 44px; padding-right: 152px; }
-.ff-drawing-quick-actions { position: absolute; top: max(16px, calc(env(safe-area-inset-top) + 4px)); right: 16px; z-index: 2; display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; width: max-content; }
+.ff-modern-drawing-topbar .ff-drawing-toolbar { justify-content: flex-end; margin-left: auto; gap: 8px; }
+.ff-modern-drawing-topbar .ff-drawing-toolbar { height: 44px; padding-right: 148px; }
+.ff-drawing-quick-actions { position: absolute; top: max(16px, calc(env(safe-area-inset-top) + 4px)); right: 8px; z-index: 2; display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; width: max-content; }
 .ff-modern-drawing-topbar { position: relative; }
 .ff-drawing-quick-actions button { display: grid; place-items: center; box-sizing: border-box; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; background: transparent; color: var(--seed-color-fg-neutral-muted); cursor: pointer; }
 .ff-drawing-quick-actions button svg { width: 24px; height: 24px; }
@@ -1177,9 +1177,9 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
   .ff-drawing-workspace { display: flex; flex-direction: column; gap: 8px; padding-inline: 10px; }
   .ff-drawing-topbar { flex: none; grid-template-columns: 36px 1fr 86px; }
   .ff-modern-drawing-topbar { width: 100%; box-sizing: border-box; grid-template-columns: 44px minmax(0, 1fr); padding-inline: 4px; }
-  .ff-modern-drawing-topbar .ff-drawing-toolbar { padding-right: 152px; }
-  .ff-drawing-quick-actions { top: max(16px, calc(env(safe-area-inset-top) + 4px)); right: 12px; }
-  .ff-drawing-toolbar { gap: 4px; }
+  .ff-modern-drawing-topbar .ff-drawing-toolbar { padding-right: 148px; }
+  .ff-drawing-quick-actions { top: max(16px, calc(env(safe-area-inset-top) + 4px)); right: 8px; }
+  .ff-drawing-toolbar { gap: 8px; }
   .ff-toolbar-color, .ff-toolbar-tool { width: 36px; height: 36px; }
   .ff-drawing-workspace .ff-draw-species-panel { padding: 10px 12px; border-radius: 14px; }
   .ff-drawing-workspace .ff-canvas-panel { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; padding: 16px 12px 12px; border-radius: 16px; }

@@ -13,10 +13,11 @@ import { Chip } from "seed-design/ui/chip";
 import { Callout } from "seed-design/ui/callout";
 import { PrefixIcon } from "@seed-design/react";
 import { BottomSheetBody, BottomSheetContent, BottomSheetRoot } from "seed-design/ui/bottom-sheet";
-import { IconCameraLine, IconChevronLeftLine, IconHouseLine, IconMagnifyingglassLine, IconMagnifyingglassSparkleLine, IconPictureLine, IconSlider2HorizontalLine } from "@karrotmarket/react-monochrome-icon";
+import { IconCameraLine, IconMagnifyingglassLine, IconMagnifyingglassSparkleLine, IconPictureLine, IconSlider2HorizontalLine } from "@karrotmarket/react-monochrome-icon";
 import { ChevronLeft, Download, Eraser, PaintBucket, Pencil, RotateCcw, RotateCw, Share2, Trash2 } from "lucide-react";
 import { useAppFeedback } from "./AppFeedback";
 import { SpeciesSelectionStep } from "./SpeciesSelectionStep";
+import { ReadinessAppBar } from "./ReadinessAppBar";
 
 const palette = [
   { name: "검정", hex: "#242424" }, { name: "흰색", hex: "#ffffff" }, { name: "회색", hex: "#8b8b8b" },
@@ -366,11 +367,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   if (mode === "draw" && !drawSpeciesConfirmed) {
     // 그림으로 찾기 동물 선택: 고양이, 강아지
     return <div className="ff-readiness ff-readiness-species">
-      <header className="ff-readiness-appbar ff-species-gate-appbar">
-        <button type="button" className="ff-readiness-back" onClick={() => window.location.assign("/find")} aria-label="이전으로"><IconChevronLeftLine aria-hidden="true" /></button>
-        <strong>그림으로 찾기</strong>
-        <div className="ff-readiness-header-actions"><button type="button" className="ff-readiness-home" onClick={() => window.location.assign("/")} aria-label="홈으로 이동"><IconHouseLine aria-hidden="true" /></button></div>
-      </header>
+      <ReadinessAppBar title="그림으로 찾기" onBack={() => window.location.assign("/find")} />
       <SpeciesSelectionStep
         titleId="drawing-species-title"
         question="어떤 친구를 그려볼까요?"

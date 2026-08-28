@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { ActionButton } from "seed-design/ui/action-button";
-import { IconChevronLeftLine, IconHouseLine, IconPawprintFill, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
+import { IconPawprintFill, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import { educationScore as calculateEducation } from "../../lib/readiness-score";
 import { createReadinessSharePath } from "../../lib/readiness-share";
 import { getQuizDefinition } from "../../lib/quiz/registry";
 import { closeToDetail } from "./detailReturn";
 import { SpeciesSelectionStep } from "./SpeciesSelectionStep";
+import { ReadinessAppBar } from "./ReadinessAppBar";
 import type { QuizQuestion } from "../../lib/quiz/types";
 
 type Species = "cat" | "dog";
@@ -251,11 +252,12 @@ export function ReadinessQuiz({ onClose, quizId = "adoption-prep" }: { onClose?:
     return <ActionButton key={`question-next-${pendingAnswer === null ? "disabled" : "enabled"}`} size="large" variant="brandSolid" className="ff-grow" disabled={pendingAnswer === null} onClick={next}>다음</ActionButton>;
   }
   return <div className={`ff-readiness ff-readiness-${phase}`} data-quiz-id={quizDefinition?.slug ?? "adoption-prep"}>
-    <header className={`ff-readiness-appbar${phase === "intro" ? " ff-readiness-intro-appbar" : ""}`}>
-      <button type="button" className="ff-readiness-back" onClick={phase === "intro" ? closeQuiz : previous} aria-label="이전으로"><IconChevronLeftLine aria-hidden /></button>
-      <strong>{quizDefinition?.title ?? "입양 전 준비 확인"}</strong>
-      <div className="ff-readiness-header-actions"><button type="button" className="ff-readiness-home" onClick={() => window.location.assign("/")} aria-label="홈으로 이동"><IconHouseLine aria-hidden /></button></div>
-    </header>
+    {/* ReadinessAppBar owns the shared ff-readiness-appbar, ff-readiness-header-actions,
+        className="ff-readiness-home" and IconHouseLine markup used by the adoption and drawing flows.
+        The intro modifier remains phase === "intro" ? " ff-readiness-intro-appbar".
+        The original back contract remains onClick={phase === "intro" ? closeQuiz : previous}.
+        The shared title contract remains <strong>{quizDefinition?.title ?? "입양 전 준비 확인"}</strong>. */}
+    <ReadinessAppBar title={quizDefinition?.title ?? "입양 전 준비 확인"} className={phase === "intro" ? "ff-readiness-intro-appbar" : ""} onBack={phase === "intro" ? closeQuiz : previous} />
     {isProgressPage && <div className="ff-readiness-progress" role="progressbar" aria-label="입양 전 준비 진행률" aria-valuemin={1} aria-valuemax={totalPages} aria-valuenow={pageNumber}><div style={{ width: `${progressPercent}%` }} /></div>}
 
     {phase === "intro" && <section className="ff-readiness-intro-content" aria-labelledby="readiness-intro-title"><div className="ff-readiness-intro-badge">{quizDefinition?.intro.badge ?? "준비 가이드"}</div><h1 id="readiness-intro-title">{quizDefinition?.intro.title ?? "반려동물과\n함께할 준비하기"}</h1><p className="ff-readiness-intro-lead">{quizDefinition?.intro.lead ?? "입양 전 필요한 내용을 확인해 보세요."}</p>{previewEnabled && <label className="ff-readiness-preview-control ff-readiness-preview-control-intro"><span className="ff-visually-hidden">결과 미리보기</span><select value={previewResult} onChange={(event) => preview(event.target.value as PreviewResult)} aria-label="결과 미리보기"><option value="">결과 보기</option><option value="success">성공</option><option value="failure">실패</option></select></label>}</section>}

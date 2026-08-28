@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import Image from "next/image";
 import { getStroke } from "perfect-freehand";
 import type { Animal } from "../../lib/data";
 import { analyzeVisual, animalVisualTags, type VisualAnalysis } from "../../lib/visual-analysis";
@@ -13,8 +13,8 @@ import { Chip } from "seed-design/ui/chip";
 import { Callout } from "seed-design/ui/callout";
 import { PrefixIcon } from "@seed-design/react";
 import { BottomSheetBody, BottomSheetContent, BottomSheetRoot } from "seed-design/ui/bottom-sheet";
-import { IconCameraLine, IconMagnifyingglassLine, IconMagnifyingglassSparkleLine, IconPictureLine, IconSlider2HorizontalLine } from "@karrotmarket/react-monochrome-icon";
-import { ChevronLeft, Download, Eraser, House, PaintBucket, Pencil, RotateCcw, RotateCw, Share2, Trash2 } from "lucide-react";
+import { IconCameraLine, IconChevronLeftLine, IconHouseLine, IconMagnifyingglassLine, IconMagnifyingglassSparkleLine, IconPictureLine, IconSlider2HorizontalLine } from "@karrotmarket/react-monochrome-icon";
+import { ChevronLeft, Download, Eraser, PaintBucket, Pencil, RotateCcw, RotateCw, Share2, Trash2 } from "lucide-react";
 import { useAppFeedback } from "./AppFeedback";
 
 const palette = [
@@ -365,24 +365,24 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   if (mode === "draw" && !drawSpeciesConfirmed) {
     return <div className="ff-readiness ff-species-gate" data-species-gate>
       <header className="ff-readiness-appbar ff-species-gate-appbar">
-        <a className="ff-readiness-back" href="/find" aria-label="찾기 메뉴로 돌아가기"><ChevronLeft size={26} strokeWidth={2} aria-hidden="true" /></a>
+        <button type="button" className="ff-readiness-back" onClick={() => window.location.assign("/find")} aria-label="이전으로"><IconChevronLeftLine aria-hidden="true" /></button>
         <strong>그림으로 찾기</strong>
-        <div className="ff-readiness-header-actions"><Link className="ff-readiness-home" href="/" aria-label="홈으로 가기"><House size={22} strokeWidth={2} aria-hidden="true" /></Link></div>
+        <div className="ff-readiness-header-actions"><button type="button" className="ff-readiness-home" onClick={() => window.location.assign("/")} aria-label="홈으로 이동"><IconHouseLine aria-hidden="true" /></button></div>
       </header>
-      <main className="ff-species-gate-content ff-readiness-species-page">
-        <h2 dangerouslySetInnerHTML={{ __html: '<span class="ff-readiness-question-label">Q.</span> 어떤 친구를 그려볼까요?' }} />
-        <div className="ff-species-gate-options ff-readiness-species-grid" role="group" aria-label="찾고 싶은 동물 선택">
-          <button type="button" className="ff-species-gate-option ff-readiness-species-choice" aria-pressed={drawSpecies === "고양이"} data-selected={drawSpecies === "고양이" || undefined} onClick={() => { setDrawSpecies("고양이"); setSpecies("고양이"); }}>
-            <img className="ff-readiness-species-image" src="/cat-artist.webp" alt="" aria-hidden="true" />
+      <section className="ff-readiness-species-page" aria-labelledby="drawing-species-title">
+        <h2 id="drawing-species-title"><span className="ff-readiness-question-label" aria-hidden="true">Q.</span> 어떤 친구를 그려볼까요?</h2>
+        <div className="ff-readiness-species-grid" role="group" aria-label="찾고 싶은 동물 선택">
+          <button type="button" className="ff-readiness-species-choice" aria-pressed={drawSpecies === "고양이"} data-selected={drawSpecies === "고양이" || undefined} onClick={() => { setDrawSpecies("고양이"); setSpecies("고양이"); }}>
+            <Image className="ff-readiness-species-image" src="/cat-selection.webp" alt="" aria-hidden="true" width={104} height={104} unoptimized />
             <strong>고양이</strong>
           </button>
-          <button type="button" className="ff-species-gate-option ff-readiness-species-choice" aria-pressed={drawSpecies === "강아지"} data-selected={drawSpecies === "강아지" || undefined} onClick={() => { setDrawSpecies("강아지"); setSpecies("강아지"); }}>
-            <img className="ff-readiness-species-image" src="/dog-artist.webp" alt="" aria-hidden="true" />
+          <button type="button" className="ff-readiness-species-choice" aria-pressed={drawSpecies === "강아지"} data-selected={drawSpecies === "강아지" || undefined} onClick={() => { setDrawSpecies("강아지"); setSpecies("강아지"); }}>
+            <Image className="ff-readiness-species-image" src="/dog-selection.webp" alt="" aria-hidden="true" width={104} height={104} unoptimized />
             <strong>강아지</strong>
           </button>
         </div>
-      </main>
-      <footer className="ff-readiness-actions is-single ff-species-gate-actions"><ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!drawSpecies} onClick={() => setDrawSpeciesConfirmed(true)}>다음</ActionButton></footer>
+      </section>
+      <footer className="ff-readiness-actions is-single"><ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!drawSpecies} onClick={() => setDrawSpeciesConfirmed(true)}>다음</ActionButton></footer>
     </div>;
   }
 

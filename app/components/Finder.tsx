@@ -79,6 +79,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const [preview, setPreview] = useState("");
   const [query, setQuery] = useState(initialTags.split(",")[0] || "");
   const [species, setSpecies] = useState("전체");
+  const [drawSpecies, setDrawSpecies] = useState<"강아지" | "고양이" | null>(null);
   const [breed, setBreed] = useState("상관 없음");
   const [coat, setCoat] = useState("상관 없음");
   const [age, setAge] = useState("상관 없음");
@@ -347,7 +348,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     try {
       const sourceAnimals = await ensureAnimals();
       if (!sourceAnimals.length) throw new Error("동물 정보를 불러오지 못했어요.");
-      if (mode === "draw" && canvasRef.current) visual = await analyzeVisual(canvasRef.current, canvasSource !== "photo");
+      if (mode === "draw" && canvasRef.current) visual = await analyzeVisual(canvasRef.current, canvasSource !== "photo", drawSpecies || undefined);
       if (mode === "photo" && imageRef.current) visual = await analyzeVisual(imageRef.current, false);
       if (visual) { setAnalysis(visual); if (species === "전체" && visual.species !== "전체") setSpecies(visual.species); }
       const result = [...sourceAnimals].sort((a, b) => score(b, visual, sourceAnimals) - score(a, visual, sourceAnimals)); setAvailableAnimals(sourceAnimals); setRanked(result); setMatched(true); document.getElementById("match-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -358,6 +359,31 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   async function saveSearch() { const response = await fetch("/api/saved-searches", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ name:analysis ? analysis.tags.slice(0,3).join(" · ") : `${species} ${region}`, criteria:{species,breed,coat,age,gender,region,query,tags:analysis?.tags||[]} }) }); if(response.status===401){setSaveState("로그인하면 이 조건과 신규 등록 알림을 저장할 수 있어요.");return;} if(response.ok){setSaveState("");feedback.success("검색 조건과 새 친구 알림을 저장했어요",{actionLabel:"알림관리",onAction:()=>{location.href="/mypage/searches"}})}else feedback.error("검색 조건을 저장하지 못했어요"); }
 
   const visible = (matched ? ranked : availableAnimals).filter((animal) => !query || `${animal.name} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
+
+  if (mode === "draw" && !drawSpecies) {
+    return <div className="ff-drawing-workspace ff-species-gate">
+      <div className="ff-drawing-topbar ff-modern-drawing-topbar">
+        <a href="/find" aria-label="찾기 메뉴로 돌아가기"><ChevronLeft size={28} strokeWidth={2} aria-hidden="true" /></a>
+      </div>
+      <main className="ff-species-gate-content">
+        <p className="ff-kicker">그림으로 찾기</p>
+        <h1>어떤 친구를 만나고 싶나요?</h1>
+        <p className="ff-description">먼저 만나고 싶은 친구를 골라주세요.<br />선택한 친구를 기준으로 그림을 살펴볼게요.</p>
+        <div className="ff-species-gate-options" role="group" aria-label="찾고 싶은 동물 선택">
+          <button type="button" className="ff-species-gate-option" onClick={() => { setDrawSpecies("강아지"); setSpecies("강아지"); }}>
+            <img src="/dog-selection.webp" alt="" aria-hidden="true" />
+            <strong>강아지</strong>
+            <small>강아지 친구를 찾을게요</small>
+          </button>
+          <button type="button" className="ff-species-gate-option" onClick={() => { setDrawSpecies("고양이"); setSpecies("고양이"); }}>
+            <img src="/cat-selection.webp" alt="" aria-hidden="true" />
+            <strong>고양이</strong>
+            <small>고양이 친구를 찾을게요</small>
+          </button>
+        </div>
+      </main>
+    </div>;
+  }
 
   return <div className={mode === "draw" ? "ff-drawing-workspace" : undefined}>
     {mode === "draw" && <><div className="ff-drawing-topbar ff-modern-drawing-topbar"><a href="/find" aria-label="그림 찾기 닫기"><ChevronLeft size={28} strokeWidth={2} aria-hidden="true" /></a><div className="ff-drawing-toolbar" aria-label="그림 도구"><button type="button" className="ff-toolbar-tool" data-active={toolSheet === "brush" && !isFilling} aria-label="브러시 크기 선택" onClick={() => { setIsFilling(false); setIsErasing(false); setToolSheet("brush"); }}><Pencil size={24} strokeWidth={2.1} /><span className="ff-tool-preview">{brushSize}pt</span></button><button type="button" className="ff-toolbar-tool" data-active={toolSheet === "eraser" || (isErasing && !isFilling)} aria-label="지우개 크기 선택" onClick={() => { setIsFilling(false); setIsErasing(true); setToolSheet("eraser"); }}><Eraser size={24} strokeWidth={2.1} /><span className="ff-tool-preview ff-tool-preview-eraser">{eraserSize}pt</span></button><button type="button" className="ff-toolbar-tool" data-active={isFilling} aria-label="페인트 도구" onClick={() => { setIsFilling(true); setIsErasing(false); setToolSheet("fill"); }}><PaintBucket size={24} strokeWidth={2.1} /></button></div><div className="ff-drawing-quick-actions" aria-label="그림 편집 메뉴"><button type="button" aria-label="되돌리기" onClick={undo}><RotateCcw size={24} strokeWidth={2.1} /></button><button type="button" aria-label="다시 되돌리기" onClick={redo}><RotateCw size={24} strokeWidth={2.1} /></button><button type="button" aria-label="전체 지우기" onClick={clear}><Trash2 size={24} strokeWidth={2.1} /></button></div></div><BottomSheetRoot open={toolSheet !== null} onOpenChange={(open) => { if (!open) setToolSheet(null); }}><BottomSheetContent title={toolSheet === "brush" ? "브러시" : toolSheet === "eraser" ? "지우개 크기" : toolSheet === "fill" ? "페인트" : toolSheet === "color" ? "색상" : "그림 저장"} showHandle className={`ff-drawing-tool-sheet ff-drawing-tool-sheet-${toolSheet || "none"}`}><BottomSheetBody>{(toolSheet === "brush" || toolSheet === "eraser") && (() => { const eraser = toolSheet === "eraser"; const value = eraser ? eraserSize : brushSize; return <div className="ff-drawing-size-slider">{!eraser && <div className="ff-drawing-brush-types" role="group" aria-label="브러시 종류">{brushTypes.map((type) => <button type="button" key={type.id} data-active={brushType === type.id} onClick={() => setBrushType(type.id)}><span>{type.label}</span><small>{type.description}</small></button>)}</div>}{!eraser && <div className="ff-drawing-inline-colors" role="group" aria-label="색상 선택">{palette.map((color) => <button type="button" key={color.name} data-active={brushColor.hex === color.hex} style={{ background: color.hex }} aria-label={color.name + " 색상"} onClick={() => chooseColor(color.hex)} />)}</div>}<div className="ff-drawing-size-slider-heading"><span>{eraser ? "지우개 크기" : "브러시 크기"}</span><strong>{value}pt</strong></div><input aria-label={eraser ? "지우개 크기" : "브러시 크기"} type="range" min="1" max="10" step="1" value={value} style={{ "--brush-thumb-size": (10 + value * 1.4) + "px" } as React.CSSProperties} onChange={(event) => { const next = Number(event.target.value); if (eraser) { setEraserSize(next); setIsErasing(true); } else { setBrushSize(next); setIsErasing(false); } }} /><div className="ff-drawing-size-slider-labels"><span>1pt</span><span>5pt</span><span>10pt</span></div></div>; })()}{(toolSheet === "fill" || toolSheet === "color") && <div className="ff-drawing-color-picker-panel"><p className="ff-drawing-tool-help">칠할 색상을 선택하세요.</p><div className="ff-drawing-color-presets" role="group" aria-label="털색 팔레트">{palette.map((color) => <button type="button" key={color.name} data-active={brushColor.hex === color.hex} style={{ background: color.hex }} aria-label={color.name + " 색상"} onClick={() => chooseColor(color.hex)} />)}</div></div>}{toolSheet === "save" && <div className="ff-drawing-save-options" role="menu"><button type="button" onClick={() => saveDrawing("png")}>PNG 이미지</button><button type="button" onClick={() => saveDrawing("jpeg")}>JPG 이미지</button><button type="button" onClick={() => saveDrawing("webp")}>WEBP 이미지</button></div>}</BottomSheetBody></BottomSheetContent></BottomSheetRoot></>}

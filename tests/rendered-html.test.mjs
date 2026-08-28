@@ -762,7 +762,9 @@ test("renders independent matching, care cost, encyclopedia, TNR, and support jo
     support,
   ])
     assert.equal(response.status, 200);
-  assert.match(await draw.text(), /마음속 친구를 그려보세요/);
+  const drawHtml = await draw.text();
+  assert.match(drawHtml, /어떤 친구를 만나고 싶나요\?/);
+  assert.match(drawHtml, /강아지.*고양이|고양이.*강아지/);
   assert.match(await photo.text(), /업로드한 사진은 기기에서 특징만 분석/);
   assert.match(await conditions.text(), /품종·털색·나이·성별·지역/);
   assert.match(await prepare.text(), /월 생활비/);
@@ -1155,7 +1157,9 @@ test("keeps draw, photo, and condition journeys independent while draw uses perf
   assert.doesNotMatch(drawPage, /getAnimalsWithPhotoCounts\(30\)/);
   assert.match(finder, /fetch\("\/api\/animals\?limit=30"/);
   assert.doesNotMatch(drawPage, /PerfectFreehandCanvas/);
-  assert.match(await draw.text(), /마음속 친구를 그려보세요/);
+  const drawHtml = await draw.text();
+  assert.match(drawHtml, /어떤 친구를 만나고 싶나요\?/);
+  assert.match(drawHtml, /찾고 싶은 동물 선택/);
 });
 
 test("uses queued SEED snackbars for transient feedback across core actions", async () => {

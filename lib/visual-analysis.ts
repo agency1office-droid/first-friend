@@ -137,9 +137,13 @@ export async function analyzeVisual(source: HTMLCanvasElement | HTMLImageElement
   const species=isDrawing && preferredSpecies !== "none" ? preferredSpecies : hints.species;
   // 손그림은 칠한 대표 색상과 선택된 종만 확실한 검색 단서로 사용합니다.
   // 눈·털 길이·체형은 그림의 선 굵기와 캔버스 비율에 크게 좌우되므로 태그에서 제외합니다.
-  const tags=isDrawing
-    ? [species !== "전체" ? `종류: ${species}` : "종류: 판별 어려움", hints.breeds.length ? `품종: ${hints.breeds.join(" · ")}` : "품종: 판별 어려움", colors.length ? `털색: ${colors.join(" · ")}` : "털색: 판별 어려움", `무늬: ${pattern}`, `형태: ${size}`]
-    : [species,...colors,size,eyes,fur,pattern,...hints.breeds].filter((value,index,array)=>value!=="전체"&&array.indexOf(value)===index);
+  const tags=[
+    species !== "전체" ? `종류: ${species}` : "종류: 판별 어려움",
+    hints.breeds.length ? `품종: ${hints.breeds.join(" · ")}` : "품종: 판별 어려움",
+    colors.length ? `털색: ${colors.join(" · ")}` : "털색: 판별 어려움",
+    `무늬: ${pattern}`,
+    `형태: ${size}`,
+  ];
   return { source:isDrawing ? "drawing" : "photo", species,speciesConfidence:hints.confidence,colors:colors.length ? colors : isDrawing ? [] : ["회색"],size,eyes,fur,pattern,breedHints:isDrawing ? [] : hints.breeds,modelLabels:predictions.map(item=>item.className),tags,usedOpenSourceModel:predictions.length>0 };
 }
 

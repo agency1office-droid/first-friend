@@ -57,6 +57,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const animalsLoadPromise = useRef<Promise<Animal[]> | null>(null);
   const mode = modeOnly || "draw";
   const [brushColor, setBrushColor] = useState(palette[0]);
+  const [canvasSource, setCanvasSource] = useState<"drawing" | "photo">("drawing");
   const [brushSize, setBrushSize] = useState(5);
   const [eraserSize, setEraserSize] = useState(5);
   const [brushType, setBrushType] = useState<(typeof brushTypes)[number]["id"]>("pencil");
@@ -239,6 +240,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     context.restore();
   }
   function fillArea(event: React.PointerEvent<HTMLCanvasElement>) {
+    setCanvasSource("drawing");
     const canvas = event.currentTarget;
     const context = canvas.getContext("2d");
     if (!context) return;
@@ -272,10 +274,10 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     setMatched(false);
     setAnalysis(null);
   }
-  function start(event: React.PointerEvent<HTMLCanvasElement>) { const canvas = event.currentTarget, context = canvas.getContext("2d"); if (!context) return; if (isFilling) { fillArea(event); return; } strokeBaseImage.current = context.getImageData(0, 0, canvas.width, canvas.height); undoStack.current.push(strokeBaseImage.current); redoStack.current = []; if (undoStack.current.length > 12) undoStack.current.shift(); drawing.current = true; strokePoints.current = [point(event)]; canvas.setPointerCapture(event.pointerId); drawSmoothStroke(context, strokePoints.current); }
+  function start(event: React.PointerEvent<HTMLCanvasElement>) { const canvas = event.currentTarget, context = canvas.getContext("2d"); if (!context) return; if (isFilling) { fillArea(event); return; } setCanvasSource("drawing"); strokeBaseImage.current = context.getImageData(0, 0, canvas.width, canvas.height); undoStack.current.push(strokeBaseImage.current); redoStack.current = []; if (undoStack.current.length > 12) undoStack.current.shift(); drawing.current = true; strokePoints.current = [point(event)]; canvas.setPointerCapture(event.pointerId); drawSmoothStroke(context, strokePoints.current); }
   function move(event: React.PointerEvent<HTMLCanvasElement>) { if (!drawing.current) return; const context = event.currentTarget.getContext("2d"); if (!context || !strokeBaseImage.current) return; strokePoints.current.push(point(event)); context.putImageData(strokeBaseImage.current, 0, 0); drawSmoothStroke(context, strokePoints.current); }
   function finish(event: React.PointerEvent<HTMLCanvasElement>) { drawing.current = false; strokePoints.current = []; strokeBaseImage.current = null; if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }
-  function clear() { const canvas = canvasRef.current, context = canvas?.getContext("2d"); if (!canvas || !context) return; undoStack.current.push(context.getImageData(0, 0, canvas.width, canvas.height)); redoStack.current = []; context.save(); context.setTransform(1, 0, 0, 1, 0, 0); context.fillStyle = "#fff"; context.fillRect(0, 0, canvas.width, canvas.height); context.restore(); setMatched(false); setAnalysis(null); }
+  function clear() { const canvas = canvasRef.current, context = canvas?.getContext("2d"); if (!canvas || !context) return; undoStack.current.push(context.getImageData(0, 0, canvas.width, canvas.height)); redoStack.current = []; context.save(); context.setTransform(1, 0, 0, 1, 0, 0); context.fillStyle = "#fff"; context.fillRect(0, 0, canvas.width, canvas.height); context.restore(); setCanvasSource("drawing"); setMatched(false); setAnalysis(null); }
   function undo() { const canvas = canvasRef.current, context = canvas?.getContext("2d"), previous = undoStack.current.pop(); if (canvas && context && previous) { redoStack.current.push(context.getImageData(0, 0, canvas.width, canvas.height)); context.putImageData(previous, 0, 0); } }
   function redo() { const canvas = canvasRef.current, context = canvas?.getContext("2d"), next = redoStack.current.pop(); if (canvas && context && next) { undoStack.current.push(context.getImageData(0, 0, canvas.width, canvas.height)); context.putImageData(next, 0, 0); } }
   function saveDrawing(format: "png" | "jpeg" | "webp" = "png") { const canvas = canvasRef.current; if (!canvas) return; const mime = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png"; const link = document.createElement("a"); link.download = `퍼스트프렌드-그림-${new Date().toISOString().slice(0, 10)}.${format === "jpeg" ? "jpg" : format}`; link.href = canvas.toDataURL(mime, 0.92); link.click(); setToolSheet(null); }
@@ -305,6 +307,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
       context.drawImage(image, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
       context.restore();
       setUploaded(file.name);
+      setCanvasSource("photo");
       setMatched(false);
       setAnalysis(null);
       URL.revokeObjectURL(url);
@@ -344,7 +347,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     try {
       const sourceAnimals = await ensureAnimals();
       if (!sourceAnimals.length) throw new Error("동물 정보를 불러오지 못했어요.");
-      if (mode === "draw" && canvasRef.current) visual = await analyzeVisual(canvasRef.current, true);
+      if (mode === "draw" && canvasRef.current) visual = await analyzeVisual(canvasRef.current, canvasSource !== "photo");
       if (mode === "photo" && imageRef.current) visual = await analyzeVisual(imageRef.current, false);
       if (visual) { setAnalysis(visual); if (species === "전체" && visual.species !== "전체") setSpecies(visual.species); }
       const result = [...sourceAnimals].sort((a, b) => score(b, visual, sourceAnimals) - score(a, visual, sourceAnimals)); setAvailableAnimals(sourceAnimals); setRanked(result); setMatched(true); document.getElementById("match-results")?.scrollIntoView({ behavior: "smooth", block: "start" });

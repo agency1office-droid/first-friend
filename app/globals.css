@@ -1602,58 +1602,6 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-care-result-accordion .seed-accordion__content p { margin: 0; }
 .ff-care-result-note { margin: 4px 0 0; color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; word-break: keep-all; }
 
-/* Keep the drawing species step identical to the shared readiness quiz on
-   desktop and mobile: one page gutter, one header width, and one CTA width. */
-.ff-species-gate[data-species-gate] {
-  position: fixed;
-  left: 50%;
-  top: 0;
-  width: min(100%, 520px);
-  height: 100dvh;
-  min-height: 100dvh;
-  margin: 0;
-  transform: translateX(-50%);
-  padding: 0 16px calc(24px + env(safe-area-inset-bottom));
-  overflow: hidden;
-}
-.ff-species-gate[data-species-gate] .ff-species-gate-appbar {
-  width: calc(100% + 32px);
-  margin-inline: -16px;
-  padding: max(8px, env(safe-area-inset-top)) 16px 0;
-}
-.ff-species-gate[data-species-gate] > .ff-readiness-species-page {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  margin-top: 24px;
-  padding: 0 16px;
-}
-.ff-species-gate[data-species-gate] > .ff-readiness-species-page h2 {
-  margin-bottom: 10px;
-}
-.ff-species-gate[data-species-gate] > .ff-readiness-species-page .ff-readiness-species-grid {
-  margin-top: 10px;
-}
-.ff-species-gate[data-species-gate] .ff-readiness-species-choice {
-  border: 1px solid transparent;
-  background: #f4f4f5;
-}
-.ff-species-gate[data-species-gate] .ff-readiness-species-choice[data-selected="true"] {
-  border-color: var(--seed-color-stroke-brand-solid);
-  background: var(--seed-color-bg-brand-weak);
-}
-.ff-species-gate[data-species-gate] .ff-readiness-species-choice:hover {
-  border-color: transparent;
-  background: #f4f4f5;
-}
-.ff-species-gate[data-species-gate] .ff-readiness-species-choice[data-selected="true"]:hover {
-  border-color: var(--seed-color-stroke-brand-solid);
-  background: var(--seed-color-bg-brand-weak);
-}
-.ff-species-gate[data-species-gate] > .ff-readiness-actions {
-  position: relative;
-  bottom: auto;
-  flex: 0 0 auto;
-  margin-top: 0;
-}
+.ff-drawing-shell.ff-quiz-shell { background: var(--seed-color-bg-layer-default); }
+.ff-species-gate[data-species-gate] { width: 100%; }
+.ff-species-gate[data-species-gate] .ff-readiness-species-choice { border-color: transparent; }

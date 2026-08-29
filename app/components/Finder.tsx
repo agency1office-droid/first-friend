@@ -367,7 +367,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   if (mode === "draw" && !drawSpeciesConfirmed) {
     // 그림으로 찾기 동물 선택: 고양이, 강아지
     return <div className="ff-readiness ff-readiness-species">
-      <ReadinessAppBar title="그림으로 찾기" onBack={() => window.location.assign("/find")} />
+      <ReadinessAppBar title="그림으로 찾기" onBack={() => window.location.assign("/")} />
       <SpeciesSelectionStep
         titleId="drawing-species-title"
         question="어떤 친구를 그려볼까요?"

@@ -46,7 +46,9 @@ export default defineConfig(async () => {
     return {
       plugins: [vinext(), nitro({
         traceDeps: ["sharp*", "@img/sharp-linux-x64*", "@img/sharp-libvips-linux-x64*"],
-        hooks: { async compiled(nitro) {
+        modules: [(nitro) => { nitro.hooks.hook("compiled", async (nitro) => {
+          const routing = JSON.parse(await readFile(join(nitro.options.output.dir, "config.json"), "utf8"));
+          if (!routing.routes?.some((route: { dest?: string }) => route.dest)) throw new Error("Vercel function routing was not generated");
           if (process.platform !== "linux" || process.arch !== "x64") return;
           const source = join(nitro.options.rootDir, "node_modules");
           const output = join(nitro.options.output.serverDir, "node_modules");
@@ -58,7 +60,7 @@ export default defineConfig(async () => {
           // Test the deployed binary, not the working build-container dependency.
           execFileSync(process.execPath, ["-e", "require(process.argv[1])", join(native, "index.cjs")], { cwd: output, stdio: "inherit" });
           console.info("Verified bundled Sharp Linux runtime");
-        } },
+        }); }],
       })],
     };
   }

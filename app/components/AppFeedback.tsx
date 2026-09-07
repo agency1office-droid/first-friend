@@ -14,7 +14,7 @@ export function useAppFeedback() {
   const snackbar = useSnackbarAdapter();
   function notify(message: string, options: NotifyOptions = {}) {
     snackbar.create({
-      timeout: options.timeout ?? 4000,
+      timeout: (options.timeout ?? 4000) / 2,
       strategy: "queued",
       render: () => <Snackbar variant={options.variant ?? "default"} message={message} actionLabel={options.actionLabel} onAction={options.onAction}/>,
     });

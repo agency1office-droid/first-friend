@@ -38,7 +38,8 @@ export async function createAnimalThumbnail(source: string) {
 export async function processAnimalThumbnails(options: { maxJobs?: number; durationMs?: number; concurrency?: number } = {}) {
   const db = getSupabaseServerClient();
   const id = crypto.randomUUID();
-  await db.from("sync_runs").insert({ id, kind: "animal-thumbnails", status: "running" }).throwOnError();
+  const startedAt = new Date().toISOString();
+  await db.from("sync_runs").insert({ id, kind: "animal-thumbnails", status: "running", started_at: startedAt, updated_at: startedAt }).throwOnError();
   const result = { completed: 0, failed: 0, originalBytes: 0, thumbnailBytes: 0 };
   const errors: string[] = [];
   const finish = async (status: string, message: string) => {

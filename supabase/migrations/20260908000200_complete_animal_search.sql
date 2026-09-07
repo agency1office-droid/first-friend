@@ -42,11 +42,13 @@ where size_group is distinct from public.animal_size_group(species,breed,traits_
 -- Preserve the existing color aliases, visibility predicate, PostGIS distance,
 -- and count-on-first-page behavior rather than maintaining another SQL copy.
 do $$
-declare definition text; original text; signature text;
+declare definition text; original text; signature text; base_types text; extended_types text;
 begin
+  base_types := 'integer,timestamp with time zone,text,double precision,double precision,double precision,text,text,text,text,text[],text,text,text,boolean,boolean,double precision';
+  extended_types := base_types || ',text,double precision,double precision,double precision,double precision';
   signature := ', p_neutered text DEFAULT NULL, p_age_min double precision DEFAULT 0, p_age_max double precision DEFAULT 17, p_weight_min double precision DEFAULT 0, p_weight_max double precision DEFAULT 60)';
-  select pg_get_functiondef(p.oid) into definition from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-    where n.nspname='public' and p.proname='search_public_animals';
+  -- Select the exact live 17-argument contract, never an arbitrary overload.
+  select pg_get_functiondef(to_regprocedure('public.search_public_animals(' || base_types || ')')) into definition;
   if definition is null or position('public.visible_public_animals' in definition)=0 then raise exception 'Expected visible animal search definition'; end if;
   definition:=replace(definition,'FUNCTION public.search_public_animals(','FUNCTION public.search_public_animals_filtered(');
   original:=definition;
@@ -61,8 +63,10 @@ begin
   -- The tie-breaker must agree with ORDER BY id ASC, including equal timestamps.
   definition:=replace(definition,'c.id < coalesce(p_cursor_id', 'c.id > coalesce(p_cursor_id');
   execute definition;
-  select pg_get_functiondef(p.oid) into definition from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-    where n.nspname='public' and p.proname='search_public_animals_with_storage';
+  if to_regprocedure('public.search_public_animals_filtered(' || extended_types || ')') is null then
+    raise exception 'Expected 22-argument filtered search was not created';
+  end if;
+  select pg_get_functiondef(to_regprocedure('public.search_public_animals_with_storage(' || base_types || ')')) into definition;
   if definition is null then raise exception 'Expected storage search definition'; end if;
   definition:=replace(definition,'FUNCTION public.search_public_animals_with_storage(','FUNCTION public.search_public_animals_filtered_with_storage(');
   original:=definition;

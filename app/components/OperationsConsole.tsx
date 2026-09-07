@@ -34,6 +34,7 @@ function choices(resource: OperationResource, row: OperationRow, role: string): 
     ...(status !== "connected" ? [{ label: "도움 연결", action: "return-status", status: "connected" }] : []),
     { label: "해결 기록", action: "return-status", status: "resolved" }];
   if (role !== "admin") return [];
+  if (resource === "imageJobs" && status === "failed") return [{ label: "다시 시도", action: "image-retry" }];
   if (resource === "registrations") return status === "review" ? [{ label: "공개 승인", action: "registration-status", status: "published" }, { label: "반려", action: "registration-status", status: "closed", critical: true }] : status === "published" ? [{ label: "공개 종료", action: "registration-status", status: "closed", critical: true }] : [];
   if (resource === "fundraisers" && status === "open") return [{ label: "모금 종료 기록", action: "fundraiser-status", status: "settled", critical: true }];
   const reviewActions = { verifications: "verification-status", certifications: "adoption-certification-status", appeals: "appeal-status", fundraisers: "fundraiser-status" };

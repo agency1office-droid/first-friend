@@ -20,6 +20,7 @@ export type Animal = {
   source: string;
   updated: string;
   image: string;
+  thumbnail?: string;
   images?: string[];
   photoCount?: number;
   colors: string[];

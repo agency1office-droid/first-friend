@@ -1,0 +1,21 @@
+begin;
+insert into public_animals(id,image_1,image_2,active) values ('test','https://openapi.animal.go.kr/a','',true);
+do $$ declare j animal_image_jobs; begin
+  if (select count(*) from animal_image_jobs) <> 1 then raise exception 'insert must enqueue'; end if;
+  select * into j from claim_animal_thumbnails(1);
+  if j.status <> 'processing' then raise exception 'claim failed'; end if;
+  if exists(select 1 from claim_animal_thumbnails(1)) then raise exception 'duplicate claim'; end if;
+  update animal_image_jobs set updated_at=now()-interval '11 minutes' where id=j.id;
+  if not exists(select 1 from claim_animal_thumbnails(1)) then raise exception 'lease recovery'; end if;
+  update public_animals set image_1_storage='old' where id='test';
+  update public_animals set image_1='https://openapi.animal.go.kr/b' where id='test';
+  if (select image_1_storage from public_animals where id='test') is not null then raise exception 'stale thumbnail'; end if;
+  select * into j from claim_animal_thumbnails(1);
+  if j.source_url <> 'https://openapi.animal.go.kr/b' then raise exception 'wrong current source'; end if;
+  update animal_image_jobs set status='completed',updated_at=now()-interval '31 days' where id=j.id;
+  if not exists(select 1 from claim_animal_thumbnails(1)) then raise exception 'monthly refresh'; end if;
+  update animal_image_jobs set status='failed',attempt_count=5 where id=j.id;
+  if exists(select 1 from claim_animal_thumbnails(1)) then raise exception 'retry limit'; end if;
+  if has_function_privilege('anon','claim_animal_thumbnails(integer)','execute') then raise exception 'public worker'; end if;
+end $$;
+rollback;

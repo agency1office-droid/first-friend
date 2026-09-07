@@ -23,7 +23,7 @@ type LossItem = { happenDt?: string; happenAddr?: string; happenPlace?: string; 
 type ShelterItem = { careRegNo?: string; careNm?: string; orgNm?: string; careAddr?: string; careTel?: string; weekOprStime?: string; weekOprEtime?: string; closeDay?: string; lat?: string; lng?: string };
 type ShelterRecord = typeof publicShelters.$inferInsert;
 type AnimalRecord = typeof publicAnimals.$inferInsert & { noticeNo?: string };
-type StoredAnimal = typeof publicAnimals.$inferSelect;
+type StoredAnimal = typeof publicAnimals.$inferSelect & { image1Storage?: string; image2Storage?: string };
 
 export type AnimalPage = {
   items: Animal[];
@@ -49,7 +49,7 @@ const regionCenters: Record<string, [number, number]> = {
 };
 
 let activeAnimalsInFlight: Promise<StoredAnimal[]> | null = null;
-const LIST_ANIMAL_COLUMNS = "id,name,species,breed,up_kind_cd,kind_cd,age,age_group,sex,region,shelter_id,shelter_name,shelter_address,shelter_phone,shelter_lat,shelter_lng,approximate_shelter_location,updated,updated_at,image_1,image_2,colors_json,traits_json,summary,health_json,life_json,match_reason,process_state,active,last_seen_sync,synced_at,size_group,has_multiple_photos,has_exact_location,color_search,public_phase";
+const LIST_ANIMAL_COLUMNS = "id,name,species,breed,up_kind_cd,kind_cd,age,age_group,sex,region,shelter_id,shelter_name,shelter_address,shelter_phone,shelter_lat,shelter_lng,approximate_shelter_location,updated,updated_at,image_1,image_2,image_1_storage,image_2_storage,colors_json,traits_json,summary,health_json,life_json,match_reason,process_state,active,last_seen_sync,synced_at,size_group,has_multiple_photos,has_exact_location,color_search,public_phase";
 type SyncStateRow = { lastCompletedAt?: string | null; last_completed_at?: string | null };
 
 function apiKey() { return process.env.PUBLIC_DATA_API_KEY?.trim(); }
@@ -187,6 +187,8 @@ function storedAnimal(row: Record<string, unknown>) {
     approximateShelterLocation: row.approximate_shelter_location ?? true,
     image1: row.image_1 || "",
     image2: row.image_2 || "",
+    image1Storage: row.image_1_storage || "",
+    image2Storage: row.image_2_storage || "",
     colorsJson: row.colors_json ?? "[]",
     traitsJson: row.traits_json ?? "[]",
     healthJson: row.health_json ?? "[]",
@@ -477,7 +479,8 @@ function fromStored(row: StoredAnimal): Animal {
     region: row.region, shelter: row.shelterName, shelterId: row.shelterId || undefined, shelterAddress: row.shelterAddress || undefined,
     shelterPhone: row.shelterPhone || undefined, shelterLat: row.shelterLat ?? undefined, shelterLng: row.shelterLng ?? undefined,
     approximateShelterLocation: row.approximateShelterLocation, source: "국가동물보호정보시스템", updated: row.updated,
-    image: images[0] || row.image1, images, photoCount: new Set(images).size, colors: jsonArray(row.colorsJson), traits: jsonArray(row.traitsJson),
+    image: images[0] || row.image1, thumbnail: (row.image1 ? row.image1Storage : row.image2Storage)?.includes("/thumb-v1/") ? (row.image1 ? row.image1Storage : row.image2Storage) : undefined,
+    images, photoCount: new Set(images).size, colors: jsonArray(row.colorsJson), traits: jsonArray(row.traitsJson),
     summary: row.summary, health: jsonArray(row.healthJson), life: jsonArray(row.lifeJson), matchReason: row.matchReason,
   };
 }
@@ -720,7 +723,7 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
     const cursor = decodeSearchCursor(options.cursor);
     const sort = options.sort === "distance" && hasHome ? "distance" : "recent";
     const kindCodes = (options.breedKeys || []).map(value => value.split(":")[1]).filter(value => /^\d{6}$/.test(value));
-    const { data, error } = await getSupabaseServerClient().rpc("search_public_animals", {
+    const { data, error } = await getSupabaseServerClient().rpc("search_public_animals_with_storage", {
       p_limit: limit,
       p_cursor_updated_at: cursor?.updatedAt || null,
       p_cursor_id: cursor?.id || null,

@@ -8,8 +8,8 @@ export function optimizedAnimalImageUrl(value: string) {
 
 export function optimizedAnimalThumbnailUrl(value: string) {
   const normalized = value.trim().replace(/^http:\/\//i, "https://");
-  // The public API already serves 400x300 JPEG images. Do not run them
-  // through another resize/proxy step for list cards.
+  // List cards receive a pre-generated Storage URL when available.
+  // Never resize on the user's page request.
   return normalized;
 }
 

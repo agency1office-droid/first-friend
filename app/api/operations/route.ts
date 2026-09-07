@@ -115,6 +115,11 @@ async function performAction(request: Request) {
   if (!canUseOperations(auth.member.role, auth.member.verified, auth.member.sanctioned)) return Response.json({ error: "운영자 권한이 필요합니다." }, { status: 403 });
   const c = auth.client, data = await request.json() as Record<string, unknown>, action = clean(data.action, 40), id = Number(data.id), note = clean(data.note, 500), admin = auth.member.role === "admin";
   if (note.length < 2) return Response.json({ error: "처리 사유를 2자 이상 입력해 주세요." }, { status: 400 });
+  if (action === "image-retry") {
+    if (!admin) return Response.json({ error: "운영 권한이 필요해요." }, { status: 403 });
+    const { data: row } = await c.from("animal_image_jobs").update({ status: "pending", attempt_count: 0, next_attempt_at: new Date().toISOString(), updated_at: new Date().toISOString(), last_error: "" }).eq("id", id).eq("status", "failed").select("id,status").single().throwOnError();
+    return Response.json({ row });
+  }
   if (!admin && !["application-status", "guardian-message", "return-status", "guardian-confirm-handover"].includes(action)) return Response.json({ error: "운영자만 처리할 수 있어요." }, { status: 403 });
   if (atomicReviewActions.includes(action)) {
     if (typeof data.expectedStatus !== "string") return Response.json({ error: "목록을 새로 불러와 주세요." }, { status: 400 });

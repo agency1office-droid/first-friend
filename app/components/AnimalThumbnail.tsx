@@ -4,18 +4,17 @@ import { useState } from "react";
 import { IconPawprintLine } from "@karrotmarket/react-monochrome-icon";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
 
-// 공공 API 이미지 주소를 브라우저가 직접 로드하므로 next/image 대신
-// 브라우저의 lazy loading을 사용합니다.
+// 서버에서 미리 만든 썸네일을 로드하고, 실패하면 원본으로 복구합니다.
 /* eslint-disable @next/next/no-img-element */
 
-export function AnimalThumbnail({ src, alt, priority = false, onUnavailable }: { src: string; alt: string; priority?: boolean; thumbnail?: boolean; onUnavailable?: () => void }) {
+export function AnimalThumbnail({ src, fallbackSrc, alt, priority = false, onUnavailable }: { src: string; fallbackSrc?: string; alt: string; priority?: boolean; thumbnail?: boolean; onUnavailable?: () => void }) {
   const [failed, setFailed] = useState(false);
   const [retrying, setRetrying] = useState(false);
   if (failed || !src.trim()) return <span className="ff-animal-image ff-animal-image-fallback" role="img" aria-label={`${alt}, 사진 준비 중`}><IconPawprintLine aria-hidden /><small>사진 준비 중</small></span>;
   return <img
     key={retrying ? "retry" : "initial"}
     className="ff-animal-image"
-    src={optimizedAnimalImageUrl(src)}
+    src={optimizedAnimalImageUrl(retrying && fallbackSrc ? fallbackSrc : src)}
     alt={alt}
     loading={priority ? "eager" : "lazy"}
     decoding="async"

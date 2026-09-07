@@ -1,0 +1,33 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import sharp from 'sharp';
+import { createServer } from 'vite';
+
+test('thumbnail worker validates sources, shrinks images and protects original URLs', async t => {
+  const server = await createServer({configFile:false,envFile:false,server:{middlewareMode:true,hmr:false},appType:'custom',logLevel:'error'});
+  const originalFetch = globalThis.fetch;
+  t.after(async () => { globalThis.fetch=originalFetch; await server.close(); });
+  const {createAnimalThumbnail,thumbnailSource}=await server.ssrLoadModule('/lib/animal-thumbnails.ts');
+  for(const url of ['https://localhost/a.jpg','https://openapi.animal.go.kr.evil.test/a','https://user@openapi.animal.go.kr/a','https://openapi.animal.go.kr:8443/a','file:///tmp/a']) assert.throws(()=>thumbnailSource(url));
+  const input=await sharp({create:{width:1000,height:750,channels:3,background:'#aabbcc'}}).jpeg().toBuffer();
+  globalThis.fetch=async (url,options)=>{assert.equal(url.hostname,'openapi.animal.go.kr');assert.equal(options.redirect,'error');return new Response(input,{headers:{'content-type':'image/jpeg'}});};
+  const a=await createAnimalThumbnail('http://openapi.animal.go.kr/test.jpg');
+  const b=await createAnimalThumbnail('https://openapi.animal.go.kr/test.jpg');
+  assert.equal(a.key,b.key,'content address is idempotent');
+  assert.match(a.key,/^thumb-v1\/[a-f0-9]{64}\.webp$/);
+  const meta=await sharp(a.buffer).metadata();assert.equal(meta.width,480);assert.equal(meta.height,360);assert.equal(meta.format,'webp');assert.ok(a.buffer.length<input.length);
+  globalThis.fetch=async()=>new Response('not an image',{headers:{'content-type':'text/html'}});
+  await assert.rejects(()=>createAnimalThumbnail('https://openapi.animal.go.kr/a'));
+  globalThis.fetch=async()=>new Response('x',{headers:{'content-type':'image/jpeg','content-length':String(11*1024*1024)}});
+  await assert.rejects(()=>createAnimalThumbnail('https://openapi.animal.go.kr/a'));
+  const oldEnv={url:process.env.NEXT_PUBLIC_SUPABASE_URL,key:process.env.SUPABASE_SECRET_KEY};
+  process.env.NEXT_PUBLIC_SUPABASE_URL='https://thumbnail.example.test';process.env.SUPABASE_SECRET_KEY='test-only';
+  t.after(()=>{for(const [key,value] of [['NEXT_PUBLIC_SUPABASE_URL',oldEnv.url],['SUPABASE_SECRET_KEY',oldEnv.key]]){if(value===undefined)delete process.env[key];else process.env[key]=value;}});
+  const source='https://openapi.animal.go.kr/original.jpg';
+  const thumb='https://thumbnail.example.test/storage/v1/object/public/animal-images/thumb-v1/test.webp';
+  globalThis.fetch=async()=>Response.json([{id:'test',name:'test',species:'강아지',age:'2025(년생)',image_1:source,image_2:'',image_1_storage:thumb}]);
+  const {getStoredAnimalById}=await server.ssrLoadModule('/lib/public-animal-store.ts');
+  const animal=await getStoredAnimalById('test');assert.equal(animal.thumbnail,thumb);assert.equal(animal.image,source);assert.deepEqual(animal.images,[source]);
+  const {GET}=await server.ssrLoadModule('/app/api/cron/animal-thumbnails/route.ts');
+  assert.equal((await GET(new Request('https://www.firstfriend.me/api/cron/animal-thumbnails'))).status,403);
+});

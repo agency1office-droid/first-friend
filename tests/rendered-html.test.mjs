@@ -605,7 +605,7 @@ test("uses the official public breed catalogue and stable breed codes", async ()
   assert.match(filter, /toLocaleLowerCase/);
 });
 
-test("keeps public sync jobs resumable and uses direct public API image URLs", async () => {
+test("keeps public sync jobs resumable and image conversion outside feed requests", async () => {
   const store = await readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8");
   const lostSync = store.slice(store.indexOf("async function syncPublicLostAnimalsUnlocked"), store.indexOf("function storedLostAnimal"));
   assert.match(lostSync, /nextPage/);
@@ -614,7 +614,8 @@ test("keeps public sync jobs resumable and uses direct public API image URLs", a
   assert.match(lostSync, /!seenIds\.has\(row\.id\)/);
   assert.doesNotMatch(store, /syncAnimalImages/);
   assert.doesNotMatch(store, /animal_image_jobs/);
-  assert.doesNotMatch(store, /image_1_storage/);
+  assert.match(store, /image_1_storage/);
+  assert.match(store, /search_public_animals_with_storage/);
 });
 
 test("keeps the nearby feed continuous without manual pagination copy", async () => {

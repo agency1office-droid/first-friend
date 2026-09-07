@@ -1,5 +1,6 @@
 export type OperationRow = Record<string, unknown> & { id: string | number };
 export const operationResources = {
+  imageJobs: { label: "동물 사진 변환", table: "animal_image_jobs", title: "animal_id", search: "animal_id", statuses: ["pending", "processing", "completed", "failed", "superseded"], pending: ["pending", "processing", "failed"], fields: "id,animal_id,slot,status,attempt_count,next_attempt_at,last_error,created_at,updated_at" },
   publicAnimals: { label: "공공 동물 DB", table: "public_animals", title: "name", search: "id", statuses: [], pending: [], fields: "id,name,notice_no,species,breed,age,sex,region,shelter_id,shelter_name,shelter_phone,image_1,image_2,summary,process_state,active,hidden,updated,synced_at" },
   applications: { label: "입양 신청", table: "applications", title: "animal_id", search: "animal_id", statuses: ["submitted", "review", "consulting", "approved", "rejected", "handover", "completed", "withdrawn", "return_support"], pending: ["submitted", "review", "consulting"], fields: "id,member_id,animal_id,status,guardian_id,household,care_plan,readiness_score,suitability_score,suitability_json,absence_plan,emergency_plan,created_at" },
   registrations: { label: "동물 등록", table: "direct_animals", title: "name", search: "name", statuses: ["review", "published", "closed", "draft"], pending: ["review"], fields: "id,member_id,name,species,region,status,rescue_story,health_json,life_json,adoption_terms,image_key,updated_at,created_at" },
@@ -37,9 +38,10 @@ export const operationGroups: { label: string; keys: OperationResource[] }[] = [
   { label: "봉사·후원", keys: ["volunteers", "volunteerApplications", "shelterNeeds", "support", "fundraisers", "pledges"] },
   { label: "문의·신고", keys: ["tickets", "reports", "appeals"] },
   { label: "마케팅·알림", keys: ["campaigns", "deliveries", "notifications"] },
-  { label: "안전과 운영", keys: ["audits"] },
+  { label: "안전과 운영", keys: ["imageJobs", "audits"] },
 ];
 export const operationLabels: Record<string, string> = {
+  slot: "사진 순서", attempt_count: "시도 횟수", next_attempt_at: "다음 재시도", last_error: "실패 이유", superseded: "원본 변경으로 종료",
   item_name:"필요 물품", target_quantity:"필요 수량", received_quantity:"받은 수량", unit_price:"예상 단가 (원)", needed:"모집 중", fulfilled:"수령 완료",
   shelter_phone:"보호처 연락처", representative_name:"대표자·신청자 이름", business_number:"사업자·면허 번호", shelter_type:"보호소 유형", reviewed_by:"심사한 운영자 번호", actor_id:"처리한 운영자 번호", before_json:"처리 전 기록", sanction_id:"제재 번호", source:"인증 경로", health_json:"건강 정보", life_json:"생활 정보", occurred_at:"발생 일시", kind:"종류", tags_json:"그림 태그", raised_amount:"참여 의향 합계 (결제 아님)",
   notice_no:"공고번호", breed:"품종", age:"나이", sex:"성별", summary:"특징", process_state:"공공 원본 상태", updated:"원본 갱신일", synced_at:"마지막 수집", updated_at:"마지막 수정", image_key:"대표 사진 경로",

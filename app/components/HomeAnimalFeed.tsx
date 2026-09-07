@@ -20,6 +20,16 @@ function compactLostRegion(value: string) {
   return parts.slice(-2).join(" ") || value;
 }
 
+function uniqueLostAnimals(animals: LostAnimal[]) {
+  const seen = new Set<string>();
+  return animals.filter(animal => {
+    const key = animal.rfidCd?.trim() || animal.legacyId?.trim() || animal.id;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function compactLostDescription(value: string) {
   const text = value.trim();
   return text.length > 25 ? `${text.slice(0, 25)}...` : text;
@@ -39,7 +49,7 @@ function LostAnimalInsert({ animal }: { animal: LostAnimal }) {
   const detailHref = `/lost-found/animals/${encodeURIComponent(animal.id)}`;
   return <section className="ff-home-lost-insert" aria-label="실종 동물 안내">
     <Link className="ff-home-lost-link" href={detailHref} target="_blank" rel="noreferrer" aria-label={`${animal.species} 실종 동물 상세 정보를 새 탭에서 보기`}>
-      <div className="ff-home-lost-head"><div><div className="ff-kicker">도움이 필요한 이웃</div><h2>우리 동네에서 찾고 있어요</h2></div><span className="ff-home-lost-external-icon"><IconArrowUpRightLine aria-hidden /></span></div>
+      <div className="ff-home-lost-head"><div><div className="ff-kicker">도움이 필요한 친구</div><h2>실종 동물을 찾고 있어요</h2></div><span className="ff-home-lost-external-icon"><IconArrowUpRightLine aria-hidden /></span></div>
       <div className="ff-home-lost-card">
         <Image src={animal.image} alt={`${animal.breed} 실종 동물`} width={104} height={104} unoptimized />
         <span><strong>{animal.species} · {animal.sex}</strong><small>{compactLostRegion(animal.region)} · {compactLostDate(animal.happenedAt)}</small><small>{compactLostDescription(animal.description || "등록된 특징이 없습니다.")}</small></span>
@@ -53,7 +63,7 @@ export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
   const [lostAnimals, setLostAnimals] = useState<LostAnimal[]>([]);
   const { cursor, loadMore } = feed;
   const lostRegion = feed.location?.label || feed.region;
-  useEffect(() => { let active = true; const controller = new AbortController(); const query = lostRegion ? `?region=${encodeURIComponent(lostRegion)}` : ""; fetch(`/api/lost-found${query}`, { signal: controller.signal }).then(response => response.ok ? response.json() as Promise<{ animals?: LostAnimal[] }> : Promise.reject(new Error("lost animals unavailable"))).then(body => { if (active) setLostAnimals(body.animals || []); }).catch(() => { if (active && !controller.signal.aborted) setLostAnimals([]); }); return () => { active = false; controller.abort(); }; }, [lostRegion]);
+  useEffect(() => { let active = true; const controller = new AbortController(); const query = lostRegion ? `?region=${encodeURIComponent(lostRegion)}` : ""; fetch(`/api/lost-found${query}`, { signal: controller.signal }).then(response => response.ok ? response.json() as Promise<{ animals?: LostAnimal[] }> : Promise.reject(new Error("lost animals unavailable"))).then(body => { if (active) setLostAnimals(uniqueLostAnimals(body.animals || [])); }).catch(() => { if (active && !controller.signal.aborted) setLostAnimals([]); }); return () => { active = false; controller.abort(); }; }, [lostRegion]);
   useEffect(() => {
     const node = sentinel.current;
     if (!node || !cursor) return;
@@ -73,7 +83,13 @@ export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
   return <section className={`ff-home-feed${feed.isRestoring ? " ff-home-feed-restoring" : ""}`} id="nearby-animals" aria-label="새 가족을 기다리는 보호동물" aria-busy={feed.isRestoring}>
     <header className="ff-home-feed-head"><div><div className="ff-kicker">{kicker}</div><h1 id="nearby-title">{title}</h1></div><a href="/find">전체 {count}마리</a></header>
     <AnimalFilterBar filters={feed.filters} location={feed.location} hasLocation={Boolean(feed.location)} activeCount={feed.activeCount} setFilter={feed.setFilter} resetFilters={feed.resetFilters}/>
-    {feed.loading && !feed.items.length ? <FeedLoadingState/> : <div className="ff-animal-list">{feed.items.map((animal, index) => <Fragment key={animal.id}><AnimalCard animal={animal} layout="row" priority={index < 4}/>{(index + 1) % 25 === 0 && lostAnimals[(index + 1) / 25 - 1] && <LostAnimalInsert animal={lostAnimals[(index + 1) / 25 - 1]}/>}</Fragment>)}</div>}
+    {feed.loading && !feed.items.length ? <FeedLoadingState/> : <div className="ff-animal-list">{feed.items.map((animal, index) => {
+      const position = index + 1;
+      // 보호소 동물 35개마다 실종 동물 카드를 한 개씩 삽입합니다.
+      const lostIndex = position % 35 === 0 ? position / 35 - 1 : -1;
+      const lostAnimal = lostIndex >= 0 ? lostAnimals[lostIndex] : undefined;
+      return <Fragment key={animal.id}><AnimalCard animal={animal} layout="row" priority={index < 4}/>{lostAnimal && <LostAnimalInsert animal={lostAnimal}/>}</Fragment>;
+    })}</div>}
     {!feed.items.length && !feed.loading && !feed.error && <div className="ff-feed-empty-spacer" aria-hidden="true" />}
     {feed.error && <div className="ff-feed-error" role="alert"><span>{feed.error}</span><button type="button" onClick={() => window.location.reload()}>{feed.items.length ? "다시 불러오기" : "다시 시도"}</button></div>}
     <div className="ff-feed-sentinel" ref={sentinel} aria-hidden="true" />

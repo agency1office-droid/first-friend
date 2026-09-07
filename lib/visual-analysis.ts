@@ -11,11 +11,14 @@ export type VisualAnalysis = {
   modelLabels: string[];
   tags: string[];
   usedOpenSourceModel: boolean;
+  embedding?: number[];
+  embeddingVariants?: number[][];
 };
 
 type ClipPrediction = { className: string; probability: number };
 type MobileClipModel = {
-  classify(source: HTMLCanvasElement | HTMLImageElement, topK?: number): Promise<{ className: string; probability: number }[]>;
+  classify(source: HTMLCanvasElement | HTMLImageElement, topK?: number): Promise<{ predictions: ClipPrediction[]; embedding: number[] }>;
+  embed(source: HTMLCanvasElement | HTMLImageElement | string): Promise<number[]>;
 };
 
 const mobileClipModelId = "plhery/mobileclip2-onnx";
@@ -34,18 +37,22 @@ async function createMobileClip(device: "webgpu" | "wasm") {
   const textInputs = tokenizer(mobileClipLabels, { padding: "max_length", truncation: true });
   const textOutput = await textModel(textInputs);
   const textEmbeddings = textOutput.text_embeds.normalize(2, -1).tolist() as number[][];
+  async function embed(source: HTMLCanvasElement | HTMLImageElement | string) {
+    const image = typeof source === "string" ? await transformers.RawImage.read(source) : source instanceof HTMLCanvasElement ? transformers.RawImage.fromCanvas(source) : await transformers.RawImage.read(source.src);
+    const imageInputs = await processor(image);
+    const imageOutput = await visionModel(imageInputs);
+    return (imageOutput.image_embeds.normalize(2, -1).tolist() as number[][])[0];
+  }
   return {
     async classify(source: HTMLCanvasElement | HTMLImageElement) {
-      const image = source instanceof HTMLCanvasElement ? transformers.RawImage.fromCanvas(source) : await transformers.RawImage.read(source.src);
-      const imageInputs = await processor(image);
-      const imageOutput = await visionModel(imageInputs);
-      const imageEmbedding = (imageOutput.image_embeds.normalize(2, -1).tolist() as number[][])[0];
+      const imageEmbedding = await embed(source);
       const scores = textEmbeddings.map((embedding) => embedding.reduce((sum, value, index) => sum + value * (imageEmbedding[index] || 0), 0));
       const max = Math.max(...scores);
       const probabilities = scores.map((score) => Math.exp((score - max) * 12));
       const total = probabilities.reduce((sum, value) => sum + value, 0) || 1;
-      return mobileClipLabels.map((className, index) => ({ className, probability: probabilities[index] / total })).sort((a, b) => b.probability - a.probability) as ClipPrediction[];
+      return { predictions: mobileClipLabels.map((className, index) => ({ className, probability: probabilities[index] / total })).sort((a, b) => b.probability - a.probability) as ClipPrediction[], embedding: imageEmbedding };
     },
+    embed,
   } satisfies MobileClipModel;
 }
 
@@ -58,6 +65,7 @@ async function loadModel() {
       try {
         return await createMobileClip("wasm");
       } catch {
+        modelPromise = null;
         return null;
       }
     })();
@@ -99,31 +107,114 @@ async function classify(source: HTMLCanvasElement | HTMLImageElement) {
       loadModel(),
       new Promise<MobileClipModel | null>((resolve) => window.setTimeout(() => resolve(null), 1200)),
     ]);
-    if (!model) return [];
+    if (!model) return { predictions: [] as ClipPrediction[], embedding: null as number[] | null };
     // 모델이 이미 준비된 경우에만 즉시 분류하고, 첫 다운로드 중에는
     // 휴리스틱 분석 결과를 먼저 사용합니다.
-    const predictions = await Promise.race([
+    const classification = await Promise.race([
       model.classify(source, 5),
-      new Promise<ClipPrediction[]>((resolve) => window.setTimeout(() => resolve([]), 1200)),
+      new Promise<{ predictions: ClipPrediction[]; embedding: number[] }>((resolve) => window.setTimeout(() => resolve({ predictions: [], embedding: [] }), 1200)),
     ]);
-    return predictions;
-  } catch { return []; }
+    return { predictions: classification.predictions, embedding: classification.embedding.length ? classification.embedding : null };
+  } catch { return { predictions: [] as ClipPrediction[], embedding: null as number[] | null }; }
+}
+
+const visualEmbeddingCache = new Map<string, Promise<number[]>>();
+const visualEmbeddingCacheLimit = 96;
+
+function timedEmbedding(model: MobileClipModel, image: string) {
+  return Promise.race([
+    model.embed(image),
+    new Promise<number[]>((resolve, reject) => window.setTimeout(() => reject(new Error("이미지 분석 시간 초과")), 5000)),
+  ]);
+}
+
+/** Compares a drawing embedding with every image-backed candidate in the selected species. */
+export async function getVisualSimilarityScores(queryEmbeddings: number[][], animals: { id: string; image: string }[]) {
+  const scores = new Map<string, number>();
+  const validQueries = queryEmbeddings.filter((embedding) => embedding.length);
+  if (!validQueries.length) return scores;
+  const model = await loadModel();
+  if (!model) return scores;
+  const candidates = animals.filter((item) => item.image);
+  for (let index = 0; index < candidates.length; index += 8) {
+    const batch = await Promise.all(candidates.slice(index, index + 8).map(async (animal) => {
+      const cached = visualEmbeddingCache.get(animal.image);
+      let embedding = cached ? await cached : null;
+      if (!embedding) {
+        try {
+          embedding = await timedEmbedding(model, animal.image);
+          visualEmbeddingCache.set(animal.image, Promise.resolve(embedding));
+          while (visualEmbeddingCache.size > visualEmbeddingCacheLimit) visualEmbeddingCache.delete(visualEmbeddingCache.keys().next().value as string);
+        } catch { embedding = null; }
+      }
+      if (!embedding) return null;
+      const similarities = validQueries.map((query) => embedding.reduce((sum, value, itemIndex) => sum + value * (query[itemIndex] || 0), 0));
+      const average = similarities.reduce((sum, value) => sum + value, 0) / similarities.length;
+      return { id: animal.id, score: Math.max(...similarities) * 0.65 + average * 0.35 };
+    }));
+    for (const result of batch) if (result) scores.set(result.id, result.score);
+  }
+  return scores;
 }
 
 export async function analyzeVisual(source: HTMLCanvasElement | HTMLImageElement, isDrawing: boolean, preferredSpecies: "none" | "강아지" | "고양이" = "none"): Promise<VisualAnalysis> {
-  const sample = document.createElement("canvas"); sample.width = 224; sample.height = 224;
+  const base = document.createElement("canvas"); base.width = 224; base.height = 224;
+  const baseContext = base.getContext("2d", { willReadFrequently: true });
+  if (!baseContext) throw new Error("이미지를 분석할 수 없습니다.");
+  baseContext.fillStyle = "#fff"; baseContext.fillRect(0, 0, 224, 224); baseContext.drawImage(source, 0, 0, 224, 224);
+  let sample: HTMLCanvasElement = base;
+  if (isDrawing) {
+    const baseData = baseContext.getImageData(0, 0, 224, 224).data;
+    let minX = 224, minY = 224, maxX = -1, maxY = -1;
+    for (let y = 0; y < 224; y += 1) for (let x = 0; x < 224; x += 1) {
+      const index = (y * 224 + x) * 4;
+      if (Math.abs(255 - baseData[index]) + Math.abs(255 - baseData[index + 1]) + Math.abs(255 - baseData[index + 2]) > 55) {
+        minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      }
+    }
+    if (maxX >= minX && maxY >= minY) {
+      const cropWidth = maxX - minX + 1, cropHeight = maxY - minY + 1;
+      const padding = Math.max(10, Math.round(Math.max(cropWidth, cropHeight) * 0.14));
+      const cropX = Math.max(0, minX - padding), cropY = Math.max(0, minY - padding);
+      const cropRight = Math.min(224, maxX + padding + 1), cropBottom = Math.min(224, maxY + padding + 1);
+      const width = cropRight - cropX, height = cropBottom - cropY;
+      const normalized = document.createElement("canvas"); normalized.width = 224; normalized.height = 224;
+      const normalizedContext = normalized.getContext("2d");
+      if (normalizedContext) {
+        normalizedContext.fillStyle = "#fff"; normalizedContext.fillRect(0, 0, 224, 224);
+        const scale = Math.min(204 / width, 204 / height);
+        const drawWidth = width * scale, drawHeight = height * scale;
+        normalizedContext.drawImage(base, cropX, cropY, width, height, (224 - drawWidth) / 2, (224 - drawHeight) / 2, drawWidth, drawHeight);
+        sample = normalized;
+      }
+    }
+  }
   const context = sample.getContext("2d", { willReadFrequently: true });
   if (!context) throw new Error("이미지를 분석할 수 없습니다.");
-  context.fillStyle = "#fff"; context.fillRect(0, 0, 224, 224); context.drawImage(source, 0, 0, 224, 224);
   const { data } = context.getImageData(0, 0, 224, 224);
   const counts = new Map<string, number>(); let minX = 224, minY = 224, maxX = 0, maxY = 0, active = 0, edges = 0;
   const gray = new Uint8Array(224 * 224), mask = new Uint8Array(224 * 224);
-  for (let y=0;y<224;y++) for (let x=0;x<224;x++) { const p=(y*224+x)*4, r=data[p],g=data[p+1],b=data[p+2], brightness=(r+g+b)/3; gray[y*224+x]=brightness; const foreground=!isDrawing || Math.abs(255-r)+Math.abs(255-g)+Math.abs(255-b)>55; if (!foreground) continue; active++; mask[y*224+x]=1; minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);const nearest=nearestColor(r,g,b); if (nearest.distance <= 70 ** 2) counts.set(nearest.name,(counts.get(nearest.name)||0)+1); }
+  for (let y=0;y<224;y++) for (let x=0;x<224;x++) {
+    const p=(y*224+x)*4, r=data[p],g=data[p+1],b=data[p+2], brightness=(r+g+b)/3;
+    gray[y*224+x]=brightness;
+    const foreground=!isDrawing || Math.abs(255-r)+Math.abs(255-g)+Math.abs(255-b)>55;
+    if (!foreground || (isDrawing && brightness > 225)) continue;
+    active++; mask[y*224+x]=1; minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+    // A black stroke produces gray anti-aliased edge pixels. Treat neutral
+    // pixels as one black signal instead of mistaking them for gray/white fur.
+    const channelRange=Math.max(r,g,b)-Math.min(r,g,b);
+    if (isDrawing && channelRange < 22) {
+      if (brightness < 130) counts.set("검정",(counts.get("검정")||0)+1);
+      continue;
+    }
+    const nearest=nearestColor(r,g,b);
+    if (nearest.distance <= 55 ** 2) counts.set(nearest.name,(counts.get(nearest.name)||0)+1);
+  }
   for (let y=1;y<223;y++) for (let x=1;x<223;x++) { const i=y*224+x; if (mask[i] && Math.abs(gray[i]-gray[i-1])+Math.abs(gray[i]-gray[i-224])>75) edges++; }
   const boxArea=Math.max(1,(maxX-minX+1)*(maxY-minY+1)), fillRatio=active/(224*224), edgeRatio=edges/Math.max(1,active);
   // 색상 가장자리의 반투명 혼합 픽셀은 별도 색으로 세지 않습니다.
   // 실제로 칠한 색으로 볼 수 있는 면적만 남겨 검정·흰색 그림이 잡색으로 늘어나는 것을 막습니다.
-  const detectedColors=[...counts.entries()].sort((a,b)=>b[1]-a[1]).filter(([,value])=>value>=Math.max(12,active*.05)).map(([name])=>name);
+  const detectedColors=[...counts.entries()].sort((a,b)=>b[1]-a[1]).filter(([,value])=>value>=Math.max(8,active*.04)).map(([name])=>name);
   // Drawing outlines are usually black, so ignore black when the canvas also has a filled color.
   // Keep it when it is the only detected color because an all-black drawing is still meaningful.
   const colors=isDrawing && detectedColors.length>1 ? detectedColors.filter((name)=>name!=="검정") : detectedColors;
@@ -133,7 +224,25 @@ export async function analyzeVisual(source: HTMLCanvasElement | HTMLImageElement
   // 눈 크기는 그림의 얼굴 상단부에 있는 어두운 픽셀 덩어리 비율을 사용한 설명 가능한 휴리스틱입니다.
   let upperDark=0; for(let y=minY;y<Math.min(maxY,minY+(maxY-minY)*.6);y++) for(let x=minX;x<=maxX;x++){const i=y*224+x;if(mask[i]&&gray[i]<80)upperDark++;}
   const eyeRatio=upperDark/boxArea, eyes=eyeRatio>.035?"큰 눈":eyeRatio<.009?"작은 눈":"보통 눈";
-  const predictions=await classify(source), hints=modelHints(predictions);
+  const classification=await classify(sample), predictions=classification.predictions, hints=modelHints(predictions);
+  let embeddingVariants = classification.embedding ? [classification.embedding] : [];
+  if (isDrawing) {
+    // CLIP sees line art and shelter photos as different domains. A binary
+    // line-art view gives retrieval a second, background-independent signal.
+    const lineVariant = document.createElement("canvas"); lineVariant.width = 224; lineVariant.height = 224;
+    const lineContext = lineVariant.getContext("2d");
+    if (lineContext) {
+      const lineData = lineContext.createImageData(224, 224);
+      for (let index = 0; index < data.length; index += 4) {
+        const brightness = (data[index] + data[index + 1] + data[index + 2]) / 3;
+        const value = brightness < 215 ? 0 : 255;
+        lineData.data[index] = value; lineData.data[index + 1] = value; lineData.data[index + 2] = value; lineData.data[index + 3] = 255;
+      }
+      lineContext.putImageData(lineData, 0, 0);
+      const lineClassification = await classify(lineVariant);
+      if (lineClassification.embedding) embeddingVariants = [...embeddingVariants, lineClassification.embedding];
+    }
+  }
   const species=isDrawing && preferredSpecies !== "none" ? preferredSpecies : hints.species;
   // 손그림은 칠한 대표 색상과 선택된 종만 확실한 검색 단서로 사용합니다.
   // 눈·털 길이·체형은 그림의 선 굵기와 캔버스 비율에 크게 좌우되므로 태그에서 제외합니다.
@@ -144,7 +253,7 @@ export async function analyzeVisual(source: HTMLCanvasElement | HTMLImageElement
     `무늬: ${pattern}`,
     `형태: ${size}`,
   ];
-  return { source:isDrawing ? "drawing" : "photo", species,speciesConfidence:hints.confidence,colors:colors.length ? colors : isDrawing ? [] : ["회색"],size,eyes,fur,pattern,breedHints:isDrawing ? [] : hints.breeds,modelLabels:predictions.map(item=>item.className),tags,usedOpenSourceModel:predictions.length>0 };
+  return { source:isDrawing ? "drawing" : "photo", species,speciesConfidence:hints.confidence,colors:colors.length ? colors : isDrawing ? [] : ["회색"],size,eyes,fur,pattern,breedHints:isDrawing ? [] : hints.breeds,modelLabels:predictions.map(item=>item.className),tags,usedOpenSourceModel:predictions.length>0,embedding:classification.embedding || undefined,embeddingVariants:embeddingVariants.length ? embeddingVariants : undefined };
 }
 
 export function animalVisualTags(animal: { breed:string; colors:string[]; traits:string[] }) {

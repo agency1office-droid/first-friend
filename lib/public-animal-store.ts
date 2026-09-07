@@ -76,12 +76,33 @@ function ageGroup(value = ""): Animal["ageGroup"] {
 }
 function lostSpecies(value = "") { const text = value.trim().toLocaleLowerCase("ko-KR"); if (/고양이|묘|러시안\s*블루|랙돌|페르시안|샴|스코티시|메인쿤|먼치킨|스핑크스/.test(text)) return "고양이"; if (/견|강아지|^개$|말티즈|푸들|포메라니안|비숑|치와와|시츄|진돗개|리트리버|스피츠|테리어|불독|닥스훈트|비글|웰시코기/.test(text)) return "강아지"; return "기타"; }
 function lostSex(value = "") { return value === "M" ? "수컷" : value === "F" ? "암컷" : "미상"; }
-function lostDate(value = "") { return value.replace(/\.0$/, "") || "발생일 미상"; }
+function lostDate(value = "") {
+  const raw = value.replace(/\.0$/, "").trim();
+  const match = raw.match(/^(\d{4})[-.](\d{1,2})[-.](\d{1,2})(?:[ T](\d{1,2}):?(\d{2})?(?::\d{2})?)?$/);
+  if (!match) return raw || "발생일 미상";
+  const [, year, month, day, hourText, minuteText] = match;
+  if (hourText === undefined) return `${year}년 ${Number(month)}월 ${Number(day)}일`;
+  const hour = Number(hourText);
+  const period = hour >= 12 ? "오후" : "오전";
+  const displayHour = hour % 12 || 12;
+  const minute = minuteText && Number(minuteText) > 0 ? ` ${Number(minuteText)}분` : "";
+  return `${year}년 ${Number(month)}월 ${Number(day)}일 ${period} ${displayHour}시${minute}`;
+}
+function lostPlace(address = "", happenPlace = "", region = "") {
+  const addressValue = address.trim(), placeValue = happenPlace.trim();
+  const normalize = (value: string) => value.replace(/[\s,·()[\]{}]/g, "").toLocaleLowerCase("ko-KR");
+  if (!addressValue && !placeValue) return `${region || "관할 지역"} 인근`;
+  if (!placeValue || normalize(addressValue).includes(normalize(placeValue)) || normalize(placeValue).includes(normalize(addressValue))) return addressValue || placeValue;
+  return [addressValue, placeValue].filter(Boolean).join(" · ");
+}
+function missingHappenPlaceColumn(error: { code?: string; message?: string } | null) {
+  return error?.code === "42703" && /happen_place|rfid_cd/i.test(error.message || "");
+}
 function mapLostAnimal(item: LossItem, index: number, syncedAt: string) {
   const id = item.rfidCd?.trim() || `${item.happenDt || "loss"}-${index}`;
   const species = lostSpecies(item.kindCd);
   if (!item.popfile || species === "기타") return null;
-  return { id, legacyId: `${item.happenDt || "loss"}-${index}`, species, breed: item.kindCd || "품종 미상", sex: lostSex(item.sexCd), age: item.age || "나이 미상", color: item.colorCd || "털색 미상", happenedAt: lostDate(item.happenDt), region: item.orgNm || "지역 미상", address: item.happenAddr || "", place: `${item.orgNm || item.happenAddr?.split(" ").slice(0, 2).join(" ") || "관할 지역"} 인근 · 상세 위치 비공개`, description: item.specialMark || "등록된 특징이 없습니다.", image: secureImage(item.popfile), active: true, synced_at: syncedAt };
+  return { id, legacyId: `${item.happenDt || "loss"}-${index}`, rfidCd: item.rfidCd?.trim() || undefined, species, breed: item.kindCd || "품종 미상", sex: lostSex(item.sexCd), age: item.age || "나이 미상", color: item.colorCd || "털색 미상", happenedAt: lostDate(item.happenDt), region: item.orgNm || "지역 미상", address: item.happenAddr || "", place: lostPlace(item.happenAddr || "", item.happenPlace || "", item.orgNm || ""), happenPlace: item.happenPlace?.trim() || undefined, description: item.specialMark || "등록된 특징이 없습니다.", image: secureImage(item.popfile), active: true, synced_at: syncedAt };
 }
 function displayName(item: AnimalItem) { return [item.kindNm || species(item), item.noticeNo?.split("-").at(-1)].filter(Boolean).join(" · "); }
 function validPoint(lat: number, lng: number) { return Number.isFinite(lat) && Number.isFinite(lng) && lat > 30 && lat < 40 && lng > 120 && lng < 135; }
@@ -597,12 +618,22 @@ async function syncPublicLostAnimalsUnlocked() {
         }
       });
       const rows = [...uniqueRows.values()].map(row => ({
-        id: row!.id, legacy_id: row!.legacyId || "", species: row!.species, breed: row!.breed, sex: row!.sex, age: row!.age,
-        color: row!.color, happened_at: row!.happenedAt, region: row!.region, address: row!.address, place: row!.place,
+        id: row!.id, legacy_id: row!.legacyId || "", rfid_cd: row!.rfidCd || "", species: row!.species, breed: row!.breed, sex: row!.sex, age: row!.age,
+        color: row!.color, happened_at: row!.happenedAt, region: row!.region, address: row!.address, place: row!.place, happen_place: row!.happenPlace || "",
         description: row!.description, image: row!.image, active: true, last_seen_sync: syncId, synced_at: syncedAt,
       }));
       if (rows.length) {
-        const { error } = await supabase.from("public_lost_animals").upsert(rows, { onConflict: "id" });
+        let { error } = await supabase.from("public_lost_animals").upsert(rows, { onConflict: "id" });
+        // 마이그레이션 전 DB에서도 기존 place 값으로 동기화가 중단되지 않게 합니다.
+        if (missingHappenPlaceColumn(error)) {
+          const legacyRows = rows.map((row) => {
+            const legacyRow: Record<string, unknown> = { ...row };
+            delete legacyRow.happen_place;
+            delete legacyRow.rfid_cd;
+            return legacyRow;
+          });
+          ({ error } = await supabase.from("public_lost_animals").upsert(legacyRows, { onConflict: "id" }));
+        }
         if (error) throw error;
         count += rows.length;
       }
@@ -629,7 +660,9 @@ async function syncPublicLostAnimalsUnlocked() {
 }
 
 function storedLostAnimal(row: Record<string, unknown>): LostAnimal {
-  return { id: String(row.id), legacyId: String(row.legacy_id || ""), species: String(row.species), breed: String(row.breed), sex: String(row.sex), age: String(row.age), color: String(row.color), happenedAt: String(row.happened_at), region: String(row.region), address: String(row.address || ""), place: String(row.place || ""), description: String(row.description || ""), image: String(row.image || "") };
+  const address = String(row.address || ""), happenPlace = String(row.happen_place || "").trim(), region = String(row.region || "");
+  const storedPlace = String(row.place || "").replace(/\s*·\s*상세 위치 비공개\s*$/, "");
+  return { id: String(row.id), legacyId: String(row.legacy_id || ""), rfidCd: String(row.rfid_cd || "").trim() || undefined, species: String(row.species), breed: String(row.breed), sex: String(row.sex), age: String(row.age), color: String(row.color), happenedAt: lostDate(String(row.happened_at)), region, address, place: happenPlace ? lostPlace(address, happenPlace, region) : (storedPlace || lostPlace(address, "", region)), happenPlace: happenPlace || undefined, description: String(row.description || ""), image: String(row.image || ""), updated: compactDate(String(row.synced_at || "")) };
 }
 
 function lostRegionParts(value: string) {
@@ -655,17 +688,27 @@ export async function getNearbyStoredLostAnimals(homeRegion: string, limit = 8):
 
 export async function getStoredLostAnimals(limit = 12): Promise<LostAnimal[]> {
   const safeLimit = Math.min(100, Math.max(1, limit));
-  const { data, error } = await getSupabaseServerClient().from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image").eq("active", true).order("happened_at", { ascending: false }).limit(safeLimit);
+  const supabase = getSupabaseServerClient();
+  let { data, error } = await supabase.from("public_lost_animals").select("id,legacy_id,rfid_cd,species,breed,sex,age,color,happened_at,region,address,place,happen_place,description,image,synced_at").eq("active", true).order("happened_at", { ascending: false }).limit(safeLimit);
+  if (missingHappenPlaceColumn(error)) {
+    ({ data, error } = await supabase.from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image,synced_at").eq("active", true).order("happened_at", { ascending: false }).limit(safeLimit));
+  }
   if (error) throw error;
   return (data || []).map(row => storedLostAnimal(row as Record<string, unknown>));
 }
 
 export async function getStoredLostAnimalById(id: string) {
-  const { data, error } = await getSupabaseServerClient().from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image").eq("active", true).eq("id", id).limit(1);
+  const supabase = getSupabaseServerClient();
+  let { data, error } = await supabase.from("public_lost_animals").select("id,legacy_id,rfid_cd,species,breed,sex,age,color,happened_at,region,address,place,happen_place,description,image,synced_at").eq("active", true).eq("id", id).limit(1);
+  if (missingHappenPlaceColumn(error)) {
+    ({ data, error } = await supabase.from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image,synced_at").eq("active", true).eq("id", id).limit(1));
+  }
   if (error) throw error;
   const row = data?.[0];
   if (!row) return undefined;
-  return { id: String(row.id), legacyId: String(row.legacy_id || ""), species: String(row.species), breed: String(row.breed), sex: String(row.sex), age: String(row.age), color: String(row.color), happenedAt: String(row.happened_at), region: String(row.region), address: String(row.address || ""), place: String(row.place || ""), description: String(row.description || ""), image: String(row.image || "") };
+  const address = String(row.address || ""), happenPlace = String(row.happen_place || "").trim(), region = String(row.region || "");
+  const storedPlace = String(row.place || "").replace(/\s*·\s*상세 위치 비공개\s*$/, "");
+  return { id: String(row.id), legacyId: String(row.legacy_id || ""), rfidCd: String(row.rfid_cd || "").trim() || undefined, species: String(row.species), breed: String(row.breed), sex: String(row.sex), age: String(row.age), color: String(row.color), happenedAt: lostDate(String(row.happened_at)), region, address, place: happenPlace ? lostPlace(address, happenPlace, region) : (storedPlace || lostPlace(address, "", region)), happenPlace: happenPlace || undefined, description: String(row.description || ""), image: String(row.image || ""), updated: compactDate(String(row.synced_at || "")) };
 }
 
 export const getCachedStoredLostAnimalById = cache(getStoredLostAnimalById);

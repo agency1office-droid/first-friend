@@ -4,8 +4,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { getStroke } from "perfect-freehand";
+import { HexColorPicker } from "react-colorful";
 import type { Animal } from "../../lib/data";
-import { analyzeVisual, animalVisualTags, type VisualAnalysis } from "../../lib/visual-analysis";
+import { analyzeVisual, animalVisualTags, getVisualSimilarityScores, preloadVisualModel, type VisualAnalysis } from "../../lib/visual-analysis";
 import { AnimalCard } from "./AnimalCard";
 import { ActionButton } from "seed-design/ui/action-button";
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
@@ -48,7 +49,7 @@ function colorDistance(first: number[], second: number[]) {
 
 type Mode = "draw" | "photo" | "conditions";
 
-export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Animal[]; modeOnly?: Mode; initialTags?: string }) {
+export function Finder({ animals, modeOnly, initialTags = "", resultsOnly = false }: { animals: Animal[]; modeOnly?: Mode; initialTags?: string; resultsOnly?: boolean }) {
   const feedback = useAppFeedback();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -57,7 +58,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const strokeBaseImage = useRef<ImageData | null>(null);
   const undoStack = useRef<ImageData[]>([]);
   const redoStack = useRef<ImageData[]>([]);
-  const animalsLoadPromise = useRef<Promise<Animal[]> | null>(null);
+  const allAnimalsLoadPromise = useRef<Promise<Animal[]> | null>(null);
   const mode = modeOnly || "draw";
   const [brushColor, setBrushColor] = useState(palette[0]);
   const [canvasSource, setCanvasSource] = useState<"drawing" | "photo">("drawing");
@@ -93,8 +94,12 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   const [availableAnimals, setAvailableAnimals] = useState(animals);
   const [ranked, setRanked] = useState(animals);
   const [analysis, setAnalysis] = useState<VisualAnalysis | null>(null);
+  const [visualScores, setVisualScores] = useState<Record<string, number>>({});
   const [analyzing, setAnalyzing] = useState(false);
   const [saveState, setSaveState] = useState("");
+  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+  const [cursorVisible, setCursorVisible] = useState(false);
+  const [resultReady, setResultReady] = useState(!resultsOnly);
 
   const breeds = useMemo(() => ["상관 없음", ...Array.from(new Set(availableAnimals.map((animal) => animal.breed))).slice(0, 30)], [availableAnimals]);
   const regions = useMemo(() => ["전국", ...Array.from(new Set(availableAnimals.map((animal) => animal.region.split(" ")[0]))).filter(Boolean)], [availableAnimals]);
@@ -105,9 +110,45 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     setBrushColor({ name: "사용자 색상", hex });
     setIsErasing(false);
   }
+  function chooseFillColor(value: string) {
+    const hex = normalizeHex(value);
+    if (!hex) return;
+    setBrushColor({ name: "사용자 색상", hex });
+    setIsFilling(true);
+    setIsErasing(false);
+  }
 
   useEffect(() => {
-    if (animals.length || (mode !== "draw" && mode !== "photo")) return;
+    if (mode === "draw" && !resultsOnly) preloadVisualModel();
+  }, [mode, resultsOnly]);
+
+  useEffect(() => {
+    if (!resultsOnly) return;
+    let cancelled = false;
+    try {
+      const raw = window.sessionStorage.getItem("ff-drawing-results");
+      const payload = raw ? JSON.parse(raw) as { ranked?: Animal[]; available?: Animal[]; analysis?: VisualAnalysis | null } : null;
+      window.setTimeout(() => {
+        if (cancelled) return;
+        if (payload) {
+          if (Array.isArray(payload.available)) setAvailableAnimals(payload.available);
+          if (Array.isArray(payload.ranked)) setRanked(payload.ranked);
+          if (payload.analysis && typeof payload.analysis === "object") setAnalysis(payload.analysis);
+          setMatched(true);
+        }
+        setResultReady(true);
+      }, 0);
+    } catch {
+      // A missing or expired session result is handled by the empty state below.
+      window.setTimeout(() => {
+        if (!cancelled) setResultReady(true);
+      }, 0);
+    }
+    return () => { cancelled = true; };
+  }, [resultsOnly]);
+
+  useEffect(() => {
+    if (resultsOnly || animals.length || (mode !== "draw" && mode !== "photo")) return;
     let cancelled = false;
     const load = async () => {
       try {
@@ -131,20 +172,29 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
       if (typeof schedule === "number") window.clearTimeout(schedule);
       else window.cancelIdleCallback?.(schedule);
     };
-  }, [animals, mode]);
+  }, [animals, mode, resultsOnly]);
 
   function ensureAnimals() {
-    if (availableAnimals.length) return Promise.resolve(availableAnimals);
-    if (!animalsLoadPromise.current) {
-      animalsLoadPromise.current = fetch("/api/animals?limit=30", { cache: "force-cache" })
-        .then(async (response) => {
-          if (!response.ok) return [];
-          const payload = await response.json() as { items?: Animal[] };
-          return Array.isArray(payload.items) ? payload.items : [];
-        })
-        .catch(() => []);
+    if (animals.length) return Promise.resolve(animals);
+    if (!allAnimalsLoadPromise.current) {
+      allAnimalsLoadPromise.current = (async () => {
+        const items: Animal[] = [];
+        let cursor = "";
+        const selectedSpecies = drawSpecies || (species === "고양이" ? "고양이" : species === "강아지" ? "강아지" : "");
+        const speciesParam = selectedSpecies === "고양이" ? "&species=cat" : selectedSpecies === "강아지" ? "&species=dog" : "";
+        for (let page = 0; page < 80; page += 1) {
+          const cursorParam = cursor ? `&cursor=${encodeURIComponent(cursor)}` : "";
+          const response = await fetch(`/api/animals?limit=50${speciesParam}${cursorParam}`, { cache: "force-cache" });
+          if (!response.ok) break;
+          const payload = await response.json() as { items?: Animal[]; nextCursor?: string | null };
+          if (Array.isArray(payload.items)) items.push(...payload.items);
+          if (!payload.nextCursor || !payload.items?.length) break;
+          cursor = payload.nextCursor;
+        }
+        return items.length ? items : availableAnimals;
+      })().catch(() => availableAnimals);
     }
-    return animalsLoadPromise.current;
+    return allAnimalsLoadPromise.current;
   }
 
   useEffect(() => {
@@ -157,9 +207,8 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
       frame = window.requestAnimationFrame(() => {
         frame = 0;
         const ratio = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-        const width = Math.max(1, Math.round(rect.width));
-        const height = Math.max(1, Math.round(rect.height));
+        const width = Math.max(1, canvas.clientWidth);
+        const height = Math.max(1, canvas.clientHeight);
         const pixelWidth = Math.round(width * ratio);
         const pixelHeight = Math.round(height * ratio);
         if (canvas.width === pixelWidth && canvas.height === pixelHeight) return;
@@ -178,9 +227,11 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     const observer = new ResizeObserver(resize);
     observer.observe(container);
     return () => { observer.disconnect(); if (frame) window.cancelAnimationFrame(frame); };
-  }, []);
+  }, [mode, drawSpeciesConfirmed]);
 
-  function point(event: React.PointerEvent<HTMLCanvasElement>): [number, number, number] { const canvas = event.currentTarget; const rect = canvas.getBoundingClientRect(); const ratio = window.devicePixelRatio || 1; const logicalWidth = canvas.width / ratio; const logicalHeight = canvas.height / ratio; return [(event.clientX - rect.left) * (logicalWidth / rect.width), (event.clientY - rect.top) * (logicalHeight / rect.height), event.pressure || 0.5]; }
+  function canvasPosition(event: React.PointerEvent<HTMLCanvasElement>) { const canvas = event.currentTarget; const rect = canvas.getBoundingClientRect(); return { x: Math.max(0, Math.min(canvas.clientWidth, (event.clientX - rect.left) * canvas.clientWidth / Math.max(1, rect.width))), y: Math.max(0, Math.min(canvas.clientHeight, (event.clientY - rect.top) * canvas.clientHeight / Math.max(1, rect.height))) }; }
+  function point(event: React.PointerEvent<HTMLCanvasElement>): [number, number, number] { const position = canvasPosition(event); return [position.x, position.y, event.pressure || 0.5]; }
+  function updateCursor(event: React.PointerEvent<HTMLCanvasElement>) { if (event.pointerType !== "mouse") { setCursorVisible(false); return; } const canvas = event.currentTarget; const rect = canvas.getBoundingClientRect(); setCursorPosition({ x: event.clientX - rect.left, y: event.clientY - rect.top }); setCursorVisible(true); }
   function drawBrushTexture(context: CanvasRenderingContext2D, points: [number, number, number][], outline: [number, number][]) {
     if (isErasing || !points.length) return;
     context.save();
@@ -231,6 +282,8 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   }
   function drawSmoothStroke(context: CanvasRenderingContext2D, points: [number, number, number][]) {
     if (!points.length) return;
+    const ratio = window.devicePixelRatio || 1;
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
     const outline = getStroke(points, { size: isErasing ? eraserSize : brushSize, thinning, smoothing, streamline, simulatePressure, easing: easing === "Linear" ? undefined : (value: number) => value * value, last: true, start: { cap: capStart, taper: taperStart || false }, end: { cap: capEnd, taper: taperEnd || false } });
     context.beginPath();
     context.moveTo(outline[0][0], outline[0][1]);
@@ -249,9 +302,10 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     const canvas = event.currentTarget;
     const context = canvas.getContext("2d");
     if (!context) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.max(0, Math.min(canvas.width - 1, Math.floor((event.clientX - rect.left) * canvas.width / rect.width)));
-    const y = Math.max(0, Math.min(canvas.height - 1, Math.floor((event.clientY - rect.top) * canvas.height / rect.height)));
+    const position = canvasPosition(event);
+    const ratio = window.devicePixelRatio || 1;
+    const x = Math.max(0, Math.min(canvas.width - 1, Math.floor(position.x * ratio)));
+    const y = Math.max(0, Math.min(canvas.height - 1, Math.floor(position.y * ratio)));
     const image = context.getImageData(0, 0, canvas.width, canvas.height);
     const data = image.data;
     const start = (y * canvas.width + x) * 4;
@@ -259,6 +313,30 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     const fill = hexToRgb(brushColor.hex);
     if (!fill || colorDistance(target, [fill.r, fill.g, fill.b, 255]) < 8) return;
     const matchesTarget = (index: number) => Math.abs(data[index] - target[0]) + Math.abs(data[index + 1] - target[1]) + Math.abs(data[index + 2] - target[2]) + Math.abs(data[index + 3] - target[3]) <= 42;
+    const barrier = new Uint8Array(canvas.width * canvas.height);
+    for (let pixel = 0; pixel < barrier.length; pixel += 1) {
+      const index = pixel * 4;
+      const differenceFromWhite = Math.max(255 - data[index], 255 - data[index + 1], 255 - data[index + 2]);
+      barrier[pixel] = differenceFromWhite > 14 ? 1 : 0;
+    }
+    // Close only tiny gaps in the temporary flood-fill mask. The source image
+    // stays unchanged, so undo and drawing remain exact while small openings
+    // cannot spill the fill into the surrounding canvas.
+    const gapRadius = Math.max(1, Math.min(3, Math.round((window.devicePixelRatio || 1) * 1.5)));
+    const closedBarrier = new Uint8Array(barrier);
+    for (let pixelY = 0; pixelY < canvas.height; pixelY += 1) {
+      for (let pixelX = 0; pixelX < canvas.width; pixelX += 1) {
+        let blocked = false;
+        for (let offsetY = -gapRadius; offsetY <= gapRadius && !blocked; offsetY += 1) {
+          for (let offsetX = -gapRadius; offsetX <= gapRadius; offsetX += 1) {
+            const neighborX = pixelX + offsetX;
+            const neighborY = pixelY + offsetY;
+            if (neighborX >= 0 && neighborX < canvas.width && neighborY >= 0 && neighborY < canvas.height && barrier[neighborY * canvas.width + neighborX]) { blocked = true; break; }
+          }
+        }
+        if (blocked) closedBarrier[pixelY * canvas.width + pixelX] = 1;
+      }
+    }
     const visited = new Uint8Array(canvas.width * canvas.height);
     const stack: [number, number][] = [[x, y]];
     while (stack.length) {
@@ -267,6 +345,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
       const pixel = pixelY * canvas.width + pixelX;
       if (visited[pixel]) continue;
       visited[pixel] = 1;
+      if (closedBarrier[pixel]) continue;
       const index = pixel * 4;
       if (!matchesTarget(index)) continue;
       data[index] = fill.r; data[index + 1] = fill.g; data[index + 2] = fill.b; data[index + 3] = 255;
@@ -321,7 +400,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     event.currentTarget.value = "";
   }
 
-  function score(animal: Animal, visual = analysis, source = availableAnimals) {
+  function score(animal: Animal, visual = analysis, source = availableAnimals, similarity = visualScores[animal.id]) {
     let value = 0;
     const haystack = `${animal.name} ${animal.breed} ${animal.species} ${animal.ageGroup} ${animal.sex} ${animal.region} ${animal.colors.join(" ")} ${animal.traits.join(" ")}`.toLowerCase();
     if (species !== "전체") value += animal.species.includes(species) ? 30 : -50;
@@ -335,9 +414,10 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
     if (visual) {
       const animalTags = animalVisualTags(animal);
       if (visual.species !== "전체") value += animal.species.includes(visual.species) ? 38 : -55;
-      if (visual.source === "photo" || visual.source === "drawing") {
+      if (visual.source === "photo") {
         for (const color of visual.colors) if (animal.colors.some((item) => item.includes(color) || color.includes(item))) value += 10;
       }
+      if (typeof similarity === "number") value += Math.max(0, similarity) * 42;
       if (visual.source === "photo") {
         for (const hint of visual.breedHints) if (animal.breed.includes(hint) || hint.includes(animal.breed)) value += 16;
         for (const tag of [visual.size, visual.eyes, visual.fur, visual.pattern]) if (animalTags.includes(tag)) value += 6;
@@ -355,7 +435,18 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
       if (mode === "draw" && canvasRef.current) visual = await analyzeVisual(canvasRef.current, canvasSource !== "photo", drawSpecies || undefined);
       if (mode === "photo" && imageRef.current) visual = await analyzeVisual(imageRef.current, false);
       if (visual) { setAnalysis(visual); if (species === "전체" && visual.species !== "전체") setSpecies(visual.species); }
-      const result = [...sourceAnimals].sort((a, b) => score(b, visual, sourceAnimals) - score(a, visual, sourceAnimals)); setAvailableAnimals(sourceAnimals); setRanked(result); setMatched(true); document.getElementById("match-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const visualCandidates = visual?.species && visual.species !== "전체" ? sourceAnimals.filter((animal) => animal.species.includes(visual.species)) : sourceAnimals;
+      const similarityScores = visual?.embeddingVariants?.length ? await getVisualSimilarityScores(visual.embeddingVariants, visualCandidates) : new Map<string, number>();
+      const nextVisualScores = Object.fromEntries(similarityScores);
+      setVisualScores(nextVisualScores);
+      const result = [...sourceAnimals].sort((a, b) => score(b, visual, sourceAnimals, nextVisualScores[b.id]) - score(a, visual, sourceAnimals, nextVisualScores[a.id]));
+      try {
+        const storedAnalysis = visual ? { ...visual, embedding: undefined } : null;
+        window.sessionStorage.setItem("ff-drawing-results", JSON.stringify({ ranked: result, available: sourceAnimals, analysis: storedAnalysis }));
+      } catch {
+        // The result page still opens; it will show its empty state if storage is unavailable.
+      }
+      window.location.assign("/find/draw/results");
     } catch {
       feedback.error("그림을 분석하지 못했어요. 잠시 후 다시 시도해 주세요.");
     } finally { setAnalyzing(false); }
@@ -364,7 +455,24 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
 
   const visible = (matched ? ranked : availableAnimals).filter((animal) => !query || `${animal.name} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
 
-  if (mode === "draw" && !drawSpeciesConfirmed) {
+  if (resultsOnly && !resultReady) {
+    return <div className="ff-page"><section className="ff-section"><p className="ff-description">찾은 친구를 준비하고 있어요…</p></section></div>;
+  }
+
+  if (resultsOnly) {
+    return <div className="ff-page ff-drawing-results-page">
+      <header className="ff-section-head"><div><p className="ff-kicker">그림으로 찾기</p><h1 className="ff-section-title">닮은 순서로 찾은 친구</h1></div><span className="ff-meta">{visible.length}마리</span></header>
+      {analysis && <div className="ff-analysis-card"><div className="ff-analysis-head"><div><span>온디바이스 시각 분석</span><strong>그림에서 찾은 검색 태그</strong></div><span className="ff-analysis-badge">특징 분석</span></div><div className="ff-tags">{analysis.tags.map(tag => <span className="ff-tag" key={tag}>{tag}</span>)}</div><p>색상·그림이 차지하는 면적·어두운 눈 영역·경계 밀도를 태그로 바꿨어요. 그림은 서버에 저장하지 않고 공개된 보호동물 정보와 비교합니다.</p></div>}
+      {visible[0] && <Callout tone="positive" title={`${visible[0].name} 친구가 가장 가까워요`} description={`${visible[0].matchReason} 분석 태그와 공개된 품종·털색·체중 단서를 비교했으며 건강·성격·입양 성공은 추측하지 않았어요.`}/>} 
+      <div className="ff-animal-grid" style={{ marginTop: 14 }}>{visible.map(animal => <AnimalCard animal={animal} key={animal.id}/>)}</div>
+      {!visible.length && <div className="ff-empty"><strong>찾은 결과가 없어요.</strong><p>그림을 다시 그리거나 다른 조건으로 찾아보세요.</p><a href="/find/draw">그림 다시 그리기</a></div>}
+      {visible[0] && <div className="ff-result-shortcut"><a href={`/friends/${visible[0].id}`}>첫 번째 친구 자세히 보기</a></div>}
+      <div className="ff-save-search"><ActionButton variant="neutralWeak" onClick={saveSearch}>이 조건과 신규 등록 알림 저장</ActionButton>{saveState && <p className="ff-meta">{saveState}</p>}</div>
+      <div className="ff-result-shortcut"><a href="/find/draw">그림 다시 그리기</a></div>
+    </div>;
+  }
+
+  if (mode === "draw" && !drawSpeciesConfirmed && !resultsOnly) {
     // 그림으로 찾기 동물 선택: 고양이, 강아지
     return <div className="ff-readiness ff-readiness-species">
       <ReadinessAppBar title="그림으로 찾기" onBack={() => window.location.assign("/")} />
@@ -372,6 +480,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
         titleId="drawing-species-title"
         question="어떤 친구를 그려볼까요?"
         groupLabel="찾고 싶은 동물 선택"
+        imageVariant="artist"
         species={drawSpecies === "고양이" ? "cat" : drawSpecies === "강아지" ? "dog" : null}
         onSpeciesChange={(selectedSpecies) => {
           const label = selectedSpecies === "cat" ? "고양이" : "강아지";
@@ -384,7 +493,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
   }
 
   return <div className={mode === "draw" ? "ff-drawing-workspace" : undefined}>
-    {mode === "draw" && <><div className="ff-drawing-topbar ff-modern-drawing-topbar"><a href="/find" aria-label="그림 찾기 닫기"><ChevronLeft size={28} strokeWidth={2} aria-hidden="true" /></a><div className="ff-drawing-toolbar" aria-label="그림 도구"><button type="button" className="ff-toolbar-tool" data-active={toolSheet === "brush" && !isFilling} aria-label="브러시 크기 선택" onClick={() => { setIsFilling(false); setIsErasing(false); setToolSheet("brush"); }}><Pencil size={24} strokeWidth={2.1} /><span className="ff-tool-preview">{brushSize}pt</span></button><button type="button" className="ff-toolbar-tool" data-active={toolSheet === "eraser" || (isErasing && !isFilling)} aria-label="지우개 크기 선택" onClick={() => { setIsFilling(false); setIsErasing(true); setToolSheet("eraser"); }}><Eraser size={24} strokeWidth={2.1} /><span className="ff-tool-preview ff-tool-preview-eraser">{eraserSize}pt</span></button><button type="button" className="ff-toolbar-tool" data-active={isFilling} aria-label="페인트 도구" onClick={() => { setIsFilling(true); setIsErasing(false); setToolSheet("fill"); }}><PaintBucket size={24} strokeWidth={2.1} /></button></div><div className="ff-drawing-quick-actions" aria-label="그림 편집 메뉴"><button type="button" aria-label="되돌리기" onClick={undo}><RotateCcw size={24} strokeWidth={2.1} /></button><button type="button" aria-label="다시 되돌리기" onClick={redo}><RotateCw size={24} strokeWidth={2.1} /></button><button type="button" aria-label="전체 지우기" onClick={clear}><Trash2 size={24} strokeWidth={2.1} /></button></div></div><BottomSheetRoot open={toolSheet !== null} onOpenChange={(open) => { if (!open) setToolSheet(null); }}><BottomSheetContent title={toolSheet === "brush" ? "브러시" : toolSheet === "eraser" ? "지우개 크기" : toolSheet === "fill" ? "페인트" : toolSheet === "color" ? "색상" : "그림 저장"} showHandle className={`ff-drawing-tool-sheet ff-drawing-tool-sheet-${toolSheet || "none"}`}><BottomSheetBody>{(toolSheet === "brush" || toolSheet === "eraser") && (() => { const eraser = toolSheet === "eraser"; const value = eraser ? eraserSize : brushSize; return <div className="ff-drawing-size-slider">{!eraser && <div className="ff-drawing-brush-types" role="group" aria-label="브러시 종류">{brushTypes.map((type) => <button type="button" key={type.id} data-active={brushType === type.id} onClick={() => setBrushType(type.id)}><span>{type.label}</span><small>{type.description}</small></button>)}</div>}{!eraser && <div className="ff-drawing-inline-colors" role="group" aria-label="색상 선택">{palette.map((color) => <button type="button" key={color.name} data-active={brushColor.hex === color.hex} style={{ background: color.hex }} aria-label={color.name + " 색상"} onClick={() => chooseColor(color.hex)} />)}</div>}<div className="ff-drawing-size-slider-heading"><span>{eraser ? "지우개 크기" : "브러시 크기"}</span><strong>{value}pt</strong></div><input aria-label={eraser ? "지우개 크기" : "브러시 크기"} type="range" min="1" max="10" step="1" value={value} style={{ "--brush-thumb-size": (10 + value * 1.4) + "px" } as React.CSSProperties} onChange={(event) => { const next = Number(event.target.value); if (eraser) { setEraserSize(next); setIsErasing(true); } else { setBrushSize(next); setIsErasing(false); } }} /><div className="ff-drawing-size-slider-labels"><span>1pt</span><span>5pt</span><span>10pt</span></div></div>; })()}{(toolSheet === "fill" || toolSheet === "color") && <div className="ff-drawing-color-picker-panel"><p className="ff-drawing-tool-help">칠할 색상을 선택하세요.</p><div className="ff-drawing-color-presets" role="group" aria-label="털색 팔레트">{palette.map((color) => <button type="button" key={color.name} data-active={brushColor.hex === color.hex} style={{ background: color.hex }} aria-label={color.name + " 색상"} onClick={() => chooseColor(color.hex)} />)}</div></div>}{toolSheet === "save" && <div className="ff-drawing-save-options" role="menu"><button type="button" onClick={() => saveDrawing("png")}>PNG 이미지</button><button type="button" onClick={() => saveDrawing("jpeg")}>JPG 이미지</button><button type="button" onClick={() => saveDrawing("webp")}>WEBP 이미지</button></div>}</BottomSheetBody></BottomSheetContent></BottomSheetRoot></>}
+    {mode === "draw" && <><div className="ff-drawing-topbar ff-modern-drawing-topbar"><a href="/find" aria-label="그림 찾기 닫기"><ChevronLeft size={28} strokeWidth={2} aria-hidden="true" /></a><div className="ff-drawing-toolbar" aria-label="그림 도구"><button type="button" className="ff-toolbar-tool" data-active={toolSheet === "brush" && !isFilling} aria-label="브러시 크기 선택" onClick={() => { setIsFilling(false); setIsErasing(false); setToolSheet("brush"); }}><Pencil size={24} strokeWidth={2.1} /><span className="ff-tool-preview">{brushSize}pt</span></button><button type="button" className="ff-toolbar-tool" data-active={toolSheet === "eraser" || (isErasing && !isFilling)} aria-label="지우개 크기 선택" onClick={() => { setIsFilling(false); setIsErasing(true); setToolSheet("eraser"); }}><Eraser size={24} strokeWidth={2.1} /><span className="ff-tool-preview ff-tool-preview-eraser">{eraserSize}pt</span></button><button type="button" className="ff-toolbar-tool" data-active={isFilling} aria-label="페인트 도구" onClick={() => { setIsFilling(true); setIsErasing(false); setToolSheet("fill"); }}><PaintBucket size={24} strokeWidth={2.1} /></button></div><div className="ff-drawing-quick-actions" aria-label="그림 편집 메뉴"><button type="button" aria-label="되돌리기" onClick={undo}><RotateCcw size={24} strokeWidth={2.1} /></button><button type="button" aria-label="다시 되돌리기" onClick={redo}><RotateCw size={24} strokeWidth={2.1} /></button><button type="button" aria-label="전체 지우기" onClick={clear}><Trash2 size={24} strokeWidth={2.1} /></button></div></div><BottomSheetRoot open={toolSheet !== null} onOpenChange={(open) => { if (!open) setToolSheet(null); }}><BottomSheetContent title={toolSheet === "brush" ? "브러시" : toolSheet === "eraser" ? "지우개 크기" : toolSheet === "fill" ? "페인트" : toolSheet === "color" ? "색상" : "그림 저장"} showHandle data-no-drag className={`ff-drawing-tool-sheet ff-drawing-tool-sheet-${toolSheet || "none"}`}><BottomSheetBody>{(toolSheet === "brush" || toolSheet === "eraser") && (() => { const eraser = toolSheet === "eraser"; const value = eraser ? eraserSize : brushSize; return <div className="ff-drawing-size-slider">{!eraser && <div className="ff-drawing-brush-types" role="group" aria-label="브러시 종류">{brushTypes.map((type) => <button type="button" key={type.id} data-active={brushType === type.id} onClick={() => setBrushType(type.id)}><span>{type.label}</span><small>{type.description}</small></button>)}</div>}{!eraser && <div className="ff-drawing-inline-colors" role="group" aria-label="색상 선택">{palette.map((color) => <button type="button" key={color.name} data-active={brushColor.hex === color.hex} style={{ background: color.hex }} aria-label={color.name + " 색상"} onClick={() => chooseColor(color.hex)} />)}</div>}<div className="ff-drawing-size-slider-heading"><span>{eraser ? "지우개 크기" : "브러시 크기"}</span><strong>{value}pt</strong></div><input aria-label={eraser ? "지우개 크기" : "브러시 크기"} type="range" min="1" max={eraser ? 30 : 10} step="1" value={value} style={{ "--brush-thumb-size": (10 + Math.min(value, 10) * 1.4) + "px" } as React.CSSProperties} onChange={(event) => { const next = Number(event.target.value); if (eraser) { setEraserSize(next); setIsErasing(true); } else { setBrushSize(next); setIsErasing(false); } }} />{!eraser && <div className="ff-drawing-size-slider-labels"><span>1pt</span><span>5pt</span><span>10pt</span></div>}</div>; })()}{(toolSheet === "fill" || toolSheet === "color") && <div className="ff-drawing-color-picker-panel"><p className="ff-drawing-tool-help">칠할 색상을 선택하세요.</p><HexColorPicker color={brushColor.hex} onChange={chooseFillColor} /><div className="ff-drawing-color-presets" role="group" aria-label="털색 팔레트">{palette.map((color) => <button type="button" key={color.name} data-active={brushColor.hex === color.hex} style={{ background: color.hex }} aria-label={color.name + " 색상"} onPointerDown={(event) => { event.preventDefault(); chooseFillColor(color.hex); }} onClick={() => chooseFillColor(color.hex)} />)}</div></div>}{toolSheet === "save" && <div className="ff-drawing-save-options" role="menu"><button type="button" onClick={() => saveDrawing("png")}>PNG 이미지</button><button type="button" onClick={() => saveDrawing("jpeg")}>JPG 이미지</button><button type="button" onClick={() => saveDrawing("webp")}>WEBP 이미지</button></div>}</BottomSheetBody></BottomSheetContent></BottomSheetRoot></>}
     {mode === "draw" &&
         <section className="ff-canvas-panel">
           <h2 className="ff-section-title">마음속 친구를 그려보세요</h2>
@@ -409,7 +518,7 @@ export function Finder({ animals, modeOnly, initialTags = "" }: { animals: Anima
               <div className="ff-demo-panel-actions"><button type="button" onClick={() => { setBrushSize(1); setThinning(0.35); setStreamline(0.45); setSmoothing(0.65); setSimulatePressure(true); setEasing("Linear"); setTaperStart(0); setCapStart(true); setTaperEnd(0); setCapEnd(true); setStrokeWidth(0); }}>기본값으로</button><button type="button" onClick={() => navigator.clipboard?.writeText(JSON.stringify({ size: brushSize, thinning, streamline, smoothing, simulatePressure, easing, taperStart, capStart, taperEnd, capEnd, strokeWidth }))}>설정 복사</button><button type="button" onClick={() => navigator.clipboard?.writeText(canvasRef.current?.toDataURL("image/svg+xml") || "")}>SVG로 복사</button></div>
             </div>}
           </div>
-          <div className="ff-drawing-canvas-wrap"><canvas ref={canvasRef} className="ff-canvas" aria-label="친구를 그리는 캔버스" onPointerDown={start} onPointerMove={move} onPointerUp={finish} onPointerCancel={finish}/></div>
+          <div className="ff-drawing-canvas-wrap"><canvas ref={canvasRef} className="ff-canvas" aria-label="친구를 그리는 캔버스" onPointerDown={(event) => { updateCursor(event); start(event); }} onPointerMove={(event) => { updateCursor(event); move(event); }} onPointerEnter={updateCursor} onPointerLeave={() => setCursorVisible(false)} onPointerUp={finish} onPointerCancel={finish}/>{cursorVisible && <span className="ff-drawing-cursor" aria-hidden="true" style={{ left: cursorPosition.x, top: cursorPosition.y, width: Math.max(6, (isErasing ? eraserSize : brushSize) * 2), height: Math.max(6, (isErasing ? eraserSize : brushSize) * 2) }} />}</div>
         </section>
     }
     {mode === "photo" &&

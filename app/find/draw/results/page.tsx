@@ -1,0 +1,8 @@
+import type { Metadata } from "next";
+import { Finder } from "../../../components/Finder";
+
+export const metadata: Metadata = { title: "그림으로 찾은 친구" };
+
+export default function Page() {
+  return <><h1 className="ff-visually-hidden">그림으로 찾은 친구</h1><Finder animals={[]} modeOnly="draw" resultsOnly /></>;
+}

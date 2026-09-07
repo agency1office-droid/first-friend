@@ -7,6 +7,7 @@ type SpeciesSelectionStepProps = {
   question: string;
   description?: string;
   groupLabel?: string;
+  imageVariant?: "selection" | "artist";
   species: SpeciesSelection | null;
   onSpeciesChange: (species: SpeciesSelection) => void;
 };
@@ -20,9 +21,11 @@ export function SpeciesSelectionStep({
   question,
   description,
   groupLabel = "입양을 준비하는 동물",
+  imageVariant = "selection",
   species,
   onSpeciesChange,
 }: SpeciesSelectionStepProps) {
+  const imagePrefix = imageVariant === "artist" ? "artist" : "selection";
   return (
     <section className="ff-readiness-species-page" aria-labelledby={titleId}>
       <h2
@@ -39,7 +42,7 @@ export function SpeciesSelectionStep({
           aria-pressed={species === "cat"}
           onClick={() => onSpeciesChange("cat")}
         >
-          <Image className="ff-readiness-species-image" src="/cat-selection.webp" alt="" aria-hidden="true" width={104} height={104} unoptimized />
+          <Image className="ff-readiness-species-image" src={`/cat-${imagePrefix}.webp`} alt="" aria-hidden="true" width={104} height={104} unoptimized />
           <strong>고양이</strong>
         </button>
         <button
@@ -49,7 +52,7 @@ export function SpeciesSelectionStep({
           aria-pressed={species === "dog"}
           onClick={() => onSpeciesChange("dog")}
         >
-          <Image className="ff-readiness-species-image" src="/dog-selection.webp" alt="" aria-hidden="true" width={104} height={104} unoptimized />
+          <Image className="ff-readiness-species-image" src={`/dog-${imagePrefix}.webp`} alt="" aria-hidden="true" width={104} height={104} unoptimized />
           <strong>강아지</strong>
         </button>
       </div>

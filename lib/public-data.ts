@@ -11,8 +11,19 @@ type AbandonedItem = { desertionNo?: string; happenDt?: string; happenPlace?: st
 type LossItem = { happenDt?: string; happenAddr?: string; happenPlace?: string; orgNm?: string; popfile?: string; kindCd?: string; colorCd?: string; sexCd?: string; age?: string; specialMark?: string; rfidCd?: string };
 type ShelterItem = { careRegNo?: string; careNm?: string; orgNm?: string; saveTrgtAnimal?: string; careAddr?: string; careTel?: string; weekOprStime?: string; weekOprEtime?: string; closeDay?: string; lat?: string; lng?: string };
 
-export type LostAnimal = { id: string; legacyId?: string; species: string; breed: string; sex: string; age: string; color: string; happenedAt: string; region: string; address: string; place: string; description: string; image: string };
+export type LostAnimal = { id: string; legacyId?: string; rfidCd?: string; species: string; breed: string; sex: string; age: string; color: string; happenedAt: string; region: string; address: string; place: string; happenPlace?: string; description: string; image: string; updated?: string };
 export type Shelter = { id: string; name: string; organization: string; animals: string; address: string; phone: string; hours: string; closed: string; lat: number; lng: number; approximateLocation: boolean };
+
+function formatLostDate(value = "") {
+  const raw = value.replace(/\.0$/, "").trim();
+  const match = raw.match(/^(\d{4})[-.](\d{1,2})[-.](\d{1,2})(?:[ T](\d{1,2}):?(\d{2})?(?::\d{2})?)?$/);
+  if (!match) return raw || "발생일 미상";
+  const [, year, month, day, hourText, minuteText] = match;
+  if (hourText === undefined) return `${year}년 ${Number(month)}월 ${Number(day)}일`;
+  const hour = Number(hourText);
+  const minute = minuteText && Number(minuteText) > 0 ? ` ${Number(minuteText)}분` : "";
+  return `${year}년 ${Number(month)}월 ${Number(day)}일 ${hour >= 12 ? "오후" : "오전"} ${hour % 12 || 12}시${minute}`;
+}
 
 let animalCache: { at: number; data: Animal[] } | undefined;
 const animalDetailCache = new Map<string, { at: number; data: Animal | null }>();
@@ -55,6 +66,13 @@ async function requestLossPage(pageNo: number, rows: number) {
 
 function secureImage(url = "") { return url.replace(/^http:\/\//, "https://"); }
 function compactDate(value = "") { const digits = value.replace(/\D/g, "").slice(0, 8); return digits.length === 8 ? `${digits.slice(0, 4)}. ${Number(digits.slice(4, 6))}. ${Number(digits.slice(6, 8))}.` : value; }
+function lostPlace(address = "", happenPlace = "", region = "") {
+  const addressValue = address.trim(), placeValue = happenPlace.trim();
+  const normalize = (value: string) => value.replace(/[\s,·()[\]{}]/g, "").toLocaleLowerCase("ko-KR");
+  if (!addressValue && !placeValue) return `${region || "관할 지역"} 인근`;
+  if (!placeValue || normalize(addressValue).includes(normalize(placeValue)) || normalize(placeValue).includes(normalize(addressValue))) return addressValue || placeValue;
+  return [addressValue, placeValue].filter(Boolean).join(" · ");
+}
 function sex(value = "") { return value === "M" ? "수컷" : value === "F" ? "암컷" : "미상"; }
 function lostSpecies(kind = "") {
   const value = kind.trim().toLocaleLowerCase("ko-KR");
@@ -126,6 +144,31 @@ export async function getAnimalsWithPhotoCounts(limit = 24): Promise<Animal[]> {
 export async function getAnimalById(id: string) {
   const stored = await import("./public-animal-store").then(module => module.getStoredAnimalById(id)).catch(() => undefined);
   if (stored) return stored;
+  const lost = await import("./public-animal-store").then(module => module.getStoredLostAnimalById(id)).catch(() => undefined);
+  if (lost) return {
+    id: lost.id,
+    name: lost.breed,
+    species: lost.species,
+    breed: lost.breed,
+    happenedAt: lost.happenedAt,
+    place: lost.place,
+    happenPlace: lost.happenPlace,
+    age: lost.age,
+    ageGroup: "나이 미상" as const,
+    sex: lost.sex,
+    region: lost.region,
+    shelter: "공공 실종 동물 정보",
+    source: "공공 실종 동물 정보",
+    updated: lost.updated || lost.happenedAt,
+    image: lost.image,
+    images: [lost.image].filter(Boolean),
+    colors: [lost.color].filter(Boolean),
+    traits: [lost.description].filter(Boolean),
+    summary: lost.description,
+    health: [],
+    life: [],
+    matchReason: "",
+  } satisfies Animal;
   const cached = animalDetailCache.get(id);
   if (cached && Date.now() - cached.at < CACHE_MS) return cached.data || undefined;
   // 공공 API 전체 검색은 상세 요청에서 실행하지 않습니다. 동기화 작업이
@@ -153,8 +196,9 @@ export async function getLostAnimals(limit = 12): Promise<LostAnimal[]> {
       rawItems.push(...page.items);
       if (page.items.length < pageSize) break;
     }
+    const updated = compactDate(new Date().toISOString());
     const data = rawItems.map((item, index) => ({
-      id: item.rfidCd?.trim() || `${item.happenDt || "loss"}-${index}`, legacyId: `${item.happenDt || "loss"}-${index}`, species: lostSpecies(item.kindCd), breed: item.kindCd || "품종 미상", sex: sex(item.sexCd), age: item.age || "나이 미상", color: item.colorCd || "털색 미상", happenedAt: item.happenDt?.replace(/\.0$/, "") || "발생일 미상", region: item.orgNm || "지역 미상", address: item.happenAddr || "", place: `${item.orgNm || item.happenAddr?.split(" ").slice(0, 2).join(" ") || "관할 지역"} 인근 · 상세 위치 비공개`, description: item.specialMark || "등록된 특징이 없습니다.", image: secureImage(item.popfile),
+      id: item.rfidCd?.trim() || `${item.happenDt || "loss"}-${index}`, legacyId: `${item.happenDt || "loss"}-${index}`, rfidCd: item.rfidCd?.trim() || undefined, species: lostSpecies(item.kindCd), breed: item.kindCd || "품종 미상", sex: sex(item.sexCd), age: item.age || "나이 미상", color: item.colorCd || "털색 미상", happenedAt: formatLostDate(item.happenDt || ""), region: item.orgNm || "지역 미상", address: item.happenAddr || "", place: lostPlace(item.happenAddr || "", item.happenPlace || "", item.orgNm || ""), happenPlace: item.happenPlace?.trim() || undefined, description: item.specialMark || "등록된 특징이 없습니다.", image: secureImage(item.popfile), updated,
     })).filter((item) => item.image);
     lossCache = { at: Date.now(), data }; return data.slice(0, limit);
   } catch { return []; }

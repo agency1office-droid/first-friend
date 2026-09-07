@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { IconPhoneLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 
-export function ShelterPhoneDialog({ shelter, phone }: { shelter: string; phone: string }) {
+export function ShelterPhoneDialog({ shelter, phone, children, className, ariaLabel }: { shelter: string; phone: string; children?: ReactNode; className?: string; ariaLabel?: string }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const tel = phone.replace(/[^0-9+]/g, "");
 
@@ -16,8 +16,8 @@ export function ShelterPhoneDialog({ shelter, phone }: { shelter: string; phone:
   }
 
   return <>
-    <button type="button" className="ff-detail-contact-link" onClick={handleClick} aria-label={`${shelter} 전화번호 보기`}>
-      <IconPhoneLine aria-hidden />
+    <button type="button" className={className || "ff-detail-contact-link"} onClick={handleClick} aria-label={ariaLabel || `${shelter} 전화번호 보기`}>
+      {children || <IconPhoneLine aria-hidden />}
     </button>
     <dialog ref={dialogRef} className="ff-phone-dialog" aria-labelledby="shelter-phone-title">
       <div className="ff-phone-dialog-card">

@@ -112,6 +112,8 @@ test("operations permissions, real pagination and guarded approval", async t => 
     const response = await render(), html = await response.text();
     assert.equal(response.status, 200);
     assert.match(html, /확인할 업무/); assert.match(html, /동물 등록/); assert.match(html, /data-seed/);
+    assert.match(html, /ff-operations-shell/); assert.doesNotMatch(html, /class="ff-shell"/);
+    assert.match(html, /operations-navigation/); assert.match(html, /안전과 운영/);
     role = "member";
     const denied = await (await render()).text();
     assert.match(denied, /운영 권한이 필요해요/); assert.doesNotMatch(denied, /확인할 업무/);

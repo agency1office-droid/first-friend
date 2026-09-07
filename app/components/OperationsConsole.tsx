@@ -151,6 +151,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
     </form>
     <div className={styles.filters}>
       {resource==="members"&&<Filter label="검색 항목" value={new URLSearchParams(query).get("field")||"display_name"} options={["display_name","email","id"].map(value=>({value,label:operationLabels[value]}))} onChange={field=>navigate({field,page:"1"})}/>}
+      {resource==="members"&&<Filter label="회원 역할" value={new URLSearchParams(query).get("role")||"all"} options={[{value:"all",label:"전체 역할"},...["admin","member","shelter","foster","veterinarian"].map(value=>({value,label:value==="admin"?"관리자":display(value)}))]} onChange={value=>navigate({role:value==="all"?"":value,page:"1"})}/>}
       {config.fields.split(",").includes("hidden")&&<Filter label="공개 여부" value={new URLSearchParams(query).get("visibility")||"all"} options={[{value:"all",label:"전체"},{value:"visible",label:"공개"},{value:"hidden",label:"숨김"}]} onChange={v=>navigate({visibility:v==="all"?"":v,page:"1"})}/>}
       {config.statuses.length > 0 && <Filter label="상태" value={status || "all"} options={[{ value: "all", label: "전체 상태" }, ...config.statuses.map(value => ({ value, label: display(value) }))]} onChange={value => navigate({ status: value === "all" ? "" : value, page: "1" })} />}
       <Filter label="정렬" value={sort} options={[{ value: "oldest", label: "오래된 순" }, { value: "newest", label: "최근 순" }]} onChange={value => navigate({ sort: value, page: "1" })} />
@@ -160,7 +161,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
     {!loading && result?.rows.length === 0 && <Callout tone="neutral" description="조건에 맞는 항목이 없어요. 검색어나 상태를 바꿔 확인해 주세요." />}
     <div className={styles.list}>{result?.rows.map(row => <article key={row.id} className={styles.card} data-selected={selected?.id === row.id}>
       <div className={styles.recordTitle}><h3>{display(row[config.title])}</h3><p>#{row.id}</p></div>
-      <div>{row.status != null && <Badge tone={(config.pending as readonly string[]).includes(String(row.status)) ? "warning" : "neutral"} variant="weak">{display(row.status)}</Badge>}</div>
+      <div>{resource==="members" ? <Badge tone={row.role==="admin"?"informative":"neutral"} variant="weak">{row.role==="admin"?"관리자":display(row.role)}</Badge> : row.status != null && <Badge tone={(config.pending as readonly string[]).includes(String(row.status)) ? "warning" : "neutral"} variant="weak">{display(row.status)}</Badge>}</div>
       <p>{display(row.created_at)}</p>
       <ActionButton size="small" variant="neutralWeak" aria-label={display(row[config.title]) + " 상세 검토"} onClick={() => { setSelected(row); setChoice(null); setActionError(""); requestAnimationFrame(() => detailRef.current?.focus()); }}>상세 검토</ActionButton>
     </article>)}</div>
@@ -172,6 +173,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
     {selected && <aside className={styles.detailPanel} ref={detailRef} tabIndex={-1} aria-label={config.label + " 상세 검토"}>
       <div className={styles.heading}><h2>상세 검토</h2><ActionButton size="small" variant="neutralWeak" onClick={() => setSelected(null)}>닫기</ActionButton></div>
       <h3>{display(selected[config.title])}</h3>
+      {resource==="members"&&<div><Badge tone={selected.role==="admin"?"informative":"neutral"} variant="weak">{selected.role==="admin"?"관리자":display(selected.role)}</Badge></div>}
       <p>대상 번호 {selected.id}</p>
       <div className={styles.detail}><dl>{Object.entries(selected).filter(([key]) => operationLabels[key] && key !== "evidence_key").map(([key, value]) => <div key={key}><dt>{operationLabels[key]}</dt><dd>{display(value)}</dd></div>)}</dl>
       {typeof selected.evidence_key === "string" && <ActionButton asChild variant="neutralWeak"><a href={"/api/operations/evidence?key=" + encodeURIComponent(selected.evidence_key)} target="_blank" rel="noreferrer">증빙 확인</a></ActionButton>}</div>

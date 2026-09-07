@@ -1,558 +1,156 @@
-/* eslint-disable no-empty */
 "use client";
-import { useEffect, useState } from "react";
-import { ActionButton } from "seed-design/ui/action-button";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@seed-design/react";
+import { ActionButton } from "seed-design/ui/action-button";
 import { Callout } from "seed-design/ui/callout";
-import {
-  TabsContent,
-  TabsList,
-  TabsRoot,
-  TabsTrigger,
-} from "seed-design/ui/tabs";
-import { ProgressCircle } from "seed-design/ui/progress-circle";
+import { TextField, TextFieldInput, TextFieldTextarea } from "seed-design/ui/text-field";
+import { SelectRoot, SelectTrigger, SelectContent, SelectItem } from "seed-design/ui/select";
+import { DialogRoot, DialogContent, DialogBody, DialogFooter } from "seed-design/ui/dialog";
+import { operationResources, operationLabels, parseOperationQuery, resourceAllowed, type OperationRow, type OperationResource } from "../../lib/operations";
+import styles from "./OperationsConsole.module.css";
 import { useAppFeedback } from "./AppFeedback";
 
-type ApplicationItem = {
-  id: number | string;
-  animal?: string;
-  animalId?: string;
-  status: string;
-  score?: number;
-  readinessScore?: number;
-  suitabilityScore?: number;
-  suitabilityJson?: string;
-};
-type RegistrationItem = {
-  id: number | string;
-  name: string;
-  region?: string;
-  status: string;
-};
-type SafetyItem = {
-  id: number | string;
-  targetType?: string;
-  targetId?: string;
-  requestedRole?: string;
-  organization?: string;
-  reason?: string;
-  purpose?: string;
-  title?: string;
-  animalId?: string;
-  targetAmount?: number;
-  status?: string;
-  severity?: string;
-  action?: string;
-  createdAt?: string;
-  applicationId?: number;
-  urgency?: string;
-  safeUntil?: string;
-  shelterName?: string;
-  animalName?: string;
-  source?: string;
-  evidenceKey?: string;
-};
-type Data = {
-  summary: Record<string, number>;
-  applications: ApplicationItem[];
-  registrations: RegistrationItem[];
-  verifications?: SafetyItem[];
-  reports?: SafetyItem[];
-  returns?: SafetyItem[];
-  audits?: SafetyItem[];
-  certifications?: SafetyItem[];
-  appeals?: SafetyItem[];
-  fundraisers?: SafetyItem[];
-};
-
-export function OperationsConsole() {
-  const [data, setData] = useState<Data | null>(null),
-    [error, setError] = useState(""),
-    [section, setSection] = useState("applications");
-  const feedback = useAppFeedback();
-  const load = () =>
-    fetch(`/api/operations?section=${encodeURIComponent(section)}`)
-      .then((response) => response.json())
-      .then((body) => (body.error ? setError(body.error) : setData(body)));
-  useEffect(() => {
-    load();
-    // The selected tab is the only part of the request that changes here.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section]);
-  async function act(payload: Record<string, unknown>) {
-    const response = await fetch("/api/operations", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-      const message = (await response.json()).error;
-      setError(message);
-      feedback.error(message);
-    } else {
-      setError("");
-      feedback.success("운영 상태를 반영했어요");
-      load();
-    }
+type Choice = { label: string; action: string; status?: string; critical?: boolean; hidden?: boolean };
+function choices(resource: OperationResource, row: OperationRow, role: string): Choice[] {
+  const status = String(row.status || "");
+  if (resource === "applications") {
+    if (["rejected", "withdrawn", "completed"].includes(status)) return [];
+    return [{ label: "상담 메시지 보내기", action: "guardian-message" },
+      ...(["submitted", "review", "consulting"].includes(status) ? [
+        ...(status !== "consulting" ? [{ label: "상담 시작", action: "application-status", status: "consulting" }] : []),
+        { label: "승인", action: "application-status", status: "approved" },
+        { label: "반려", action: "application-status", status: "rejected", critical: true },
+      ] : []),
+      ...(["approved", "handover"].includes(status) ? [{ label: "인계 확인", action: "guardian-confirm-handover" }] : [])];
   }
-  if (!data)
-    return (
-      <div className="ff-empty">
-        {error || "운영 데이터를 불러오고 있어요."}
-      </div>
-    );
-  return (
-    <>
-      <div className="ff-dashboard-grid ff-ops-summary">
-        <div>
-          <strong>{data.summary.applications}</strong>
-          <span>입양 신청</span>
-        </div>
-        <div>
-          <strong>{data.summary.reviews}</strong>
-          <span>등록 심사</span>
-        </div>
-        <div>
-          <strong>{data.summary.reports}</strong>
-          <span>안전 신고</span>
-        </div>
-        <div>
-          <strong>{data.summary.returns}</strong>
-          <span>반환 도움</span>
-        </div>
-      </div>
-      {error && <Callout tone="critical" description={error} />}
-      <TabsRoot value={section} onValueChange={setSection}>
-        <TabsList>
-          <TabsTrigger value="applications">입양 신청</TabsTrigger>
-          <TabsTrigger value="registrations">등록·인증</TabsTrigger>
-          <TabsTrigger value="safety">도움·신고·감사</TabsTrigger>
-        </TabsList>
-        <TabsContent value="applications">
-          <Callout
-            tone="informative"
-            description="자신이 담당하는 동물의 신청자만 적합도 순으로 표시합니다. 점수는 자동 탈락 기준이 아니며 이유와 상담을 함께 봅니다."
-          />
-          <div className="ff-ops-list">
-            {data.applications.map((item) => {
-              let fit: { reasons?: string[]; concerns?: string[] } = {};
-              try {
-                fit = JSON.parse(item.suitabilityJson || "{}");
-              } catch {}
-              const value =
-                item.suitabilityScore || item.score || item.readinessScore || 0;
-              return (
-                <article key={item.id}>
-                  <ProgressCircle
-                    value={value}
-                    aria-label={`적합도 ${value}점`}
-                  />
-                  <div className="ff-grow">
-                    <span className="ff-kicker">신청 {item.id}</span>
-                    <h3>{item.animal || item.animalId}</h3>
-                    <p>
-                      적합도 {value}점 · 준비도 {item.readinessScore || "-"}점 ·{" "}
-                      {item.status}
-                    </p>
-                    {fit.reasons?.length ? (
-                      <small>잘 맞는 점: {fit.reasons.join(" · ")}</small>
-                    ) : null}
-                    {fit.concerns?.length ? (
-                      <small>상담할 점: {fit.concerns.join(" · ")}</small>
-                    ) : null}
-                  </div>
-                  <div className="ff-ops-actions">
-                    <ActionButton
-                      size="small"
-                      variant="neutralWeak"
-                      onClick={() => {
-                        const body = window.prompt(
-                          "신청자에게 보낼 상담 메시지를 입력하세요.",
-                        );
-                        if (body)
-                          act({
-                            action: "guardian-message",
-                            id: item.id,
-                            body,
-                          });
-                      }}
-                    >
-                      메시지
-                    </ActionButton>
-                    <ActionButton
-                      size="small"
-                      variant="neutralWeak"
-                      onClick={() =>
-                        act({
-                          action: "application-status",
-                          id: item.id,
-                          status: "consulting",
-                          note: "상담 시작",
-                        })
-                      }
-                    >
-                      상담
-                    </ActionButton>
-                    <ActionButton
-                      size="small"
-                      onClick={() =>
-                        act({
-                          action: "application-status",
-                          id: item.id,
-                          status: "approved",
-                          note: "보호처 최종 승인",
-                        })
-                      }
-                    >
-                      승인
-                    </ActionButton>
-                    <ActionButton
-                      size="small"
-                      variant="neutralWeak"
-                      onClick={() =>
-                        act({
-                          action: "guardian-confirm-handover",
-                          id: item.id,
-                        })
-                      }
-                    >
-                      인계 확인
-                    </ActionButton>
-                    <ActionButton
-                      size="small"
-                      variant="criticalSolid"
-                      onClick={() =>
-                        act({
-                          action: "application-status",
-                          id: item.id,
-                          status: "rejected",
-                          note: "운영자 검토 종료",
-                        })
-                      }
-                    >
-                      종료
-                    </ActionButton>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </TabsContent>
-        <TabsContent value="registrations">
-          <div className="ff-ops-list">
-            {data.registrations.map((item) => (
-              <article key={item.id}>
-                <div className="ff-grow">
-                  <span className="ff-kicker">직접 등록 {item.id}</span>
-                  <h3>{item.name}</h3>
-                  <p>
-                    {item.region || item.status} · {item.status}
-                  </p>
-                </div>
-                <div className="ff-ops-actions">
-                  <ActionButton
-                    size="small"
-                    onClick={() =>
-                      act({
-                        action: "registration-status",
-                        id: item.id,
-                        status: "published",
-                      })
-                    }
-                  >
-                    공개
-                  </ActionButton>
-                  <ActionButton
-                    size="small"
-                    variant="criticalSolid"
-                    onClick={() =>
-                      act({
-                        action: "registration-status",
-                        id: item.id,
-                        status: "closed",
-                      })
-                    }
-                  >
-                    종료
-                  </ActionButton>
-                </div>
-              </article>
-            ))}
-            {(data.verifications || []).map((item) => (
-              <article key={`v-${item.id}`}>
-                <div className="ff-grow">
-                  <h3>{item.requestedRole} 인증 요청</h3>
-                  <p>
-                    {item.organization || "개인 임시보호"} · {item.status}
-                  </p>
-                </div>
-                <div className="ff-ops-actions">
-                  {item.evidenceKey && (
-                    <ActionButton asChild size="small" variant="neutralWeak">
-                      <a
-                        href={`/api/operations/evidence?key=${encodeURIComponent(item.evidenceKey)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        증빙 확인
-                      </a>
-                    </ActionButton>
-                  )}
-                  <ActionButton
-                    size="small"
-                    onClick={() =>
-                      act({
-                        action: "verification-status",
-                        id: item.id,
-                        status: "verified",
-                      })
-                    }
-                  >
-                    인증
-                  </ActionButton>
-                  <ActionButton
-                    size="small"
-                    variant="criticalSolid"
-                    onClick={() =>
-                      act({
-                        action: "verification-status",
-                        id: item.id,
-                        status: "rejected",
-                      })
-                    }
-                  >
-                    반려
-                  </ActionButton>
-                </div>
-              </article>
-            ))}
-          </div>
-        </TabsContent>
-        <TabsContent value="safety">
-          <Callout
-            tone="informative"
-            title="신고 50건 자동 블라인드"
-            description="신고자는 제재 대상이 아닙니다. 대상 소유자를 확인한 뒤 제재하며 모든 조치는 감사 기록에 남습니다."
-          />
-          <div className="ff-ops-list">
-            {(data.fundraisers || []).map((item) => (
-              <article key={`fund-${item.id}`}>
-                <div className="ff-grow">
-                  <Badge tone="warning" variant="weak">동물별 검증 모금</Badge>
-                  <h3>{item.title} · {item.animalId}</h3>
-                  <p>{item.purpose} · 목표 {(item.targetAmount || 0).toLocaleString()}원 · {item.status}</p>
-                </div>
-                {item.status === "review" && <div className="ff-ops-actions">
-                  <ActionButton size="small" onClick={() => act({ action: "fundraiser-status", id: item.id, status: "open" })}>공개 승인</ActionButton>
-                  <ActionButton size="small" variant="criticalSolid" onClick={() => act({ action: "fundraiser-status", id: item.id, status: "rejected" })}>반려</ActionButton>
-                </div>}
-              </article>
-            ))}
-            {(data.certifications || []).map((item) => (
-              <article key={`cert-${item.id}`}>
-                <div className="ff-grow">
-                  <Badge tone="informative" variant="weak">
-                    외부 입양 인증
-                  </Badge>
-                  <h3>
-                    {item.animalName} · {item.shelterName}
-                  </h3>
-                  <p>{item.status}</p>
-                </div>
-                {item.status === "submitted" && (
-                  <div className="ff-ops-actions">
-                    <ActionButton
-                      size="small"
-                      onClick={() =>
-                        act({
-                          action: "adoption-certification-status",
-                          id: item.id,
-                          status: "verified",
-                        })
-                      }
-                    >
-                      인증
-                    </ActionButton>
-                    <ActionButton
-                      size="small"
-                      variant="criticalSolid"
-                      onClick={() =>
-                        act({
-                          action: "adoption-certification-status",
-                          id: item.id,
-                          status: "rejected",
-                        })
-                      }
-                    >
-                      반려
-                    </ActionButton>
-                  </div>
-                )}
-              </article>
-            ))}
-            {(data.appeals || []).map((item) => (
-              <article key={`appeal-${item.id}`}>
-                <div className="ff-grow">
-                  <Badge tone="warning" variant="weak">
-                    제재 이의제기
-                  </Badge>
-                  <h3>이의제기 #{item.id}</h3>
-                  <p>
-                    {item.reason} · {item.status}
-                  </p>
-                </div>
-                {item.status === "submitted" && (
-                  <div className="ff-ops-actions">
-                    <ActionButton
-                      size="small"
-                      onClick={() =>
-                        act({
-                          action: "appeal-status",
-                          id: item.id,
-                          status: "accepted",
-                        })
-                      }
-                    >
-                      제재 해제
-                    </ActionButton>
-                    <ActionButton
-                      size="small"
-                      variant="criticalSolid"
-                      onClick={() =>
-                        act({
-                          action: "appeal-status",
-                          id: item.id,
-                          status: "rejected",
-                        })
-                      }
-                    >
-                      기각
-                    </ActionButton>
-                  </div>
-                )}
-              </article>
-            ))}
-            {(data.returns || []).map((item) => (
-              <article key={`return-${item.id}`}>
-                <div className="ff-grow">
-                  <Badge
-                    tone={item.urgency === "emergency" ? "critical" : "warning"}
-                    variant="weak"
-                  >
-                    {item.urgency}
-                  </Badge>
-                  <h3>돌봄 위기 요청 · 신청 #{item.applicationId}</h3>
-                  <p>
-                    {item.reason} · 돌봄 가능 시점 {item.safeUntil || "미정"} ·{" "}
-                    {item.status}
-                  </p>
-                </div>
-                {item.status !== "resolved" && (
-                  <div className="ff-ops-actions">
-                    <ActionButton
-                      size="small"
-                      onClick={() =>
-                        act({
-                          action: "return-status",
-                          id: item.id,
-                          status: "connected",
-                        })
-                      }
-                    >
-                      도움 연결
-                    </ActionButton>
-                    <ActionButton
-                      size="small"
-                      variant="neutralWeak"
-                      onClick={() =>
-                        act({
-                          action: "return-status",
-                          id: item.id,
-                          status: "resolved",
-                        })
-                      }
-                    >
-                      해결 완료
-                    </ActionButton>
-                  </div>
-                )}
-              </article>
-            ))}
-            {(data.reports || []).map((item) => (
-              <article key={`r-${item.id}`}>
-                <div className="ff-grow">
-                  <Badge
-                    tone={item.severity === "critical" ? "critical" : "warning"}
-                    variant="weak"
-                  >
-                    {item.severity || "normal"}
-                  </Badge>
-                  <h3>
-                    {item.targetType} #{item.targetId}
-                  </h3>
-                  <p>{item.reason}</p>
-                </div>
-                <div className="ff-ops-actions">
-                  {item.targetType === "post" && (
-                    <>
-                      <ActionButton
-                        size="small"
-                        variant="criticalSolid"
-                        onClick={() =>
-                          act({
-                            action: "post-visibility",
-                            id: Number(item.targetId),
-                            hidden: true,
-                          })
-                        }
-                      >
-                        숨김
-                      </ActionButton>
-                      <ActionButton
-                        size="small"
-                        variant="neutralWeak"
-                        onClick={() =>
-                          act({
-                            action: "post-visibility",
-                            id: Number(item.targetId),
-                            hidden: false,
-                          })
-                        }
-                      >
-                        복구
-                      </ActionButton>
-                    </>
-                  )}
-                  <ActionButton
-                    size="small"
-                    variant="criticalSolid"
-                    onClick={() =>
-                      act({
-                        action: "account-sanction-target",
-                        id: item.id,
-                        note: "운영자 신고 검토 후 제재 확정",
-                      })
-                    }
-                  >
-                    대상 계정 제재
-                  </ActionButton>
-                </div>
-              </article>
-            ))}
-            {(data.audits || []).map((item) => (
-              <article key={`a-${item.id}`}>
-                <div>
-                  <span className="ff-kicker">감사 기록</span>
-                  <h3>{item.action}</h3>
-                  <p>
-                    {item.targetType} #{item.targetId} · {item.createdAt}
-                  </p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </TabsContent>
-      </TabsRoot>
-    </>
-  );
+  if (resource === "returns") return status === "resolved" ? [] : [
+    ...(status !== "connected" ? [{ label: "도움 연결", action: "return-status", status: "connected" }] : []),
+    { label: "해결 기록", action: "return-status", status: "resolved" }];
+  if (role !== "admin") return [];
+  if (resource === "registrations") return status === "review" ? [{ label: "공개 승인", action: "registration-status", status: "published" }, { label: "반려", action: "registration-status", status: "closed", critical: true }] : status === "published" ? [{ label: "공개 종료", action: "registration-status", status: "closed", critical: true }] : [];
+  const reviewActions = { verifications: "verification-status", certifications: "adoption-certification-status", appeals: "appeal-status", fundraisers: "fundraiser-status" };
+  if (resource in reviewActions && ["submitted", "review"].includes(status)) return [
+    { label: "승인", action: reviewActions[resource as keyof typeof reviewActions], status: resource === "appeals" ? "accepted" : resource === "fundraisers" ? "open" : "verified" },
+    { label: "반려", action: reviewActions[resource as keyof typeof reviewActions], status: "rejected", critical: true }];
+  if (resource === "reports") return [
+    ...(row.target_type === "post" ? [{ label: "게시물 숨기기", action: "post-visibility", hidden: true, critical: true }, { label: "게시물 복구", action: "post-visibility", hidden: false }] : []),
+    { label: "대상 계정 제재", action: "account-sanction-target", critical: true }];
+  return [];
+}
+function display(value: unknown): string {
+  if (typeof value === "boolean") return value ? "예" : "아니요";
+  if (value == null || value === "") return "등록된 내용 없음";
+  if (typeof value === "object") return JSON.stringify(value, null, 2);
+  return operationLabels[String(value)] || String(value);
+}
+function Filter({ label, value, options, onChange }: { label: string; value: string; options: { value: string; label: string }[]; onChange: (value: string) => void }) {
+  return <SelectRoot label={label} value={[value]} onValueChange={values => onChange(values[0] || "")}>
+    <SelectTrigger /><SelectContent>{options.map(option => <SelectItem key={option.value} {...option} />)}</SelectContent>
+  </SelectRoot>;
+}
+
+export function OperationsConsole({ role, initialQuery }: { role: string; initialQuery: string }) {
+  const feedback = useAppFeedback();
+  const [query, setQuery] = useState(initialQuery);
+  const [result, setResult] = useState<{ rows: OperationRow[]; total: number } | null>(null);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [refresh, setRefresh] = useState(0);
+  const [search, setSearch] = useState(new URLSearchParams(initialQuery).get("q") || "");
+  const [selected, setSelected] = useState<OperationRow | null>(null);
+  const [choice, setChoice] = useState<Choice | null>(null);
+  const [note, setNote] = useState("");
+  const [pending, setPending] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const lock = useRef(false);
+  const requestKey = useRef("");
+  let input;
+  try { input = parseOperationQuery(new URLSearchParams(query)); }
+  catch { input = parseOperationQuery(new URLSearchParams()); }
+  const { resource, page, status, sort, pageSize } = input;
+  const config = operationResources[resource];
+  useEffect(() => {
+    const sync = () => { setQuery(window.location.search.slice(1)); setSearch(new URLSearchParams(window.location.search).get("q") || ""); setLoading(true); setError(""); setResult(null); setSelected(null); setRefresh(value => value + 1); };
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/operations?" + query, { signal: controller.signal, cache: "no-store" })
+      .then(async response => { const body = await response.json(); if (!response.ok) throw new Error(body.error || "목록을 불러오지 못했어요."); return body; })
+      .then(setResult)
+      .catch(error => { if (!controller.signal.aborted) setError(error.message); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [query, refresh]);
+  function resetList() { setLoading(true); setError(""); setResult(null); setSelected(null); }
+  function reload() { resetList(); setRefresh(value => value + 1); }
+  function navigate(changes: Record<string, string>) {
+    const params = new URLSearchParams(query);
+    Object.entries(changes).forEach(([key, value]) => value ? params.set(key, value) : params.delete(key));
+    const next = params.toString();
+    window.history.pushState(null, "", "/operations?" + next);
+    resetList(); setQuery(next); setNotice(""); setRefresh(value => value + 1);
+  }
+  function choose(next: Choice) { setChoice(next); setNote(""); setActionError(""); requestKey.current = crypto.randomUUID(); }
+  async function submit() {
+    if (lock.current || !selected || !choice || note.trim().length < 2) return;
+    lock.current = true; setPending(true); setActionError("");
+    try {
+      const response = await fetch("/api/operations", { method: "POST", headers: { "content-type": "application/json", "idempotency-key": requestKey.current }, body: JSON.stringify({
+        action: choice.action, id: choice.action === "post-visibility" ? Number(selected.target_id) : selected.id,
+        status: choice.status, hidden: choice.hidden, expectedStatus: selected.status,
+        note: note.trim(), ...(choice.action === "guardian-message" ? { body: note.trim() } : {}),
+      }) });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "처리 결과를 확인하지 못했어요.");
+      setNotice(choice.label + " 처리를 완료했어요."); feedback.success("운영 상태를 반영했어요."); setChoice(null); reload();
+    } catch (error) { const message = error instanceof Error ? error.message : "연결을 확인하고 다시 시도해 주세요."; setActionError(message); feedback.error(message); }
+    finally { lock.current = false; setPending(false); }
+  }
+  const resources = (Object.keys(operationResources) as OperationResource[]).filter(key => resourceAllowed(key, role));
+  return <section className={styles.console} aria-label="운영 업무">
+    <Filter label="확인할 업무" value={resource} options={resources.map(value => ({ value, label: operationResources[value].label }))} onChange={value => { setSearch(""); navigate({ resource: value, page: "1", q: "", status: "" }); }} />
+    <form className={styles.filters} onSubmit={event => { event.preventDefault(); navigate({ q: search.trim(), page: "1" }); }}>
+      <TextField label={(operationLabels[config.search] || "내용") + " 검색"}><TextFieldInput value={search} maxLength={100} placeholder="검색어 또는 #번호" onChange={event => setSearch(event.target.value)} /></TextField>
+      <ActionButton type="submit" variant="neutralWeak">검색</ActionButton>
+    </form>
+    <div className={styles.filters}>
+      {config.statuses.length > 0 && <Filter label="상태" value={status || "all"} options={[{ value: "all", label: "전체 상태" }, ...config.statuses.map(value => ({ value, label: display(value) }))]} onChange={value => navigate({ status: value === "all" ? "" : value, page: "1" })} />}
+      <Filter label="정렬" value={sort} options={[{ value: "oldest", label: "오래된 순" }, { value: "newest", label: "최근 순" }]} onChange={value => navigate({ sort: value, page: "1" })} />
+    </div>
+    {notice && <Callout tone="positive" description={notice} />}
+    {error && <Callout tone="critical" description={error} />}
+    <div className={styles.heading}><h2>{config.label}</h2><ActionButton size="small" variant="neutralWeak" disabled={loading} onClick={reload}>새로고침</ActionButton></div>
+    <p role="status">{loading ? "목록을 불러오고 있어요." : result ? "전체 " + result.total.toLocaleString() + "건 · " + page + "페이지" : "다시 불러와 주세요."}</p>
+    {!loading && result?.rows.length === 0 && <Callout tone="neutral" description="조건에 맞는 항목이 없어요. 검색어나 상태를 바꿔 확인해 주세요." />}
+    <div className={styles.list}>{result?.rows.map(row => <article key={row.id} className={styles.card}>
+      <div className={styles.heading}><span>#{row.id}</span>{row.status != null && <Badge tone={(config.pending as readonly string[]).includes(String(row.status)) ? "warning" : "neutral"} variant="weak">{display(row.status)}</Badge>}</div>
+      <h3>{display(row[config.title])}</h3><p>{display(row.created_at)}</p>
+      <ActionButton size="small" variant="neutralWeak" onClick={() => { setSelected(row); setChoice(null); setActionError(""); }}>상세 검토</ActionButton>
+    </article>)}</div>
+    <nav className={styles.heading} aria-label="목록 페이지">
+      <ActionButton variant="neutralWeak" disabled={loading || page <= 1} onClick={() => navigate({ page: String(page - 1) })}>이전</ActionButton>
+      <ActionButton variant="neutralWeak" disabled={loading || !result || page * pageSize >= result.total} onClick={() => navigate({ page: String(page + 1) })}>다음</ActionButton>
+    </nav>
+    <DialogRoot open={!!selected} onOpenChange={open => { if (!open && !lock.current) { setSelected(null); setChoice(null); } }}>
+      <DialogContent title={choice ? choice.label + " 확인" : config.label + " 상세 검토"} description={selected ? "대상 번호 " + selected.id : ""} showCloseButton={!pending}>
+        <DialogBody><div className={styles.detail}>
+          {!choice && selected && <>
+            <dl>{Object.entries(selected).filter(([key]) => operationLabels[key] && key !== "evidence_key").map(([key, value]) => <div key={key}><dt>{operationLabels[key]}</dt><dd>{display(value)}</dd></div>)}</dl>
+            {typeof selected.evidence_key === "string" && <ActionButton asChild variant="neutralWeak"><a href={"/api/operations/evidence?key=" + encodeURIComponent(selected.evidence_key)} target="_blank" rel="noreferrer">증빙 확인</a></ActionButton>}
+          </>}
+          {choice && <><Callout tone={choice.critical ? "warning" : "informative"} description={choice.action === "guardian-message" ? "아래 메시지가 신청자에게 전달돼요." : (selected ? display(selected[config.title]) : "") + " 항목에 ‘" + choice.label + "’ 처리를 적용해요. 대상과 사유를 확인해 주세요."} />
+            <TextField label={choice.action === "guardian-message" ? "상담 메시지" : "처리 사유"} required><TextFieldTextarea value={note} maxLength={500} disabled={pending} onChange={event => { setNote(event.target.value); requestKey.current = crypto.randomUUID(); }} /></TextField>
+          </>}
+          {actionError && <Callout tone="critical" description={actionError} />}
+        </div></DialogBody>
+        <DialogFooter><div className={styles.actions}>
+          <ActionButton variant="neutralWeak" disabled={pending} onClick={() => choice ? setChoice(null) : setSelected(null)}>{choice ? "돌아가기" : "닫기"}</ActionButton>
+          {choice ? <ActionButton variant={choice.critical ? "criticalSolid" : "brandSolid"} disabled={pending || note.trim().length < 2} onClick={submit}>{pending ? "처리 중" : choice.label}</ActionButton> : selected && choices(resource, selected, role).map(item => <ActionButton key={item.label} variant={item.critical ? "criticalSolid" : "neutralWeak"} onClick={() => choose(item)}>{item.label}</ActionButton>)}
+        </div></DialogFooter>
+      </DialogContent>
+    </DialogRoot>
+  </section>;
 }

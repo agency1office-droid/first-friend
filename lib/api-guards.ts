@@ -63,7 +63,7 @@ export async function beginIdempotentRequest(scope: string, subject: string, req
 }
 
 export async function completeIdempotentRequest(guard: Extract<GuardResult, { kind: "started" }>, body: unknown, status: number) {
-  await getSupabaseServerClient().from("api_idempotency_keys").update({ status: "completed", response_status: status, response_body: body, completed_at: new Date().toISOString() }).eq("scope", guard.scope).eq("subject_hash", guard.subjectHash).eq("idempotency_key", guard.key).eq("request_hash", guard.requestHash);
+  await getSupabaseServerClient().from("api_idempotency_keys").update({ status: "completed", response_status: status, response_body: body, completed_at: new Date().toISOString() }).eq("scope", guard.scope).eq("subject_hash", guard.subjectHash).eq("idempotency_key", guard.key).eq("request_hash", guard.requestHash).throwOnError();
 }
 
 export async function releaseIdempotentRequest(guard: Extract<GuardResult, { kind: "started" }>) {

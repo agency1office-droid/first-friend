@@ -39,7 +39,8 @@
     "react": "19.2.8",
     "react-colorful": "^5.8.0",
     "react-dom": "19.2.8",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.3",
+    "simple-icons": "16.30.0"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",

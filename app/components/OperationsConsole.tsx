@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@seed-design/react";
+import { IconEnvelopeLine } from "@karrotmarket/react-monochrome-icon";
+import { siGoogle, siKakaotalk, siNaver } from "simple-icons";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Callout } from "seed-design/ui/callout";
 import { TextField, TextFieldInput, TextFieldTextarea } from "seed-design/ui/text-field";
@@ -47,11 +49,18 @@ function display(value: unknown): string {
   if (typeof value === "object") return JSON.stringify(value, null, 2);
   return operationLabels[String(value)] || String(value);
 }
-function memberLoginMethods(value: unknown) {
+function MemberLoginMethods({ value }: { value: unknown }) {
   const names: Record<string, string> = { google: "구글", kakao: "카카오", naver: "네이버", email: "이메일" };
-  return typeof value === "string" && value.trim()
-    ? value.replace(/\b(google|kakao|naver|email)\b/g, provider => names[provider])
-    : "연결 기록 없음";
+  const icons: Record<string, { path: string }> = { google: siGoogle, kakao: siKakaotalk, naver: siNaver };
+  if (typeof value !== "string" || !value.trim()) return <p>연결 로그인: 연결 기록 없음</p>;
+  return <div className={styles.loginMethods} aria-label="연결 로그인"><span>연결 로그인</span>{value.split(",").map((method,index) => {
+    const provider = method.trim().split(" ")[0], icon = icons[provider];
+    const label = method.trim().replace(provider, names[provider] || provider);
+    return <Badge key={index} tone="neutral" variant="weak" className={styles.loginMethod}>
+      {icon ? <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d={icon.path}/></svg> : provider === "email" ? <IconEnvelopeLine aria-hidden="true" focusable="false"/> : null}
+      <span>{label}</span>
+    </Badge>;
+  })}</div>;
 }
 function memberJoinedAt(value: unknown) {
   const date = new Date(String(value || ""));
@@ -171,7 +180,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
     {!loading && result?.rows.length === 0 && <Callout tone="neutral" description="조건에 맞는 항목이 없어요. 검색어나 상태를 바꿔 확인해 주세요." />}
     <div className={styles.list}>{result?.rows.map(row => <article key={row.id} className={styles.card} data-selected={selected?.id === row.id}>
       <div className={styles.recordTitle}><h3>{display(row[config.title])}</h3>
-        {resource==="members"&&<><p>이메일: {typeof row.email==="string"&&row.email.trim()?row.email:"등록된 이메일 없음"}</p><p>연결 로그인: {memberLoginMethods(row.login_methods)}</p></>}
+        {resource==="members"&&<><p>이메일: {typeof row.email==="string"&&row.email.trim()?row.email:"등록된 이메일 없음"}</p><MemberLoginMethods value={row.login_methods}/></>}
         <p>#{row.id}</p></div>
       <div>{resource==="members" ? <Badge tone={row.role==="admin"?"informative":"neutral"} variant="weak">{row.role==="admin"?"관리자":display(row.role)}</Badge> : row.status != null && <Badge tone={(config.pending as readonly string[]).includes(String(row.status)) ? "warning" : "neutral"} variant="weak">{display(row.status)}</Badge>}</div>
       <p>{resource==="members"?<>가입일 (한국 시간)<br />{memberJoinedAt(row.created_at)}</>:display(row.created_at)}</p>

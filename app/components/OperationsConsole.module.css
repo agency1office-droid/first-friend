@@ -18,6 +18,9 @@
 .card { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(100px, 160px) auto; gap: var(--seed-dimension-x4); align-items: center; padding: var(--seed-dimension-x4); border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
 .card[data-selected=true] { background: var(--seed-color-bg-brand-weak); }
 .recordTitle { display: grid; gap: var(--seed-dimension-x2); min-width: 0; }
+.loginMethods { display: flex; flex-wrap: wrap; align-items: center; gap: var(--seed-dimension-x2); color: var(--seed-color-fg-neutral-muted); font-size: var(--seed-font-size-t4); }
+.loginMethod { display: inline-flex; align-items: center; gap: var(--seed-dimension-x2); max-width: 100%; white-space: normal; }
+.loginMethod svg { width: var(--seed-dimension-x4); height: var(--seed-dimension-x4); flex-shrink: 0; }
 .detailPanel { position: sticky; top: var(--seed-dimension-x5); }
 .detailPanel:focus-visible { outline: 2px solid var(--seed-color-stroke-focus-ring); outline-offset: 2px; }
 .console h2, .console h3, .console p { margin: 0; }

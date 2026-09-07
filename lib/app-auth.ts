@@ -51,7 +51,7 @@ export function clearSessionCookie(secure = true) { return `${SESSION_COOKIE}=; 
 
 export function isLocalRequest(request: Request) {
   const hostname = new URL(request.url).hostname;
-  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
 }
 
 export async function memberFromSession(db: Db, token: string) {
@@ -61,23 +61,41 @@ export async function memberFromSession(db: Db, token: string) {
   return memberRow((rows?.[0] as Record<string, unknown>) || null);
 }
 
-export async function findOrCreateSocialMember(db: Db, provider: "google" | "kakao" | "naver", providerUserId: string, email: string, displayName: string) {
+export async function findOrCreateSocialMember(db: Db, provider: "google" | "kakao" | "naver", providerUserId: string, email: string, displayName: string, emailVerified = false) {
   const supabase = getSupabaseServerClient();
-  const { data: existingRows } = await supabase.from("auth_accounts").select("member_id").eq("provider", provider).eq("provider_user_id", providerUserId).limit(1);
+  const { data: existingRows, error: lookupError } = await supabase.from("auth_accounts").select("member_id").eq("provider", provider).eq("provider_user_id", providerUserId).limit(1);
+  if (lookupError) throw lookupError;
   if (existingRows?.[0]) {
     const { data: rows } = await supabase.from("members").select("*").eq("id", existingRows[0].member_id).limit(1);
     return memberRow((rows?.[0] as Record<string, unknown>) || null);
   }
   const normalizedEmail = email.trim().toLowerCase();
-  const { data: emailRows } = normalizedEmail ? await supabase.from("auth_accounts").select("member_id").eq("email", normalizedEmail).limit(1) : { data: [] };
-  const memberId = emailRows?.[0]?.member_id || crypto.randomUUID();
-  if (!emailRows?.[0]) await supabase.from("members").insert({ id: memberId, email: normalizedEmail || `${providerUserId}@${provider}.first-friend.local`, display_name: displayName || "퍼스트프렌드 회원", verified: true });
-  await supabase.from("auth_accounts").insert({ member_id: memberId, provider, provider_user_id: providerUserId, email: normalizedEmail, email_verified: Boolean(normalizedEmail) });
+  // Provider identity owns the account. Matching emails never authorize linking.
+  const memberId = crypto.randomUUID();
+  const { error: memberError } = await supabase.from("members").insert({ id: memberId, email: normalizedEmail, display_name: displayName.trim().slice(0, 60) || "퍼스트프렌드 회원", verified: false });
+  if (memberError) throw memberError;
+  const { error: accountError } = await supabase.from("auth_accounts").insert({ member_id: memberId, provider, provider_user_id: providerUserId, email: normalizedEmail, email_verified: emailVerified });
+  if (accountError) {
+    // This member was created by this request and has never had a session.
+    await supabase.from("members").delete().eq("id", memberId);
+    if (accountError.code === "23505") {
+      const { data: winner } = await supabase.from("auth_accounts").select("member_id").eq("provider", provider).eq("provider_user_id", providerUserId).limit(1);
+      if (winner?.[0]) {
+        const { data: rows } = await supabase.from("members").select("*").eq("id", winner[0].member_id).limit(1);
+        return memberRow(rows?.[0] || null);
+      }
+    }
+    throw accountError;
+  }
   const { data: rows } = await supabase.from("members").select("*").eq("id", memberId).limit(1);
   return memberRow((rows?.[0] as Record<string, unknown>) || null);
 }
 
 export function safeReturnTo(value: string | null | undefined) {
-  if (!value?.startsWith("/") || value.startsWith("//")) return "/mypage";
-  return value;
+  if (!value?.startsWith("/") || value.includes("\\") || [...value].some(char => char.charCodeAt(0) <= 32)) return "/mypage";
+  try {
+    const url = new URL(value, "https://www.firstfriend.me");
+    if (url.origin !== "https://www.firstfriend.me") return "/mypage";
+    return url.pathname + url.search + url.hash;
+  } catch { return "/mypage"; }
 }

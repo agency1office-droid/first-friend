@@ -424,12 +424,10 @@ test("keeps favorite add, restore, and removal consistent", async () => {
   assert.doesNotMatch(detailChrome, /<GlobalMenuButton \/>/);
 });
 
-test("keeps Kakao test login local-only and issues a real member session", async () => {
+test("uses real Kakao OAuth on localhost without a test-account bypass", async () => {
   const source = await readFile(new URL("../app/api/auth/oauth/[provider]/route.ts", import.meta.url), "utf8");
-  assert.match(source, /provider === "kakao" && isLocalRequest\(request\)/);
-  assert.match(source, /findOrCreateSocialMember/);
-  assert.match(source, /createSession/);
-  assert.match(source, /first-friend-local-kakao-member/);
+  assert.match(source, /config.authorize/);
+  assert.doesNotMatch(source, /first-friend-local-kakao-member|findOrCreateSocialMember|createSession/);
 });
 
 test("replaces species tabs with actionable shelter-distance animal filters", async () => {

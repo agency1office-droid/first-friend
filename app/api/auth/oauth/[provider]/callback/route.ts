@@ -1,33 +1,44 @@
-import { createSession, findOrCreateSocialMember, safeReturnTo, sessionCookie } from "../../../../../../lib/app-auth";
-
-type Provider = "google" | "kakao" | "naver";
-const providers = {
-  google: { client: "GOOGLE_OAUTH_CLIENT_ID", secret: "GOOGLE_OAUTH_CLIENT_SECRET", token: "https://oauth2.googleapis.com/token", user: "https://openidconnect.googleapis.com/v1/userinfo" },
-  kakao: { client: "KAKAO_OAUTH_CLIENT_ID", secret: "KAKAO_OAUTH_CLIENT_SECRET", token: "https://kauth.kakao.com/oauth/token", user: "https://kapi.kakao.com/v2/user/me" },
-  naver: { client: "NAVER_OAUTH_CLIENT_ID", secret: "NAVER_OAUTH_CLIENT_SECRET", token: "https://nid.naver.com/oauth2.0/token", user: "https://openapi.naver.com/v1/nid/me" },
-} satisfies Record<Provider, Record<string, string>>;
+import { createSession, findOrCreateSocialMember, isLocalRequest, safeReturnTo, sessionCookie } from "../../../../../../lib/app-auth";
+import { isOAuthProvider, oauthFailure, oauthOrigin, oauthProviders, oauthRedirect, readOAuthCookie } from "../../../../../../lib/oauth";
 
 export async function GET(request: Request, { params }: { params: Promise<{ provider: string }> }) {
-  const provider = (await params).provider as Provider, config = providers[provider];
-  if (!config) return Response.redirect(new URL("/login?oauth=failed", request.url));
-  const url = new URL(request.url), code = url.searchParams.get("code"), state = url.searchParams.get("state"), cookie = request.headers.get("cookie") || "";
-  const expected = cookie.match(/(?:^|;\s*)ff_oauth_state=([^;]+)/)?.[1], rawReturn = cookie.match(/(?:^|;\s*)ff_oauth_return=([^;]+)/)?.[1];
-  if (!code || !state || state !== expected) return Response.redirect(new URL("/login?oauth=state", request.url));
-  const clientId = process.env[config.client], clientSecret = process.env[config.secret];
-  if (!clientId || !clientSecret) return Response.redirect(new URL(`/login?oauth=unconfigured&provider=${provider}`, request.url));
-  const callback = `${url.origin}/api/auth/oauth/${provider}/callback`;
-  const body = new URLSearchParams({ grant_type: "authorization_code", client_id: clientId, client_secret: clientSecret, redirect_uri: callback, code, state });
-  const tokenResponse = await fetch(config.token, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body });
-  const token = await tokenResponse.json() as { access_token?: string };
-  if (!token.access_token) return Response.redirect(new URL("/login?oauth=failed", request.url));
-  const profileResponse = await fetch(config.user, { headers: { authorization: `Bearer ${token.access_token}` } });
-  const profile = await profileResponse.json() as Record<string, unknown>;
-  const record = (value: unknown) => value && typeof value === "object" ? value as Record<string, unknown> : {};
-  const kakaoAccount = record(profile.kakao_account), kakaoProfile = record(kakaoAccount.profile), properties = record(profile.properties), naver = record(profile.response);
-  const normalized = provider === "google" ? { id: String(profile.sub), email: String(profile.email || ""), name: String(profile.name || "") } : provider === "kakao" ? { id: String(profile.id), email: String(kakaoAccount.email || ""), name: String(properties.nickname || kakaoProfile.nickname || "") } : { id: String(naver.id), email: String(naver.email || ""), name: String(naver.name || naver.nickname || "") };
-  if (!normalized.id || normalized.id === "undefined") return Response.redirect(new URL("/login?oauth=failed", request.url));
-  const member = await findOrCreateSocialMember(undefined, provider, normalized.id, normalized.email, normalized.name);
-  if (!member) return Response.redirect(new URL("/login?oauth=failed", request.url));
-  const session = await createSession(undefined, member.id), returnTo = safeReturnTo(rawReturn ? decodeURIComponent(rawReturn) : "/mypage");
-  return new Response(null, { status: 302, headers: { location: new URL(returnTo, request.url).toString(), "set-cookie": sessionCookie(session.token) } });
+  const { provider } = await params;
+  if (!isOAuthProvider(provider)) return Response.json({ error: "지원하지 않는 로그인입니다." }, { status: 404 });
+  let origin: string;
+  try { origin = oauthOrigin(request); } catch { return Response.json({ error: "운영 사이트에서 다시 로그인해 주세요." }, { status: 400 }); }
+  const url = new URL(request.url);
+  const state = url.searchParams.get("state"), expected = readOAuthCookie(request, provider, "state");
+  if (!state || !expected || state !== expected) return oauthFailure(request, provider, "state");
+  if (url.searchParams.has("error")) return oauthFailure(request, provider, "cancelled");
+  const code = url.searchParams.get("code");
+  if (!code) return oauthFailure(request, provider, "failed");
+  const config = oauthProviders[provider];
+  const clientId = process.env[config.client]?.trim(), clientSecret = process.env[config.secret]?.trim();
+  if (!clientId || !clientSecret) return oauthFailure(request, provider, "unconfigured");
+  try {
+    const body = new URLSearchParams({ grant_type: "authorization_code", client_id: clientId, client_secret: clientSecret, redirect_uri: `${origin}/api/auth/oauth/${provider}/callback`, code, state });
+    const tokenResponse = await fetch(config.token, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body, signal: AbortSignal.timeout(10000) });
+    const token = await tokenResponse.json() as { access_token?: unknown };
+    if (!tokenResponse.ok || typeof token.access_token !== "string" || !token.access_token) return oauthFailure(request, provider, "failed");
+    const profileResponse = await fetch(config.user, { headers: { authorization: `Bearer ${token.access_token}` }, signal: AbortSignal.timeout(10000) });
+    if (!profileResponse.ok) return oauthFailure(request, provider, "failed");
+    const record = (value: unknown): Record<string, unknown> => value && typeof value === "object" ? value as Record<string, unknown> : {};
+    const profile = record(await profileResponse.json());
+    const kakaoAccount = record(profile.kakao_account), kakaoProfile = record(kakaoAccount.profile), properties = record(profile.properties), naver = record(profile.response);
+    const text = (value: unknown) => typeof value === "string" ? value : "";
+    const id = provider === "google" ? text(profile.sub) : provider === "kakao" ? (typeof profile.id === "number" && Number.isSafeInteger(profile.id) ? String(profile.id) : "") : text(naver.id);
+    if (!id || (provider === "naver" && profile.resultcode !== "00")) return oauthFailure(request, provider, "failed");
+    const email = provider === "google" ? text(profile.email) : provider === "kakao" ? "" : text(naver.email);
+    const name = provider === "google" ? text(profile.name) : provider === "kakao" ? text(kakaoProfile.nickname) || text(properties.nickname) : text(naver.nickname);
+    const emailVerified = provider === "google" && profile.email_verified === true;
+    const member = await findOrCreateSocialMember(undefined, provider, id, email, name, emailVerified);
+    if (!member || member.sanctioned) return oauthFailure(request, provider, "failed");
+    const session = await createSession(undefined, member.id);
+    const headers = oauthRedirect(request, provider, safeReturnTo(readOAuthCookie(request, provider, "return")));
+    headers.append("set-cookie", sessionCookie(session.token, undefined, !isLocalRequest(request)));
+    return new Response(null, { status: 302, headers });
+  } catch {
+    // Provider responses can contain credentials. Never echo them into logs or URLs.
+    return oauthFailure(request, provider, "failed");
+  }
 }

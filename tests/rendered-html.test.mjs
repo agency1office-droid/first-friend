@@ -413,7 +413,7 @@ test("keeps favorite add, restore, and removal consistent", async () => {
     readFile(new URL("../app/friends/[id]/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/AnimalDetailChromeBridge.tsx", import.meta.url), "utf8"),
   ]);
-  assert.match(button, /aria-busy=\{hydrating \|\| busy\}/);
+  assert.match(button, /aria-busy=\{busy\}/);
   assert.match(button, /onFavoriteChange\?\.\(next\)/);
   assert.match(grid, /current\.filter\(item => item\.id !== animal\.id\)/);
   assert.match(api, /getAnimalById\(animalId\)/);
@@ -936,10 +936,11 @@ test("shows verified multi-photo counts on discovery thumbnails", async () => {
   assert.match(favorite, /import \{ Bookmark \} from "lucide-react"/);
   assert.match(favorite, /fill=\{saved \? "currentColor" : "none"\}/);
   assert.match(favorite, /useState\(initialSaved \?\? false\)/);
-  assert.match(favorite, /fetch\("\/api\/favorites"\)/);
+  assert.match(favorite, /fetch\("\/api\/favorites",/);
   assert.match(favorite, /ids\.has\(animalId\)/);
   assert.match(favorite, /favoriteIdsRequest/);
-  assert.match(favorite, /disabled=\{hydrating \|\| busy\}/);
+  assert.match(favorite, /aria-disabled=\{busy\}/);
+  assert.doesNotMatch(favorite, /\sdisabled=\{/);
   assert.doesNotMatch(favorite, /\.catch\(\(\) => new Set/);
   assert.match(favorite, /ff-card-scrap/);
   assert.match(css, /\.ff-animal-card-row \.ff-card-scrap \{[^}]*--seed-color-fg-placeholder/);

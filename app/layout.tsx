@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { SESSION_COOKIE, sha256 } from "../lib/app-auth";
 import "./globals.css";
 import { AppChrome } from "./components/AppChrome";
 import { AppFeedbackProvider } from "./components/AppFeedback";
@@ -18,6 +19,9 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="ko" data-seed data-seed-color-mode="light-only"><head><meta name="color-scheme" content="light" /></head><body><AppFeedbackProvider><AppChrome>{children}</AppChrome></AppFeedbackProvider></body></html>;
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  // Separate display caches across logins without exposing a session credential.
+  const favoriteScope = token ? (await sha256(`favorite-display:${token}`)).slice(0, 24) : "guest";
+  return <html lang="ko" data-seed data-seed-color-mode="light-only"><head><meta name="color-scheme" content="light" /></head><body data-favorite-scope={favoriteScope}><AppFeedbackProvider><AppChrome>{children}</AppChrome></AppFeedbackProvider></body></html>;
 }

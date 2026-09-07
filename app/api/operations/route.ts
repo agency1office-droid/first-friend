@@ -5,6 +5,7 @@ import { clean } from "../_helpers";
 import { beginIdempotentRequest, completeIdempotentRequest } from "../../../lib/api-guards";
 import { canUseOperations, operationResources, parseOperationQuery, resourceAllowed } from "../../../lib/operations";
 import { logError } from "../../../lib/observability";
+import { getSyncHistory } from "../../../lib/sync-history";
 
 type Row = Record<string, unknown>;
 const atomicReviewActions = ["registration-status", "verification-status", "adoption-certification-status", "appeal-status", "fundraiser-status"];
@@ -25,6 +26,10 @@ export async function GET(request: Request) {
     if (!auth) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
     if (!canUseOperations(auth.member.role, auth.member.verified, auth.member.sanctioned)) return Response.json({ error: "인증된 보호소 또는 운영자만 이용할 수 있어요." }, { status: 403 });
     const params=new URL(request.url).searchParams;
+    if (params.get("view") === "sync") {
+      if (auth.member.role !== "admin") return Response.json({ error: "운영 권한이 필요해요." }, { status: 403 });
+      return Response.json(await getSyncHistory(params), { headers: { "cache-control": "no-store" } });
+    }
     if(params.get("view")==="overview") {
       if(auth.member.role!=="admin")return Response.json({error:"운영 권한이 필요해요."},{status:403});
       const includeRecords=params.get("records")==="1";

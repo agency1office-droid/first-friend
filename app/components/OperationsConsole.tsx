@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@seed-design/react";
+import { OperationsSyncHistory } from "./OperationsSyncHistory";
 import { IconEnvelopeLine } from "@karrotmarket/react-monochrome-icon";
 import { siGoogle, siKakaotalk, siNaver } from "simple-icons";
 import { ActionButton } from "seed-design/ui/action-button";
@@ -100,6 +101,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
   const { resource, page, status, sort, queue, pageSize } = input;
   const config = operationResources[resource];
   const overview = new URLSearchParams(query).get("view") === "overview" && role === "admin";
+  const syncHistory = new URLSearchParams(query).get("view") === "sync" && role === "admin";
   useEffect(() => {
     const sync = () => { setQuery(window.location.search.slice(1)); setSearch(new URLSearchParams(window.location.search).get("q") || ""); setLoading(true); setError(""); setResult(null); setSelected(null); setRefresh(value => value + 1); };
     window.addEventListener("popstate", sync);
@@ -107,7 +109,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
   }, []);
   useEffect(() => {
     const controller = new AbortController();
-    if(new URLSearchParams(query).get("view")==="overview" && role==="admin")return () => controller.abort();
+    if(["overview","sync"].includes(new URLSearchParams(query).get("view")||"") && role==="admin")return () => controller.abort();
     fetch("/api/operations?" + query, { signal: controller.signal, cache: "no-store" })
       .then(async response => { const body = await response.json(); if (!response.ok) throw new Error(body.error || "목록을 불러오지 못했어요."); return body; })
       .then(setResult)
@@ -147,14 +149,14 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
     <div className={styles.mobileBar}><strong>퍼스트프렌드 · 운영 콘솔</strong><ActionButton size="small" variant="neutralWeak" aria-expanded={menuOpen} aria-controls="operations-navigation" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "메뉴 닫기" : "업무 메뉴"}</ActionButton></div>
     <SideNavigationRoot id="operations-navigation" className={styles.sidebar} data-mobile-open={menuOpen} aria-label="확인할 업무">
       <SideNavigationHeader><Link className={styles.brand} href="/">퍼스트프렌드<span>운영 콘솔</span></Link><div className={styles.menuSearch}><TextField label="업무 메뉴 검색"><TextFieldInput value={menuSearch} onChange={event=>setMenuSearch(event.target.value)} placeholder="회원, 신고, 입양" /></TextField></div></SideNavigationHeader>
-      <SideNavigationContent>{role==="admin"&&<SideNavigationGroup items={[{label:"운영 요약",current:overview,onClick:()=>{setMenuOpen(false);navigate({view:"overview"});}}]}/>}
-      {groups.map(group => <SideNavigationGroup key={group.label + resource + String(overview) + menuSearch} items={[{label:group.label,defaultOpen:!!menuSearch || (!overview && group.keys.includes(resource)),items:group.keys.map(key=>({key,label:operationResources[key].label,current:!overview&&key===resource,onClick:()=>{setMenuOpen(false);setMenuSearch("");navigate({resource:key,view:""});}}))}]}/>)}
+      <SideNavigationContent>{role==="admin"&&<SideNavigationGroup items={[{label:"운영 요약",current:overview,onClick:()=>{setMenuOpen(false);navigate({view:"overview"});}},{label:"동기화 기록",current:syncHistory,onClick:()=>{setMenuOpen(false);navigate({view:"sync",kind:"",status:"",page:"1"});}}]}/>}
+      {groups.map(group => <SideNavigationGroup key={group.label + resource + String(overview) + String(syncHistory) + menuSearch} items={[{label:group.label,defaultOpen:!!menuSearch || (!overview && !syncHistory && group.keys.includes(resource)),items:group.keys.map(key=>({key,label:operationResources[key].label,current:!overview&&!syncHistory&&key===resource,onClick:()=>{setMenuOpen(false);setMenuSearch("");navigate({resource:key,view:""});}}))}]}/>)}
       {!groups.length&&<p className={styles.menuSearch} role="status">일치하는 메뉴가 없어요.</p>}</SideNavigationContent>
       <SideNavigationFooter><ActionButton asChild variant="neutralWeak" size="small"><a href="/mypage">나의 페이지로</a></ActionButton></SideNavigationFooter>
     </SideNavigationRoot>
     <section className={styles.console} aria-label="운영 업무">
-    <header className={styles.topbar}><div><p>보호처·운영자 도구</p><h1>{overview?"운영 요약":config.label}</h1></div><Badge tone="neutral" variant="weak">{role === "admin" ? "관리자" : "보호소 운영자"}</Badge></header>
-    {overview?<OperationsOverview onSelect={(key,pending)=>navigate({resource:key,view:"",queue:pending?"pending":""})}/>:<div className={styles.workspace}>
+    <header className={styles.topbar}><div><p>보호처·운영자 도구</p><h1>{syncHistory?"동기화 기록":overview?"운영 요약":config.label}</h1></div><Badge tone="neutral" variant="weak">{role === "admin" ? "관리자" : "보호소 운영자"}</Badge></header>
+    {syncHistory?<OperationsSyncHistory key={query} query={query} navigate={navigate}/>:overview?<OperationsOverview onSelect={(key,pending)=>navigate({resource:key,view:"",queue:pending?"pending":""})}/>:<div className={styles.workspace}>
     {role==="admin"&&resource==="campaigns"&&<OperationsManagement resource={resource} row={null} onDone={reload}/>}
     <p>목록에서 항목을 선택하고, 내용을 검토한 뒤 처리해 주세요.</p>
     {resource==="publicAnimals"&&<Callout tone="informative" description="공공 원본의 동물 정보와 수집이 종료된 기록을 조회해요. 숨김은 우리 사이트에만 적용되며 다음 수집에도 유지돼요. 기존 공개 화면 캐시는 잠시 남을 수 있어요. 공고번호는 다음 수집부터 채워져요."/>}

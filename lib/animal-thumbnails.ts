@@ -36,12 +36,34 @@ export async function createAnimalThumbnail(source: string) {
 }
 
 export async function processAnimalThumbnails(options: { maxJobs?: number; durationMs?: number; concurrency?: number } = {}) {
+  const db = getSupabaseServerClient();
+  const id = crypto.randomUUID();
+  await db.from("sync_runs").insert({ id, kind: "animal-thumbnails", status: "running" }).throwOnError();
+  const result = { completed: 0, failed: 0, originalBytes: 0, thumbnailBytes: 0 };
+  const errors: string[] = [];
+  const finish = async (status: string, message: string) => {
+    const now = new Date().toISOString();
+    await db.from("sync_runs").update({ status, finished_at: now, updated_at: now,
+      processed_count: result.completed + result.failed, image_completed: result.completed, image_failed: result.failed,
+      original_bytes: result.originalBytes, thumbnail_bytes: result.thumbnailBytes, message: message.slice(0, 1500),
+    }).eq("id", id).throwOnError();
+  };
+  try {
+    await processThumbnailBatch(options, result, errors);
+    await finish(result.failed ? "partial" : "completed", errors.join("\n"));
+    return result;
+  } catch (error) {
+    await finish("failed", error instanceof Error ? error.message : "사진 처리 실행 실패");
+    throw error;
+  }
+}
+
+async function processThumbnailBatch(options: { maxJobs?: number; durationMs?: number; concurrency?: number }, result: { completed: number; failed: number; originalBytes: number; thumbnailBytes: number }, errors: string[]) {
   // Fail a broken deployment before claiming or consuming any image retries.
   await import("sharp");
   const db = getSupabaseServerClient();
   const deadline = Date.now() + Math.min(options.durationMs ?? 200000, 200000);
   const maxJobs = Math.min(options.maxJobs ?? 5000, 5000);
-  const result = { completed: 0, failed: 0, originalBytes: 0, thumbnailBytes: 0 };
   while (Date.now() < deadline && result.completed + result.failed < maxJobs) {
     const { data: jobs } = await db.rpc("claim_animal_thumbnails", { p_limit: Math.min(Math.max(1, options.concurrency ?? 8), 8, maxJobs - result.completed - result.failed) }).throwOnError();
     if (!jobs?.length) break;
@@ -61,6 +83,7 @@ export async function processAnimalThumbnails(options: { maxJobs?: number; durat
         result.completed++; result.originalBytes += image.originalBytes; result.thumbnailBytes += image.buffer.length;
       } catch (error) {
         const message = error instanceof Error ? error.message : "사진을 변환하지 못했어요.";
+        if (errors.length < 5) errors.push(`동물 ${job.animal_id} · 사진 ${job.slot}: ${message.slice(0, 200)}`);
         await db.from("animal_image_jobs").update({ status: "failed", last_error: message.slice(0, 300),
           next_attempt_at: new Date(Date.now() + 60000 * 2 ** job.attempt_count).toISOString(), updated_at: new Date().toISOString() })
           .eq("id", job.id).eq("status", "processing").eq("updated_at", job.updated_at).throwOnError();

@@ -2,7 +2,7 @@ export type HomeLocation = { label: string; address?: string; lat: number; lng: 
 export type GeoPoint = { lat: number; lng: number };
 
 export function isKoreaPoint(value: Partial<GeoPoint> | null | undefined): value is GeoPoint {
-  return Boolean(value && Number.isFinite(value.lat) && Number.isFinite(value.lng)
+  return Boolean(value && typeof value.lat === "number" && typeof value.lng === "number" && Number.isFinite(value.lat) && Number.isFinite(value.lng)
     && value.lat >= 30 && value.lat <= 40 && value.lng >= 120 && value.lng <= 135);
 }
 

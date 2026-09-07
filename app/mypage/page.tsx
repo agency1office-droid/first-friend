@@ -15,14 +15,13 @@ const statusLabel: Record<string, string> = { submitted: "접수", review: "검�
 
 export default async function MyPage() {
   const user = await getChatGPTUser();
-  let dashboard: { readiness: Record<string, unknown> | undefined; applications: Record<string, unknown>[]; favorites: number; posts: number; reports: number; registrations: number; searches: number; unread: number } | null = null;
+  let dashboard: { readiness: Record<string, unknown> | undefined; applications: { id: string | number; status: string; readinessScore: number }[]; applicationCount: number; favorites: number; posts: number; reports: number; registrations: number; searches: number; unread: number } | null = null;
   if (user) {
     try {
       const client = getSupabaseServerClient();
-      await client.from("members").upsert({ id: user.userId, email: user.email, display_name: user.displayName }, { onConflict: "id" });
       const [readiness, applicationRows, favoriteCount, postCount, reportCount, registrationCount, searchCount, unreadCount] = await Promise.all([
         client.from("readiness_assessments").select("*").eq("member_id", user.userId).order("completed_at", { ascending: false }).limit(1),
-        client.from("applications").select("*").eq("member_id", user.userId).order("created_at", { ascending: false }),
+        client.from("applications").select("id,status,readiness_score", { count: "exact" }).eq("member_id", user.userId).order("created_at", { ascending: false }).limit(5),
         client.from("favorites").select("id", { count: "exact", head: true }).eq("member_id", user.userId),
         client.from("posts").select("id", { count: "exact", head: true }).eq("member_id", user.userId),
         client.from("lost_reports").select("id", { count: "exact", head: true }).eq("member_id", user.userId),
@@ -30,7 +29,9 @@ export default async function MyPage() {
         client.from("saved_searches").select("id", { count: "exact", head: true }).eq("member_id", user.userId),
         client.from("notifications").select("id", { count: "exact", head: true }).eq("member_id", user.userId).eq("read", false),
       ]);
-      dashboard = { readiness: readiness.data?.[0], applications: (applicationRows.data || []).map(row => ({ ...row, animalId: row.animal_id, readinessScore: row.readiness_score })), favorites: favoriteCount.count || 0, posts: postCount.count || 0, reports: reportCount.count || 0, registrations: registrationCount.count || 0, searches: searchCount.count || 0, unread: unreadCount.count || 0 };
+      const failed = [readiness, applicationRows, favoriteCount, postCount, reportCount, registrationCount, searchCount, unreadCount].find(result => result.error);
+      if (failed?.error) throw failed.error;
+      dashboard = { readiness: readiness.data?.[0], applications: (applicationRows.data || []).map(row => ({ id: row.id, status: row.status, readinessScore: row.readiness_score })), applicationCount: applicationRows.count || 0, favorites: favoriteCount.count || 0, posts: postCount.count || 0, reports: reportCount.count || 0, registrations: registrationCount.count || 0, searches: searchCount.count || 0, unread: unreadCount.count || 0 };
     } catch { dashboard = null; }
   }
 
@@ -38,7 +39,8 @@ export default async function MyPage() {
     <header className="ff-page-header"><div className="ff-kicker">나의 페이지</div><h1 className="ff-title">{user ? `${user.displayName}님, 안녕하세요` : "퍼스트 프렌드에 오신 걸 환영해요"}</h1></header>
     {!user ? <section className="ff-result"><h2 className="ff-section-title">안전한 만남을 위해 로그인이 필요해요</h2><p className="ff-description" style={{ margin: "8px 0 18px" }}>동물과 이야기는 누구나 볼 수 있고, 찜·신청·글쓰기·실종 제보·직접 등록은 로그인 후 이용할 수 있어요.</p><ActionButton asChild size="large" className="ff-action-link"><a href={chatGPTSignInPath("/mypage")}>로그인·회원가입</a></ActionButton></section> : <>
       <div className="ff-profile-row"><Avatar size="48" fallback={user.displayName.slice(0, 1)}/><div className="ff-grow"><strong>{user.displayName}</strong><div className="ff-meta">퍼스트프렌드 회원 · {user.email}</div></div><ActionButton asChild size="small" variant="neutralWeak"><a href={chatGPTSignOutPath("/")}>로그아웃</a></ActionButton></div>
-      {dashboard && <><div className="ff-dashboard-grid"><div><strong>{dashboard.favorites}</strong><span>관심 친구</span></div><div><strong>{dashboard.applications.length}</strong><span>입양 신청</span></div><div><strong>{dashboard.posts}</strong><span>나의 이야기</span></div><div><strong>{dashboard.reports}</strong><span>실종·발견</span></div></div>
+      {!dashboard && <Callout tone="warning" title="활동 정보를 불러오지 못했어요" description="잠시 후 새로고침해 주세요."/>}
+      {dashboard && <><div className="ff-dashboard-grid"><div><strong>{dashboard.favorites}</strong><span>관심 친구</span></div><div><strong>{dashboard.applicationCount}</strong><span>입양 신청</span></div><div><strong>{dashboard.posts}</strong><span>나의 이야기</span></div><div><strong>{dashboard.reports}</strong><span>실종·발견</span></div></div>
         <section className="ff-section"><div className="ff-section-head"><h2 className="ff-section-title">입양 준비</h2><a className="ff-more" href="/readiness">다시 확인</a></div>{dashboard.readiness ? <div className="ff-readiness-summary"><div><span>생활 준비도</span><strong>{String(dashboard.readiness.readiness_score || 0)}</strong></div><div><span>필수 시험</span><strong>{String(dashboard.readiness.education_score || 0)}</strong></div><Badge tone={dashboard.readiness.passed ? "positive" : "warning"} variant="weak">{dashboard.readiness.passed ? "교육 완료" : "재학습 필요"}</Badge></div> : <Callout tone="warning" title="아직 준비 시험을 완료하지 않았어요" description="입양 신청 전에 생활 환경·비용·필수 교육을 확인해 주세요." linkProps={{ href: "/readiness", children: "시험 시작" }}/>}</section>
         <section className="ff-section"><h2 className="ff-section-title" style={{ marginBottom: 10 }}>진행 중인 입양</h2>{dashboard.applications.length ? <List>{dashboard.applications.slice(0, 5).map((application, index) => <div key={application.id}><ListLinkItem href={`/applications/${application.id}`} prefix={<IconPawprintLine/>} title={`신청 #${application.id}`} detail={`준비도 ${application.readinessScore}점 · ${statusLabel[application.status] || application.status}`} suffix={<IconChevronRightLine/>}/>{index < Math.min(4, dashboard.applications.length - 1) && <ListDivider/>}</div>)}</List> : <div className="ff-empty">진행 중인 입양 신청이 없어요.</div>}</section>
       </>}

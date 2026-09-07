@@ -204,7 +204,7 @@ export default async function Page({
           <div><IconPhoneLine aria-hidden="true"/><span>연락처</span><ShelterInfoValue value={shelter.phone} copyLabel="연락처"/></div>
           <div><IconPawprintLine aria-hidden="true"/><span>보호 대상</span><ShelterInfoValue value={shelter.animals}/></div>
           <div><IconHospitalcrossBuildingLine aria-hidden="true"/><span>운영 기관</span><ShelterInfoValue value={shelter.organization}/></div>
-          {profile?.introduction && <div><IconArticleLine aria-hidden="true"/><span>보호소 소개</span><ShelterInfoValue value={profile.introduction}/></div>}
+          {typeof profile?.introduction === "string" && profile.introduction && <div><IconArticleLine aria-hidden="true"/><span>보호소 소개</span><ShelterInfoValue value={profile.introduction}/></div>}
         </div>
         <p className="ff-description ff-shelter-data-note">
           <span>공공데이터와 보호소 확인 정보를 함께 보여드려요.</span>

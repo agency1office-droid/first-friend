@@ -34,3 +34,14 @@ jobs:
 
       - name: Test and build
         run: npm test
+
+      - name: Production application types
+        run: npm run typecheck
+
+      - name: Build actual Vercel runtime
+        env:
+          NITRO_PRESET: vercel
+        run: npm run build
+
+      - name: Smoke test generated Vercel function
+        run: node scripts/check-vercel-build.mjs

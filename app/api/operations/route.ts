@@ -1,4 +1,4 @@
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { getAuthenticatedMember } from "../../chatgpt-auth";
 import { getSupabaseServerClient } from "../../../lib/supabase/server";
 import { sendExternalNotification, sendToOfficialShelter } from "../../../lib/integrations";
 import { clean } from "../_helpers";
@@ -12,9 +12,8 @@ const map = (row: Row) => ({ ...row, memberId: row.member_id, animalId: row.anim
 
 
 async function context() {
-  const user = await getChatGPTUser(); if (!user) return null;
-  const client = getSupabaseServerClient(), { data: member } = await client.from("members").select("*").eq("id", user.userId).maybeSingle().throwOnError();
-  return member ? { user, member, client } : null;
+  const member = await getAuthenticatedMember();
+  return member ? { user: { userId: member.id }, member, client: getSupabaseServerClient() } : null;
 }
 async function audit(client: ReturnType<typeof getSupabaseServerClient>, actorId: string, action: string, targetType: string, targetId: string, before?: unknown, after?: unknown) {
   await client.from("admin_audit_logs").insert({ actor_id: actorId, action, target_type: targetType, target_id: targetId, before_json: JSON.stringify(before || {}), after_json: JSON.stringify(after || {}) }).throwOnError();
@@ -28,13 +27,13 @@ export async function GET(request: Request) {
     const params=new URL(request.url).searchParams;
     if(params.get("view")==="overview") {
       if(auth.member.role!=="admin")return Response.json({error:"운영 권한이 필요해요."},{status:403});
-      const counts=await Promise.all(Object.entries(operationResources).map(async ([resource,config])=>{
+      const includeRecords=params.get("records")==="1";
+      const [counts,{data:jobs,error}]=await Promise.all([Promise.all(Object.entries(operationResources).filter(([,config])=>includeRecords || config.pending.length>0).map(async ([resource,config])=>{
         let query=auth.client.from(config.table).select("id",{count:"exact",head:true});
         if(config.pending.length)query=query.in("status",[...config.pending]);
         const {count,error}=await query;
         return {resource,label:config.label,count:error?null:count||0,pending:config.pending.length>0,error:error?"데이터베이스 준비 상태를 확인해 주세요.":null};
-      }));
-      const {data:jobs,error}=await auth.client.from("public_sync_state").select("id,status,item_count,last_completed_at,message").in("id",["public-animals","public-lost-animals"]);
+      })),auth.client.from("public_sync_state").select("id,status,item_count,last_completed_at,message").in("id",["public-animals","public-lost-animals"])]);
       return Response.json({counts,jobs:jobs||[],syncError:!!error,emailReady:!!(process.env.RESEND_API_KEY&&process.env.EMAIL_FROM&&process.env.EMAIL_REPLY_TO),oauth:Object.fromEntries(["GOOGLE","KAKAO","NAVER"].map(name=>[name,!!(process.env[name+"_OAUTH_CLIENT_ID"]&&process.env[name+"_OAUTH_CLIENT_SECRET"])]))},{headers:{"cache-control":"no-store"}});
     }
     let input;
@@ -73,8 +72,10 @@ export async function GET(request: Request) {
     let rows=(data||[]) as unknown as Row[];
     if(resource==="members"&&rows.length){
       const ids=rows.map(row=>row.id);
-      const accounts=await c.from("auth_accounts").select("member_id,provider,email_verified").in("member_id",ids).throwOnError();
-      const preferences=await c.from("contact_preferences").select("member_id,marketing_email,marketing_notification").in("member_id",ids).throwOnError();
+      const [accounts,preferences]=await Promise.all([
+        c.from("auth_accounts").select("member_id,provider,email_verified").in("member_id",ids).throwOnError(),
+        c.from("contact_preferences").select("member_id,marketing_email,marketing_notification").in("member_id",ids).throwOnError(),
+      ]);
       rows=rows.map(row=>({...row,login_methods:(accounts.data||[]).filter(a=>a.member_id===row.id).map(a=>`${a.provider}${a.email_verified?" (이메일 확인됨)":""}`).join(", "),marketing_email:preferences.data?.find(p=>p.member_id===row.id)?.marketing_email||false,marketing_notification:preferences.data?.find(p=>p.member_id===row.id)?.marketing_notification||false}));
     }
     return Response.json({ rows, total: count || 0, page, pageSize, role: auth.member.role }, { headers: { "cache-control": "no-store" } });

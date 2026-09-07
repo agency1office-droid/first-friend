@@ -9,6 +9,7 @@ import { isKoreaPoint, readHomeLocation } from "../../lib/geo";
 import { useAppFeedback } from "./AppFeedback";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalMenuButton } from "./GlobalMenuButton";
+import { loadDefaultHomeLocation } from "./defaultHomeLocation";
 
 function savedLocations() {
   try {
@@ -39,7 +40,7 @@ export function HomeTopbar() {
         setRegion(manualLocal[0].label);
         return;
       }
-      const ipLocation = await fetch("/api/location/default").then((response) => response.json()).then((body) => body.location as HomeLocation | null).catch(() => null);
+      const ipLocation = await loadDefaultHomeLocation();
       if (ipLocation) {
         const defaultLocation = { ...ipLocation, source: "ip" as const };
         setNeighborhoods([defaultLocation]);

@@ -11,6 +11,11 @@ import * as React from "react";
 
 import { IconChevronRightLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon"; // "@daangn/react-monochrome-icon"과 동일합니다.
 
+type CalloutLinkProps = SeedCallout.LinkProps & { href?: string };
+function CalloutLink({ href, children, ...props }: CalloutLinkProps) {
+  return href ? <SeedCallout.Link {...props} asChild><a href={href}>{children}</a></SeedCallout.Link> : <SeedCallout.Link {...props}>{children}</SeedCallout.Link>;
+}
+
 export interface CalloutProps
   extends Omit<
     SeedCallout.RootProps,
@@ -22,7 +27,7 @@ export interface CalloutProps
 
   description: React.ReactNode;
 
-  linkProps?: SeedCallout.LinkProps;
+  linkProps?: CalloutLinkProps;
 }
 
 /**
@@ -36,7 +41,7 @@ export const Callout = React.forwardRef<React.ElementRef<typeof SeedCallout.Root
         <SeedCallout.Content>
           {title && <SeedCallout.Title>{title}</SeedCallout.Title>}
           <SeedCallout.Description>{description}</SeedCallout.Description>
-          {linkProps && <SeedCallout.Link {...linkProps} />}
+          {linkProps && <CalloutLink {...linkProps} />}
         </SeedCallout.Content>
       </SeedCallout.Root>
     );
@@ -86,7 +91,7 @@ export interface DismissibleCalloutProps
 
   description: React.ReactNode;
 
-  linkProps?: SeedCallout.LinkProps;
+  linkProps?: CalloutLinkProps;
 }
 
 /**
@@ -102,7 +107,7 @@ export const DismissibleCallout = React.forwardRef<
       <SeedCallout.Content>
         {title && <SeedCallout.Title>{title}</SeedCallout.Title>}
         <SeedCallout.Description>{description}</SeedCallout.Description>
-        {linkProps && <SeedCallout.Link {...linkProps} />}
+        {linkProps && <CalloutLink {...linkProps} />}
       </SeedCallout.Content>
       {/* You may implement your own i18n for dismiss label */}
       <SeedCallout.CloseButton aria-label="닫기">

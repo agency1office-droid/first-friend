@@ -54,7 +54,7 @@ export default function Page() {
           </dl>
           <Accordion
             multiple
-            defaultValue={[`${item.label}-good`, `${item.label}-real`]}
+            defaultValues={[`${item.label}-good`, `${item.label}-real`]}
           >
             <AccordionItem value={`${item.label}-good`}>
               <AccordionTrigger title="함께 살 때 좋은 점" />

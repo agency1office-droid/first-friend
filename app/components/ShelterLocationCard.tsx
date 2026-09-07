@@ -9,7 +9,8 @@ import { distanceMeters, formatDistance, formatDrivingDuration, readHomeLocation
 export type KakaoMaps = {
   load: (callback: () => void) => void;
   LatLng: new (lat: number, lng: number) => object;
-  Map: new (container: HTMLElement, options: { center: object; level: number }) => object;
+  Map: new (container: HTMLElement, options: { center: object; level: number }) => { setCenter(center: object): void; setBounds(bounds: object): void };
+  LatLngBounds: new () => { extend(point: object): void };
   Marker: new (options: { map: object; position: object; title?: string }) => object;
 };
 

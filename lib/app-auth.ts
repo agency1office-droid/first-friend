@@ -56,8 +56,10 @@ export function isLocalRequest(request: Request) {
 
 export async function memberFromSession(db: Db, token: string) {
   const { data: sessions, error } = await getSupabaseServerClient().from("auth_sessions").select("member_id").eq("token_hash", await sha256(token)).gt("expires_at", new Date().toISOString()).limit(1);
-  if (error || !sessions?.[0]) return null;
-  const { data: rows } = await getSupabaseServerClient().from("members").select("*").eq("id", sessions[0].member_id).limit(1);
+  if (error) throw new Error("로그인 정보를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.", { cause: error });
+  if (!sessions?.[0]) return null;
+  const { data: rows, error: memberError } = await getSupabaseServerClient().from("members").select("*").eq("id", sessions[0].member_id).limit(1);
+  if (memberError) throw new Error("회원 정보를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.", { cause: memberError });
   return memberRow((rows?.[0] as Record<string, unknown>) || null);
 }
 

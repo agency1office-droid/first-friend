@@ -2,7 +2,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import { getStroke } from "perfect-freehand";
 import { HexColorPicker } from "react-colorful";
 import type { Animal } from "../../lib/data";
@@ -164,13 +163,14 @@ export function Finder({ animals, modeOnly, initialTags = "", resultsOnly = fals
         // The drawing canvas remains usable even when the optional result data is unavailable.
       }
     };
-    const schedule = "requestIdleCallback" in window
+    const idle = typeof window.requestIdleCallback === "function";
+    const schedule = idle
       ? window.requestIdleCallback(load, { timeout: 800 })
       : window.setTimeout(load, 0);
     return () => {
       cancelled = true;
-      if (typeof schedule === "number") window.clearTimeout(schedule);
-      else window.cancelIdleCallback?.(schedule);
+      if (idle) window.cancelIdleCallback(schedule);
+      else window.clearTimeout(schedule);
     };
   }, [animals, mode, resultsOnly]);
 
@@ -371,7 +371,7 @@ export function Finder({ animals, modeOnly, initialTags = "", resultsOnly = fals
     const file = event.target.files?.[0];
     if (!file || !canvasRef.current) return;
     const url = URL.createObjectURL(file);
-    const image = new Image();
+    const image = new window.Image();
     image.onload = () => {
       const canvas = canvasRef.current;
       const context = canvas?.getContext("2d");
@@ -435,7 +435,8 @@ export function Finder({ animals, modeOnly, initialTags = "", resultsOnly = fals
       if (mode === "draw" && canvasRef.current) visual = await analyzeVisual(canvasRef.current, canvasSource !== "photo", drawSpecies || undefined);
       if (mode === "photo" && imageRef.current) visual = await analyzeVisual(imageRef.current, false);
       if (visual) { setAnalysis(visual); if (species === "전체" && visual.species !== "전체") setSpecies(visual.species); }
-      const visualCandidates = visual?.species && visual.species !== "전체" ? sourceAnimals.filter((animal) => animal.species.includes(visual.species)) : sourceAnimals;
+      const visualSpecies = visual?.species;
+      const visualCandidates = visualSpecies && visualSpecies !== "전체" ? sourceAnimals.filter((animal) => animal.species.includes(visualSpecies)) : sourceAnimals;
       const similarityScores = visual?.embeddingVariants?.length ? await getVisualSimilarityScores(visual.embeddingVariants, visualCandidates) : new Map<string, number>();
       const nextVisualScores = Object.fromEntries(similarityScores);
       setVisualScores(nextVisualScores);

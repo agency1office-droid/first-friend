@@ -8,6 +8,7 @@ import type { AnimalPage } from "../../lib/public-animal-store";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
 import { PUBLIC_ANIMAL_AGE_MAX } from "../../lib/animal-filter-ranges";
 import { HOME_FEED_SNAPSHOT_KEY } from "./homeFeedSnapshot";
+import { loadDefaultHomeLocation } from "./defaultHomeLocation";
 
 export type AnimalFeedFilters = {
   sort: "distance" | "recent";
@@ -26,6 +27,7 @@ export type AnimalFeedFilters = {
 const defaultFilters: AnimalFeedFilters = { sort: "distance", species: "all", publicStatus: "all", breedKeys: [], sex: "all", neutered: "all", color: "all", ageGroup: "all", sizeGroup: "all", ageMin: 0, ageMax: PUBLIC_ANIMAL_AGE_MAX };
 type FeedSnapshot = { url: string; items: Animal[]; total: number; cursor: string | null; syncedAt: string | null; stale: boolean; scrollY: number };
 const preloadedAnimalImages = new Set<string>();
+const scrollSnapshotKey = `${HOME_FEED_SNAPSHOT_KEY}:scroll`;
 
 function readFeedSnapshot(): FeedSnapshot | null {
   if (typeof window === "undefined") return null;
@@ -33,7 +35,8 @@ function readFeedSnapshot(): FeedSnapshot | null {
     const snapshot = JSON.parse(window.sessionStorage.getItem(HOME_FEED_SNAPSHOT_KEY) || "null") as Partial<FeedSnapshot> | null;
     const url = `${window.location.pathname}${window.location.search}`;
     if (!snapshot || snapshot.url !== url || !Array.isArray(snapshot.items)) return null;
-    return { url, items: snapshot.items, total: Number(snapshot.total) || 0, cursor: typeof snapshot.cursor === "string" ? snapshot.cursor : null, syncedAt: typeof snapshot.syncedAt === "string" ? snapshot.syncedAt : null, stale: Boolean(snapshot.stale), scrollY: Number(snapshot.scrollY) || 0 };
+    const scroll = JSON.parse(window.sessionStorage.getItem(scrollSnapshotKey) || "null") as { url?: string; scrollY?: number } | null;
+    return { url, items: snapshot.items, total: Number(snapshot.total) || 0, cursor: typeof snapshot.cursor === "string" ? snapshot.cursor : null, syncedAt: typeof snapshot.syncedAt === "string" ? snapshot.syncedAt : null, stale: Boolean(snapshot.stale), scrollY: Number(scroll?.url === url ? scroll.scrollY : snapshot.scrollY) || 0 };
   } catch { return null; }
 }
 
@@ -42,7 +45,7 @@ function preloadAnimalImages(items: Animal[]) {
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
   if (connection?.saveData || connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g") return;
   const limit = connection?.effectiveType === "3g" ? 2 : 4;
-  const sources = [...new Set(items.map(item => optimizedAnimalImageUrl(item.image)).filter(Boolean))]
+  const sources = [...new Set(items.map(item => optimizedAnimalImageUrl(item.thumbnail || item.image)).filter(Boolean))]
     .filter(src => !preloadedAnimalImages.has(src))
     .slice(0, limit);
   if (!sources.length) return;
@@ -224,18 +227,19 @@ export function useAnimalFeed(initialPage: AnimalPage) {
       // IP 좌표를 확보하기 전에는 첫 목록 요청을 보내지 않아
       // 거리순 요청이 최신순으로 대체되는 것을 막습니다.
       if (!next && !detail) {
-        next = await fetch("/api/location/default", { cache: "no-store" })
-          .then(response => response.ok ? response.json() as Promise<{ location?: HomeLocation | null }> : { location: null })
-          .then(body => body.location || null)
-          .catch(() => null);
+        next = await loadDefaultHomeLocation();
         if (next && active) {
-          window.localStorage.setItem("ff-ip-location", JSON.stringify(next));
-          window.localStorage.setItem("ff-home-location", JSON.stringify(next));
+          try {
+            window.localStorage.setItem("ff-ip-location", JSON.stringify(next));
+            window.localStorage.setItem("ff-home-location", JSON.stringify(next));
+          } catch { /* A blocked browser store must not prevent the feed loading. */ }
         }
       }
       if (!active) return;
-      setLocation(next);
-      setRegion(next?.label || window.localStorage.getItem("ff-home-region") || "");
+      setLocation(current => current?.lat === next?.lat && current?.lng === next?.lng && current?.label === next?.label ? current : next);
+      let savedRegion = "";
+      try { savedRegion = window.localStorage.getItem("ff-home-region") || ""; } catch { /* Use the resolved location. */ }
+      setRegion(next?.label || savedRegion);
       setReady(true);
     };
     void update();
@@ -281,11 +285,11 @@ export function useAnimalFeed(initialPage: AnimalPage) {
       if (!response.ok) throw new Error(typeof body.error === "string" ? body.error : "다음 친구를 불러오지 못했어요.");
       if (Array.isArray(body.items)) preloadAnimalImages(body.items as Animal[]);
       return body;
-    }).catch(errorValue => {
+    }).catch(() => {
       if (controller.signal.aborted) return null;
       prefetchedPage.current = null;
       prefetchedUrl.current = null;
-      throw errorValue;
+      return null;
     });
     return () => {
       controller.abort();
@@ -317,9 +321,10 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     try {
       const url = `${window.location.pathname}${window.location.search}`;
       const save = (scrollY = window.scrollY) => {
-        window.sessionStorage.setItem(HOME_FEED_SNAPSHOT_KEY, JSON.stringify({ url, items, total, cursor, syncedAt, stale, scrollY } satisfies FeedSnapshot));
+        try { window.sessionStorage.setItem(scrollSnapshotKey, JSON.stringify({ url, scrollY })); } catch { /* Browsing still works when storage is full. */ }
       };
-      const current = JSON.parse(window.sessionStorage.getItem(HOME_FEED_SNAPSHOT_KEY) || "null") as Partial<FeedSnapshot> | null;
+      const current = readFeedSnapshot();
+      window.sessionStorage.setItem(HOME_FEED_SNAPSHOT_KEY, JSON.stringify({ url, items, total, cursor, syncedAt, stale, scrollY: current?.scrollY || 0 } satisfies FeedSnapshot));
       save(Number(current?.scrollY) || window.scrollY);
       let saveTimer: number | null = null;
       const onScroll = () => {
@@ -350,9 +355,10 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     setLoading(true); setError("");
     try {
       const url = endpoint(cursor);
-      const body = prefetchedUrl.current === url && prefetchedPage.current
+      const prefetched = prefetchedUrl.current === url && prefetchedPage.current
         ? await prefetchedPage.current
-        : await fetch(url, { signal: controller.signal }).then(async response => {
+        : null;
+      const body = prefetched ?? await fetch(url, { signal: controller.signal }).then(async response => {
           const result = await response.json() as Record<string, unknown>;
           if (!response.ok) throw new Error(typeof result.error === "string" ? result.error : "다음 친구를 불러오지 못했어요.");
           return result;

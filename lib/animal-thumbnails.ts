@@ -24,7 +24,8 @@ export async function createAnimalThumbnail(source: string) {
       chunks.push(value);
     }
   } finally { await reader.cancel(); }
-  const { default: sharp } = await import("sharp");
+  // vinext's optional-dependency stub is unknown; use the installed Sharp types.
+  const sharp = (await import("sharp")).default as typeof import("../node_modules/sharp/lib/index");
   const input = Buffer.concat(chunks);
   const decoded = sharp(input, { limitInputPixels: 40_000_000 });
   if (!["jpeg", "png", "webp"].includes((await decoded.metadata()).format || "")) throw new Error("지원하지 않는 사진 형식이에요.");

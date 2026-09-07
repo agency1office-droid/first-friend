@@ -6,7 +6,7 @@ test("operations permissions, real pagination and guarded approval", async t => 
   const server = await createServer({ configFile: false, envFile: false, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true, hmr: false }, appType: "custom", logLevel: "error", plugins: [{
     name: "test-auth", enforce: "pre",
     resolveId(source) { if (source.endsWith("chatgpt-auth")) return "\0test-auth"; },
-    load(id) { if (id === "\0test-auth") return "export async function getChatGPTUser(){return globalThis.__operationsUser;}"; },
+    load(id) { if (id === "\0test-auth") return "export async function getChatGPTUser(){return globalThis.__operationsUser;} export async function getAuthenticatedMember(){return globalThis.__operationsMember();}"; },
   }] });
   t.after(() => server.close());
   for (const [name, value] of Object.entries({ NEXT_PUBLIC_SUPABASE_URL: "https://operations.example.test", SUPABASE_SECRET_KEY: "test-only" })) {
@@ -18,8 +18,10 @@ test("operations permissions, real pagination and guarded approval", async t => 
   const { POST: manage } = await server.ssrLoadModule("/app/api/operations/manage/route.ts");
   const { POST: outreach } = await server.ssrLoadModule("/app/api/operations/outreach/route.ts");
   const { GET: evidence } = await server.ssrLoadModule("/app/api/operations/evidence/route.ts");
-  const { parseOperationQuery } = await server.ssrLoadModule("/lib/operations.ts");
+  const { parseOperationQuery, operationResources } = await server.ssrLoadModule("/lib/operations.ts");
   let role = "admin", verified = true, sanctioned = false, failAudit = false;
+  globalThis.__operationsMember = () => globalThis.__operationsUser && !sanctioned ? { id: "operator", role, verified, sanctioned } : null;
+  t.after(() => delete globalThis.__operationsMember);
   const requests = [];
   const db = {
     members: [], auth_accounts: [], contact_preferences: [],
@@ -29,8 +31,9 @@ test("operations permissions, real pagination and guarded approval", async t => 
     public_animals: [{id:"animal-one",name:"공공 동물",hidden:false,updated:"2026-09-07"}],
     verification_requests: [{ id: 1, requested_role: "admin", member_id: "owner", status: "submitted" }],
     fundraisers: [{ id: 1, status: "open", title: "모금" }, { id: 2, status: "review", title: "모금 검토" }],
-    api_idempotency_keys: [], admin_audit_logs: [],
+    api_idempotency_keys: [], admin_audit_logs: [], public_sync_state: [],
   };
+  for (const config of Object.values(operationResources)) db[config.table] ??= [];
   t.mock.method(globalThis, "fetch", async (input, options = {}) => {
     const url = new URL(typeof input === "string" || input instanceof URL ? input : input.url);
     assert.equal(url.hostname, "operations.example.test");
@@ -72,6 +75,16 @@ test("operations permissions, real pagination and guarded approval", async t => 
   const get = query => GET(new Request("https://www.firstfriend.me/api/operations?" + query));
   const post = (payload, key = crypto.randomUUID(), origin = "https://www.firstfriend.me") => POST(new Request("https://www.firstfriend.me/api/operations", { method: "POST", headers: { origin, "content-type": "application/json", "idempotency-key": key }, body: JSON.stringify(payload) }));
   const approval = { action: "registration-status", id: 1, status: "published", expectedStatus: "review", note: "증빙 확인 완료" };
+  await t.test("overview only counts pending queues until complete records are requested", async () => {
+    globalThis.__operationsUser = {userId:"operator"};
+    requests.length=0;
+    const initial=await (await get("view=overview")).json();
+    assert.equal(initial.counts.length,Object.values(operationResources).filter(config=>config.pending.length).length);
+    assert.ok(initial.counts.every(item=>item.pending));
+    assert.equal(requests.some(request=>request.table==="public_animals"),false);
+    const expanded=await (await get("view=overview&records=1")).json();
+    assert.equal(expanded.counts.length,Object.keys(operationResources).length);
+  });
   await t.test("rejects missing session, ordinary member and unverified shelter", async () => {
     globalThis.__operationsUser = null; assert.equal((await get("")).status, 401);
     globalThis.__operationsUser = { userId: "operator" };

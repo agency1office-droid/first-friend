@@ -43,7 +43,7 @@ export default async function Page() {
             </Badge>
           </article>
         ))}
-        {!rows.length && (
+        {!rows?.length && (
           <div className="ff-empty">아직 도움 기록이 없어요.</div>
         )}
       </div>

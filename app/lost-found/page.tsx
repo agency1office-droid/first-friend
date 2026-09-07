@@ -22,7 +22,7 @@ export default async function LostFound() {
   return <div className="ff-page">
     <header className="ff-page-header"><div className="ff-kicker">공공 분실동물 정보 연동</div><h1 className="ff-title">다시 집으로<br/>돌아갈 수 있도록</h1><p className="ff-description">농림축산검역본부 분실동물 정보와 퍼스트 프렌드 제보를 함께 확인해요.</p></header>
     <LostFoundForm/>
-    {mine.length>0&&<section className="ff-section"><h2 className="ff-section-title">내 신고 관리</h2><List>{mine.map((item,index)=><div key={item.id}><ListLinkItem href={`/lost-found/${item.id}`} title={`${item.kind==="lost"?"실종":"발견"} · ${item.species}`} detail={`${item.region} · ${item.status} · ${item.occurredAt.replace("T"," ")}`} suffix={<span>관리</span>}/>{index<mine.length-1&&<ListDivider/>}</div>)}</List></section>}
+    {mine.length>0&&<section className="ff-section"><h2 className="ff-section-title">내 신고 관리</h2><List>{mine.map((item,index)=><div key={String(item.id)}><ListLinkItem href={`/lost-found/${item.id}`} title={`${item.kind==="lost"?"실종":"발견"} · ${item.species}`} detail={`${item.region} · ${item.status} · ${String(item.occurredAt || "").replace("T"," ")}`} suffix={<span>관리</span>}/>{index<mine.length-1&&<ListDivider/>}</div>)}</List></section>}
     <div className="ff-divider"/>
     <section className="ff-section">
       <div className="ff-section-head"><h2 className="ff-section-title">최근 분실동물</h2><a className="ff-more" href="#shelters">보호센터 찾기</a></div>

@@ -18,6 +18,9 @@ export type Animal = {
   approximateShelterLocation?: boolean;
   distanceMeters?: number;
   source: string;
+  happenedAt?: string;
+  place?: string;
+  happenPlace?: string;
   updated: string;
   image: string;
   thumbnail?: string;

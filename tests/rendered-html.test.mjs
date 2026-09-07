@@ -473,7 +473,7 @@ test("replaces species tabs with actionable shelter-distance animal filters", as
   assert.doesNotMatch(allFilters, /SnapRange|weightRange|<SectionHeading title="체중"/);
   assert.match(allFilters, /item\.count\.toLocaleString\("ko-KR"\)/);
   assert.match(allFilters, /마리<\/small>/);
-  assert.match(store, /breedFilters\.has\(storedBreedKey\(row\)\)/);
+  assert.match(store, /p_kind_codes: kindCodes\.length/);
   assert.match(store, /export async function getBreedCounts/);
   assert.doesNotMatch(store, /row\.breed\.toLocaleLowerCase/);
   assert.match(store, /return "나이 미상"/);
@@ -615,7 +615,7 @@ test("keeps public sync jobs resumable and image conversion outside feed request
   assert.doesNotMatch(store, /syncAnimalImages/);
   assert.doesNotMatch(store, /animal_image_jobs/);
   assert.match(store, /image_1_storage/);
-  assert.match(store, /search_public_animals_with_storage/);
+  assert.match(store, /search_public_animals_filtered_with_storage/);
 });
 
 test("keeps the nearby feed continuous without manual pagination copy", async () => {
@@ -806,7 +806,7 @@ test("persists family, support, moderation, lost matching, and multi-media workf
   ])
     assert.match(schema, new RegExp(`export const ${name}`));
   for (const source of [family, support, lost, direct, operations])
-    assert.match(source, /getChatGPTUser/);
+    assert.match(source, /get(?:ChatGPTUser|AuthenticatedMember)/);
   assert.match(reports, /reportCount/);
   assert.match(direct, /animal_media/);
   assert.match(lost, /reasons_json/);
@@ -820,7 +820,7 @@ test("protects private mutation APIs at the source boundary", async () => {
     ),
   );
   for (const source of files) {
-    assert.match(source, /getChatGPTUser/);
+    assert.match(source, /get(?:ChatGPTUser|AuthenticatedMember)/);
     assert.match(source, /status:\s*401/);
   }
 });
@@ -896,7 +896,7 @@ test("protects new operations, verification, alerts, and saved-search APIs", asy
     ),
   );
   for (const source of files) {
-    assert.match(source, /getChatGPTUser/);
+    assert.match(source, /get(?:ChatGPTUser|AuthenticatedMember)/);
     assert.match(source, /status:\s*401/);
   }
 });

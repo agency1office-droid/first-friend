@@ -226,8 +226,6 @@ export default async function AnimalPage({
         {animal.shelterLat !== undefined && animal.shelterLng !== undefined && <ShelterLocationCard
           jsKey={process.env.NEXT_PUBLIC_KAKAO_JS_KEY || ""}
           name={animal.shelter}
-          address={animal.shelterAddress || animal.region}
-          phone={animal.shelterPhone}
           lat={animal.shelterLat}
           lng={animal.shelterLng}
           approximate={animal.approximateShelterLocation}

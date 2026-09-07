@@ -144,7 +144,7 @@ export const SideNavigationGroup = React.forwardRef<HTMLDivElement, SideNavigati
 
       if (isFlyout) {
         return (
-          <NavigationMenuRoot key={item.key ?? index} value={`${groupId}:${item.key ?? index}`}>
+          <NavigationMenuRoot key={item.key ?? index} value={`${groupId}:${String(item.key ?? index)}`}>
             <NavigationMenuTrigger asChild>
               <SideNavigationItemButton
                 prefixIcon={item.prefixIcon}

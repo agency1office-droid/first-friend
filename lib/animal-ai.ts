@@ -140,19 +140,21 @@ function safeImageUrl(value: string) {
 }
 
 async function readImage(url: string) {
-  let safeUrl = safeImageUrl(url);
-  if (!safeUrl) throw new Error("공공 이미지 주소를 확인하지 못했어요.");
+  const initialUrl = safeImageUrl(url);
+  if (!initialUrl) throw new Error("공공 이미지 주소를 확인하지 못했어요.");
+  let safeUrl: string = initialUrl;
 
-  let response: Response;
+  let response: Response | undefined;
   for (let redirectCount = 0; redirectCount <= 2; redirectCount += 1) {
     response = await fetch(safeUrl, { redirect: "manual", signal: AbortSignal.timeout(8000), headers: { accept: "image/jpeg,image/png,image/webp" } });
     if (response.status < 300 || response.status >= 400) break;
     const location = response.headers.get("location");
-    const redirectedUrl = location ? safeImageUrl(new URL(location, safeUrl).toString()) : null;
+    const redirectedUrl: string | null = location ? safeImageUrl(new URL(location, safeUrl).toString()) : null;
     if (!redirectedUrl) throw new Error("공공 이미지 리다이렉트 주소를 확인하지 못했어요.");
     safeUrl = redirectedUrl;
     if (redirectCount === 2) throw new Error("공공 이미지 리다이렉트가 너무 많아요.");
   }
+  if (!response) throw new Error("공공 이미지 응답을 확인하지 못했어요.");
   if (!response.ok) throw new Error(`공공 이미지 응답 오류(${response.status})`);
   const declaredType = response.headers.get("content-type")?.split(";", 1)[0]?.toLowerCase();
   if (!declaredType || (!["image/jpeg", "image/png", "image/webp", "application/octet-stream"].includes(declaredType))) throw new Error("지원하지 않는 이미지 형식이에요.");
@@ -262,19 +264,23 @@ export async function processAnimalAiJob(animalId: string, expectedKey?: string,
   const { data: claimed, error: claimError } = await client.from("public_animal_ai_summaries").update({ status: "processing", updated_at: new Date().toISOString() }).eq("animal_id", animalId).eq("purpose", purpose).eq("analysis_key", key).eq("status", "pending").select("animal_id").maybeSingle();
   if (claimError) throw claimError;
   if (!claimed) return { status: "processing" as const };
+  let summary: string;
+  let fallbackFields = {};
+  let source: "ai" | "public-data" = "ai";
   try {
-    const summary = await generateSummary(animal, purpose);
-    await client.from("public_animal_ai_summaries").update({ status: "completed", generated_summary: summary, last_error: null, updated_at: new Date().toISOString() }).eq("animal_id", animalId).eq("purpose", purpose).eq("analysis_key", key).eq("status", "processing");
-    return { status: "completed" as const, summary };
+    summary = await generateSummary(animal, purpose);
   } catch (error) {
     const message = error instanceof Error ? error.message.slice(0, 240) : "AI 소개를 만들지 못했어요.";
     const retryCount = row.retry_count + 1;
     const nextAttemptAt = retryCount < MAX_RETRIES ? new Date(Date.now() + Math.min(60 * 60 * 1000, 2 ** retryCount * 60 * 1000)).toISOString() : null;
-    const fallback = createPublicDataFallback(animal, purpose);
-    await client.from("public_animal_ai_summaries").update({ status: "completed", generated_summary: fallback, model_version: "public-data-fallback-v1", retry_count: retryCount, next_attempt_at: nextAttemptAt, last_error: message, updated_at: new Date().toISOString() }).eq("animal_id", animalId).eq("purpose", purpose).eq("analysis_key", key).eq("status", "processing");
+    summary = createPublicDataFallback(animal, purpose);
+    source = "public-data";
+    fallbackFields = { model_version: "public-data-fallback-v1", retry_count: retryCount, next_attempt_at: nextAttemptAt, last_error: message };
     console.error("[animal-ai]", animalId, message);
-    return { status: "completed" as const, summary: fallback, source: "public-data" as const };
   }
+  // Storage failure must remain a failure, not be mistaken for an AI fallback.
+  await client.from("public_animal_ai_summaries").update({ status: "completed", generated_summary: summary, last_error: null, ...fallbackFields, updated_at: new Date().toISOString() }).eq("animal_id", animalId).eq("purpose", purpose).eq("analysis_key", key).eq("status", "processing").select("animal_id").single().throwOnError();
+  return { status: "completed" as const, summary, source };
 }
 
 export async function processPendingAnimalAiJobs(limit = 3) {

@@ -12,8 +12,8 @@ export async function GET(request: Request) {
   if (!authorized(request)) return Response.json({ error: "동기화 권한이 없습니다." }, { status: 403 });
   try {
     const lostAnimals = await syncPublicLostAnimals();
-    return Response.json({ ok: true, job: "public-lost-animals", lostAnimals, completedAt: new Date().toISOString() }, {
-      headers: { "cache-control": "no-store", "x-sync-job": "public-lost-animals", "x-sync-status": "complete" },
+    return Response.json({ ok: true, job: "public-lost-animals", lostAnimals, ...(lostAnimals.complete ? { completedAt: new Date().toISOString() } : { checkpointedAt: new Date().toISOString() }) }, {
+      headers: { "cache-control": "no-store", "x-sync-job": "public-lost-animals", "x-sync-status": lostAnimals.complete ? "complete" : "running" },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "실종 동물을 동기화하지 못했어요.";

@@ -39,7 +39,7 @@ export default async function Page() {
             </div>
           ))}
         </div>
-        {!badges.length && (
+        {!badges?.length && (
           <div className="ff-empty">
             첫 봉사를 완료하면 보호소 확인 후 배지가 생겨요.
           </div>

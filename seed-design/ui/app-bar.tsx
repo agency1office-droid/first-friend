@@ -9,7 +9,7 @@
 import { IconChevronLeftLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon"; // "@daangn/react-monochrome-icon"과 동일합니다.
 import { VStack } from "@seed-design/react";
 import { AppBar as SeedAppBar } from "@seed-design/stackflow";
-import { useActions, useActivity } from "@stackflow/react";
+import { useFlow as useActions, useActivity } from "@stackflow/react";
 import * as React from "react";
 import { forwardRef } from "react";
 

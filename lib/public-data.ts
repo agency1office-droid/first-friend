@@ -151,7 +151,7 @@ export async function getAnimalsWithPhotoCounts(limit = 24): Promise<Animal[]> {
   return items.map(animal => ({ ...animal, photoCount: new Set(animal.images || [animal.image].filter(Boolean)).size }));
 }
 
-export async function getAnimalById(id: string) {
+export async function getAnimalById(id: string): Promise<Animal | undefined> {
   if (/^direct-\d+$/.test(id)) return (await mergeDirectAnimals([], 1, Number(id.slice(7))))[0];
   const stored = await import("./public-animal-store").then(module => module.getStoredAnimalById(id)).catch(() => undefined);
   if (stored) return stored;

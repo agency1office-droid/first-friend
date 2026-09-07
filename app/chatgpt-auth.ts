@@ -4,17 +4,18 @@ import { memberFromSession, safeReturnTo, SESSION_COOKIE } from "../lib/app-auth
 
 export type ChatGPTUser = { userId: string; displayName: string; email: string; fullName: string | null };
 
-export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
+/** Server-only member record for handlers that also need role or profile fields. */
+export async function getAuthenticatedMember() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  let member;
-  try {
-    member = await memberFromSession(undefined, token);
-  } catch {
-    // A stale local cookie must not turn a signed-out/private page into a 500.
-    return null;
-  }
+  const member = await memberFromSession(undefined, token);
   if (!member || member.sanctioned) return null;
+  return member;
+}
+
+export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
+  const member = await getAuthenticatedMember();
+  if (!member) return null;
   return { userId: member.id, displayName: member.displayName, email: member.email, fullName: member.displayName };
 }
 

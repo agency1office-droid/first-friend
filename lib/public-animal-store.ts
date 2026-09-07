@@ -22,7 +22,7 @@ type AnimalItem = { desertionNo?: string; happenDt?: string; kindFullNm?: string
 type LossItem = { happenDt?: string; happenAddr?: string; happenPlace?: string; orgNm?: string; popfile?: string; kindCd?: string; sexCd?: string; age?: string; colorCd?: string; specialMark?: string; rfidCd?: string };
 type ShelterItem = { careRegNo?: string; careNm?: string; orgNm?: string; careAddr?: string; careTel?: string; weekOprStime?: string; weekOprEtime?: string; closeDay?: string; lat?: string; lng?: string };
 type ShelterRecord = typeof publicShelters.$inferInsert;
-type AnimalRecord = typeof publicAnimals.$inferInsert & { noticeNo?: string };
+type AnimalRecord = Omit<typeof publicAnimals.$inferInsert, "ageGroup"> & { ageGroup: Animal["ageGroup"]; noticeNo?: string };
 type StoredAnimal = typeof publicAnimals.$inferSelect & { image1Storage?: string; image2Storage?: string };
 
 export type AnimalPage = {
@@ -124,24 +124,6 @@ function sizeGroup(row: { traitsJson?: string | null; species: string; breed?: s
   return weight < 5 ? "small" : weight < 15 ? "medium" : weight < 30 ? "large" : "xlarge";
 }
 
-const colorAliases: Record<string, string[]> = {
-  // 공공 API의 colorCd는 보호소 자유입력값이라, 단일 색상뿐 아니라
-  // 약칭(갈/흰), 조합(갈색&흰색), 기타(삼색)도 같은 색상 그룹으로 찾는다.
-  "흰색": ["흰색", "백색", "화이트", "하얀", "하양", "아이보리"],
-  "검정": ["검정", "검은색", "검은", "흑색", "블랙", "까만색"],
-  "갈색": ["갈색", "갈색계열", "밤색", "브라운", "초콜릿", "쵸콜릿", "흑갈색", "황갈색", "금갈색", "연갈색", "암갈색", "갈백", "갈흑"],
-  "황색": ["황색", "황색계열", "황토색", "황토", "노랑", "노란색", "옐로우", "레몬색", "크림색", "금색", "금갈색", "황갈색", "옅은 황색", "엷은 황갈색", "붉고 엷은 황갈색", "주황", "겨자색", "살구색", "빨간색", "베이지", "탄색", "고동색말단"],
-  "회색": ["회색", "그레이", "잿빛", "은색", "실버", "흰회", "회백", "회갈"],
-  "삼색": ["삼색", "세가지색", "칼리코", "캘리코", "카오스", "기타(삼색)"],
-  "고등어": ["고등어", "반고등어", "고등어태비", "태비", "테비", "줄무늬", "호랑이무늬", "호반색", "얼룩무늬", "기타(고등어)"],
-  "치즈": ["치즈", "치즈색", "치즈태비", "치즈테비", "기타(치즈)"],
-  "기타·복합색": ["기타(믹스)", "기타(베이지)", "기타(베이지색)", "기타(브린들)", "기타(비숑믹스)", "기타(젖소)", "기타(턱시도)", "기타(한국고양이)", "기타(호구)", "기타(호피색)", "기타(삼색)", "기타(고등어)", "기타(치즈)", "기타(갈", "기타(검", "기타(흰", "기타(황", "기타(회", "기타(백", "기타(흑", "기타(노"],
-};
-
-function matchesColorGroup(colorsJsonValue: string, color: string) {
-  const aliases = colorAliases[color] || [color];
-  return jsonArray(colorsJsonValue).some(value => aliases.some(alias => value.toLocaleLowerCase("ko-KR").includes(alias)));
-}
 function storedBreedKey(row: StoredAnimal) { const upKindCd = /^(417000|422400)$/.test(row.upKindCd) ? row.upKindCd : row.species === "고양이" ? "422400" : "417000"; const kindCd = /^\d{6}$/.test(row.kindCd) ? row.kindCd : "000000"; return `${upKindCd}:${kindCd}`; }
 function chunks<T>(items: T[], size: number) { const result: T[][] = []; for (let index = 0; index < items.length; index += size) result.push(items.slice(index, index + size)); return result; }
 function syncCompletedAt(state: SyncStateRow | undefined) { return state?.lastCompletedAt || state?.last_completed_at || null; }
@@ -245,7 +227,10 @@ async function fetchPage<T>(endpoint: string, pageNo: number, numOfRows: number,
   if (!response.ok) throw new Error(`공공데이터 API 응답 오류 ${response.status}`);
   const payload = await response.json() as Envelope<T>;
   if (payload.response?.header?.resultCode !== "00") throw new Error(payload.response?.header?.resultMsg || "공공데이터 API 오류");
-  return { items: array(payload.response.body?.items?.item), total: Number(payload.response.body?.totalCount || 0) };
+  const rawTotal = payload.response.body?.totalCount;
+  const total = Number(rawTotal);
+  if (rawTotal === undefined || rawTotal === null || rawTotal === "" || !Number.isSafeInteger(total) || total < 0) throw new Error("공공데이터 전체 건수가 올바르지 않습니다.");
+  return { items: array(payload.response.body?.items?.item), total };
 }
 
 function retryableApiError(error: unknown) {
@@ -446,7 +431,7 @@ async function syncPublicAnimalsUnlocked() {
     await writeShelters(shelterRows);
     const animalsResult = await syncAnimalPages(shelterMap, syncId, startedAt);
     if (!animalsResult.complete) throw new Error(`공공데이터 동물 전체 수집이 완료되지 않았습니다. ${animalsResult.count}/${animalsResult.total}`);
-    if (animalsResult.total > 0 && animalsResult.count === 0) throw new Error("공공데이터는 수집됐지만 화면에 반영할 동물이 0건입니다. 매핑 조건을 확인해야 합니다.");
+    if (animalsResult.count === 0) throw new Error("수집된 동물이 0건이므로 기존 동물 정보를 유지합니다. 공공데이터 응답을 확인해야 합니다.");
     const completedAt = new Date().toISOString();
     const { error: deactivateError } = await supabase.from("public_animals").update({ active: false, synced_at: completedAt }).neq("last_seen_sync", syncId).eq("active", true);
     if (deactivateError) throw deactivateError;
@@ -485,7 +470,6 @@ function fromStored(row: StoredAnimal): Animal {
   };
 }
 
-function cursorOffset(cursor: string | null | undefined) { const value = Number.parseInt(cursor || "0", 36); return Number.isFinite(value) && value >= 0 ? value : 0; }
 type SearchCursor = { updatedAt?: string; id?: string; distanceMeters?: number };
 function decodeSearchCursor(cursor: string | null | undefined): SearchCursor | null {
   if (!cursor) return null;
@@ -525,7 +509,7 @@ export async function getBreedCounts(options: BreedCountOptions = {}) {
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
   const ageFilter = new Set(csvValues(options.ageGroup).map(value => ({ young: "어린 친구", adult: "청년 친구", mature: "어른 친구", senior: "나이 많은 친구", unknown: "나이 미상" } as Record<string, string>)[value]).filter(Boolean));
   const sizeFilter = new Set(csvValues(options.sizeGroup).filter(value => ["small", "medium", "large", "xlarge", "unknown"].includes(value)));
-  const sexFilter = new Set(csvValues(options.sex).map(value => value === "female" ? "암컷" : value === "male" ? "수컷" : value === "unknown" ? "미상" : "").filter(Boolean));
+  const sexFilter = new Set<string>(csvValues(options.sex).map(value => value === "female" ? "암컷" : value === "male" ? "수컷" : value === "unknown" ? "미상" : "").filter(Boolean));
   const counts: Record<string, { count: number; kindNm: string; species: "dog" | "cat" }> = {};
   for (const row of rows) {
     if ((ageFilter.size && !ageFilter.has(ageGroup(row.age))) || (sizeFilter.size && !sizeFilter.has(sizeGroup(row))) || (sexFilter.size && !sexFilter.has(row.sex))) continue;
@@ -582,24 +566,31 @@ async function syncPublicLostAnimalsUnlocked() {
   const now = new Date(), endDate = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(now.getUTCDate()).padStart(2, "0")}`;
   const start = new Date(now); start.setUTCFullYear(start.getUTCFullYear() - 1);
   const startDate = `${start.getUTCFullYear()}${String(start.getUTCMonth() + 1).padStart(2, "0")}${String(start.getUTCDate()).padStart(2, "0")}`;
+  const deadline = Date.now() + 200_000;
   type Checkpoint = { syncId: string; startDate: string; endDate: string; nextPage: number; count: number; total: number; updatedAt: string; error?: string };
   const { data: state } = await supabase.from("public_sync_state").select("status,message,last_started_at").eq("id", "public-lost-animals").maybeSingle();
   let checkpoint: Checkpoint | null = null;
   try {
     const parsed = JSON.parse(String(state?.message || "")) as Checkpoint;
-    if (parsed.syncId && parsed.startDate === startDate && parsed.endDate === endDate && parsed.nextPage > 0 && Date.now() - new Date(String(state?.last_started_at || 0)).getTime() < 24 * 60 * 60 * 1000) checkpoint = parsed;
+    if (state?.status !== "complete" && parsed.syncId && /^\d{8}$/.test(parsed.startDate) && /^\d{8}$/.test(parsed.endDate) && Number.isInteger(parsed.nextPage) && parsed.nextPage > 0 && parsed.nextPage <= MAX_LOST_PAGES && Date.now() - new Date(parsed.updatedAt).getTime() < 7 * 24 * 60 * 60 * 1000) checkpoint = parsed;
   } catch { checkpoint = null; }
   const syncId = checkpoint?.syncId || crypto.randomUUID();
   let page = checkpoint?.nextPage || 1, count = checkpoint?.count || 0, total = checkpoint?.total || 0, pages = Math.max(0, page - 1);
   const seenIds = new Set<string>();
-  const dateParams = { bgnde: startDate, endde: endDate };
+  const rangeStart = checkpoint?.startDate || startDate, rangeEnd = checkpoint?.endDate || endDate;
+  const dateParams = { bgnde: rangeStart, endde: rangeEnd };
+  const checkpointMessage = (error?: string) => JSON.stringify({ syncId, startDate: rangeStart, endDate: rangeEnd, nextPage: page, count, total, updatedAt: new Date().toISOString(), ...(error ? { error } : {}) } satisfies Checkpoint);
   const writeState = async (status: string, message: string) => {
     const { error } = await supabase.from("public_sync_state").upsert({ id: "public-lost-animals", status, last_started_at: syncedAt, item_count: count, page_count: pages, message }, { onConflict: "id" });
     if (error) throw error;
   };
   try {
-    await writeState("running", JSON.stringify({ syncId, startDate, endDate, nextPage: page, count, total, updatedAt: syncedAt } satisfies Checkpoint));
+    await writeState("running", checkpointMessage());
     while (page <= MAX_LOST_PAGES) {
+      if (Date.now() >= deadline) {
+        await writeState("running", checkpointMessage());
+        return { count, pages, syncedAt, complete: false, nextPage: page };
+      }
       const result = await fetchPageWithRetry<LossItem>(LOSS_ENDPOINT, page, 100, dateParams);
       const current = result.items.filter(Boolean);
       total = result.total;
@@ -634,21 +625,25 @@ async function syncPublicLostAnimalsUnlocked() {
       pages = page;
       page += 1;
       const done = !current.length || (total === 0 && current.length < 100) || (total > 0 && (page - 1) * 100 >= total);
-      const nextPage = current.length ? page : Math.max(1, page - 1);
-      await writeState("running", JSON.stringify({ syncId, startDate, endDate, nextPage, count, total, updatedAt: new Date().toISOString() } satisfies Checkpoint));
+      if (!current.length && total > 0 && (page - 1) * 100 < total) {
+        page -= 1;
+        throw new Error(`실종 동물 응답이 중간에 비었습니다. ${count}/${total}`);
+      }
+      await writeState("running", checkpointMessage());
       if (done) break;
     }
     if (page > MAX_LOST_PAGES + 1 || (total > 0 && (page - 1) * 100 < total)) throw new Error(`실종 동물 전체 수집이 완료되지 않았습니다. ${count}/${total}`);
+    if (count === 0) throw new Error("수집된 실종 동물이 0건이므로 기존 정보를 유지합니다.");
     const { error: deactivateError } = await supabase.from("public_lost_animals").update({ active: false, synced_at: syncedAt }).neq("last_seen_sync", syncId).eq("active", true);
     if (deactivateError) throw deactivateError;
     const cutoff = new Date(Date.now() - ARCHIVE_RETENTION_MS).toISOString();
     const { error: cleanupError } = await supabase.from("public_lost_animals").delete().eq("active", false).lt("synced_at", cutoff);
     if (cleanupError) throw cleanupError;
-    await supabase.from("public_sync_state").update({ status: "complete", last_completed_at: syncedAt, item_count: count, page_count: pages, message: "" }).eq("id", "public-lost-animals");
-    return { count, pages, syncedAt };
+    await supabase.from("public_sync_state").update({ status: "complete", last_completed_at: syncedAt, item_count: count, page_count: pages, message: "" }).eq("id", "public-lost-animals").throwOnError();
+    return { count, pages, syncedAt, complete: true };
   } catch (error) {
     const message = error instanceof Error ? error.message.slice(0, 500) : "실종 동물 동기화 실패";
-    await writeState("failed", JSON.stringify({ syncId, startDate, endDate, nextPage: page, count, total, updatedAt: new Date().toISOString(), error: message } satisfies Checkpoint));
+    await writeState("failed", checkpointMessage(message));
     throw error;
   }
 }
@@ -685,7 +680,9 @@ export async function getStoredLostAnimals(limit = 12): Promise<LostAnimal[]> {
   const supabase = getSupabaseServerClient();
   let { data, error } = await supabase.from("public_lost_animals").select("id,legacy_id,rfid_cd,species,breed,sex,age,color,happened_at,region,address,place,happen_place,description,image,synced_at").eq("active", true).order("happened_at", { ascending: false }).limit(safeLimit);
   if (missingHappenPlaceColumn(error)) {
-    ({ data, error } = await supabase.from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image,synced_at").eq("active", true).order("happened_at", { ascending: false }).limit(safeLimit));
+    const legacy = await supabase.from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image,synced_at").eq("active", true).order("happened_at", { ascending: false }).limit(safeLimit);
+    data = legacy.data?.map(row => ({ ...row, rfid_cd: "", happen_place: "" })) ?? null;
+    error = legacy.error;
   }
   if (error) throw error;
   return (data || []).map(row => storedLostAnimal(row as Record<string, unknown>));
@@ -695,7 +692,9 @@ export async function getStoredLostAnimalById(id: string) {
   const supabase = getSupabaseServerClient();
   let { data, error } = await supabase.from("public_lost_animals").select("id,legacy_id,rfid_cd,species,breed,sex,age,color,happened_at,region,address,place,happen_place,description,image,synced_at").eq("active", true).eq("id", id).limit(1);
   if (missingHappenPlaceColumn(error)) {
-    ({ data, error } = await supabase.from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image,synced_at").eq("active", true).eq("id", id).limit(1));
+    const legacy = await supabase.from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image,synced_at").eq("active", true).eq("id", id).limit(1);
+    data = legacy.data?.map(row => ({ ...row, rfid_cd: "", happen_place: "" })) ?? null;
+    error = legacy.error;
   }
   if (error) throw error;
   const row = data?.[0];
@@ -707,23 +706,14 @@ export async function getStoredLostAnimalById(id: string) {
 
 export const getCachedStoredLostAnimalById = cache(getStoredLostAnimalById);
 
-function ageYears(value: string) { const text = String(value || ""); const birth = text.match(/(\d{4})\s*\(년생\)/); if (birth) return Math.max(0, new Date().getFullYear() - Number(birth[1])); const months = text.match(/(\d+(?:\.\d+)?)\s*개월/); if (months) return Number(months[1]) / 12; const days = text.match(/(\d+(?:\.\d+)?)\s*일/); if (days) return Number(days[1]) / 365; const years = text.match(/(\d+(?:\.\d+)?)\s*살/); return years ? Number(years[1]) : undefined; }
-
 export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; neutered?: string; ageMin?: number; ageMax?: number; weightMin?: number; weightMax?: number; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {
-  const state = await ensurePublicAnimals({ allowSync: false });
   const limit = Math.min(50, Math.max(1, options.limit || 20));
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
-  // 중성화 여부는 현재 RPC의 인자에 없는 보조 필터입니다. 이 필터를 쓸 때만
-  // 전체 활성 목록 fallback으로 정확하게 적용하고, 일반 검색은 기존 RPC를 유지합니다.
-  // 크기 그룹은 공공 API의 체중 원문에서 계산합니다. 운영 DB의 size_group
-  // 보정이 아직 진행 중이어도 크기 필터가 전체 결과로 되돌아가지 않도록
-  // 크기 선택 시에는 동일한 계산을 수행하는 fallback 경로를 사용합니다.
-  const canUseDatabaseSearch = !csvValues(options.neutered).length && !csvValues(options.sizeGroup).length && (options.ageMin ?? 0) === 0 && (options.ageMax ?? PUBLIC_ANIMAL_AGE_MAX) === PUBLIC_ANIMAL_AGE_MAX && (options.weightMin ?? 0) === 0 && (options.weightMax ?? PUBLIC_ANIMAL_WEIGHT_MAX) === PUBLIC_ANIMAL_WEIGHT_MAX;
-  if (canUseDatabaseSearch) {
-    const cursor = decodeSearchCursor(options.cursor);
-    const sort = options.sort === "distance" && hasHome ? "distance" : "recent";
-    const kindCodes = (options.breedKeys || []).map(value => value.split(":")[1]).filter(value => /^\d{6}$/.test(value));
-    const { data, error } = await getSupabaseServerClient().rpc("search_public_animals_with_storage", {
+  const cursor = decodeSearchCursor(options.cursor);
+  const sort = options.sort === "distance" && hasHome ? "distance" : "recent";
+  const kindCodes = (options.breedKeys || []).map(value => value.split(":")[1]).filter(value => /^\d{6}$/.test(value));
+  const [{ data, error }, state] = await Promise.all([
+    getSupabaseServerClient().rpc("search_public_animals_filtered_with_storage", {
       p_limit: limit,
       p_cursor_updated_at: cursor?.updatedAt || null,
       p_cursor_id: cursor?.id || null,
@@ -741,52 +731,28 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
       p_multiple_photos: Boolean(options.multiplePhotos),
       p_exact_location: Boolean(options.exactLocation),
       p_max_distance_meters: options.maxDistance && hasHome ? options.maxDistance : null,
-    });
-    if (!error && data?.length) {
-      const items = (data as Array<Record<string, unknown>>).map(row => {
-        const animal = fromStored(storedAnimal(row));
-        const distance = Number(row.distance_meters);
-        return Number.isFinite(distance) ? { ...animal, distanceMeters: distance } : animal;
-      });
-      const last = data.at(-1) as Record<string, unknown> | undefined;
-      // Never replace a filtered zero-result with the global feed count. The
-      // absence of the first RPC row means there is no matching animal.
-      const total = Number((data[0] as Record<string, unknown> | undefined)?.total_count ?? 0);
-      const nextCursor = data.length === limit && last ? encodeSearchCursor(sort === "distance"
-        ? { distanceMeters: Number.isFinite(Number(last.distance_meters)) ? Number(last.distance_meters) : 1e15, id: String(last.id) }
-        : { updatedAt: String(last.updated_at || ""), id: String(last.id) }) : null;
-      const completedAt = syncCompletedAt(state as SyncStateRow | undefined);
-      return { items, total, nextCursor, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= STALE_DATA_MS };
-    }
-    if (error) {
-      // RPC errors remain explicit; an empty, successful response is handled
-      // by the exact local filter path below so a stale RPC cannot fabricate
-      // the global count or hide valid matches.
-      throw new Error(error.message || "보호동물 검색을 잠시 사용할 수 없습니다.");
-    }
-  }
-  const rows = await activeAnimals();
-  const speciesFilter = options.species === "cat" ? "고양이" : options.species === "dog" ? "강아지" : "";
-  const ageFilter = new Set(csvValues(options.ageGroup).map(value => ({ young: "어린 친구", adult: "청년 친구", mature: "어른 친구", senior: "나이 많은 친구", unknown: "나이 미상" } as Record<string, string>)[value]).filter(Boolean));
-  const breedFilters = new Set((options.breedKeys || []).filter(value => /^(417000|422400):\d{6}$/.test(value)).slice(0, 10));
-  const sizeFilter = new Set(csvValues(options.sizeGroup).filter(value => ["small", "medium", "large", "xlarge", "unknown"].includes(value)));
-  const sexFilter = new Set(csvValues(options.sex).map(value => value === "female" ? "암컷" : value === "male" ? "수컷" : value === "unknown" ? "미상" : "").filter(Boolean));
-  const colorFilter = options.color && options.color !== "all" ? options.color.trim().toLocaleLowerCase("ko-KR") : "";
-  const neuteredFilter = new Set(csvValues(options.neutered).map(value => value === "yes" ? "중성화 완료로 등록됨" : value === "no" ? "중성화되지 않은 것으로 등록됨" : "").filter(Boolean));
-  const ageMin = options.ageMin ?? 0, ageMax = options.ageMax ?? PUBLIC_ANIMAL_AGE_MAX, weightMin = options.weightMin ?? 0, weightMax = options.weightMax ?? PUBLIC_ANIMAL_WEIGHT_MAX;
-  const prepared = rows.filter(row => { const age = ageYears(row.age), weight = weightKg(row); return (!speciesFilter || row.species === speciesFilter) && (!breedFilters.size || breedFilters.has(storedBreedKey(row))) && (!ageFilter.size || ageFilter.has(ageGroup(row.age))) && (age === undefined || (age >= ageMin && age <= ageMax)) && (weight === undefined || (weight >= weightMin && weight <= weightMax)) && (!sizeFilter.size || sizeFilter.has(sizeGroup(row))) && (!sexFilter.size || sexFilter.has(row.sex)) && (!neuteredFilter.size || jsonArray(row.healthJson || "[]").some(value => [...neuteredFilter].some(filter => value.includes(filter)))) && (!colorFilter || matchesColorGroup(row.colorsJson, colorFilter)) && (!options.multiplePhotos || Boolean(row.image2 && row.image2 !== row.image1)) && (!options.exactLocation || (!row.approximateShelterLocation && validPoint(Number(row.shelterLat), Number(row.shelterLng)))); }).map(row => {
-    const animal = fromStored(row);
-    if (!matchesAnimalPublicStatus(animal, options.publicStatus)) return null;
-    const hasExactPoint = hasHome && !row.approximateShelterLocation && validPoint(Number(row.shelterLat), Number(row.shelterLng));
-    return hasExactPoint ? { ...animal, distanceMeters: distanceMeters({ lat: Number(options.lat), lng: Number(options.lng) }, { lat: Number(row.shelterLat), lng: Number(row.shelterLng) }) } : animal;
-  }).filter((animal): animal is Animal => Boolean(animal)).filter(animal => !options.maxDistance || !hasHome || (animal.distanceMeters !== undefined && animal.distanceMeters <= options.maxDistance)).sort((a, b) => options.sort === "recent" ? b.updated.localeCompare(a.updated) || a.id.localeCompare(b.id) : (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity) || b.updated.localeCompare(a.updated) || a.id.localeCompare(b.id));
-  const offset = cursorOffset(options.cursor), pageItems = prepared.slice(offset, offset + limit);
-  // 목록에서는 동기화된 대표 이미지들만 사용합니다. 추가 사진 조회는 상세페이지에서만 수행해
-  // 스크롤마다 카드 수만큼 별도 DB 요청이 발생하지 않도록 합니다.
-  const items = pageItems;
-  const nextOffset = offset + items.length;
+      p_neutered: csvValues(options.neutered).filter(value => value === "yes" || value === "no").join(",") || null,
+      p_age_min: options.ageMin ?? 0,
+      p_age_max: options.ageMax ?? PUBLIC_ANIMAL_AGE_MAX,
+      p_weight_min: options.weightMin ?? 0,
+      p_weight_max: options.weightMax ?? PUBLIC_ANIMAL_WEIGHT_MAX,
+    }),
+    ensurePublicAnimals({ allowSync: false }),
+  ]);
+  if (error) throw new Error(error.message || "보호동물 검색을 잠시 사용할 수 없습니다.");
+  const rows = (data || []) as Array<Record<string, unknown>>;
+  const items = rows.map(row => {
+    const animal = fromStored(storedAnimal(row));
+    return row.distance_meters != null && Number.isFinite(Number(row.distance_meters))
+      ? { ...animal, distanceMeters: Number(row.distance_meters) } : animal;
+  });
+  const last = rows.at(-1);
+  const nextCursor = rows.length === limit && last ? encodeSearchCursor(sort === "distance"
+    ? { distanceMeters: last.distance_meters == null ? 1e15 : Number(last.distance_meters), id: String(last.id) }
+    : { updatedAt: String(last.updated_at || ""), id: String(last.id) }) : null;
   const completedAt = syncCompletedAt(state as SyncStateRow | undefined);
-  return { items, total: prepared.length, nextCursor: nextOffset < prepared.length ? nextOffset.toString(36) : null, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= STALE_DATA_MS };
+  // A successful empty SQL result is final, including a cursor beyond the last row.
+  return { items, total: Number(rows[0]?.total_count ?? 0), nextCursor, syncedAt: completedAt, stale: !completedAt || Date.now() - new Date(completedAt).getTime() >= STALE_DATA_MS };
 }
 
 export async function getStoredAnimalById(id: string) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SnackbarAvoidOverlap } from "seed-design/ui/snackbar";
 import { catCosts, dogCosts, type CostItem } from "../../lib/care-content";
 import { SegmentedControl, SegmentedControlItem } from "seed-design/ui/segmented-control";
 import { Slider } from "seed-design/ui/slider";
@@ -186,7 +187,7 @@ function CalculatorCostPlanner({ quality, animal }: { quality: number; animal?: 
   const { items } = useCostTotals(selectedSpecies, quality, 1, composition, catalog);
 
   const update = <K extends keyof CalculatorSelections>(key: K, value: CalculatorSelections[K]) => setSelections(current => ({ ...current, [key]: value }));
-  const continueButton = () => <button className="ff-cost-chat-continue" type="button" onClick={() => setStep(step + 1)}>다음</button>;
+  const continueButton = () => <SnackbarAvoidOverlap><button className="ff-cost-chat-continue" type="button" onClick={() => setStep(step + 1)}>다음</button></SnackbarAvoidOverlap>;
   const choice = (label: string, value: string, selected: boolean, onClick: () => void) => <button type="button" data-value={value} className={`ff-cost-chat-choice-button${selected ? " is-selected" : ""}`} aria-pressed={selected} onClick={onClick}><strong>{label}</strong>{selected && <small>현재 선택</small>}</button>;
 
   if (step === totalSteps) return <CostReceipt species={selectedSpecies} animal={animal} selections={selections} quality={quality} items={items}/>;

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createServer} from 'vite';
 
 test('sync history is admin-only, paginated, and image runs preserve partial and fatal failures',async t=>{
- const server=await createServer({configFile:false,envFile:false,appType:'custom',logLevel:'error',server:{middlewareMode:true,hmr:false},plugins:[{name:'sync-auth',enforce:'pre',resolveId(s){if(s.endsWith('chatgpt-auth'))return '\0sync-auth';},load(id){if(id==='\0sync-auth')return 'export async function getAuthenticatedMember(){return globalThis.__syncMember}';}}]});
+ const server=await createServer({configFile:false,envFile:false,optimizeDeps:{noDiscovery:true,include:[]},appType:'custom',logLevel:'error',server:{middlewareMode:true,hmr:false},plugins:[{name:'sync-auth',enforce:'pre',resolveId(s){if(s.endsWith('chatgpt-auth'))return '\0sync-auth';},load(id){if(id==='\0sync-auth')return 'export async function getAuthenticatedMember(){return globalThis.__syncMember}';}}]});
  const oldFetch=globalThis.fetch,oldUrl=process.env.NEXT_PUBLIC_SUPABASE_URL,oldKey=process.env.SUPABASE_SECRET_KEY;
  process.env.NEXT_PUBLIC_SUPABASE_URL='https://sync.example.test';process.env.SUPABASE_SECRET_KEY='test-only';
  t.after(async()=>{globalThis.fetch=oldFetch;delete globalThis.__syncMember;if(oldUrl===undefined)delete process.env.NEXT_PUBLIC_SUPABASE_URL;else process.env.NEXT_PUBLIC_SUPABASE_URL=oldUrl;if(oldKey===undefined)delete process.env.SUPABASE_SECRET_KEY;else process.env.SUPABASE_SECRET_KEY=oldKey;await server.close();});

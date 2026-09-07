@@ -70,6 +70,7 @@ export const Snackbar = React.forwardRef<HTMLDivElement, SnackbarProps>(
           {actionLabel && (
             <SeedSnackbar.ActionButton onClick={onAction}>{actionLabel}</SeedSnackbar.ActionButton>
           )}
+          <SeedSnackbar.ActionButton aria-label="알림 확인">확인</SeedSnackbar.ActionButton>
         </SeedSnackbar.Content>
         {/* You may implement your own i18n for dismiss label */}
         <SeedSnackbar.HiddenCloseButton>닫기</SeedSnackbar.HiddenCloseButton>

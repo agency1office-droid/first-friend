@@ -1,4 +1,5 @@
 "use client";
+import { SnackbarAvoidOverlap } from "seed-design/ui/snackbar";
 
 import { ActionButton } from "seed-design/ui/action-button";
 import {
@@ -61,10 +62,10 @@ export function AnimalActions({
     </BottomSheetContent>
   </BottomSheetRoot>;
 
-  return <div className="ff-sticky-actions">
+  return <SnackbarAvoidOverlap><div className="ff-sticky-actions">
     <FavoriteButton animalId={animalId} animalName={name} className="ff-sticky-scrap" />
     <button className="ff-sticky-share" type="button" onClick={share} aria-label="공유하기"><IconAndroidshareLine aria-hidden /></button>
     {calculator}
     <ActionButton asChild><a href={inquiryHref}>연락하기</a></ActionButton>
-  </div>;
+  </div></SnackbarAvoidOverlap>;
 }

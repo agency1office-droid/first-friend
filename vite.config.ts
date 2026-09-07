@@ -3,6 +3,9 @@ import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { sites } from "./build/sites-vite-plugin";
 import { nitro } from "nitro/vite";
+import { cp, readFile, realpath } from "node:fs/promises";
+import { join } from "node:path";
+import { execFileSync } from "node:child_process";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
@@ -41,8 +44,22 @@ const localBindingConfig = {
 export default defineConfig(async () => {
   if (isVercel) {
     return {
-      // Native libvips is loaded dynamically; include the complete Linux packages.
-      plugins: [vinext(), nitro({ traceDeps: ["sharp*", "@img/sharp-linux-x64*", "@img/sharp-libvips-linux-x64*"] })],
+      plugins: [vinext(), nitro({
+        traceDeps: ["sharp*", "@img/sharp-linux-x64*", "@img/sharp-libvips-linux-x64*"],
+        hooks: { async compiled(nitro) {
+          if (process.platform !== "linux" || process.arch !== "x64") return;
+          const source = join(nitro.options.rootDir, "node_modules");
+          const output = join(nitro.options.output.serverDir, "node_modules");
+          const { version } = JSON.parse(await readFile(join(source, "sharp/package.json"), "utf8"));
+          // nf3's multi-version layout breaks the binary's sibling libvips RPATH.
+          const native = await realpath(join(output, `.nf3/@img/sharp-linux-x64@${version}`))
+            .catch(() => realpath(join(output, "@img/sharp-linux-x64")));
+          await cp(join(source, "@img/sharp-libvips-linux-x64"), join(native, "../sharp-libvips-linux-x64"), { recursive: true, dereference: true });
+          // Test the deployed binary, not the working build-container dependency.
+          execFileSync(process.execPath, ["-e", "require(process.argv[1])", join(native, "index.cjs")], { cwd: output, stdio: "inherit" });
+          console.info("Verified bundled Sharp Linux runtime");
+        } },
+      })],
     };
   }
 

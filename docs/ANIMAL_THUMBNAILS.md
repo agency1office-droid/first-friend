@@ -24,7 +24,7 @@ node --env-file=.env.local scripts/backfill-animal-thumbnails.mjs
 
 Cron 한 번의 처리량보다 유입량이 지속해서 많으면 대기 건수가 누적된다. 요금제의 실행 주기·함수 시간·저장소 용량을 확인한 뒤 주기를 늘린다. 공개 저장소는 URL을 아는 사람이 접근할 수 있으므로 비공개 사진·신원 증빙을 이 큐에 넣지 않는다.
 
-Vercel Hobby의 예약 실행에는 최대 1시간의 실행 시간대 유동성이 있다. Linux 네이티브 라이브러리는 `vite.config.ts`의 Nitro `traceDeps`로 패키지 전체를 포함한다. 서버 실행 결과는 `sync.animal_thumbnails_complete` 로그에서 성공·실패·용량 합계를 확인한다. 엔진을 불러오지 못하면 작업을 가져오기 전에 중단한다.
+Vercel Hobby의 예약 실행에는 최대 1시간의 실행 시간대 유동성이 있다. Linux 네이티브 라이브러리는 `vite.config.ts`에서 패키지 전체를 포함하고, nf3의 다중 버전 폴더 구조에 맞춰 libvips 위치를 보정한다. 빌드가 완료될 때 배포할 Linux 바이너리를 직접 불러와 확인한다. 서버 실행 결과는 `sync.animal_thumbnails_complete` 로그에서 성공·실패·용량 합계를 확인한다. 엔진을 불러오지 못하면 작업을 가져오기 전에 중단한다.
 
 ## 수정 파일
 

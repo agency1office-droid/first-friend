@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     let input;
     try { input = parseOperationQuery(new URL(request.url).searchParams); }
     catch (error) { return Response.json({ error: (error as Error).message }, { status: 400 }); }
-    const { resource, page, status, q, sort, pageSize } = input;
+    const { resource, page, status, q, sort, queue, pageSize } = input;
     if (!resourceAllowed(resource, auth.member.role)) return Response.json({ error: "운영자만 확인할 수 있는 업무예요." }, { status: 403 });
     const config = operationResources[resource], admin = auth.member.role === "admin", c = auth.client;
     // Apply ownership in SQL before pagination, including return requests.
@@ -50,6 +50,7 @@ export async function GET(request: Request) {
       if (resource === "returns") query = query.eq("applications.guardian_id", auth.user.userId);
     }
     if (status) query = query.eq("status", status);
+    if (queue === "pending") query = query.in("status", [...config.pending]);
     const field=params.get("field")||config.search;
     const allowedFields=[config.search,...(resource==="members"?["email","id"]:[])];
     if(!(allowedFields as readonly string[]).includes(field))return Response.json({error:"검색 항목을 확인해 주세요."},{status:400});

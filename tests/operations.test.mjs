@@ -37,7 +37,7 @@ test("operations permissions, real pagination and guarded approval", async t => 
     if (table === "members") return Response.json([{ id: "operator", display_name: "운영 검증", email: "test@example.test", role, verified, sanctioned: false }]);
     if (table === "auth_sessions") return Response.json(db.auth_sessions);
     assert.ok(Object.hasOwn(db, table), "Unexpected table " + table);
-    const matches = row => [...url.searchParams].every(([key, value]) => !value.startsWith("eq.") || String(row[key]) === value.slice(3));
+    const matches = row => [...url.searchParams].every(([key, value]) => value.startsWith("eq.") ? String(row[key]) === value.slice(3) : value.startsWith("in.(") ? value.slice(4,-1).split(",").includes(String(row[key])) : true);
     let rows = db[table].filter(matches);
     if (method === "POST") {
       const row = JSON.parse(options.body);
@@ -74,6 +74,14 @@ test("operations permissions, real pagination and guarded approval", async t => 
     for (const query of ["resource=__proto__", "page=NaN", "page=-1", "status=wrong", "sort=sql", "q=" + "x".repeat(101)]) assert.throws(() => parseOperationQuery(new URLSearchParams(query)));
     await get("resource=registrations&q=%25_");
     assert.equal(requests.at(-1).params.get("name"), "ilike.%\\%\\_%");
+  });
+  await t.test("pending queue filters rows and total before pagination and rejects conflicting states", async () => {
+    db.applications.push({id:66,guardian_id:"operator",animal_id:"cat",status:"completed",created_at:"9999"});
+    const body=await (await get("resource=applications&queue=pending&page=4")).json();
+    assert.equal(body.total,65);assert.equal(body.rows.length,5);
+    assert.ok(body.rows.every(row=>row.status==="submitted"));
+    assert.equal(requests.at(-1).params.get("status"),"in.(submitted,review,consulting)");
+    for(const query of ["resource=members&queue=pending","queue=unknown","queue=pending&status=approved"])assert.equal((await get(query)).status,400);
   });
   await t.test("rejects cross-origin actions and requires idempotency key", async () => {
     assert.equal((await post(approval, crypto.randomUUID(), "https://other.example")).status, 403);

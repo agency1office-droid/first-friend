@@ -32,6 +32,8 @@
 .actions { justify-content: flex-end; }
 .console p { overflow-wrap: anywhere; }
 .mobileBar { display: none; }
+.menuSearch { padding: var(--seed-dimension-x3); }
+.quickViews { display: flex; flex-wrap: wrap; gap: var(--seed-dimension-x2); }
 .summaryGrid { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:var(--seed-dimension-x4); }
 .summaryGrid .summaryCard { display:grid; height:auto; white-space:normal; justify-content:start; gap:var(--seed-dimension-x3); text-align:left; padding:var(--seed-dimension-x5); border:1px solid var(--seed-color-stroke-neutral-muted); border-radius:var(--seed-radius-r3); background:var(--seed-color-bg-layer-default); color:var(--seed-color-fg-neutral); font:inherit; cursor:pointer; }
 .summaryCard strong { font-size:var(--seed-font-size-t7); }

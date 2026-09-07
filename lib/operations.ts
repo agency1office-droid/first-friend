@@ -27,6 +27,16 @@ export const operationResources = {
   fundraisers: { label: "모금 심사", table: "fundraisers", title: "title", search: "title", statuses: ["review", "open", "rejected", "settled"], pending: ["review"], fields: "id,title,animal_id,purpose,target_amount,status,created_at" },
 } as const;
 export type OperationResource = keyof typeof operationResources;
+// Group by the operator's work, not by database tables (see docs/OPERATIONS_REFERENCES.md).
+export const operationGroups: { label: string; keys: OperationResource[] }[] = [
+  { label: "회원·보호소", keys: ["members", "shelters", "verifications"] },
+  { label: "동물·입양", keys: ["registrations", "applications", "certifications", "returns", "lost"] },
+  { label: "커뮤니티", keys: ["posts", "questions", "answers", "drawings", "updates"] },
+  { label: "봉사·후원", keys: ["volunteers", "volunteerApplications", "support", "fundraisers", "pledges"] },
+  { label: "문의·신고", keys: ["tickets", "reports", "appeals"] },
+  { label: "마케팅·알림", keys: ["campaigns", "deliveries", "notifications"] },
+  { label: "안전과 운영", keys: ["audits"] },
+];
 export const operationLabels: Record<string, string> = {
   login_methods:"연결된 로그인", marketing_email:"이메일 마케팅 동의", marketing_notification:"앱 마케팅 동의",
   declined:"미승인",confirmed:"전달 확인",pledged:"참여 의향",
@@ -42,8 +52,10 @@ export function parseOperationQuery(params: URLSearchParams) {
   const status = params.get("status") || "";
   const q = (params.get("q") || "").trim();
   const sort = params.get("sort") || "oldest";
+  const queue = params.get("queue") || "";
+  if (queue && (queue !== "pending" || !config.pending.length || status)) throw new Error("처리 대기 조건을 확인해 주세요.");
   if (!Number.isSafeInteger(page) || page < 1 || page > 100000 || q.length > 100 || !["oldest", "newest"].includes(sort) || (status && !(config.statuses as readonly string[]).includes(status))) throw new Error("검색 조건을 확인해 주세요.");
-  return { resource: resource as OperationResource, page, status, q, sort, pageSize: 20 };
+  return { resource: resource as OperationResource, page, status, q, sort, queue, pageSize: 20 };
 }
 export function canUseOperations(role: unknown, verified: unknown, sanctioned: unknown) {
   return !sanctioned && (role === "admin" || (role === "shelter" && verified === true));

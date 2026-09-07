@@ -23,3 +23,19 @@ node --env-file=.env.local scripts/backfill-animal-thumbnails.mjs
 원본 삭제·응답 지연·10MB 초과·지원하지 않는 형식은 실패 이유로 남는다. 허용 호스트 밖의 URL과 리다이렉트는 거부한다. 썸네일 로드 실패 시 목록은 원본으로 복구한다. 새 규격을 도입할 때는 경로 버전을 올린다. 기존 파일의 일괄 삭제는 하지 않는다.
 
 Cron 한 번의 처리량보다 유입량이 지속해서 많으면 대기 건수가 누적된다. 요금제의 실행 주기·함수 시간·저장소 용량을 확인한 뒤 주기를 늘린다. 공개 저장소는 URL을 아는 사람이 접근할 수 있으므로 비공개 사진·신원 증빙을 이 큐에 넣지 않는다.
+
+Vercel Hobby의 예약 실행에는 최대 1시간의 실행 시간대 유동성이 있다. Linux 네이티브 라이브러리는 `vite.config.ts`의 Nitro `traceDeps`로 패키지 전체를 포함한다. 서버 실행 결과는 `sync.animal_thumbnails_complete` 로그에서 성공·실패·용량 합계를 확인한다. 엔진을 불러오지 못하면 작업을 가져오기 전에 중단한다.
+
+## 수정 파일
+
+- `lib/animal-thumbnails.ts`: 변환·저장·작업 처리
+- `app/api/cron/animal-thumbnails/route.ts`: 인증된 예약 실행·운영 로그
+- `supabase/migrations/20260908000100_animal_thumbnails.sql`: 자동 등록·작업 점유·재시도·원본 변경 처리
+- `scripts/backfill-animal-thumbnails.mjs`: 기존 사진 일괄 처리
+- `lib/public-animal-store.ts`, `lib/data.ts`: 원본과 별도 썸네일 주소 제공
+- `app/components/AnimalCard.tsx`, `app/components/AnimalThumbnail.tsx`: 목록 표시·원본 복구
+- `lib/image-url.ts`: 기존 이미지 규격 가정 정정
+- `lib/operations.ts`, `app/components/OperationsConsole.tsx`, `app/api/operations/route.ts`: SEED 기반 작업 상태 확인·실패 재시도
+- `vercel.json`, `vite.config.ts`: 예약 일정·Linux 이미지 엔진 배포
+- `tests/animal-thumbnails.test.mjs`, `tests/animal-thumbnails.sql`, `tests/rendered-html.test.mjs`, `package.json`: 변환·권한·DB 회귀 검증
+- `docs/ANIMAL_THUMBNAILS.md`: 운영 절차와 변경 내역

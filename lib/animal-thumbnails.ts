@@ -35,6 +35,8 @@ export async function createAnimalThumbnail(source: string) {
 }
 
 export async function processAnimalThumbnails(options: { maxJobs?: number; durationMs?: number; concurrency?: number } = {}) {
+  // Fail a broken deployment before claiming or consuming any image retries.
+  await import("sharp");
   const db = getSupabaseServerClient();
   const deadline = Date.now() + Math.min(options.durationMs ?? 200000, 200000);
   const maxJobs = Math.min(options.maxJobs ?? 5000, 5000);

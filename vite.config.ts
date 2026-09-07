@@ -41,7 +41,8 @@ const localBindingConfig = {
 export default defineConfig(async () => {
   if (isVercel) {
     return {
-      plugins: [vinext(), nitro()],
+      // Native libvips is loaded dynamically; include the complete Linux packages.
+      plugins: [vinext(), nitro({ traceDeps: ["sharp*", "@img/sharp-linux-x64*", "@img/sharp-libvips-linux-x64*"] })],
     };
   }
 

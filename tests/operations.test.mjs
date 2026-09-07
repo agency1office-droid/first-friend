@@ -15,11 +15,13 @@ test("operations permissions, real pagination and guarded approval", async t => 
   }
   t.after(() => delete globalThis.__operationsUser);
   const { GET, POST } = await server.ssrLoadModule("/app/api/operations/route.ts");
+  const { POST: manage } = await server.ssrLoadModule("/app/api/operations/manage/route.ts");
+  const { POST: outreach } = await server.ssrLoadModule("/app/api/operations/outreach/route.ts");
   const { parseOperationQuery } = await server.ssrLoadModule("/lib/operations.ts");
   let role = "admin", verified = true, failAudit = false;
   const requests = [];
   const db = {
-    members: [],
+    members: [], auth_accounts: [], contact_preferences: [],
     auth_sessions: [{ member_id: "operator" }],
     applications: Array.from({ length: 65 }, (_, i) => ({ id: i + 1, guardian_id: i < 30 ? "other" : "operator", animal_id: "dog", status: "submitted", created_at: String(i).padStart(4, "0") })),
     direct_animals: [{ id: 1, name: "검토 동물", status: "review", member_id: "owner", created_at: "2026-09-07" }],
@@ -114,8 +116,28 @@ test("operations permissions, real pagination and guarded approval", async t => 
     assert.match(html, /확인할 업무/); assert.match(html, /동물 등록/); assert.match(html, /data-seed/);
     assert.match(html, /ff-operations-shell/); assert.doesNotMatch(html, /class="ff-shell"/);
     assert.match(html, /operations-navigation/); assert.match(html, /안전과 운영/);
+    for(const label of ["회원 관리","이야기 관리","고객 문의","이메일·마케팅","발송 기록","운영 요약"])assert.ok(html.includes(label));
     role = "member";
     const denied = await (await render()).text();
     assert.match(denied, /운영 권한이 필요해요/); assert.doesNotMatch(denied, /확인할 업무/);
+  });
+  await t.test("management APIs reject ordinary users and cross-origin writes", async()=>{
+    const req=(origin="https://www.firstfriend.me")=>new Request("https://www.firstfriend.me/api/operations/manage",{method:"POST",headers:{origin,"content-type":"application/json"},body:"{}"});
+    role="member";assert.equal((await manage(req())).status,403);assert.equal((await outreach(req())).status,403);
+    role="admin";assert.equal((await manage(req("https://other.example"))).status,403);
+  });
+  await t.test("management requires complete row version and verified mail configuration",async()=>{
+    role="admin";
+    const req=body=>new Request("https://www.firstfriend.me/api/operations/manage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+    assert.equal((await manage(req({resource:"members",id:"operator",action:"suspend",value:{},expected:{id:"operator"},note:"제한 사유"}))).status,400);
+    const expected={id:1,title:"제목",body:"본문",channel:"email",audience:"all",href:"/mypage",status:"draft",created_at:"2026-09-07"};
+    assert.equal((await manage(req({resource:"campaigns",id:1,action:"queue",value:{},expected,note:"발송 준비"}))).status,422);
+    assert.equal((await manage(req({resource:"campaigns",action:"create",value:{href:"//evil.example"},note:"초안 작성"}))).status,400);
+  });
+  await t.test("member response excludes passwords, tokens and provider identifiers",async()=>{
+    role="admin";db.auth_accounts.push({member_id:"operator",provider:"google",email_verified:true,password_hash:"secret",provider_user_id:"private"});
+    const body=await (await get("resource=members")).json();
+    assert.equal(body.rows[0].login_methods,"google (이메일 확인됨)");assert.ok(!JSON.stringify(body).includes("secret"));assert.ok(!JSON.stringify(body).includes("private"));
+    assert.equal((await get("resource=members&field=password_hash")).status,400);
   });
 });

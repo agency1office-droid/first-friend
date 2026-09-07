@@ -11,6 +11,8 @@ import { SideNavigationProvider, SideNavigationRoot, SideNavigationHeader, SideN
 import { operationResources, operationLabels, parseOperationQuery, resourceAllowed, type OperationRow, type OperationResource } from "../../lib/operations";
 import styles from "./OperationsConsole.module.css";
 import { useAppFeedback } from "./AppFeedback";
+import { OperationsManagement } from "./OperationsManagement";
+import { OperationsOverview } from "./OperationsOverview";
 
 type Choice = { label: string; action: string; status?: string; critical?: boolean; hidden?: boolean };
 function choices(resource: OperationResource, row: OperationRow, role: string): Choice[] {
@@ -34,7 +36,7 @@ function choices(resource: OperationResource, row: OperationRow, role: string): 
   if (resource in reviewActions && ["submitted", "review"].includes(status)) return [
     { label: "승인", action: reviewActions[resource as keyof typeof reviewActions], status: resource === "appeals" ? "accepted" : resource === "fundraisers" ? "open" : "verified" },
     { label: "반려", action: reviewActions[resource as keyof typeof reviewActions], status: "rejected", critical: true }];
-  if (resource === "reports") return [
+  if (resource === "reports" && status === "open") return [
     ...(row.target_type === "post" ? [{ label: "게시물 숨기기", action: "post-visibility", hidden: true, critical: true }, { label: "게시물 복구", action: "post-visibility", hidden: false }] : []),
     { label: "대상 계정 제재", action: "account-sanction-target", critical: true }];
   return [];
@@ -74,6 +76,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
   catch { input = parseOperationQuery(new URLSearchParams()); }
   const { resource, page, status, sort, pageSize } = input;
   const config = operationResources[resource];
+  const overview = new URLSearchParams(query).get("view") === "overview" && role === "admin";
   useEffect(() => {
     const sync = () => { setQuery(window.location.search.slice(1)); setSearch(new URLSearchParams(window.location.search).get("q") || ""); setLoading(true); setError(""); setResult(null); setSelected(null); setRefresh(value => value + 1); };
     window.addEventListener("popstate", sync);
@@ -81,6 +84,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
   }, []);
   useEffect(() => {
     const controller = new AbortController();
+    if(new URLSearchParams(query).get("view")==="overview")return () => controller.abort();
     fetch("/api/operations?" + query, { signal: controller.signal, cache: "no-store" })
       .then(async response => { const body = await response.json(); if (!response.ok) throw new Error(body.error || "목록을 불러오지 못했어요."); return body; })
       .then(setResult)
@@ -115,23 +119,27 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
   }
   const resources = (Object.keys(operationResources) as OperationResource[]).filter(key => resourceAllowed(key, role));
   const groups: {label: string; keys: OperationResource[]}[] = [
+    { label: "회원과 콘텐츠", keys: ["members","posts","questions","answers","drawings","updates"] },
     { label: "입양과 보호", keys: ["applications", "registrations", "returns"] },
+    { label: "보호소와 참여", keys: ["shelters","volunteers","volunteerApplications","lost","support","pledges"] },
     { label: "검토와 인증", keys: ["verifications", "certifications", "fundraisers"] },
-    { label: "안전과 운영", keys: ["reports", "appeals", "members", "audits"] },
+    { label: "소통과 마케팅", keys: ["tickets","campaigns","deliveries","notifications"] },
+    { label: "안전과 운영", keys: ["reports", "appeals", "audits"] },
   ];
   return <SideNavigationProvider><div className={styles.layout}>
     <div className={styles.mobileBar}><strong>퍼스트프렌드 · 운영 콘솔</strong><ActionButton size="small" variant="neutralWeak" aria-expanded={menuOpen} aria-controls="operations-navigation" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "메뉴 닫기" : "업무 메뉴"}</ActionButton></div>
     <SideNavigationRoot id="operations-navigation" className={styles.sidebar} data-mobile-open={menuOpen} aria-label="확인할 업무">
       <SideNavigationHeader><Link className={styles.brand} href="/">퍼스트프렌드<span>운영 콘솔</span></Link></SideNavigationHeader>
-      <SideNavigationContent>{groups.map(group => {
+      <SideNavigationContent>{role==="admin"&&<SideNavigationGroup items={[{label:"운영 요약",current:overview,onClick:()=>{setMenuOpen(false);navigate({view:"overview"});}}]}/>} {groups.map(group => {
         const keys = group.keys.filter(key => resources.includes(key));
-        return keys.length > 0 && <SideNavigationGroup key={group.label} label={group.label} items={keys.map(key => ({ key, label: operationResources[key].label, current: key === resource, onClick: () => { setSearch(""); setMenuOpen(false); navigate({ resource: key, page: "1", q: "", status: "" }); } }))} />;
+        return keys.length > 0 && <SideNavigationGroup key={group.label} label={group.label} items={keys.map(key => ({ key, label: operationResources[key].label, current: !overview && key === resource, onClick: () => { setSearch(""); setMenuOpen(false); navigate({ resource: key, view:"", field:"",visibility:"",role:"",page: "1", q: "", status: "" }); } }))} />;
       })}</SideNavigationContent>
       <SideNavigationFooter><ActionButton asChild variant="neutralWeak" size="small"><a href="/mypage">나의 페이지로</a></ActionButton></SideNavigationFooter>
     </SideNavigationRoot>
     <section className={styles.console} aria-label="운영 업무">
-    <header className={styles.topbar}><div><p>보호처·운영자 도구</p><h1>{config.label}</h1></div><Badge tone="neutral" variant="weak">{role === "admin" ? "관리자" : "보호소 운영자"}</Badge></header>
-    <div className={styles.workspace}>
+    <header className={styles.topbar}><div><p>보호처·운영자 도구</p><h1>{overview?"운영 요약":config.label}</h1></div><Badge tone="neutral" variant="weak">{role === "admin" ? "관리자" : "보호소 운영자"}</Badge></header>
+    {overview?<OperationsOverview onSelect={key=>navigate({resource:key,view:"",page:"1",q:"",status:"",field:"",visibility:"",role:""})}/>:<div className={styles.workspace}>
+    {role==="admin"&&resource==="campaigns"&&<OperationsManagement resource={resource} row={null} onDone={reload}/>}
     <p>목록에서 항목을 선택하고, 내용을 검토한 뒤 처리해 주세요.</p>
     {notice && <Callout tone="positive" description={notice} />}
     {error && <Callout tone="critical" description={error} />}
@@ -142,6 +150,8 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
       <ActionButton type="submit" variant="neutralWeak">검색</ActionButton>
     </form>
     <div className={styles.filters}>
+      {resource==="members"&&<Filter label="검색 항목" value={new URLSearchParams(query).get("field")||"display_name"} options={["display_name","email","id"].map(value=>({value,label:operationLabels[value]}))} onChange={field=>navigate({field,page:"1"})}/>}
+      {config.fields.split(",").includes("hidden")&&<Filter label="공개 여부" value={new URLSearchParams(query).get("visibility")||"all"} options={[{value:"all",label:"전체"},{value:"visible",label:"공개"},{value:"hidden",label:"숨김"}]} onChange={v=>navigate({visibility:v==="all"?"":v,page:"1"})}/>}
       {config.statuses.length > 0 && <Filter label="상태" value={status || "all"} options={[{ value: "all", label: "전체 상태" }, ...config.statuses.map(value => ({ value, label: display(value) }))]} onChange={value => navigate({ status: value === "all" ? "" : value, page: "1" })} />}
       <Filter label="정렬" value={sort} options={[{ value: "oldest", label: "오래된 순" }, { value: "newest", label: "최근 순" }]} onChange={value => navigate({ sort: value, page: "1" })} />
     </div></div>
@@ -166,8 +176,9 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
       <div className={styles.detail}><dl>{Object.entries(selected).filter(([key]) => operationLabels[key] && key !== "evidence_key").map(([key, value]) => <div key={key}><dt>{operationLabels[key]}</dt><dd>{display(value)}</dd></div>)}</dl>
       {typeof selected.evidence_key === "string" && <ActionButton asChild variant="neutralWeak"><a href={"/api/operations/evidence?key=" + encodeURIComponent(selected.evidence_key)} target="_blank" rel="noreferrer">증빙 확인</a></ActionButton>}</div>
       <div className={styles.actions}>{choices(resource, selected, role).map(item => <ActionButton key={item.label} variant={item.critical ? "criticalSolid" : "neutralWeak"} onClick={() => choose(item)}>{item.label}</ActionButton>)}</div>
+      {role==="admin"&&<OperationsManagement resource={resource} row={selected} onDone={reload}/>}
     </aside>}
-    </div></div>
+    </div></div>}
     <DialogRoot open={!!choice && !!selected} onOpenChange={open => { if (!open && !lock.current) setChoice(null); }}>
       <DialogContent title={choice ? choice.label + " 확인" : "처리 확인"} description={selected ? "대상 번호 " + selected.id : ""} showCloseButton={!pending}>
         <DialogBody><div className={styles.detail}>

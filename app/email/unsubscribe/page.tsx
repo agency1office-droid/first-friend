@@ -1,0 +1,2 @@
+import {ActionButton} from "seed-design/ui/action-button";
+export default async function Page({searchParams}:{searchParams:Promise<{token?:string}>}){const {token}=await searchParams;return <div className="ff-page"><h1>이메일 수신 거부</h1><p>마케팅 이메일 수신을 중단하려면 아래 버튼을 눌러 주세요.</p><form method="post" action="/api/contact/unsubscribe"><input type="hidden" name="token" value={token||""}/><ActionButton variant="neutralSolid" type="submit">마케팅 이메일 수신 중단</ActionButton></form></div>;}

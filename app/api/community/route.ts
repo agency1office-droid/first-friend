@@ -9,7 +9,7 @@ const mapMatch = (row: Row) => ({ ...row, postId: row.post_id, memberId: row.mem
 export async function GET(request: Request) {
   const url = new URL(request.url), type = url.searchParams.get("type"), id = clean(url.searchParams.get("id"), 120), client = getSupabaseServerClient();
   if (type === "drawings") {
-    const { data: posts } = await client.from("drawing_posts").select("*").order("created_at", { ascending: false }).limit(50);
+    const { data: posts } = await client.from("drawing_posts").select("*").eq("hidden", false).order("created_at", { ascending: false }).limit(50);
     const { data: matches } = await client.from("drawing_matches").select("*").order("created_at", { ascending: false }).limit(200);
     return Response.json({ posts: (posts || []).map(post => ({ ...mapDrawing(post), matches: (matches || []).filter(match => match.post_id === post.id).map(mapMatch) })) });
   }
@@ -18,12 +18,12 @@ export async function GET(request: Request) {
     return Response.json({ suggestions: (data || []).map(row => ({ ...row, animalId: row.animal_id, memberId: row.member_id, createdAt: row.created_at })) });
   }
   if (type === "questions") {
-    const [{ data: questions }, { data: answers }, { data: memberRows }] = await Promise.all([client.from("community_questions").select("*").order("created_at", { ascending: false }).limit(50), client.from("community_answers").select("*").order("helpful", { ascending: false }).limit(200), client.from("members").select("id,display_name,role")]);
+    const [{ data: questions }, { data: answers }, { data: memberRows }] = await Promise.all([client.from("community_questions").select("*").eq("hidden", false).order("created_at", { ascending: false }).limit(50), client.from("community_answers").select("*").eq("hidden", false).order("helpful", { ascending: false }).limit(200), client.from("members").select("id,display_name,role")]);
     const memberMap = new Map((memberRows || []).map(member => [member.id, member]));
     return Response.json({ questions: (questions || []).map(question => ({ ...question, memberId: question.member_id, createdAt: question.created_at, answers: (answers || []).filter(answer => answer.question_id === question.id).map(answer => ({ ...answer, questionId: answer.question_id, memberId: answer.member_id, createdAt: answer.created_at, author: memberMap.get(answer.member_id)?.display_name || "회원", expert: memberMap.get(answer.member_id)?.role === "veterinarian" })) })) });
   }
   if (type === "fundraisers") {
-    const { data } = await client.from("fundraisers").select("*").eq("animal_id", id).order("created_at", { ascending: false });
+    const { data } = await client.from("fundraisers").select("*").eq("animal_id", id).in("status", ["open", "settled"]).order("created_at", { ascending: false });
     return Response.json({ fundraisers: (data || []).map(row => ({ ...row, shelterId: row.shelter_id, animalId: row.animal_id, targetAmount: row.target_amount, raisedAmount: row.raised_amount, evidenceKey: row.evidence_key, createdAt: row.created_at })) });
   }
   if (type === "reputation") {

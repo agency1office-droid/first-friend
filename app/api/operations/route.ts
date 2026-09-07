@@ -24,6 +24,18 @@ export async function GET(request: Request) {
     const auth = await context();
     if (!auth) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
     if (!canUseOperations(auth.member.role, auth.member.verified, auth.member.sanctioned)) return Response.json({ error: "인증된 보호소 또는 운영자만 이용할 수 있어요." }, { status: 403 });
+    const params=new URL(request.url).searchParams;
+    if(params.get("view")==="overview") {
+      if(auth.member.role!=="admin")return Response.json({error:"운영 권한이 필요해요."},{status:403});
+      const counts=await Promise.all(Object.entries(operationResources).map(async ([resource,config])=>{
+        let query=auth.client.from(config.table).select("id",{count:"exact",head:true});
+        if(config.pending.length)query=query.in("status",[...config.pending]);
+        const {count,error}=await query;
+        return {resource,label:config.label,count:error?null:count||0,pending:config.pending.length>0,error:error?"데이터베이스 준비 상태를 확인해 주세요.":null};
+      }));
+      const {data:jobs,error}=await auth.client.from("public_sync_state").select("id,status,item_count,last_completed_at,message").in("id",["public-animals","public-lost-animals"]);
+      return Response.json({counts,jobs:jobs||[],syncError:!!error,emailReady:!!(process.env.RESEND_API_KEY&&process.env.EMAIL_FROM&&process.env.EMAIL_REPLY_TO),oauth:Object.fromEntries(["GOOGLE","KAKAO","NAVER"].map(name=>[name,!!(process.env[name+"_OAUTH_CLIENT_ID"]&&process.env[name+"_OAUTH_CLIENT_SECRET"])]))},{headers:{"cache-control":"no-store"}});
+    }
     let input;
     try { input = parseOperationQuery(new URL(request.url).searchParams); }
     catch (error) { return Response.json({ error: (error as Error).message }, { status: 400 }); }
@@ -38,14 +50,28 @@ export async function GET(request: Request) {
       if (resource === "returns") query = query.eq("applications.guardian_id", auth.user.userId);
     }
     if (status) query = query.eq("status", status);
+    const field=params.get("field")||config.search;
+    const allowedFields=[config.search,...(resource==="members"?["email","id"]:[])];
+    if(!(allowedFields as readonly string[]).includes(field))return Response.json({error:"검색 항목을 확인해 주세요."},{status:400});
+    const visibility=params.get("visibility");
+    if(visibility){if(!config.fields.split(",").includes("hidden")||!["visible","hidden"].includes(visibility))return Response.json({error:"공개 상태를 확인해 주세요."},{status:400});query=query.eq("hidden",visibility==="hidden");}
+    const role=params.get("role");
+    if(role){if(resource!=="members"||!["member","shelter","foster","veterinarian","admin"].includes(role))return Response.json({error:"역할을 확인해 주세요."},{status:400});query=query.eq("role",role);}
     if (q) {
       // Exact number search; otherwise literal text search, with LIKE wildcards escaped.
       if (/^#[0-9]+$/.test(q)) query = query.eq("id", q.slice(1));
-      else query = query.ilike(config.search, "%" + q.replace(/[\\%_]/g, "\\$&") + "%");
+      else query = query.ilike(field, "%" + q.replace(/[\\%_]/g, "\\$&") + "%");
     }
     const { data, error, count } = await query.order("created_at", { ascending: sort === "oldest" }).order("id", { ascending: sort === "oldest" }).range((page - 1) * pageSize, page * pageSize - 1);
     if (error) throw error;
-    return Response.json({ rows: data || [], total: count || 0, page, pageSize, role: auth.member.role }, { headers: { "cache-control": "no-store" } });
+    let rows=(data||[]) as unknown as Row[];
+    if(resource==="members"&&rows.length){
+      const ids=rows.map(row=>row.id);
+      const accounts=await c.from("auth_accounts").select("member_id,provider,email_verified").in("member_id",ids).throwOnError();
+      const preferences=await c.from("contact_preferences").select("member_id,marketing_email,marketing_notification").in("member_id",ids).throwOnError();
+      rows=rows.map(row=>({...row,login_methods:(accounts.data||[]).filter(a=>a.member_id===row.id).map(a=>`${a.provider}${a.email_verified?" (이메일 확인됨)":""}`).join(", "),marketing_email:preferences.data?.find(p=>p.member_id===row.id)?.marketing_email||false,marketing_notification:preferences.data?.find(p=>p.member_id===row.id)?.marketing_notification||false}));
+    }
+    return Response.json({ rows, total: count || 0, page, pageSize, role: auth.member.role }, { headers: { "cache-control": "no-store" } });
   } catch (error) {
     logError("operations.list_failed", error);
     return Response.json({ error: "목록을 불러오지 못했어요. 잠시 후 다시 확인해 주세요." }, { status: 503 });

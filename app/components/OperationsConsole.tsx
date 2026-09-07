@@ -47,6 +47,16 @@ function display(value: unknown): string {
   if (typeof value === "object") return JSON.stringify(value, null, 2);
   return operationLabels[String(value)] || String(value);
 }
+function memberLoginMethods(value: unknown) {
+  const names: Record<string, string> = { google: "구글", kakao: "카카오", naver: "네이버", email: "이메일" };
+  return typeof value === "string" && value.trim()
+    ? value.replace(/\b(google|kakao|naver|email)\b/g, provider => names[provider])
+    : "연결 기록 없음";
+}
+function memberJoinedAt(value: unknown) {
+  const date = new Date(String(value || ""));
+  return Number.isNaN(date.getTime()) ? "날짜 기록 없음" : new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(date);
+}
 function Filter({ label, value, options, onChange }: { label: string; value: string; options: { value: string; label: string }[]; onChange: (value: string) => void }) {
   return <SelectRoot label={label} value={[value]} onValueChange={values => onChange(values[0] || "")}>
     <SelectTrigger /><SelectContent>{options.map(option => <SelectItem key={option.value} {...option} />)}</SelectContent>
@@ -160,9 +170,11 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
     <p role="status">{loading ? "목록을 불러오고 있어요." : result ? "전체 " + result.total.toLocaleString() + "건 · " + page + "페이지" : "다시 불러와 주세요."}</p>
     {!loading && result?.rows.length === 0 && <Callout tone="neutral" description="조건에 맞는 항목이 없어요. 검색어나 상태를 바꿔 확인해 주세요." />}
     <div className={styles.list}>{result?.rows.map(row => <article key={row.id} className={styles.card} data-selected={selected?.id === row.id}>
-      <div className={styles.recordTitle}><h3>{display(row[config.title])}</h3><p>#{row.id}</p></div>
+      <div className={styles.recordTitle}><h3>{display(row[config.title])}</h3>
+        {resource==="members"&&<><p>이메일: {typeof row.email==="string"&&row.email.trim()?row.email:"등록된 이메일 없음"}</p><p>연결 로그인: {memberLoginMethods(row.login_methods)}</p></>}
+        <p>#{row.id}</p></div>
       <div>{resource==="members" ? <Badge tone={row.role==="admin"?"informative":"neutral"} variant="weak">{row.role==="admin"?"관리자":display(row.role)}</Badge> : row.status != null && <Badge tone={(config.pending as readonly string[]).includes(String(row.status)) ? "warning" : "neutral"} variant="weak">{display(row.status)}</Badge>}</div>
-      <p>{display(row.created_at)}</p>
+      <p>{resource==="members"?<>가입일 (한국 시간)<br />{memberJoinedAt(row.created_at)}</>:display(row.created_at)}</p>
       <ActionButton size="small" variant="neutralWeak" aria-label={display(row[config.title]) + " 상세 검토"} onClick={() => { setSelected(row); setChoice(null); setActionError(""); requestAnimationFrame(() => detailRef.current?.focus()); }}>상세 검토</ActionButton>
     </article>)}</div>
     <nav className={styles.heading} aria-label="목록 페이지">

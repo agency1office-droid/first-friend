@@ -1,13 +1,16 @@
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { hasAllowedFileSignature, PRIVATE_EVIDENCE_BUCKET, uploadStoredFile } from "../../../lib/supabase/storage";
+import { enforceRateLimit, requestSubject } from "../../../lib/api-guards";
 
 const allowed = new Set(["image/jpeg", "image/png", "image/webp"]);
-const purpose = "sanction-appeal";
+const purpose = "appeal-evidence";
 
 // 제재 상태에서도 이의제기권은 보장되어야 하므로 일반 업로드와 인증 경로를 분리합니다.
 export async function POST(request: Request) {
+  if (request.headers.get("origin") && request.headers.get("origin") !== new URL(request.url).origin) return Response.json({ error: "요청 주소를 확인해 주세요." }, { status: 403 });
   const user = await getChatGPTUser();
   if (!user) return Response.json({ error: "본인 확인이 필요합니다." }, { status: 401 });
+  if (!await enforceRateLimit("appeal-evidence", requestSubject(request, user.userId), 3600, 10)) return Response.json({ error: "업로드가 너무 많아요. 잠시 후 다시 시도해 주세요." }, { status: 429 });
   const form = await request.formData();
   const file = form.get("file");
   if (!(file instanceof File) || !allowed.has(file.type) || file.size > 8 * 1024 * 1024) {

@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     if (!name || !region || introduction.length < 20) return Response.json({ error: "이름·지역·소개를 확인해 주세요." }, { status: 400 });
     const { data: existing } = await client.from("shelter_profiles").select("*").eq("public_id", publicId).maybeSingle();
     if (existing?.owner_id && existing.owner_id !== state.user.userId) return Response.json({ error: "이미 관리자가 연결된 보호소입니다." }, { status: 409 });
+    if (state.member?.role !== "admin" && publicId !== `direct-shelter-${state.user.userId}` && existing?.owner_id !== state.user.userId) return Response.json({ error: "공공 보호소 연결은 운영자가 담당자를 확인한 뒤 진행해요." }, { status: 403 });
     const { error } = existing ? await client.from("shelter_profiles").update({ owner_id: state.user.userId, name, region, introduction, verified: true }).eq("id", existing.id) : await client.from("shelter_profiles").insert({ owner_id: state.user.userId, public_id: publicId, name, region, introduction, verified: true });
     if (error) return Response.json({ error: "보호소 프로필을 저장하지 못했어요." }, { status: 500 });
     await client.from("applications").update({ guardian_id: state.user.userId }).eq("shelter_public_id", publicId).is("guardian_id", null);
@@ -60,11 +61,11 @@ export async function POST(request: Request) {
     return Response.json({ row: map(row) }, { status: 201 });
   }
   if (action === "volunteer-application-status") {
-    const id = Number(data.id), status = clean(data.status, 20); const { data: application } = await client.from("volunteer_applications").select("*").eq("id", id).maybeSingle(); const { data: post } = application ? await client.from("volunteer_posts").select("*").eq("id", application.post_id).maybeSingle() : { data: null };
-    if (!application || !post || post.shelter_id !== state.profile.id || !["accepted", "declined", "completed"].includes(status)) return Response.json({ error: "봉사 지원과 상태를 확인해 주세요." }, { status: 403 });
-    const { data: row } = await client.from("volunteer_applications").update({ status }).eq("id", id).select("*").single();
-    if (status === "completed") { const labels: Record<string, string> = { cleaning: "깨끗한 하루", photography: "프로필 사진가", transport: "안전 이동", medical: "의료 도움", care: "돌봄 메이트", event: "현장 지원" }; await client.from("volunteer_badges").upsert([{ member_id: application.member_id, kind: "first", label: "첫 봉사" }, { member_id: application.member_id, kind: post.category === "event" ? "care" : post.category, label: labels[post.category] || "돌봄 메이트" }], { onConflict: "member_id,kind", ignoreDuplicates: true }); }
-    return Response.json({ row: row ? map(row) : null });
+    const id = Number(data.id), status = clean(data.status, 20);
+    if (!Number.isSafeInteger(id) || id < 1 || !["accepted", "declined", "completed"].includes(status)) return Response.json({ error: "봉사 신청과 상태를 확인해 주세요." }, { status: 400 });
+    const { data: row, error } = await client.rpc("guardian_volunteer_status", { p_actor: state.user.userId, p_id: id, p_status: status });
+    if (error) return Response.json({ error: error.code === "42501" ? "담당 보호소 신청만 처리할 수 있어요." : error.code === "P0001" ? error.message : "봉사 처리 결과를 확인하지 못했어요. 다시 확인해 주세요." }, { status: error.code === "42501" ? 403 : error.code === "P0001" ? 409 : 503 });
+    return Response.json({ row: map(row) });
   }
   if (action === "need-received") {
     const id = Number(data.id), { data: need } = await client.from("shelter_needs").select("*").eq("id", id).maybeSingle();

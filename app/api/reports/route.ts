@@ -10,9 +10,11 @@ export async function POST(request: Request) {
   if (!targetType || !targetId || reason.length < 5) return Response.json({ error: "신고 사유를 확인해 주세요." }, { status: 400 });
   const severity = /학대|폭행|살해|긴급|사망|유기/.test(reason) ? "critical" : /사기|금전|개인정보|주소|전화/.test(reason) ? "high" : "normal";
   const client = getSupabaseServerClient();
-  await client.from("reports").upsert({ member_id: user.userId, target_type: targetType, target_id: targetId, reason, severity }, { onConflict: "member_id,target_type,target_id", ignoreDuplicates: true });
-  const { count } = await client.from("reports").select("id", { count: "exact", head: true }).eq("target_type", targetType).eq("target_id", targetId);
+  const { error } = await client.from("reports").upsert({ member_id: user.userId, target_type: targetType, target_id: targetId, reason, severity }, { onConflict: "member_id,target_type,target_id", ignoreDuplicates: true });
+  if (error) return Response.json({ error: "신고를 저장하지 못했어요. 다시 시도해 주세요." }, { status: 503 });
+  const { count, error: countError } = await client.from("reports").select("id", { count: "exact", head: true }).eq("target_type", targetType).eq("target_id", targetId);
+  if (countError) return Response.json({ error: "신고는 저장됐지만 처리 상태를 확인하지 못했어요." }, { status: 503 });
   const reportCount = count || 0, hidden = targetType === "post" && reportCount >= 50;
-  if (hidden) await client.from("posts").update({ hidden: true }).eq("id", Number(targetId));
+  if (hidden) { const { error } = await client.from("posts").update({ hidden: true }).eq("id", Number(targetId)); if (error) return Response.json({ error: "신고는 저장됐지만 게시물 숨김을 완료하지 못했어요." }, { status: 503 }); }
   return Response.json({ received: true, hidden, severity, reportCount, reviewPriority: severity === "critical" ? "immediate" : severity === "high" ? "priority" : "standard" }, { status: 201 });
 }

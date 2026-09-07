@@ -24,7 +24,7 @@ test("admin publications reach public detail, stories and the correct applicatio
     }; return query;
   } };
   globalThis.__publicFlowAnimals = [];
-  const server = await createServer({ configFile: false, envFile: false, server: { middlewareMode: true }, appType: "custom", logLevel: "error", plugins: [{
+  const server = await createServer({ configFile: false, envFile: false, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true, hmr: false }, appType: "custom", logLevel: "error", plugins: [{
     name: "public-flow-fixture", enforce: "pre",
     resolveId(source) {
       if (source.endsWith("supabase/server")) return "\0flow-db";

@@ -1,9 +1,12 @@
-import { createSession, hashPassword, safeReturnTo, sessionCookie } from "../../../../lib/app-auth";
+import { createSession, hashPassword, isLocalRequest, safeReturnTo, sessionCookie } from "../../../../lib/app-auth";
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
 import { enforceRateLimit, requestSubject } from "../../../../lib/api-guards";
+import { readJson } from "../../_helpers";
 
 export async function POST(request: Request) {
-  const data = await request.json() as Record<string, unknown>;
+  if (request.headers.get("origin") && request.headers.get("origin") !== new URL(request.url).origin) return Response.json({ error: "요청 주소를 확인해 주세요." }, { status: 403 });
+  const data = await readJson(request);
+  if (!data || typeof data.email !== "string" || typeof data.password !== "string" || typeof data.displayName !== "string" || data.email.length > 254 || data.password.length > 1024) return Response.json({ error: "이름, 이메일과 비밀번호를 확인해 주세요." }, { status: 400 });
   const email = String(data.email || "").trim().toLowerCase();
   const password = String(data.password || "");
   const displayName = String(data.displayName || "").trim().slice(0, 60);
@@ -17,7 +20,10 @@ export async function POST(request: Request) {
   const { error: memberError } = await supabase.from("members").insert({ id: memberId, email, display_name: displayName, verified: false });
   if (memberError) return Response.json({ error: "회원 정보를 저장하지 못했어요." }, { status: 500 });
   const { error: accountError } = await supabase.from("auth_accounts").insert({ member_id: memberId, provider: "email", provider_user_id: email, email, password_hash: passwordResult.hash, password_salt: passwordResult.salt, email_verified: false });
-  if (accountError) return Response.json({ error: "계정을 저장하지 못했어요." }, { status: 500 });
+  if (accountError) {
+    await supabase.from("members").delete().eq("id", memberId);
+    return Response.json({ error: "계정을 저장하지 못했어요." }, { status: 500 });
+  }
   const session = await createSession(undefined, memberId);
-  return Response.json({ ok: true, returnTo: safeReturnTo(String(data.returnTo || "")), emailVerificationRequired: true }, { status: 201, headers: { "set-cookie": sessionCookie(session.token) } });
+  return Response.json({ ok: true, returnTo: safeReturnTo(String(data.returnTo || "")), emailVerificationRequired: true }, { status: 201, headers: { "set-cookie": sessionCookie(session.token, undefined, !isLocalRequest(request)), "cache-control": "no-store" } });
 }

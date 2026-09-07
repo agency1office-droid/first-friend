@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bookmark } from "lucide-react";
 import { useAppFeedback } from "./AppFeedback";
 
@@ -25,11 +25,11 @@ export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteC
   const [known, setKnown] = useState(initialSaved !== undefined);
   const [hydrating, setHydrating] = useState(initialSaved === undefined);
   const [busy, setBusy] = useState(false);
+  const lock = useRef(false);
   const feedback = useAppFeedback();
   useEffect(() => {
     if (initialSaved !== undefined) {
-      if (!favoriteIds) favoriteIds = new Set();
-      if (initialSaved) favoriteIds.add(animalId); else favoriteIds.delete(animalId);
+      if (favoriteIds) { if (initialSaved) favoriteIds.add(animalId); else favoriteIds.delete(animalId); }
       return;
     }
     let active = true;
@@ -42,14 +42,16 @@ export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteC
   useEffect(() => {
     const sync = (event: Event) => {
       const detail = (event as CustomEvent<{ animalId?: string; saved?: boolean }>).detail;
-      if (detail?.animalId === animalId) setSaved(Boolean(detail.saved));
+      if (detail?.animalId === animalId) { setSaved(Boolean(detail.saved)); setKnown(true); }
     };
     window.addEventListener("ff-favorite-change", sync);
     return () => window.removeEventListener("ff-favorite-change", sync);
   }, [animalId]);
   async function toggle() {
-    if (busy || hydrating) return;
+    if (lock.current || busy || hydrating) return;
+    lock.current = true;
     setBusy(true);
+    try {
     let current = saved;
     if (!known) {
       try {
@@ -59,22 +61,21 @@ export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteC
         setKnown(true);
       } catch {
         feedback.error("스크랩 상태를 확인하지 못했어요. 다시 시도해 주세요.");
-        setBusy(false);
         return;
       }
     }
     const response = await fetch("/api/favorites", { method: current ? "DELETE" : "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ animalId }) });
-    if (response.status === 401) window.location.href = `/login?return_to=${encodeURIComponent(location.pathname)}`;
+    if (response.status === 401) window.location.href = `/login?return_to=${encodeURIComponent(location.pathname + location.search)}`;
     else if (response.ok) {
       const next = !current;
       setSaved(next);
-      if (!favoriteIds) favoriteIds = new Set();
-      if (next) favoriteIds.add(animalId); else favoriteIds.delete(animalId);
+      if (favoriteIds) { if (next) favoriteIds.add(animalId); else favoriteIds.delete(animalId); }
       window.dispatchEvent(new CustomEvent("ff-favorite-change", { detail: { animalId, saved: next } }));
       onFavoriteChange?.(next);
       feedback.success(next ? "관심 친구로 스크랩했어요" : "스크랩에서 삭제했어요", next ? { actionLabel: "목록보기", onAction: () => { location.href = "/mypage/favorites"; } } : undefined);
     } else feedback.error("스크랩을 변경하지 못했어요");
-    setBusy(false);
+    } catch { feedback.error("스크랩을 변경하지 못했어요. 연결을 확인하고 다시 시도해 주세요."); }
+    finally { lock.current = false; setBusy(false); }
   }
   return <button type="button" className={className ? `ff-card-scrap ${className}` : "ff-card-scrap"} aria-pressed={saved} aria-busy={hydrating || busy} aria-label={`${animalName} ${hydrating ? "스크랩 상태 확인 중" : saved ? "스크랩에서 삭제" : "스크랩하기"}`} onClick={toggle} disabled={hydrating || busy}><Bookmark aria-hidden="true" strokeWidth={1.8} fill={saved ? "currentColor" : "none"}/></button>;
 }

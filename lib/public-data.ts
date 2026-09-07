@@ -25,7 +25,6 @@ function formatLostDate(value = "") {
   return `${year}년 ${Number(month)}월 ${Number(day)}일 ${hour >= 12 ? "오후" : "오전"} ${hour % 12 || 12}시${minute}`;
 }
 
-const animalDetailCache = new Map<string, { at: number; data: Animal | null }>();
 let lossCache: { at: number; data: LostAnimal[] } | undefined;
 let shelterCache: { at: number; data: Shelter[] } | undefined;
 const animalContacts = new Map<string, { shelter: string; phone: string; address: string; organization: string }>();
@@ -181,12 +180,9 @@ export async function getAnimalById(id: string) {
     life: [],
     matchReason: "",
   } satisfies Animal;
-  const cached = animalDetailCache.get(id);
-  if (cached && Date.now() - cached.at < CACHE_MS) return cached.data || undefined;
   // 공공 API 전체 검색은 상세 요청에서 실행하지 않습니다. 동기화 작업이
   // public_animals를 채우고, 상세페이지는 그 결과만 빠르게 읽어야 합니다.
   const animal = fallbackAnimals.find((item) => item.id === id);
-  animalDetailCache.set(id, { at: Date.now(), data: animal || null });
   if (!animal) return undefined;
   const images = Array.from(new Set(animal.images || [animal.image].filter(Boolean)));
   return { ...animal, image: images[0] || animal.image, images };

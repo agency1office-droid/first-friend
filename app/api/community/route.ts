@@ -1,6 +1,6 @@
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { getSupabaseServerClient } from "../../../lib/supabase/server";
-import { clean } from "../_helpers";
+import { clean, ownedUploadKey } from "../_helpers";
 
 type Row = Record<string, unknown>;
 const mapDrawing = (row: Row) => ({ ...row, memberId: row.member_id, imageKey: row.image_key, tagsJson: row.tags_json, createdAt: row.created_at });
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   const data = await request.json() as Record<string, unknown>, action = clean(data.action, 40);
   if (action === "drawing-create") {
     const title = clean(data.title, 100), description = clean(data.description, 500), imageKey = clean(data.imageKey, 300), species = clean(data.species, 10), tags = Array.isArray(data.tags) ? data.tags.map(value => clean(value, 30)).filter(Boolean).slice(0, 12) : [];
-    if (!title || !imageKey || !["cat", "dog"].includes(species)) return Response.json({ error: "그림·제목·동물 종류를 확인해 주세요." }, { status: 400 });
+    if (!title || !ownedUploadKey(imageKey, user.userId, ["public-media", "uploads"]) || !["cat", "dog"].includes(species)) return Response.json({ error: "본인이 올린 그림·제목·동물 종류를 확인해 주세요." }, { status: 400 });
     const { data: post, error } = await client.from("drawing_posts").insert({ member_id: user.userId, title, description, image_key: imageKey, species, tags_json: JSON.stringify(tags) }).select("*").single();
     if (error) return Response.json({ error: "그림 게시물을 저장하지 못했어요." }, { status: 500 });
     return Response.json({ post: mapDrawing(post) }, { status: 201 });
@@ -80,6 +80,11 @@ export async function POST(request: Request) {
     if (!["shelter", "admin"].includes(String(member.role))) return Response.json({ error: "입점 보호소 담당자만 최종 이름을 채택할 수 있어요." }, { status: 403 });
     const suggestionId = Number(data.suggestionId), { data: suggestion } = await client.from("animal_name_suggestions").select("*").eq("id", suggestionId).maybeSingle();
     if (!suggestion) return Response.json({ error: "이름 제안을 찾을 수 없어요." }, { status: 404 });
+    if (member.role !== "admin") {
+      const { data: profile } = await client.from("shelter_profiles").select("public_id").eq("owner_id", user.userId).eq("verified", true).maybeSingle();
+      const { data: animal } = await client.from("public_animals").select("shelter_id").eq("id", suggestion.animal_id).maybeSingle();
+      if (!profile || !animal || animal.shelter_id !== profile.public_id) return Response.json({ error: "담당 보호소 동물의 이름만 선택할 수 있어요." }, { status: 403 });
+    }
     await client.from("animal_name_suggestions").update({ selected: false }).eq("animal_id", suggestion.animal_id);
     const { data: row } = await client.from("animal_name_suggestions").update({ selected: true }).eq("id", suggestionId).select("*").single();
     return Response.json({ suggestion: row });

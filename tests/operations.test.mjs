@@ -3,7 +3,7 @@ import test from "node:test";
 import { createServer } from "vite";
 
 test("operations permissions, real pagination and guarded approval", async t => {
-  const server = await createServer({ configFile: false, envFile: false, server: { middlewareMode: true }, appType: "custom", logLevel: "error", plugins: [{
+  const server = await createServer({ configFile: false, envFile: false, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true, hmr: false }, appType: "custom", logLevel: "error", plugins: [{
     name: "test-auth", enforce: "pre",
     resolveId(source) { if (source.endsWith("chatgpt-auth")) return "\0test-auth"; },
     load(id) { if (id === "\0test-auth") return "export async function getChatGPTUser(){return globalThis.__operationsUser;}"; },

@@ -1,5 +1,5 @@
 import { getChatGPTUser } from "../../chatgpt-auth";
-import { clean } from "../_helpers";
+import { clean, ownedUploadKey } from "../_helpers";
 import { getSupabaseServerClient } from "../../../lib/supabase/server";
 
 const privatePattern = /(01[016789][\s.-]?\d{3,4}[\s.-]?\d{4})|(\d{1,4}번지)|(\d+동\s*\d+호)|(급식소|밥자리|포획\s*장소).{0,20}(앞|뒤|옆|골목|번지|출구)/;
@@ -12,6 +12,7 @@ export async function POST(request: Request) {
   const supabase = getSupabaseServerClient();
   const data = await request.json() as Record<string, unknown>;
   const category = clean(data.category, 20) as "adoption" | "neighborhood" | "memory" | "rescue", title = clean(data.title, 80), body = clean(data.body), imageKey = clean(data.imageKey, 240);
+  if (imageKey && !ownedUploadKey(imageKey, user.userId, ["public-media", "uploads"])) return Response.json({ error: "본인이 올린 사진만 사용할 수 있어요." }, { status: 400 });
   if (!["adoption", "neighborhood", "memory", "rescue"].includes(category) || !title || body.length < 20) return Response.json({ error: "공개할 이야기를 확인해 주세요." }, { status: 400 });
   if (privatePattern.test(`${title} ${body}`)) return Response.json({ error: "전화번호·번지·동호수처럼 정확한 개인정보는 공개 글에 적을 수 없어요." }, { status: 400 });
   if (category === "adoption") { const [{ data: completed }, { data: external }] = await Promise.all([supabase.from("applications").select("id").eq("member_id", user.userId).eq("status", "completed").limit(1), supabase.from("adoption_certifications").select("id").eq("member_id", user.userId).eq("status", "verified").limit(1)]); if (!completed?.[0] && !external?.[0]) return Response.json({ error: "인계가 완료됐거나 외부 보호소 인증을 받은 입양자만 입양 일기를 쓸 수 있어요." }, { status: 403 }); }

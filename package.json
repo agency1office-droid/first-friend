@@ -10,7 +10,7 @@
     "build": "vinext build",
     "vercel-build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs tests/api-guards.test.mjs tests/oauth.test.mjs tests/operations.test.mjs tests/operations-public-flows.test.mjs",
+    "test": "npm run build && node --test tests/rendered-html.test.mjs tests/api-guards.test.mjs tests/oauth.test.mjs tests/operations.test.mjs tests/operations-public-flows.test.mjs tests/security-auth.test.mjs tests/security-business.test.mjs tests/site-flows.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .vercel --ignore-pattern seed-design",
     "db:generate": "drizzle-kit generate"
   },
@@ -65,7 +65,7 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.59.3",
     "vinext": "1.0.0-beta.2",
-    "vite": "8.0.13",
+    "vite": "8.0.16",
     "wrangler": "4.92.0"
   },
   "type": "module"

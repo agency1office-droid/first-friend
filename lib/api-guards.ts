@@ -31,7 +31,7 @@ export async function enforceRateLimit(scope: string, subject: string, windowSec
     return Boolean(data);
   } catch (error) {
     logError("api.rate_limit_unavailable", error, { scope });
-    return true;
+    return false;
   }
 }
 
@@ -54,7 +54,7 @@ export async function beginIdempotentRequest(scope: string, subject: string, req
   if (readError) throw readError;
   if (!existing) return { kind: "none" };
   if (new Date(existing.expires_at).getTime() <= Date.now()) {
-    await client.from("api_idempotency_keys").delete().eq("scope", scope).eq("subject_hash", subjectHash).eq("idempotency_key", key);
+    await client.from("api_idempotency_keys").delete().eq("scope", scope).eq("subject_hash", subjectHash).eq("idempotency_key", key).lte("expires_at", new Date().toISOString()).throwOnError();
     return beginIdempotentRequest(scope, subject, request, requestInput);
   }
   if (existing.request_hash !== requestHash) return { kind: "conflict", response: Response.json({ error: "같은 Idempotency-Key에 다른 요청을 보낼 수 없어요." }, { status: 409 }) };

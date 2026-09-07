@@ -10,9 +10,9 @@ export async function GET(request: Request) {
   if (!raw) return new Response("missing url", { status: 400 });
   let source: URL;
   try { source = new URL(raw); } catch { return new Response("invalid url", { status: 400 }); }
-  if (source.protocol !== "https:" || !isAllowedHost(source.hostname)) return new Response("image host is not allowed", { status: 403 });
+  if (source.protocol !== "https:" || !isAllowedHost(source.hostname) || source.username || source.password || source.port) return new Response("image host is not allowed", { status: 403 });
   try {
-    const response = await fetch(source, { cache: "force-cache", signal: AbortSignal.timeout(15000) });
+    const response = await fetch(source, { cache: "force-cache", redirect: "error", signal: AbortSignal.timeout(15000) });
     if (!response.ok) return new Response("image unavailable", { status: 404 });
     const pathname = String(source.pathname || "").toLowerCase();
     const contentType = pathname.endsWith(".png") ? "image/png" : pathname.endsWith(".webp") ? "image/webp" : "image/jpeg";

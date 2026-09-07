@@ -1091,7 +1091,7 @@ test("implements external adoption proof, sanction appeal, and two-sided operato
     assert.match(schema, new RegExp(`export const ${name}`));
   assert.match(certification, /verification_code_hash/);
   assert.match(appeal, /sanction_appeals/);
-  assert.match(appealUpload, /sanction-appeal/);
+  assert.match(appealUpload, /appeal-evidence/);
   assert.match(posts, /adoption_certifications/);
   assert.match(operations, /adoption-certification-status/);
   assert.match(operations, /appeal-status/);

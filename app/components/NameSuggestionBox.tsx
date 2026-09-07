@@ -32,7 +32,7 @@ export function NameSuggestionBox({
   useEffect(() => { void load(); }, [load]);
   async function suggest(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const f = new FormData(e.currentTarget),
+    const formElement=e.currentTarget, f=new FormData(formElement),
       r = await fetch("/api/community", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -48,7 +48,7 @@ export function NameSuggestionBox({
       return;
     }
     if (r.ok) {
-      e.currentTarget.reset();
+      formElement.reset();
       feedback.success("이름을 보호소 후보 목록에 보냈어요");
       load();
     }

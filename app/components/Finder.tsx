@@ -81,8 +81,8 @@ export function Finder({ animals, modeOnly, initialTags = "", resultsOnly = fals
   const [toolSheet, setToolSheet] = useState<"brush" | "eraser" | "fill" | "color" | "save" | null>(null);
   const [uploaded, setUploaded] = useState("");
   const [preview, setPreview] = useState("");
-  const [query, setQuery] = useState(initialTags.split(",")[0] || "");
-  const [species, setSpecies] = useState("전체");
+  const [query, setQuery] = useState("");
+  const [species, setSpecies] = useState(initialTags.split(",").find(tag=>tag==="강아지"||tag==="고양이") || "전체");
   const [drawSpecies, setDrawSpecies] = useState<"강아지" | "고양이" | null>(null);
   const [drawSpeciesConfirmed, setDrawSpeciesConfirmed] = useState(false);
   const [breed, setBreed] = useState("상관 없음");
@@ -440,6 +440,7 @@ export function Finder({ animals, modeOnly, initialTags = "", resultsOnly = fals
       const nextVisualScores = Object.fromEntries(similarityScores);
       setVisualScores(nextVisualScores);
       const result = [...sourceAnimals].sort((a, b) => score(b, visual, sourceAnimals, nextVisualScores[b.id]) - score(a, visual, sourceAnimals, nextVisualScores[a.id]));
+      if (mode === "conditions") { setRanked(result); setMatched(true); return; }
       try {
         const storedAnalysis = visual ? { ...visual, embedding: undefined } : null;
         window.sessionStorage.setItem("ff-drawing-results", JSON.stringify({ ranked: result, available: sourceAnimals, analysis: storedAnalysis }));
@@ -448,12 +449,12 @@ export function Finder({ animals, modeOnly, initialTags = "", resultsOnly = fals
       }
       window.location.assign("/find/draw/results");
     } catch {
-      feedback.error("그림을 분석하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      feedback.error(mode === "conditions" ? "친구를 찾지 못했어요. 연결을 확인하고 다시 시도해 주세요." : "그림을 분석하지 못했어요. 잠시 후 다시 시도해 주세요.");
     } finally { setAnalyzing(false); }
   }
   async function saveSearch() { const response = await fetch("/api/saved-searches", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ name:analysis ? analysis.tags.slice(0,3).join(" · ") : `${species} ${region}`, criteria:{species,breed,coat,age,gender,region,query,tags:analysis?.tags||[]} }) }); if(response.status===401){setSaveState("로그인하면 이 조건과 신규 등록 알림을 저장할 수 있어요.");return;} if(response.ok){setSaveState("");feedback.success("검색 조건과 새 친구 알림을 저장했어요",{actionLabel:"알림관리",onAction:()=>{location.href="/mypage/searches"}})}else feedback.error("검색 조건을 저장하지 못했어요"); }
 
-  const visible = (matched ? ranked : availableAnimals).filter((animal) => !query || `${animal.name} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
+  const visible = (matched ? ranked : availableAnimals).filter((animal) => (mode !== "conditions" || species === "전체" || animal.species === species) && (!query || `${animal.name} ${animal.species} ${animal.breed} ${animal.region} ${animal.traits.join(" ")}`.toLowerCase().includes(query.toLowerCase())));
 
   if (resultsOnly && !resultReady) {
     return <div className="ff-page"><section className="ff-section"><p className="ff-description">찾은 친구를 준비하고 있어요…</p></section></div>;

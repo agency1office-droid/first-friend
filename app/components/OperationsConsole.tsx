@@ -117,7 +117,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
   function reload() { resetList(); setRefresh(value => value + 1); }
   function navigate(changes: Record<string, string>) {
     const params = new URLSearchParams(query);
-    if (changes.resource) for (const key of ["q", "status", "queue", "field", "visibility", "role", "page", "sort"]) params.delete(key);
+    if (changes.resource) for (const key of ["q", "status", "queue", "field", "visibility", "role", "page", "sort", "activity", "species"]) params.delete(key);
     Object.entries(changes).forEach(([key, value]) => value ? params.set(key, value) : params.delete(key));
     const next = params.toString();
     window.history.pushState(null, "", "/operations?" + next);
@@ -173,8 +173,9 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
     <div className={styles.filters}>
       {resource==="members"&&<Filter label="검색 항목" value={new URLSearchParams(query).get("field")||"display_name"} options={["display_name","email","id"].map(value=>({value,label:operationLabels[value]}))} onChange={field=>navigate({field,page:"1"})}/>}
       {resource==="publicAnimals"&&<Filter label="검색 항목" value={new URLSearchParams(query).get("field")||"id"} options={["id","notice_no","name","shelter_name","region","breed"].map(value=>({value,label:operationLabels[value]}))} onChange={field=>navigate({field,page:"1"})}/>}
+      {resource==="publicAnimals"&&<><Filter label="수집 상태" value={new URLSearchParams(query).get("activity")||"all"} options={[{value:"all",label:"전체 기록"},{value:"active",label:"수집 중"},{value:"inactive",label:"수집 종료"}]} onChange={value=>navigate({activity:value==="all"?"":value,page:"1"})}/><Filter label="동물 종류" value={new URLSearchParams(query).get("species")||"all"} options={[{value:"all",label:"전체 종류"},{value:"dog",label:"강아지"},{value:"cat",label:"고양이"}]} onChange={value=>navigate({species:value==="all"?"":value,page:"1"})}/></>}
       {resource==="members"&&<Filter label="회원 역할" value={new URLSearchParams(query).get("role")||"all"} options={[{value:"all",label:"전체 역할"},...["admin","member","shelter","foster","veterinarian"].map(value=>({value,label:value==="admin"?"관리자":display(value)}))]} onChange={value=>navigate({role:value==="all"?"":value,page:"1"})}/>}
-      {config.fields.split(",").includes("hidden")&&<Filter label="공개 여부" value={new URLSearchParams(query).get("visibility")||"all"} options={[{value:"all",label:"전체"},{value:"visible",label:"공개"},{value:"hidden",label:"숨김"}]} onChange={v=>navigate({visibility:v==="all"?"":v,page:"1"})}/>}
+      {config.fields.split(",").includes("hidden")&&<Filter label="공개 여부" value={new URLSearchParams(query).get("visibility")||"all"} options={[{value:"all",label:"전체"},{value:"visible",label:resource==="publicAnimals"?"숨김 아님":"공개"},{value:"hidden",label:"숨김"}]} onChange={v=>navigate({visibility:v==="all"?"":v,page:"1"})}/>}
       {config.statuses.length > 0 && <Filter label="상태" value={queue ? "pending-queue" : status || "all"} options={[{ value: "all", label: "전체 상태" }, ...(config.pending.length?[{value:"pending-queue",label:"처리 대기 전체"}]:[]), ...config.statuses.map(value => ({ value, label: display(value) }))]} onChange={value => navigate({ queue:value==="pending-queue"?"pending":"", status: ["all","pending-queue"].includes(value) ? "" : value, page: "1" })} />}
       <Filter label="정렬" value={sort} options={[{ value: "oldest", label: "오래된 순" }, { value: "newest", label: "최근 순" }]} onChange={value => navigate({ sort: value, page: "1" })} />
     </div></div>
@@ -183,6 +184,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
     {!loading && result?.rows.length === 0 && <Callout tone="neutral" description="조건에 맞는 항목이 없어요. 검색어나 상태를 바꿔 확인해 주세요." />}
     <div className={styles.list}>{result?.rows.map(row => <article key={row.id} className={styles.card} data-selected={selected?.id === row.id}>
       <div className={styles.recordTitle}><h3>{display(row[config.title])}</h3>
+        {resource==="registrations"&&<>{typeof row.image_key==="string"&&row.image_key&&<Image unoptimized src={"/media/"+row.image_key.split("/").map(encodeURIComponent).join("/")} alt={String(row.name)+" 대표 사진"} width={80} height={80} style={{objectFit:"cover"}}/>}<p>{display(row.species)} · {display(row.region)}</p></>}
         {resource==="publicAnimals"&&<><div>{typeof row.image_1==="string"&&/^https?:\/\//.test(row.image_1)&&<Image unoptimized src={row.image_1} alt={String(row.name)+" 사진"} width={80} height={80} style={{objectFit:"cover"}}/>}</div><p>{display(row.breed)} · {display(row.region)} · {display(row.shelter_name)}</p><p>공고번호: {row.notice_no?String(row.notice_no):"다음 수집 후 확인"}</p><p>{display(row.process_state)} · {row.active?"수집 중":"수집 종료"}</p></>}
         {resource==="members"&&<><p>이메일: {typeof row.email==="string"&&row.email.trim()?row.email:"등록된 이메일 없음"}</p><MemberLoginMethods value={row.login_methods}/></>}
         <p>#{row.id}</p></div>
@@ -200,6 +202,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
       <h3>{display(selected[config.title])}</h3>
       {resource==="members"&&<div><Badge tone={selected.role==="admin"?"informative":"neutral"} variant="weak">{selected.role==="admin"?"관리자":display(selected.role)}</Badge></div>}
       <p>대상 번호 {selected.id}</p>
+      {resource==="registrations"&&typeof selected.image_key==="string"&&selected.image_key&&<a href={"/media/"+selected.image_key.split("/").map(encodeURIComponent).join("/")} target="_blank" rel="noreferrer"><Image unoptimized src={"/media/"+selected.image_key.split("/").map(encodeURIComponent).join("/")} alt={String(selected.name)+" 대표 사진 원본"} width={200} height={200} style={{objectFit:"cover"}}/></a>}
       {resource==="publicAnimals"&&<div className={styles.quickViews}>{[selected.image_1,selected.image_2].filter((src,index,all)=>typeof src==="string"&&/^https?:\/\//.test(src)&&all.indexOf(src)===index).map(src=><a key={String(src)} href={String(src)} target="_blank" rel="noreferrer"><Image unoptimized src={String(src)} alt="공공 원본 동물 사진" width={140} height={140} style={{objectFit:"cover"}}/></a>)}</div>}
       {["publicAnimals","registrations"].includes(resource)&&<ActionButton asChild size="small" variant="neutralWeak"><a href={"/friends/"+encodeURIComponent(resource==="registrations"?"direct-"+selected.id:String(selected.id))} target="_blank" rel="noreferrer">공개 페이지 확인</a></ActionButton>}
       <div className={styles.detail}><dl>{Object.entries(selected).filter(([key]) => operationLabels[key] && key !== "evidence_key").map(([key, value]) => <div key={key}><dt>{operationLabels[key]}</dt><dd>{display(value)}</dd></div>)}</dl>

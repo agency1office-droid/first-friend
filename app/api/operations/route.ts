@@ -55,6 +55,9 @@ export async function GET(request: Request) {
     const allowedFields=[config.search,...(resource==="members"?["email","id"]:resource==="publicAnimals"?["name","notice_no","shelter_name","region","breed"]:[])];
     if(!(allowedFields as readonly string[]).includes(field))return Response.json({error:"검색 항목을 확인해 주세요."},{status:400});
     const visibility=params.get("visibility");
+    const activity=params.get("activity"),species=params.get("species");
+    if(activity){if(resource!=="publicAnimals"||!["active","inactive"].includes(activity))return Response.json({error:"수집 상태를 확인해 주세요."},{status:400});query=query.eq("active",activity==="active");}
+    if(species){if(resource!=="publicAnimals"||!["dog","cat"].includes(species))return Response.json({error:"동물 종류를 확인해 주세요."},{status:400});query=query.eq("species",species==="dog"?"강아지":"고양이");}
     if(visibility){if(!config.fields.split(",").includes("hidden")||!["visible","hidden"].includes(visibility))return Response.json({error:"공개 상태를 확인해 주세요."},{status:400});query=query.eq("hidden",visibility==="hidden");}
     const role=params.get("role");
     if(role){if(resource!=="members"||!["member","shelter","foster","veterinarian","admin"].includes(role))return Response.json({error:"역할을 확인해 주세요."},{status:400});query=query.eq("role",role);}

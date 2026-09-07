@@ -83,6 +83,10 @@ test("operations permissions, real pagination and guarded approval", async t => 
     assert.equal(requests.at(-1).params.get("hidden"),"eq.true");
     assert.equal(requests.at(-1).params.get("order"),"updated.asc,id.asc");
     assert.equal((await get("resource=publicAnimals&field=last_seen_sync")).status,400);
+    assert.equal((await get("resource=publicAnimals&activity=inactive&species=cat")).status,200);
+    assert.equal(requests.at(-1).params.get("active"),"eq.false");
+    assert.equal(requests.at(-1).params.get("species"),"eq.고양이");
+    for(const query of ["resource=members&activity=active","resource=publicAnimals&activity=invalid","resource=publicAnimals&species=invalid"])assert.equal((await get(query)).status,400);
     role="shelter";assert.equal((await get("resource=publicAnimals")).status,403);role="admin";
   });
   await t.test("pending queue filters rows and total before pagination and rejects conflicting states", async () => {

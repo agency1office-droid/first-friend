@@ -3,6 +3,7 @@ import { getSupabaseServerClient } from "../../../../lib/supabase/server";
 import { operationResources, type OperationResource } from "../../../../lib/operations";
 import { beginIdempotentRequest, completeIdempotentRequest } from "../../../../lib/api-guards";
 import { safeReturnTo } from "../../../../lib/app-auth";
+import { storyInput } from "../../../../lib/story-input";
 
 export async function POST(request: Request) {
   if (request.headers.get("origin") && request.headers.get("origin") !== new URL(request.url).origin) return Response.json({error:"요청 주소를 확인해 주세요."},{status:403});
@@ -15,6 +16,11 @@ export async function POST(request: Request) {
     const {resource,id,action,value,expected,note}=body;
     if(!Object.hasOwn(operationResources,resource)||typeof action!=="string"||typeof note!=="string"||note.trim().length<2||note.length>500||!value||typeof value!=="object"||Array.isArray(value)) return Response.json({error:"입력 내용을 확인해 주세요."},{status:400});
     const config=operationResources[resource as OperationResource];
+    if(resource==="posts"&&expected?.status!=="published")return Response.json({error:"게시 중인 이야기만 수정할 수 있어요."},{status:400});
+    if(resource==="posts"&&action==="edit"){
+      try{storyInput({...value,category:expected.category,status:"published",imageKeys:expected.image_keys});}
+      catch(error){return Response.json({error:(error as Error).message},{status:400});}
+    }
     if(action!=="create" && (!expected || typeof expected!=="object" || String(expected.id)!==String(id) || config.fields.split(",").some(key=>!Object.hasOwn(expected,key)))) return Response.json({error:"목록을 새로 불러와 주세요."},{status:400});
     if(action==="create" && resource!=="campaigns") return Response.json({error:"지원하지 않는 작성 기능이에요."},{status:400});
     if(resource==="campaigns"&&["create","edit"].includes(action)&& (typeof value.href!=="string"||safeReturnTo(value.href)!==value.href||value.href.length>500))return Response.json({error:"연결할 서비스 내부 주소를 확인해 주세요."},{status:400});

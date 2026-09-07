@@ -1,23 +1,56 @@
-/* eslint-disable @next/next/no-html-link-for-pages */
+/* eslint-disable @next/next/no-img-element */
 "use client";
-
-import { useState } from "react";
-import { ActionButton } from "seed-design/ui/action-button";
-import { TextField, TextFieldInput, TextFieldTextarea } from "seed-design/ui/text-field";
-import { Callout } from "seed-design/ui/callout";
-import { Checkbox } from "seed-design/ui/checkbox";
-import { sanitizeImageFile } from "../../lib/client-image";
-
-export function PostForm() {
-  const [done, setDone] = useState(false), [publicConfirmed, setPublicConfirmed] = useState(false), [error, setError] = useState(""), [imageName, setImageName] = useState("");
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError(""); if (!publicConfirmed) { setError("전체 공개와 개인정보 안내를 확인해 주세요."); return; }
-    const form = new FormData(event.currentTarget); let imageKey = ""; const file = form.get("image");
-    if (file instanceof File && file.size) { const upload = new FormData(); upload.set("file", await sanitizeImageFile(file)); const uploadResponse = await fetch("/api/uploads", { method: "POST", body: upload }); if (uploadResponse.status === 401) { window.location.href = "/login?return_to=%2Fstories%2Fnew"; return; } if (!uploadResponse.ok) { setError((await uploadResponse.json()).error); return; } imageKey = (await uploadResponse.json()).key; }
-    const response = await fetch("/api/posts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ category: form.get("category"), title: form.get("title"), body: form.get("body"), imageKey }) });
-    if (response.status === 401) { window.location.href = "/login?return_to=%2Fstories%2Fnew"; return; }
-    if (response.ok) setDone(true); else setError((await response.json()).error || "공개하지 못했어요.");
-  }
-  if (done) return <div className="ff-result"><h2 className="ff-section-title">이야기를 공개했어요</h2><p className="ff-description" style={{ margin: "8px 0 16px" }}>댓글은 없고 공감과 응원만 받을 수 있어요. 언제든 나의 페이지에서 수정·삭제할 수 있습니다.</p><ActionButton asChild variant="neutralSolid"><a href="/stories">이야기 보기</a></ActionButton></div>;
-  return <form className="ff-form" onSubmit={submit}><Callout tone="warning" title="모든 글은 전체 공개됩니다" description="검색엔진과 공유 미리보기에 나타날 수 있어요. 정확한 위치, 급식 장소, 전화번호, 집 주소는 적지 마세요."/><div className="ff-field"><label htmlFor="category">이야기 종류</label><select className="ff-native-select" id="category" name="category"><option value="memory">오늘의 추억</option><option value="neighborhood">동네 친구</option><option value="adoption">입양 일기 · 인증 입양자</option><option value="rescue">보호 이야기 · 인증 보호자</option></select></div><label className="ff-photo-drop ff-upload-compact" htmlFor="post-image"><span>대표 사진 선택 · 최대 8MB</span><input id="post-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImageName(event.target.files?.[0]?.name || "")}/></label>{imageName && <div className="ff-meta">{imageName}</div>}<TextField label="제목" required maxGraphemeCount={80}><TextFieldInput name="title" required/></TextField><TextField label="이야기" required maxGraphemeCount={4000}><TextFieldTextarea name="body" required minLength={20}/></TextField><Checkbox label="전체 공개와 개인정보·동물 위치 보호 안내를 확인했습니다" checked={publicConfirmed} onCheckedChange={setPublicConfirmed}/>{error && <Callout tone="critical" description={error}/>}<ActionButton size="large" className="ff-action-link">본인 확인 후 공개하기</ActionButton></form>;
+import { useEffect, useRef, useState } from 'react';
+import { ActionButton } from 'seed-design/ui/action-button';
+import { TextField, TextFieldInput, TextFieldTextarea } from 'seed-design/ui/text-field';
+import { Callout } from 'seed-design/ui/callout';
+import { storyCategories, storyImageUrl } from '../../lib/story-input';
+import type { PublicStory } from '../../lib/stories';
+export function PostForm({initial}:{initial?:PublicStory}){
+ const [title,setTitle]=useState(initial?.title||''),[body,setBody]=useState(initial?.body||''),[category,setCategory]=useState(initial?.categoryKey||'memory');
+ const [photos,setPhotos]=useState<string[]>(initial?.imageKeys||[]),[record,setRecord]=useState(initial?{id:initial.postId,revision:initial.revision}:null);
+ const [busy,setBusy]=useState(false),[dirty,setDirty]=useState(false),[error,setError]=useState(''),[lastSaved,setLastSaved]=useState('');
+ const lock=useRef(false),leaving=useRef(false),clientKey=useRef('');
+ useEffect(()=>{const warn=(e:BeforeUnloadEvent)=>{if(!leaving.current&&(dirty||busy)){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[dirty,busy]);
+ function expired(){location.href='/login?return_to='+encodeURIComponent(location.pathname);}
+ async function upload(event:React.ChangeEvent<HTMLInputElement>){
+  const files=Array.from(event.target.files||[]);event.target.value='';
+  if(lock.current||!files.length)return;
+  if(photos.length+files.length>3){setError('사진은 3장까지 올릴 수 있어요.');return;}
+  if(files.some(f=>!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>4*1024*1024)){setError('4MB 이하 JPG·PNG·WEBP 사진을 선택해 주세요.');return;}
+  lock.current=true;setBusy(true);setError('');
+  try{for(const file of files){const form=new FormData();form.set('file',file);const r=await fetch('/api/post-media',{method:'POST',body:form});if(r.status===401){expired();return;}const result=await r.json();if(!r.ok)throw new Error(result.error);setPhotos(previous=>[...previous,result.key]);setDirty(true);}}
+  catch(e){setError(e instanceof Error?e.message:'사진을 올리지 못했어요. 다시 시도해 주세요.');}
+  finally{lock.current=false;setBusy(false);}
+ }
+ async function save(status:'draft'|'published'){
+  if(lock.current)return;
+  lock.current=true;setBusy(true);setError('');clientKey.current ||= crypto.randomUUID();
+  try{
+   const r=await fetch('/api/posts',{method:record?'PUT':'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:record?.id,revision:record?.revision,clientKey:clientKey.current,title,body,category,imageKeys:photos,status})});
+   if(r.status===401){expired();return;}const result=await r.json();if(!r.ok)throw new Error(result.error);
+   setRecord({id:result.post.id,revision:result.post.revision});setDirty(false);
+   history.replaceState(null,'','/stories/manage/'+result.post.id);
+   if(status==='published'){leaving.current=true;location.href='/stories/post-'+result.post.id;return;}
+   setLastSaved(new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){setError(e instanceof Error?e.message:'저장하지 못했어요. 내용은 그대로 있으니 다시 시도해 주세요.');}
+  finally{lock.current=false;setBusy(false);}
+ }
+ function move(index:number,direction:number){setPhotos(previous=>{const next=[...previous];[next[index],next[index+direction]]=[next[index+direction],next[index]];return next;});setDirty(true);}
+ return <form className="ff-board-editor" onSubmit={e=>{e.preventDefault();void save('published');}}>
+  <p className="ff-board-muted">남기고 싶은 순간만 가볍게 나눠요. 사진은 3장까지 올릴 수 있어요.</p>
+  {initial?.hidden&&<Callout tone="warning" description="운영자가 확인 중인 글이에요. 검토 후 수정할 수 있어요."/>}
+  <fieldset disabled={busy||initial?.hidden} className="ff-board-fields">
+   <label className="ff-board-category-label">이야기 종류<select className="ff-native-select" value={category} onChange={e=>{setCategory(e.target.value);setDirty(true);}}>{Object.entries(storyCategories).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>
+   <TextField label="제목" maxGraphemeCount={80} value={title} onValueChange={({slicedValue})=>{setTitle(slicedValue);setDirty(true);}}><TextFieldInput placeholder="어떤 이야기를 나누고 싶나요?"/></TextField>
+   <TextField label="이야기" maxGraphemeCount={2000} value={body} onValueChange={({slicedValue})=>{setBody(slicedValue);setDirty(true);}}><TextFieldTextarea placeholder="함께한 일상이나 기억하고 싶은 순간을 적어 주세요." style={{minHeight:200}}/></TextField>
+   <div className="ff-board-photo-head"><strong>사진 <span>{photos.length}/3</span></strong><label className="ff-board-upload">사진 추가<input aria-label="사진 추가" type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={busy||photos.length>=3} onChange={upload}/></label></div>
+   <div className="ff-board-photo-edit">{photos.map((key,i)=><div key={key}><img src={storyImageUrl(key,true)} alt={'첨부 사진 '+(i+1)}/><span>{i===0?'대표 사진':(i+1)+'번째 사진'}</span><div><ActionButton type="button" size="small" variant="neutralWeak" aria-label={(i+1)+'번째 사진 앞으로'} disabled={i===0} onClick={()=>move(i,-1)}>←</ActionButton><ActionButton type="button" size="small" variant="neutralWeak" aria-label={(i+1)+'번째 사진 뒤로'} disabled={i===photos.length-1} onClick={()=>move(i,1)}>→</ActionButton><ActionButton type="button" size="small" variant="neutralWeak" aria-label={(i+1)+'번째 사진 삭제'} onClick={()=>{setPhotos(v=>v.filter(x=>x!==key));setDirty(true);}}>삭제</ActionButton></div></div>)}</div>
+   <p className="ff-board-muted">사진당 최대 4MB · 위치 정보는 제거하고 크기를 줄여 저장해요.</p>
+  </fieldset>
+  <Callout tone="neutral" description="게시한 글은 누구나 볼 수 있어요. 연락처·정확한 주소·동물의 위치는 빼 주세요. 임시저장한 글은 나만 볼 수 있어요."/>
+  {error&&<div role="alert"><Callout tone="critical" description={error}/></div>}
+  <div className="ff-board-save-status" role="status">{busy?'저장하고 있어요…':lastSaved?lastSaved+' 임시저장됨':dirty?'아직 저장하지 않은 내용이 있어요.':''}</div>
+  <div className="ff-board-editor-actions"><ActionButton type="button" variant="neutralWeak" disabled={busy||initial?.hidden} onClick={()=>save('draft')}>임시저장</ActionButton><ActionButton type="submit" disabled={busy||initial?.hidden}>게시하기</ActionButton></div>
+ </form>;
 }

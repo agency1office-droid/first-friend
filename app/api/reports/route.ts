@@ -3,6 +3,7 @@ import { getSupabaseServerClient } from "../../../lib/supabase/server";
 import { clean } from "../_helpers";
 
 export async function POST(request: Request) {
+  if (request.headers.get("origin") && request.headers.get("origin") !== new URL(request.url).origin) return Response.json({error:"요청 주소를 확인해 주세요."},{status:403});
   const user = await getChatGPTUser();
   if (!user) return Response.json({ error: "본인 확인이 필요합니다." }, { status: 401 });
   const data = await request.json() as Record<string, unknown>;
@@ -10,6 +11,11 @@ export async function POST(request: Request) {
   if (!targetType || !targetId || reason.length < 5) return Response.json({ error: "신고 사유를 확인해 주세요." }, { status: 400 });
   const severity = /학대|폭행|살해|긴급|사망|유기/.test(reason) ? "critical" : /사기|금전|개인정보|주소|전화/.test(reason) ? "high" : "normal";
   const client = getSupabaseServerClient();
+  if (targetType === "post") {
+    const {data:post,error}=await client.from("posts").select("id").eq("id",Number(targetId)).eq("status","published").eq("hidden",false).maybeSingle();
+    if(error)return Response.json({error:"글을 확인하지 못했어요."},{status:503});
+    if(!post)return Response.json({error:"공개 중인 글을 찾지 못했어요."},{status:404});
+  }
   const { error } = await client.from("reports").upsert({ member_id: user.userId, target_type: targetType, target_id: targetId, reason, severity }, { onConflict: "member_id,target_type,target_id", ignoreDuplicates: true });
   if (error) return Response.json({ error: "신고를 저장하지 못했어요. 다시 시도해 주세요." }, { status: 503 });
   const { count, error: countError } = await client.from("reports").select("id", { count: "exact", head: true }).eq("target_type", targetType).eq("target_id", targetId);

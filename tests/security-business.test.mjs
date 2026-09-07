@@ -33,6 +33,7 @@ test("business APIs reject owner privilege escalation and surface database failu
   assert.equal((await favorites.GET()).status, 503);
   assert.equal((await favorites.DELETE(req({ animalId: "123" }))).status, 503);
   const reports = await server.ssrLoadModule("/app/api/reports/route.ts");
+  db.posts = [{id:1,status:"published",hidden:false}];
   failTable = "reports";
   assert.equal((await reports.POST(req({ targetType: "post", targetId: "1", reason: "게시물 신고 사유입니다" }))).status, 503);
 });

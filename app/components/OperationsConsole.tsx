@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import {storyImageUrl} from "../../lib/story-input";
 import { Badge } from "@seed-design/react";
 import { OperationsSyncHistory } from "./OperationsSyncHistory";
 import { IconEnvelopeLine } from "@karrotmarket/react-monochrome-icon";
@@ -204,6 +205,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
     </div>
     {selected && <aside className={styles.detailPanel} ref={detailRef} tabIndex={-1} aria-label={config.label + " 상세 검토"}>
       <div className={styles.heading}><h2>상세 검토</h2><ActionButton size="small" variant="neutralWeak" onClick={() => setSelected(null)}>닫기</ActionButton></div>
+      {resource==="posts"&&Array.isArray(selected.image_keys)&&<div className={styles.quickViews}>{selected.image_keys.map(key=><a key={String(key)} href={storyImageUrl(String(key))} target="_blank" rel="noreferrer"><Image unoptimized src={storyImageUrl(String(key),true)} width={140} height={140} alt="이야기 첨부 사진" style={{objectFit:"cover"}}/></a>)}</div>}
       <h3>{display(selected[config.title])}</h3>
       {resource==="members"&&<div><Badge tone={selected.role==="admin"?"informative":"neutral"} variant="weak">{selected.role==="admin"?"관리자":display(selected.role)}</Badge></div>}
       <p>대상 번호 {selected.id}</p>

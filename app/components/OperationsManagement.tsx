@@ -13,6 +13,7 @@ type Task={label:string;action:string;value?:Record<string,unknown>;fields?:stri
 function tasks(resource:OperationResource,row:OperationRow|null):Task[]{
   if(resource==="campaigns"&&!row)return [{label:"캠페인 작성",action:"create",fields:["title","body","channel","audience","href"]}];
   if(!row)return [];
+  if(resource==="posts"&&row.status!=="published")return [];
   if(resource==="publicAnimals")return [{label:row.hidden?"사이트에 다시 표시":"사이트에서 숨기기",action:"visibility",value:{hidden:!row.hidden},critical:!row.hidden}];
   if(resource==="registrations")return [{label:"동물 정보 수정",action:"edit",fields:["name","species","region","rescue_story","adoption_terms"]}];
   if(resource==="members")return row.role==="admin"?[]:[{label:"회원 정보 수정",action:"profile",fields:["display_name","home_region"]},{label:row.sanctioned?"이용 제한 해제":"이용 제한",action:row.sanctioned?"restore":"suspend",critical:true},{label:"모든 기기 로그아웃",action:"sessions",critical:true}];

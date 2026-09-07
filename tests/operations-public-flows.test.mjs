@@ -6,7 +6,7 @@ test("admin publications reach public detail, stories and the correct applicatio
   const db = {
     direct_animals: [{ id: 7, member_id: "foster-owner", status: "published", name: "등록 친구", species: "강아지", region: "서울", rescue_story: "구조 이야기", health_json: "{}", life_json: "{}", updated_at: "2026-09-07" }],
     animal_media: [],
-    posts: [{ id: 10, title: "운영자가 수정한 제목", body: "실제 게시물", hidden: false, category: "neighborhood", created_at: "2026-09-07" }],
+    posts: [{ id: 10, title: "운영자가 수정한 제목", body: "실제 게시물", status: "published", hidden: false, category: "neighborhood", created_at: "2026-09-07" }],
     post_reactions: [],
     readiness_assessments: [{ id: 1, member_id: "applicant", passed: true, readiness_score: 80, species: "dog" }],
     applications: [],
@@ -17,7 +17,7 @@ test("admin publications reach public detail, stories and the correct applicatio
     const query = {
       select() { return query; }, eq(key, value) { filters.push(row => row[key] === value); return query; },
       in(key, values) { filters.push(row => values.includes(row[key])); return query; },
-      order() { return query; }, limit() { return query; },
+      order() { return query; }, limit() { return query; }, range() { return query; },
       maybeSingle() { single = true; return query; }, single() { single = true; return query; },
       insert(value) { inserted = { id: 1, ...value }; db[table].push(inserted); return query; },
       then(resolve, reject) { const rows = inserted ? [inserted] : (db[table] || []).filter(row => filters.every(filter => filter(row))); return Promise.resolve({ data: single ? rows[0] || null : rows, error: null }).then(resolve, reject); },

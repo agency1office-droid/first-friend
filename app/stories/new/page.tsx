@@ -1,1 +1,8 @@
-import type{Metadata}from"next";import{PostForm}from"../../components/PostForm";export const metadata:Metadata={title:"이야기 쓰기"};export default function NewStory(){return <div className="ff-page"><header className="ff-page-header"><div className="ff-kicker">이야기 쓰기</div><h1 className="ff-title">오늘의 마음을<br/>들려주세요</h1><p className="ff-description">입양 후 기록은 의무가 아니에요. 남기고 싶은 순간만 나눠주세요.</p></header><PostForm/></div>}
+import Link from "next/link";
+import type {Metadata} from 'next';
+import {PostForm} from '../../components/PostForm';
+import {requireChatGPTUser} from '../../chatgpt-auth';
+import '../board.css';
+export const dynamic='force-dynamic';
+export const metadata:Metadata={title:'이야기 쓰기',robots:{index:false,follow:false}};
+export default async function NewStory(){await requireChatGPTUser('/stories/new');return <div className="ff-page ff-board-page"><header className="ff-board-heading"><h1>이야기 쓰기</h1><Link href="/stories/manage">내 글 관리</Link></header><PostForm/></div>;}

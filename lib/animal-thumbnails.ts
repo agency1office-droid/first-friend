@@ -12,7 +12,7 @@ export function thumbnailSource(value: string) {
 export async function createAnimalThumbnail(source: string) {
   const response = await fetch(thumbnailSource(source), { redirect: "error", signal: AbortSignal.timeout(15000) });
   if (!response.ok || !response.body) throw new Error(`원본 사진 응답: ${response.status}`);
-  if (!/^image\/(jpeg|png|webp)(;|$)/i.test(response.headers.get("content-type") || "")) throw new Error("지원하지 않는 사진 형식이에요.");
+  if (!/^(image\/(jpeg|png|webp)|application\/octet-stream)(;|$)/i.test(response.headers.get("content-type") || "")) throw new Error("지원하지 않는 사진 형식이에요.");
   if (Number(response.headers.get("content-length")) > MAX_BYTES) throw new Error("사진이 10MB를 넘어요.");
   const chunks: Uint8Array[] = []; let bytes = 0;
   const reader = response.body.getReader();
@@ -26,7 +26,9 @@ export async function createAnimalThumbnail(source: string) {
   } finally { await reader.cancel(); }
   const { default: sharp } = await import("sharp");
   const input = Buffer.concat(chunks);
-  const buffer = await sharp(input, { limitInputPixels: 40_000_000 }).rotate()
+  const decoded = sharp(input, { limitInputPixels: 40_000_000 });
+  if (!["jpeg", "png", "webp"].includes((await decoded.metadata()).format || "")) throw new Error("지원하지 않는 사진 형식이에요.");
+  const buffer = await decoded.rotate()
     .resize({ width: 480, height: 480, fit: "inside", withoutEnlargement: true })
     .webp({ quality: 78 }).toBuffer();
   return { buffer, originalBytes: bytes, key: `thumb-v1/${createHash("sha256").update(buffer).digest("hex")}.webp` };

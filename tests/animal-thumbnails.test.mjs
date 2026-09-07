@@ -13,6 +13,8 @@ test('thumbnail worker validates sources, shrinks images and protects original U
   globalThis.fetch=async (url,options)=>{assert.equal(url.hostname,'openapi.animal.go.kr');assert.equal(options.redirect,'error');return new Response(input,{headers:{'content-type':'image/jpeg'}});};
   const a=await createAnimalThumbnail('http://openapi.animal.go.kr/test.jpg');
   const b=await createAnimalThumbnail('https://openapi.animal.go.kr/test.jpg');
+  globalThis.fetch=async()=>new Response(input,{headers:{'content-type':'application/octet-stream'}});
+  const binary=await createAnimalThumbnail('https://openapi.animal.go.kr/test.jpg');assert.equal(binary.key,a.key);
   assert.equal(a.key,b.key,'content address is idempotent');
   assert.match(a.key,/^thumb-v1\/[a-f0-9]{64}\.webp$/);
   const meta=await sharp(a.buffer).metadata();assert.equal(meta.width,480);assert.equal(meta.height,360);assert.equal(meta.format,'webp');assert.ok(a.buffer.length<input.length);

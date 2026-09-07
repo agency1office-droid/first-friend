@@ -20,7 +20,8 @@ function tasks(resource:OperationResource,row:OperationRow|null):Task[]{
   if(resource==="shelters")return [{label:"보호소 정보 수정",action:"edit",fields:["name","region","introduction"]}];
   if(resource==="tickets")return [{label:"답변하기",action:"reply",fields:["reply"]},...(["open","closed"].filter(s=>s!==row.status).map(status=>({label:status==="closed"?"문의 종료":"다시 접수",action:"status",value:{status}})))];
   if(resource==="campaigns")return row.status==="draft"?[{label:"초안 수정",action:"edit",fields:["title","body","channel","audience","href"]},{label:"수신 동의 회원 발송 준비",action:"queue"},{label:"캠페인 취소",action:"cancel",critical:true}]:row.status==="queued"?[{label:"다음 10건 발송",action:"dispatch"},{label:"남은 발송 취소",action:"cancel",critical:true}]:[];
-  const statusOptions:Partial<Record<OperationResource,string[]>>={reports:["open","resolved","closed"],volunteers:["open","closed"],volunteerApplications:["accepted","declined","completed"],lost:["active","resolved","closed"],support:["contacted","closed"]};
+  if(resource==="volunteerApplications")return (row.status==="submitted"?["accepted","declined"]:row.status==="accepted"?["completed","declined"]:[]).map(status=>({label:status==="accepted"?"신청 승인":status==="completed"?"봉사 완료":"신청 반려",action:"status",value:{status},critical:status==="declined"}));
+  const statusOptions:Partial<Record<OperationResource,string[]>>={reports:["open","resolved","closed"],volunteers:["open","closed"],lost:["active","resolved","closed"],support:["contacted","closed"]};
   return (statusOptions[resource]||[]).filter(status=>status!==row.status).map(status=>({label:operationLabels[status]||status,action:"status",value:{status},critical:["closed","rejected"].includes(status)}));
 }
 export function OperationsManagement({resource,row,onDone}:{resource:OperationResource;row:OperationRow|null;onDone:()=>void}){

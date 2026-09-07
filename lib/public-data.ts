@@ -25,7 +25,6 @@ function formatLostDate(value = "") {
   return `${year}년 ${Number(month)}월 ${Number(day)}일 ${hour >= 12 ? "오후" : "오전"} ${hour % 12 || 12}시${minute}`;
 }
 
-let animalCache: { at: number; data: Animal[] } | undefined;
 const animalDetailCache = new Map<string, { at: number; data: Animal | null }>();
 let lossCache: { at: number; data: LostAnimal[] } | undefined;
 let shelterCache: { at: number; data: Shelter[] } | undefined;
@@ -94,10 +93,15 @@ function species(item: AbandonedItem) { return item.upKindNm || item.kindFullNm?
 function ageGroup(value = ""): Animal["ageGroup"] { if (value.includes("60일미만")) return "어린 친구"; const born = Number(value.match(/(19|20)\d{2}/)?.[0]); if (!born) return "나이 미상"; return new Date().getFullYear() - born <= 1 ? "어린 친구" : "어른 친구"; }
 function displayName(item: AbandonedItem) { return [item.kindNm || species(item), item.noticeNo?.split("-").at(-1)].filter(Boolean).join(" · "); }
 
-async function mergeDirectAnimals(base: Animal[], limit: number) {
+async function mergeDirectAnimals(base: Animal[], limit: number, id?: number) {
   try {
     const client = getSupabaseServerClient();
-    const [{ data: rows }, { data: media }] = await Promise.all([client.from("direct_animals").select("*").eq("status", "published"), client.from("animal_media").select("*").eq("media_type", "image").order("sort_order")]);
+    let query = client.from("direct_animals").select("*").eq("status", "published");
+    if (id !== undefined) query = query.eq("id", id);
+    const { data: rows, error } = await query;
+    if (error) throw error;
+    const { data: media, error: mediaError } = rows?.length ? await client.from("animal_media").select("*").in("animal_id", rows.map(row => row.id)).eq("media_type", "image").order("sort_order") : { data: [], error: null };
+    if (mediaError) throw mediaError;
     const activeRows = (rows || []).filter(row => !row.reconfirmed_at || Date.now() - new Date(row.reconfirmed_at).getTime() <= 30 * 86400000);
     const direct = activeRows.map(row => { const health = JSON.parse(row.health_json || "{}") as Record<string, string>, life = JSON.parse(row.life_json || "{}") as Record<string, string>, images = (media || []).filter(item => item.animal_id === row.id).map(item => `/media/${item.object_key}`), traits = [life.personality, health.weight, health.neutered].filter(Boolean).slice(0, 3); return { id: `direct-${row.id}`, name: row.name, species: row.species, breed: "직접 등록 · 상담 확인", age: "상담 확인", ageGroup: "어른 친구" as const, sex: "상담 확인", region: row.region, shelter: "개인 임시보호", source: "개인 임시보호 등록", updated: compactDate(row.updated_at), image: images[0] || (row.image_key ? `/media/${row.image_key}` : ""), images, photoCount: images.length, colors: [], traits, summary: row.rescue_story.slice(0, 160), health: [health.vaccination, health.neutered && `중성화 ${health.neutered}`, health.treatment].filter(Boolean), life: [life.personality, life.aloneTime, life.toilet, life.compatibility].filter(Boolean), matchReason: "임시보호자가 등록한 외형·생활 정보를 조건과 비교했어요." } satisfies Animal; });
     return [...direct, ...base].slice(0, limit);
@@ -129,11 +133,18 @@ function mapAnimal(item: AbandonedItem, shelters: Shelter[] = []): Animal | null
 }
 
 export async function getAnimals(limit = 24): Promise<Animal[]> {
-  const supported = (animal: Animal) => /고양이|개|강아지/.test(animal.species) && !/기타/.test(animal.species);
-  if (!key()) return mergeDirectAnimals(fallbackAnimals.filter(supported),limit);
-  if (animalCache && Date.now() - animalCache.at < CACHE_MS) return mergeDirectAnimals(animalCache.data.filter(supported),limit);
-  try { const [items, shelters] = await Promise.all([request<AbandonedItem>(ABANDONED_API, Math.max(limit * 3, 100)), getShelters(1000)]); const data = items.map((item) => mapAnimal(item, shelters)).filter((item): item is Animal => Boolean(item)).filter(supported); if (data.length) animalCache = { at: Date.now(), data }; return mergeDirectAnimals(data.length ? data : fallbackAnimals.filter(supported),limit); }
-  catch { return mergeDirectAnimals(fallbackAnimals.filter(supported),limit); }
+  const safeLimit = Math.min(500, Math.max(1, limit));
+  const { getNearbyAnimalsPage } = await import("./public-animal-store");
+  const items: Animal[] = [];
+  let cursor: string | null = null;
+  try {
+    do {
+      const page = await getNearbyAnimalsPage({ limit: Math.min(50, safeLimit - items.length), cursor, sort: "recent" });
+      items.push(...page.items);
+      cursor = page.nextCursor;
+    } while (cursor && items.length < safeLimit);
+  } catch { /* Never restore an operator-hidden animal through an external feed. */ }
+  return mergeDirectAnimals(items, safeLimit);
 }
 
 export async function getAnimalsWithPhotoCounts(limit = 24): Promise<Animal[]> {
@@ -142,6 +153,7 @@ export async function getAnimalsWithPhotoCounts(limit = 24): Promise<Animal[]> {
 }
 
 export async function getAnimalById(id: string) {
+  if (/^direct-\d+$/.test(id)) return (await mergeDirectAnimals([], 1, Number(id.slice(7))))[0];
   const stored = await import("./public-animal-store").then(module => module.getStoredAnimalById(id)).catch(() => undefined);
   if (stored) return stored;
   const lost = await import("./public-animal-store").then(module => module.getStoredLostAnimalById(id)).catch(() => undefined);
@@ -181,6 +193,9 @@ export async function getAnimalById(id: string) {
 }
 
 export async function getAnimalContactById(id: string) {
+  if (id.startsWith("direct-")) return null;
+  const stored = await import("./public-animal-store").then(module => module.getStoredAnimalById(id)).catch(() => undefined);
+  if (stored) return { shelter: stored.shelter, phone: stored.shelterPhone || "", address: stored.shelterAddress?.split(" ").slice(0, 2).join(" ") || "", organization: stored.region };
   if (!key()) return null;
   if (animalContacts.has(id)) return animalContacts.get(id) || null;
   try { const [items, shelters] = await Promise.all([request<AbandonedItem>(ABANDONED_API, 100), getShelters(1000)]); items.forEach((item) => mapAnimal(item, shelters)); return animalContacts.get(id) || null; } catch { return null; }

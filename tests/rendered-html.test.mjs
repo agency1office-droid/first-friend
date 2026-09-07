@@ -1033,7 +1033,8 @@ test("enforces guardian ownership and correct moderation targets", async () => {
   assert.match(compactOperations, /current\.guardian_id!==auth\.user\.userId/);
   assert.match(operations, /account-sanction-target/);
   assert.match(compactOperations, /member_id/);
-  assert.match(application, /guardian_id:null/);
+  assert.match(application, /guardian_id:guardian/);
+  assert.doesNotMatch(application, /guardian_id:null/);
   assert.match(schema, /guardianId:\s*text\("guardian_id"\)/);
 });
 

@@ -48,11 +48,7 @@ const regionCenters: Record<string, [number, number]> = {
   서울: [37.5665, 126.978], 부산: [35.1796, 129.0756], 대구: [35.8714, 128.6014], 인천: [37.4563, 126.7052], 광주: [35.1595, 126.8526], 대전: [36.3504, 127.3845], 울산: [35.5384, 129.3114], 세종: [36.4801, 127.289], 경기: [37.275, 127.009], 강원: [37.8854, 127.7298], 충북: [36.6357, 127.4917], 충남: [36.6588, 126.6728], 전북: [35.8202, 127.1089], 전남: [34.8161, 126.4629], 경북: [36.5759, 128.5056], 경남: [35.2383, 128.6924], 제주: [33.4996, 126.5312],
 };
 
-let activeAnimalsCache: { at: number; rows: StoredAnimal[] } | null = null;
 let activeAnimalsInFlight: Promise<StoredAnimal[]> | null = null;
-const ACTIVE_ANIMALS_CACHE_MS = 60 * 1000;
-const STORED_DETAIL_CACHE_MS = 60 * 1000;
-const storedAnimalDetailCache = new Map<string, { at: number; data?: Animal }>();
 const LIST_ANIMAL_COLUMNS = "id,name,species,breed,up_kind_cd,kind_cd,age,age_group,sex,region,shelter_id,shelter_name,shelter_address,shelter_phone,shelter_lat,shelter_lng,approximate_shelter_location,updated,updated_at,image_1,image_2,colors_json,traits_json,summary,health_json,life_json,match_reason,process_state,active,last_seen_sync,synced_at,size_group,has_multiple_photos,has_exact_location,color_search,public_phase";
 type SyncStateRow = { lastCompletedAt?: string | null; last_completed_at?: string | null };
 
@@ -391,8 +387,6 @@ async function writeAnimals(rows: AnimalRecord[]) {
     const { error } = await getSupabaseServerClient().from("public_animals").upsert(group, { onConflict: "id" });
     if (error) throw error;
   }
-  activeAnimalsCache = null;
-  for (const row of rows) storedAnimalDetailCache.delete(String(row.id));
 }
 
 async function compactExpiredAnimals(supabase: ReturnType<typeof getSupabaseServerClient>, now: string) {
@@ -429,8 +423,6 @@ async function compactExpiredAnimals(supabase: ReturnType<typeof getSupabaseServ
     }).in("id", retained.map(row => String(row.id)));
     if (compactError) throw compactError;
   }
-  activeAnimalsCache = null;
-  for (const row of expired) storedAnimalDetailCache.delete(String(row.id));
   return { deleted: deletable.length, compacted: retained.length };
 }
 
@@ -502,13 +494,11 @@ function decodeSearchCursor(cursor: string | null | undefined): SearchCursor | n
 function encodeSearchCursor(value: SearchCursor) { return Buffer.from(JSON.stringify(value)).toString("base64url"); }
 
 async function activeAnimals() {
-  if (activeAnimalsCache && Date.now() - activeAnimalsCache.at < ACTIVE_ANIMALS_CACHE_MS) return activeAnimalsCache.rows;
   if (activeAnimalsInFlight) return activeAnimalsInFlight;
   activeAnimalsInFlight = (async () => {
     const { data, error } = await getSupabaseServerClient().from("visible_public_animals").select(LIST_ANIMAL_COLUMNS).eq("active", true).order("updated", { ascending: false }).limit(10000);
     if (error) throw error;
     const rows = (data || []).map(row => storedAnimal(row as Record<string, unknown>));
-    activeAnimalsCache = { at: Date.now(), rows };
     return rows;
   })().finally(() => { activeAnimalsInFlight = null; });
   return activeAnimalsInFlight;
@@ -798,19 +788,15 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
 
 export async function getStoredAnimalById(id: string) {
   await ensureTables();
-  const cached = storedAnimalDetailCache.get(id);
-  if (cached && Date.now() - cached.at < STORED_DETAIL_CACHE_MS) return cached.data;
   // 상세페이지는 목록에 필요한 컬럼만 읽습니다. 이미지 검증은 동기화 시점에
   // 끝내고, 사용자가 상세페이지를 열 때 원본 이미지를 다시 다운로드하지 않습니다.
   const { data, error } = await getSupabaseServerClient().from("visible_public_animals").select(LIST_ANIMAL_COLUMNS).eq("id", id).limit(1);
   if (error || !data?.[0]) {
-    storedAnimalDetailCache.set(id, { at: Date.now() });
     return undefined;
   }
   const animal = fromStored(storedAnimal(data[0] as Record<string, unknown>));
   const images = Array.from(new Set(animal.images || [animal.image].filter(Boolean)));
   const result = { ...animal, image: images[0] || animal.image, images, photoCount: images.length };
-  storedAnimalDetailCache.set(id, { at: Date.now(), data: result });
   return result;
 }
 

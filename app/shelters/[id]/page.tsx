@@ -63,14 +63,17 @@ export default async function Page({
   const { id } = await params,
     { tab } = await searchParams,
     publicId = decodeURIComponent(id),
-    shelter = await getCachedShelterById(publicId);
-  if (!shelter) notFound();
+    sourceShelter = await getCachedShelterById(publicId);
+  if (!sourceShelter) notFound();
+  const shelter = { ...sourceShelter };
   const shelterAnimals = await getAnimalsByShelterId(publicId),
-    animals = shelterAnimals.items,
-    region = shelter.address.split(" ").slice(0, 2).join(" ");
+    animals = shelterAnimals.items;
+  let region = shelter.address.split(" ").slice(0, 2).join(" ");
   let profile: Record<string, unknown> | undefined;
   let updates: UpdateRow[] = [], volunteers: VolunteerRow[] = [], needs: NeedRow[] = [];
   try { const client = getSupabaseServerClient(), { data: rawProfile } = await client.from("shelter_profiles").select("*").eq("public_id", publicId).maybeSingle(); if (rawProfile) { profile = { ...rawProfile, publicId: rawProfile.public_id, ownerId: rawProfile.owner_id, createdAt: rawProfile.created_at }; const [{ data: rawUpdates }, { data: rawVolunteers }, { data: rawNeeds }] = await Promise.all([client.from("shelter_updates").select("*").eq("hidden", false).eq("shelter_id", rawProfile.id).order("created_at", { ascending: false }), client.from("volunteer_posts").select("*").eq("status", "open").eq("shelter_id", rawProfile.id).order("created_at", { ascending: false }), client.from("shelter_needs").select("*").eq("shelter_id", rawProfile.id)]); updates = (rawUpdates || []).map(row => ({ ...row, createdAt: row.created_at, authorId: row.author_id })); volunteers = (rawVolunteers || []).map(row => ({ ...row, scheduledAt: row.scheduled_at, shelterId: row.shelter_id, createdAt: row.created_at })); needs = (rawNeeds || []).map(row => ({ ...row, itemName: row.item_name, targetQuantity: row.target_quantity, receivedQuantity: row.received_quantity, unitPrice: row.unit_price })); } } catch { /* 공개 공공데이터 프로필은 계속 표시 */ }
+  if (profile?.name) shelter.name = String(profile.name);
+  if (profile?.region) region = String(profile.region);
   const localDemo = process.env.NODE_ENV !== "production" ? localShelterDemoContent(region) : null,
     realOpenVolunteers = volunteers.filter((item) => item.status === "open"),
     realOpenNeeds = needs.filter((item) => item.status === "needed"),

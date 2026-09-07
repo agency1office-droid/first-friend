@@ -6,7 +6,6 @@ const categoryLabel: Record<string, string> = { adoption: "입양 일기", neigh
 
 export async function getStories(): Promise<PublicStory[]> {
   const fallback=()=>fallbackStories.map((story) => ({ ...story, id: `story-${story.id}`,shares:0,views:0,popularity:story.reactions*5 }));
-  if (typeof process !== "undefined" && process.release?.name === "node") return fallback();
   try {
     const supabase = getSupabaseServerClient();
     const [{ data: rows, error }, { data: reactionRows }] = await Promise.all([

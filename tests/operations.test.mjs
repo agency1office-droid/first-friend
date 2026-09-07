@@ -17,8 +17,9 @@ test("operations permissions, real pagination and guarded approval", async t => 
   const { GET, POST } = await server.ssrLoadModule("/app/api/operations/route.ts");
   const { POST: manage } = await server.ssrLoadModule("/app/api/operations/manage/route.ts");
   const { POST: outreach } = await server.ssrLoadModule("/app/api/operations/outreach/route.ts");
+  const { GET: evidence } = await server.ssrLoadModule("/app/api/operations/evidence/route.ts");
   const { parseOperationQuery } = await server.ssrLoadModule("/lib/operations.ts");
-  let role = "admin", verified = true, failAudit = false;
+  let role = "admin", verified = true, sanctioned = false, failAudit = false;
   const requests = [];
   const db = {
     members: [], auth_accounts: [], contact_preferences: [],
@@ -27,6 +28,7 @@ test("operations permissions, real pagination and guarded approval", async t => 
     direct_animals: [{ id: 1, name: "검토 동물", status: "review", member_id: "owner", created_at: "2026-09-07" }],
     public_animals: [{id:"animal-one",name:"공공 동물",hidden:false,updated:"2026-09-07"}],
     verification_requests: [{ id: 1, requested_role: "admin", member_id: "owner", status: "submitted" }],
+    fundraisers: [{ id: 1, status: "open", title: "모금" }, { id: 2, status: "review", title: "모금 검토" }],
     api_idempotency_keys: [], admin_audit_logs: [],
   };
   t.mock.method(globalThis, "fetch", async (input, options = {}) => {
@@ -35,8 +37,22 @@ test("operations permissions, real pagination and guarded approval", async t => 
     const table = url.pathname.split("/").at(-1);
     const method = options.method || "GET";
     requests.push({ table, method, params: url.searchParams });
-    if (table === "members") return Response.json([{ id: "operator", display_name: "운영 검증", email: "test@example.test", role, verified, sanctioned: false }]);
+    if (table === "members") return Response.json([{ id: "operator", display_name: "운영 검증", email: "test@example.test", role, verified, sanctioned }]);
     if (table === "auth_sessions") return Response.json(db.auth_sessions);
+    if (table === "review_operation") {
+      const args = JSON.parse(options.body);
+      const tableName = { "registration-status": "direct_animals", "verification-status": "verification_requests", "fundraiser-status": "fundraisers" }[args.p_action];
+      const row = db[tableName]?.find(row => row.id === args.p_id);
+      if (!row) return Response.json({ code: "P0002", message: "missing" }, { status: 404 });
+      if (row.status !== args.p_expected || row.status === args.p_status) return Response.json({ code: "40001", message: "stale" }, { status: 409 });
+      if (args.p_action === "verification-status" && (!row.evidence_key || !["shelter","foster","veterinarian"].includes(row.requested_role))) return Response.json({ code: "P0001", message: "invalid role" }, { status: 400 });
+      if (args.p_action === "verification-status" && row.member_id === "operator" && args.p_status === "verified") return Response.json({ code: "42501", message: "admin protection" }, { status: 403 });
+      if (args.p_action === "fundraiser-status" && !((row.status === "review" && ["open","rejected"].includes(args.p_status)) || (row.status === "open" && args.p_status === "settled"))) return Response.json({ code: "P0001", message: "invalid transition" }, { status: 400 });
+      if (failAudit) return Response.json({ code: "XX000", message: "audit unavailable" }, { status: 500 });
+      row.status = args.p_status;
+      db.admin_audit_logs.push({ action: "operation:" + args.p_action, after_json: JSON.stringify({ note: args.p_note }) });
+      return Response.json(row);
+    }
     assert.ok(Object.hasOwn(db, table), "Unexpected table " + table);
     const matches = row => [...url.searchParams].every(([key, value]) => value.startsWith("eq.") ? String(row[key]) === value.slice(3) : value.startsWith("in.(") ? value.slice(4,-1).split(",").includes(String(row[key])) : true);
     let rows = db[table].filter(matches);
@@ -115,6 +131,23 @@ test("operations permissions, real pagination and guarded approval", async t => 
   await t.test("cannot grant administrator via role certification", async () => {
     assert.equal((await post({ action: "verification-status", id: 1, status: "verified", expectedStatus: "submitted", note: "역할 인증" })).status, 400);
   });
+  await t.test("cannot demote an administrator through an older certification request", async () => {
+    db.verification_requests.push({ id: 2, requested_role: "shelter", member_id: "operator", status: "submitted", evidence_key: "private-evidence/operator/proof" });
+    assert.equal((await post({ action: "verification-status", id: 2, status: "verified", expectedStatus: "submitted", note: "증빙 심사" })).status, 403);
+    assert.equal(db.verification_requests[1].status, "submitted");
+  });
+  await t.test("fundraiser completion follows approval and cannot skip review", async () => {
+    assert.equal((await post({ action: "fundraiser-status", id: 1, status: "settled", expectedStatus: "open", note: "모금 종료" })).status, 200);
+    assert.equal(db.fundraisers[0].status, "settled");
+    assert.equal((await post({ action: "fundraiser-status", id: 2, status: "settled", expectedStatus: "review", note: "잘못된 종료" })).status, 400);
+    assert.equal(db.fundraisers[1].status, "review");
+  });
+  await t.test("private review evidence rejects sanctioned operators and ordinary members", async () => {
+    const req = () => new Request("https://www.firstfriend.me/api/operations/evidence?key=private-evidence/proof");
+    sanctioned = true; assert.equal((await evidence(req())).status, 403);
+    sanctioned = false; role = "member"; assert.equal((await evidence(req())).status, 403);
+    role = "admin";
+  });
   await t.test("concurrent reviewers cannot approve the same version twice", async () => {
     db.direct_animals.push({ id: 2, name: "동시 검토", status: "review" });
     const before = db.admin_audit_logs.length;
@@ -122,12 +155,13 @@ test("operations permissions, real pagination and guarded approval", async t => 
     assert.deepEqual(responses.map(response => response.status).sort(), [200, 409]);
     assert.equal(db.admin_audit_logs.length, before + 1);
   });
-  await t.test("partial failure is visible and same request stays blocked", async () => {
+  await t.test("review audit failure rolls back the mutation and returns an error", async () => {
     failAudit = true;
     const key = crypto.randomUUID(), close = { ...approval, status: "closed", expectedStatus: "published" };
     assert.equal((await post(close, key)).status, 503);
-    assert.equal((await post(close, key)).status, 409);
-    assert.equal(db.direct_animals[0].status, "closed");
+    assert.equal((await post(close, key)).status, 503);
+    assert.equal(db.direct_animals[0].status, "published");
+    failAudit = false;
   });
   await t.test("built operations page renders SEED controls only for operators", async () => {
     const { default: worker } = await import("../dist/server/index.js");

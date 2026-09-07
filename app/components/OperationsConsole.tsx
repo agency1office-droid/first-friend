@@ -35,6 +35,7 @@ function choices(resource: OperationResource, row: OperationRow, role: string): 
     { label: "해결 기록", action: "return-status", status: "resolved" }];
   if (role !== "admin") return [];
   if (resource === "registrations") return status === "review" ? [{ label: "공개 승인", action: "registration-status", status: "published" }, { label: "반려", action: "registration-status", status: "closed", critical: true }] : status === "published" ? [{ label: "공개 종료", action: "registration-status", status: "closed", critical: true }] : [];
+  if (resource === "fundraisers" && status === "open") return [{ label: "모금 종료 기록", action: "fundraiser-status", status: "settled", critical: true }];
   const reviewActions = { verifications: "verification-status", certifications: "adoption-certification-status", appeals: "appeal-status", fundraisers: "fundraiser-status" };
   if (resource in reviewActions && ["submitted", "review"].includes(status)) return [
     { label: "승인", action: reviewActions[resource as keyof typeof reviewActions], status: resource === "appeals" ? "accepted" : resource === "fundraisers" ? "open" : "verified" },
@@ -105,14 +106,14 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
   }, []);
   useEffect(() => {
     const controller = new AbortController();
-    if(new URLSearchParams(query).get("view")==="overview")return () => controller.abort();
+    if(new URLSearchParams(query).get("view")==="overview" && role==="admin")return () => controller.abort();
     fetch("/api/operations?" + query, { signal: controller.signal, cache: "no-store" })
       .then(async response => { const body = await response.json(); if (!response.ok) throw new Error(body.error || "목록을 불러오지 못했어요."); return body; })
       .then(setResult)
       .catch(error => { if (!controller.signal.aborted) setError(error.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [query, refresh]);
+  }, [query, refresh, role]);
   function resetList() { setLoading(true); setError(""); setResult(null); setSelected(null); }
   function reload() { resetList(); setRefresh(value => value + 1); }
   function navigate(changes: Record<string, string>) {
@@ -156,6 +157,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
     {role==="admin"&&resource==="campaigns"&&<OperationsManagement resource={resource} row={null} onDone={reload}/>}
     <p>목록에서 항목을 선택하고, 내용을 검토한 뒤 처리해 주세요.</p>
     {resource==="publicAnimals"&&<Callout tone="informative" description="공공 원본의 동물 정보와 수집이 종료된 기록을 조회해요. 숨김은 우리 사이트에만 적용되며 다음 수집에도 유지돼요. 기존 공개 화면 캐시는 잠시 남을 수 있어요. 공고번호는 다음 수집부터 채워져요."/>}
+    {resource==="shelterNeeds"&&<Callout tone="informative" description="보호소가 등록한 필요 물품과 수령 현황을 조회해요. 수량 변경과 수령 확인은 해당 보호소의 관리 화면에서 진행해요. 예상 단가는 결제 내역이 아니에요."/>}
     {notice && <Callout tone="positive" description={notice} />}
     {error && <Callout tone="critical" description={error} />}
     <div className={styles.reviewLayout} data-has-selection={!!selected}>
@@ -189,7 +191,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
         {resource==="members"&&<><p>이메일: {typeof row.email==="string"&&row.email.trim()?row.email:"등록된 이메일 없음"}</p><MemberLoginMethods value={row.login_methods}/></>}
         <p>#{row.id}</p></div>
       <div>{resource==="members" ? <Badge tone={row.role==="admin"?"informative":"neutral"} variant="weak">{row.role==="admin"?"관리자":display(row.role)}</Badge> : row.status != null && <Badge tone={(config.pending as readonly string[]).includes(String(row.status)) ? "warning" : "neutral"} variant="weak">{display(row.status)}</Badge>}</div>
-      <p>{resource==="members"?<>가입일 (한국 시간)<br />{memberJoinedAt(row.created_at)}</>:resource==="publicAnimals"?<>원본 갱신일<br/>{display(row.updated)}<br/><Badge tone={row.hidden?"warning":"neutral"} variant="weak">{row.hidden?"사이트 숨김":"숨김 아님"}</Badge></>:display(row.created_at)}</p>
+      <p>{resource==="members"?<>가입일 (한국 시간)<br />{memberJoinedAt(row.created_at)}</>:resource==="publicAnimals"?<>원본 갱신일<br/>{display(row.updated)}<br/><Badge tone={row.hidden?"warning":"neutral"} variant="weak">{row.hidden?"사이트 숨김":"숨김 아님"}</Badge></>:resource==="shelterNeeds"?<>수령 {display(row.received_quantity)} / 필요 {display(row.target_quantity)}<br/>보호소 #{display(row.shelter_id)}</>:display(row.created_at)}</p>
       <ActionButton size="small" variant="neutralWeak" aria-label={display(row[config.title]) + " 상세 검토"} onClick={() => { setSelected(row); setChoice(null); setActionError(""); requestAnimationFrame(() => detailRef.current?.focus()); }}>상세 검토</ActionButton>
     </article>)}</div>
     <nav className={styles.heading} aria-label="목록 페이지">
@@ -202,11 +204,12 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
       <h3>{display(selected[config.title])}</h3>
       {resource==="members"&&<div><Badge tone={selected.role==="admin"?"informative":"neutral"} variant="weak">{selected.role==="admin"?"관리자":display(selected.role)}</Badge></div>}
       <p>대상 번호 {selected.id}</p>
-      {resource==="registrations"&&typeof selected.image_key==="string"&&selected.image_key&&<a href={"/media/"+selected.image_key.split("/").map(encodeURIComponent).join("/")} target="_blank" rel="noreferrer"><Image unoptimized src={"/media/"+selected.image_key.split("/").map(encodeURIComponent).join("/")} alt={String(selected.name)+" 대표 사진 원본"} width={200} height={200} style={{objectFit:"cover"}}/></a>}
+      {role==="admin"&&typeof selected.member_id==="string"&&selected.member_id&&<ActionButton size="small" variant="neutralWeak" onClick={()=>navigate({resource:"members",field:"id",q:String(selected.member_id),view:""})}>회원 정보 확인</ActionButton>}
+      {["registrations","drawings","lost"].includes(resource)&&typeof selected.image_key==="string"&&selected.image_key&&<a href={"/media/"+selected.image_key.split("/").map(encodeURIComponent).join("/")} target="_blank" rel="noreferrer"><Image unoptimized src={"/media/"+selected.image_key.split("/").map(encodeURIComponent).join("/")} alt={display(selected[config.title])+" 대표 사진 원본"} width={200} height={200} style={{objectFit:"cover"}}/></a>}
       {resource==="publicAnimals"&&<div className={styles.quickViews}>{[selected.image_1,selected.image_2].filter((src,index,all)=>typeof src==="string"&&/^https?:\/\//.test(src)&&all.indexOf(src)===index).map(src=><a key={String(src)} href={String(src)} target="_blank" rel="noreferrer"><Image unoptimized src={String(src)} alt="공공 원본 동물 사진" width={140} height={140} style={{objectFit:"cover"}}/></a>)}</div>}
       {["publicAnimals","registrations"].includes(resource)&&<ActionButton asChild size="small" variant="neutralWeak"><a href={"/friends/"+encodeURIComponent(resource==="registrations"?"direct-"+selected.id:String(selected.id))} target="_blank" rel="noreferrer">공개 페이지 확인</a></ActionButton>}
       <div className={styles.detail}><dl>{Object.entries(selected).filter(([key]) => operationLabels[key] && key !== "evidence_key").map(([key, value]) => <div key={key}><dt>{operationLabels[key]}</dt><dd>{display(value)}</dd></div>)}</dl>
-      {typeof selected.evidence_key === "string" && <ActionButton asChild variant="neutralWeak"><a href={"/api/operations/evidence?key=" + encodeURIComponent(selected.evidence_key)} target="_blank" rel="noreferrer">증빙 확인</a></ActionButton>}</div>
+      {typeof selected.evidence_key === "string" && selected.evidence_key && <ActionButton asChild variant="neutralWeak"><a href={"/api/operations/evidence?key=" + encodeURIComponent(selected.evidence_key)} target="_blank" rel="noreferrer">증빙 확인</a></ActionButton>}</div>
       <div className={styles.actions}>{choices(resource, selected, role).map(item => <ActionButton key={item.label} variant={item.critical ? "criticalSolid" : "neutralWeak"} onClick={() => choose(item)}>{item.label}</ActionButton>)}</div>
       {role==="admin"&&<OperationsManagement resource={resource} row={selected} onDone={reload}/>}
     </aside>}

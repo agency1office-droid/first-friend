@@ -22,7 +22,7 @@ type AnimalItem = { desertionNo?: string; happenDt?: string; kindFullNm?: string
 type LossItem = { happenDt?: string; happenAddr?: string; happenPlace?: string; orgNm?: string; popfile?: string; kindCd?: string; sexCd?: string; age?: string; colorCd?: string; specialMark?: string; rfidCd?: string };
 type ShelterItem = { careRegNo?: string; careNm?: string; orgNm?: string; careAddr?: string; careTel?: string; weekOprStime?: string; weekOprEtime?: string; closeDay?: string; lat?: string; lng?: string };
 type ShelterRecord = typeof publicShelters.$inferInsert;
-type AnimalRecord = typeof publicAnimals.$inferInsert;
+type AnimalRecord = typeof publicAnimals.$inferInsert & { noticeNo?: string };
 type StoredAnimal = typeof publicAnimals.$inferSelect;
 
 export type AnimalPage = {
@@ -223,7 +223,7 @@ function storedAnimalRow(row: AnimalRecord) {
   const noticeEndAt = isoDate(noticeEnd), processState = row.processState || "";
   const publicPhase = processState.startsWith("종료") ? "ended" : !life.includes("공고 ") ? "unknown" : noticeEndAt && new Date(noticeEndAt).getTime() < Date.now() ? "checking" : "notice";
   return {
-    id: row.id, name: row.name, species: row.species, breed: row.breed, up_kind_cd: row.upKindCd, kind_cd: row.kindCd,
+    id: row.id, notice_no: row.noticeNo || "", name: row.name, species: row.species, breed: row.breed, up_kind_cd: row.upKindCd, kind_cd: row.kindCd,
     age: row.age, age_group: row.ageGroup, sex: row.sex, region: row.region, shelter_id: row.shelterId,
     shelter_name: row.shelterName, shelter_address: row.shelterAddress, shelter_phone: row.shelterPhone,
     shelter_lat: row.shelterLat, shelter_lng: row.shelterLng, approximate_shelter_location: row.approximateShelterLocation,
@@ -348,6 +348,7 @@ function mapAnimal(item: AnimalItem, shelterMap: Map<string, ShelterRecord>, syn
   const notice = item.noticeSdt && item.noticeEdt ? `공고 ${compactDate(item.noticeSdt)} ~ ${compactDate(item.noticeEdt)}` : "공고 기간은 상세 상담에서 확인해 주세요";
   return {
     id: item.desertionNo,
+    noticeNo: item.noticeNo || "",
     name: displayName(item),
     species: animalSpecies.includes("고양이") ? "고양이" : "강아지",
     breed: item.kindNm || "품종 미상",
@@ -504,7 +505,7 @@ async function activeAnimals() {
   if (activeAnimalsCache && Date.now() - activeAnimalsCache.at < ACTIVE_ANIMALS_CACHE_MS) return activeAnimalsCache.rows;
   if (activeAnimalsInFlight) return activeAnimalsInFlight;
   activeAnimalsInFlight = (async () => {
-    const { data, error } = await getSupabaseServerClient().from("public_animals").select(LIST_ANIMAL_COLUMNS).eq("active", true).order("updated", { ascending: false }).limit(10000);
+    const { data, error } = await getSupabaseServerClient().from("visible_public_animals").select(LIST_ANIMAL_COLUMNS).eq("active", true).order("updated", { ascending: false }).limit(10000);
     if (error) throw error;
     const rows = (data || []).map(row => storedAnimal(row as Record<string, unknown>));
     activeAnimalsCache = { at: Date.now(), rows };
@@ -559,7 +560,7 @@ export async function getPublicRawFilterOptions() {
   }
 
   // 마이그레이션이 아직 적용되지 않은 환경에서만 기존 호환 경로를 사용합니다.
-  const { data, error } = await getSupabaseServerClient().from("public_animals")
+  const { data, error } = await getSupabaseServerClient().from("visible_public_animals")
     .select("up_kind_cd,kind_cd,species,breed,sex,age,colors_json,traits_json,process_state,region")
     .eq("active", true).limit(10000);
   if (error) throw error;
@@ -801,7 +802,7 @@ export async function getStoredAnimalById(id: string) {
   if (cached && Date.now() - cached.at < STORED_DETAIL_CACHE_MS) return cached.data;
   // 상세페이지는 목록에 필요한 컬럼만 읽습니다. 이미지 검증은 동기화 시점에
   // 끝내고, 사용자가 상세페이지를 열 때 원본 이미지를 다시 다운로드하지 않습니다.
-  const { data, error } = await getSupabaseServerClient().from("public_animals").select(LIST_ANIMAL_COLUMNS).eq("id", id).limit(1);
+  const { data, error } = await getSupabaseServerClient().from("visible_public_animals").select(LIST_ANIMAL_COLUMNS).eq("id", id).limit(1);
   if (error || !data?.[0]) {
     storedAnimalDetailCache.set(id, { at: Date.now() });
     return undefined;
@@ -818,8 +819,8 @@ export async function getAnimalsByShelterId(shelterId: string, limit = 200) {
     await ensurePublicAnimals();
     const supabase = getSupabaseServerClient(), safeLimit = Math.min(500, Math.max(1, limit));
     const [{ data, error }, { count: total, error: countError }] = await Promise.all([
-      supabase.from("public_animals").select(LIST_ANIMAL_COLUMNS).eq("active", true).eq("shelter_id", shelterId).order("updated", { ascending: false }).limit(safeLimit),
-      supabase.from("public_animals").select("id", { count: "exact", head: true }).eq("active", true).eq("shelter_id", shelterId),
+      supabase.from("visible_public_animals").select(LIST_ANIMAL_COLUMNS).eq("active", true).eq("shelter_id", shelterId).order("updated", { ascending: false }).limit(safeLimit),
+      supabase.from("visible_public_animals").select("id", { count: "exact", head: true }).eq("active", true).eq("shelter_id", shelterId),
     ]);
     if (error || countError) throw error || countError;
     const rows = (data || []).map(row => storedAnimal(row as Record<string, unknown>));

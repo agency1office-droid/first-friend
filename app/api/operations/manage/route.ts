@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       if(typeof value.title!=="string"||value.title.trim().length<2||value.title.length>120||typeof value.body!=="string"||value.body.trim().length<2||value.body.length>5000||!["email","notification"].includes(value.channel)||!["all","member","shelter","foster","veterinarian"].includes(value.audience)||typeof value.href!=="string"||safeReturnTo(value.href)!==value.href) return Response.json({error:"제목·본문·대상·내부 연결 주소를 확인해 주세요."},{status:400});
       const result=await c.rpc("create_outreach",{p_actor:user.userId,p_title:value.title.trim(),p_body:value.body.trim(),p_channel:value.channel,p_audience:value.audience,p_href:value.href,p_note:note}); row=result.data;error=result.error;
     } else {
-      const result=await c.rpc("manage_operation",{p_actor:user.userId,p_resource:resource,p_id:String(id),p_action:action,p_value:value,p_expected:Object.fromEntries(config.fields.split(",").map(key=>[key,expected[key]])),p_note:note});row=result.data;error=result.error;
+      const result=await c.rpc(["publicAnimals","registrations"].includes(resource)?"manage_animal":"manage_operation",{p_actor:user.userId,p_resource:resource,p_id:String(id),p_action:action,p_value:value,p_expected:Object.fromEntries(config.fields.split(",").map(key=>[key,expected[key]])),p_note:note});row=result.data;error=result.error;
     }
     const status=error ? error.code==="42501"?403:error.code==="40001"?409:error.code==="P0002"?404:error.code==="P0001"?400:503 : 200;
     const result=error?{error:status===503?"기능을 준비하지 못했어요. 운영 상태에서 데이터베이스 연결을 확인해 주세요.":error.message}:{row};

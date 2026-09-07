@@ -25,6 +25,7 @@ test("operations permissions, real pagination and guarded approval", async t => 
     auth_sessions: [{ member_id: "operator" }],
     applications: Array.from({ length: 65 }, (_, i) => ({ id: i + 1, guardian_id: i < 30 ? "other" : "operator", animal_id: "dog", status: "submitted", created_at: String(i).padStart(4, "0") })),
     direct_animals: [{ id: 1, name: "검토 동물", status: "review", member_id: "owner", created_at: "2026-09-07" }],
+    public_animals: [{id:"animal-one",name:"공공 동물",hidden:false,updated:"2026-09-07"}],
     verification_requests: [{ id: 1, requested_role: "admin", member_id: "owner", status: "submitted" }],
     api_idempotency_keys: [], admin_audit_logs: [],
   };
@@ -74,6 +75,15 @@ test("operations permissions, real pagination and guarded approval", async t => 
     for (const query of ["resource=__proto__", "page=NaN", "page=-1", "status=wrong", "sort=sql", "q=" + "x".repeat(101)]) assert.throws(() => parseOperationQuery(new URLSearchParams(query)));
     await get("resource=registrations&q=%25_");
     assert.equal(requests.at(-1).params.get("name"), "ilike.%\\%\\_%");
+  });
+  await t.test("public animal management searches the real table and restricts search fields",async()=>{
+    role="admin";
+    assert.equal((await get("resource=publicAnimals&field=shelter_name&q=보호소&visibility=hidden")).status,200);
+    assert.equal(requests.at(-1).table,"public_animals");
+    assert.equal(requests.at(-1).params.get("hidden"),"eq.true");
+    assert.equal(requests.at(-1).params.get("order"),"updated.asc,id.asc");
+    assert.equal((await get("resource=publicAnimals&field=last_seen_sync")).status,400);
+    role="shelter";assert.equal((await get("resource=publicAnimals")).status,403);role="admin";
   });
   await t.test("pending queue filters rows and total before pagination and rejects conflicting states", async () => {
     db.applications.push({id:66,guardian_id:"operator",animal_id:"cat",status:"completed",created_at:"9999"});

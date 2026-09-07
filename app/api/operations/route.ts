@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     if (status) query = query.eq("status", status);
     if (queue === "pending") query = query.in("status", [...config.pending]);
     const field=params.get("field")||config.search;
-    const allowedFields=[config.search,...(resource==="members"?["email","id"]:[])];
+    const allowedFields=[config.search,...(resource==="members"?["email","id"]:resource==="publicAnimals"?["name","notice_no","shelter_name","region","breed"]:[])];
     if(!(allowedFields as readonly string[]).includes(field))return Response.json({error:"검색 항목을 확인해 주세요."},{status:400});
     const visibility=params.get("visibility");
     if(visibility){if(!config.fields.split(",").includes("hidden")||!["visible","hidden"].includes(visibility))return Response.json({error:"공개 상태를 확인해 주세요."},{status:400});query=query.eq("hidden",visibility==="hidden");}
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
       if (/^#[0-9]+$/.test(q)) query = query.eq("id", q.slice(1));
       else query = query.ilike(field, "%" + q.replace(/[\\%_]/g, "\\$&") + "%");
     }
-    const { data, error, count } = await query.order("created_at", { ascending: sort === "oldest" }).order("id", { ascending: sort === "oldest" }).range((page - 1) * pageSize, page * pageSize - 1);
+    const { data, error, count } = await query.order(resource==="publicAnimals"?"updated":"created_at", { ascending: sort === "oldest" }).order("id", { ascending: sort === "oldest" }).range((page - 1) * pageSize, page * pageSize - 1);
     if (error) throw error;
     let rows=(data||[]) as unknown as Row[];
     if(resource==="members"&&rows.length){

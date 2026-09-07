@@ -1,7 +1,8 @@
 export type OperationRow = Record<string, unknown> & { id: string | number };
 export const operationResources = {
+  publicAnimals: { label: "공공 동물 DB", table: "public_animals", title: "name", search: "id", statuses: [], pending: [], fields: "id,name,notice_no,species,breed,age,sex,region,shelter_id,shelter_name,shelter_phone,image_1,image_2,summary,process_state,active,hidden,updated,synced_at" },
   applications: { label: "입양 신청", table: "applications", title: "animal_id", search: "animal_id", statuses: ["submitted", "review", "consulting", "approved", "rejected", "handover", "completed", "withdrawn", "return_support"], pending: ["submitted", "review", "consulting"], fields: "id,animal_id,status,guardian_id,household,care_plan,readiness_score,suitability_score,suitability_json,absence_plan,emergency_plan,created_at" },
-  registrations: { label: "동물 등록", table: "direct_animals", title: "name", search: "name", statuses: ["review", "published", "closed", "draft"], pending: ["review"], fields: "id,name,species,region,status,rescue_story,adoption_terms,created_at" },
+  registrations: { label: "동물 등록", table: "direct_animals", title: "name", search: "name", statuses: ["review", "published", "closed", "draft"], pending: ["review"], fields: "id,name,species,region,status,rescue_story,adoption_terms,image_key,updated_at,created_at" },
   verifications: { label: "보호처·역할 인증", table: "verification_requests", title: "organization", search: "organization", statuses: ["submitted", "verified", "rejected"], pending: ["submitted"], fields: "id,requested_role,organization,status,evidence_key,created_at" },
   reports: { label: "신고 검토", table: "reports", title: "reason", search: "reason", statuses: ["open","resolved","closed"], pending: ["open"], fields: "id,target_type,target_id,reason,severity,status,created_at" },
   returns: { label: "돌봄 위기 도움", table: "return_requests", title: "reason", search: "reason", statuses: ["open", "connected", "resolved"], pending: ["open", "connected"], fields: "id,application_id,reason,urgency,safe_until,status,created_at" },
@@ -30,7 +31,7 @@ export type OperationResource = keyof typeof operationResources;
 // Group by the operator's work, not by database tables (see docs/OPERATIONS_REFERENCES.md).
 export const operationGroups: { label: string; keys: OperationResource[] }[] = [
   { label: "회원·보호소", keys: ["members", "shelters", "verifications"] },
-  { label: "동물·입양", keys: ["registrations", "applications", "certifications", "returns", "lost"] },
+  { label: "동물·입양", keys: ["publicAnimals", "registrations", "applications", "certifications", "returns", "lost"] },
   { label: "커뮤니티", keys: ["posts", "questions", "answers", "drawings", "updates"] },
   { label: "봉사·후원", keys: ["volunteers", "volunteerApplications", "support", "fundraisers", "pledges"] },
   { label: "문의·신고", keys: ["tickets", "reports", "appeals"] },
@@ -38,6 +39,7 @@ export const operationGroups: { label: string; keys: OperationResource[] }[] = [
   { label: "안전과 운영", keys: ["audits"] },
 ];
 export const operationLabels: Record<string, string> = {
+  notice_no:"공고번호", breed:"품종", age:"나이", sex:"성별", summary:"특징", process_state:"공공 원본 상태", updated:"원본 갱신일", synced_at:"마지막 수집", updated_at:"마지막 수정", image_key:"대표 사진 경로",
   login_methods:"연결된 로그인", marketing_email:"이메일 마케팅 동의", marketing_notification:"앱 마케팅 동의",
   declined:"미승인",confirmed:"전달 확인",pledged:"참여 의향",
   email:"이메일", member_id:"회원 번호", owner_id:"담당자 번호", public_id:"공공 보호소 번호", category:"분류", body:"본문", description:"설명", hidden:"숨김", views:"조회수", shares:"공유수", introduction:"소개", scheduled_at:"예정 일시", capacity:"모집 인원", message:"신청 내용", amount:"의향 금액 (결제 아님)", disclosure:"안내 사항", reply:"답변", channel:"발송 수단", audience:"대상", href:"연결 주소", recipient:"수신 주소", campaign_id:"캠페인 번호", provider_id:"발송 접수 번호", error:"확인할 문제", read:"읽음", type:"알림 종류", active:"진행 중", contacting:"연락 중", answered:"답변 완료", intent:"의향 접수", contacted:"연락 확인", queued:"발송 대기", cancelled:"취소", pending:"대기", processing:"처리 중", failed:"실패", skipped:"제외", email_channel:"이메일", all:"수신 동의 회원 전체", notification:"앱 알림", post_id:"게시물 번호", shelter_id:"보호소 번호", question_id:"질문 번호", fundraiser_id:"모금 번호",

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Badge } from "@seed-design/react";
 import { IconEnvelopeLine } from "@karrotmarket/react-monochrome-icon";
 import { siGoogle, siKakaotalk, siNaver } from "simple-icons";
@@ -154,6 +155,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
     {overview?<OperationsOverview onSelect={(key,pending)=>navigate({resource:key,view:"",queue:pending?"pending":""})}/>:<div className={styles.workspace}>
     {role==="admin"&&resource==="campaigns"&&<OperationsManagement resource={resource} row={null} onDone={reload}/>}
     <p>목록에서 항목을 선택하고, 내용을 검토한 뒤 처리해 주세요.</p>
+    {resource==="publicAnimals"&&<Callout tone="informative" description="공공 원본의 동물 정보와 수집이 종료된 기록을 조회해요. 숨김은 우리 사이트에만 적용되며 다음 수집에도 유지돼요. 기존 공개 화면 캐시는 잠시 남을 수 있어요. 공고번호는 다음 수집부터 채워져요."/>}
     {notice && <Callout tone="positive" description={notice} />}
     {error && <Callout tone="critical" description={error} />}
     <div className={styles.reviewLayout} data-has-selection={!!selected}>
@@ -170,6 +172,7 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
     </form>
     <div className={styles.filters}>
       {resource==="members"&&<Filter label="검색 항목" value={new URLSearchParams(query).get("field")||"display_name"} options={["display_name","email","id"].map(value=>({value,label:operationLabels[value]}))} onChange={field=>navigate({field,page:"1"})}/>}
+      {resource==="publicAnimals"&&<Filter label="검색 항목" value={new URLSearchParams(query).get("field")||"id"} options={["id","notice_no","name","shelter_name","region","breed"].map(value=>({value,label:operationLabels[value]}))} onChange={field=>navigate({field,page:"1"})}/>}
       {resource==="members"&&<Filter label="회원 역할" value={new URLSearchParams(query).get("role")||"all"} options={[{value:"all",label:"전체 역할"},...["admin","member","shelter","foster","veterinarian"].map(value=>({value,label:value==="admin"?"관리자":display(value)}))]} onChange={value=>navigate({role:value==="all"?"":value,page:"1"})}/>}
       {config.fields.split(",").includes("hidden")&&<Filter label="공개 여부" value={new URLSearchParams(query).get("visibility")||"all"} options={[{value:"all",label:"전체"},{value:"visible",label:"공개"},{value:"hidden",label:"숨김"}]} onChange={v=>navigate({visibility:v==="all"?"":v,page:"1"})}/>}
       {config.statuses.length > 0 && <Filter label="상태" value={queue ? "pending-queue" : status || "all"} options={[{ value: "all", label: "전체 상태" }, ...(config.pending.length?[{value:"pending-queue",label:"처리 대기 전체"}]:[]), ...config.statuses.map(value => ({ value, label: display(value) }))]} onChange={value => navigate({ queue:value==="pending-queue"?"pending":"", status: ["all","pending-queue"].includes(value) ? "" : value, page: "1" })} />}
@@ -180,10 +183,11 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
     {!loading && result?.rows.length === 0 && <Callout tone="neutral" description="조건에 맞는 항목이 없어요. 검색어나 상태를 바꿔 확인해 주세요." />}
     <div className={styles.list}>{result?.rows.map(row => <article key={row.id} className={styles.card} data-selected={selected?.id === row.id}>
       <div className={styles.recordTitle}><h3>{display(row[config.title])}</h3>
+        {resource==="publicAnimals"&&<><div>{typeof row.image_1==="string"&&/^https?:\/\//.test(row.image_1)&&<Image unoptimized src={row.image_1} alt={String(row.name)+" 사진"} width={80} height={80} style={{objectFit:"cover"}}/>}</div><p>{display(row.breed)} · {display(row.region)} · {display(row.shelter_name)}</p><p>공고번호: {row.notice_no?String(row.notice_no):"다음 수집 후 확인"}</p><p>{display(row.process_state)} · {row.active?"수집 중":"수집 종료"}</p></>}
         {resource==="members"&&<><p>이메일: {typeof row.email==="string"&&row.email.trim()?row.email:"등록된 이메일 없음"}</p><MemberLoginMethods value={row.login_methods}/></>}
         <p>#{row.id}</p></div>
       <div>{resource==="members" ? <Badge tone={row.role==="admin"?"informative":"neutral"} variant="weak">{row.role==="admin"?"관리자":display(row.role)}</Badge> : row.status != null && <Badge tone={(config.pending as readonly string[]).includes(String(row.status)) ? "warning" : "neutral"} variant="weak">{display(row.status)}</Badge>}</div>
-      <p>{resource==="members"?<>가입일 (한국 시간)<br />{memberJoinedAt(row.created_at)}</>:display(row.created_at)}</p>
+      <p>{resource==="members"?<>가입일 (한국 시간)<br />{memberJoinedAt(row.created_at)}</>:resource==="publicAnimals"?<>원본 갱신일<br/>{display(row.updated)}<br/><Badge tone={row.hidden?"warning":"neutral"} variant="weak">{row.hidden?"사이트 숨김":"숨김 아님"}</Badge></>:display(row.created_at)}</p>
       <ActionButton size="small" variant="neutralWeak" aria-label={display(row[config.title]) + " 상세 검토"} onClick={() => { setSelected(row); setChoice(null); setActionError(""); requestAnimationFrame(() => detailRef.current?.focus()); }}>상세 검토</ActionButton>
     </article>)}</div>
     <nav className={styles.heading} aria-label="목록 페이지">
@@ -196,6 +200,8 @@ export function OperationsConsole({ role, initialQuery }: { role: string; initia
       <h3>{display(selected[config.title])}</h3>
       {resource==="members"&&<div><Badge tone={selected.role==="admin"?"informative":"neutral"} variant="weak">{selected.role==="admin"?"관리자":display(selected.role)}</Badge></div>}
       <p>대상 번호 {selected.id}</p>
+      {resource==="publicAnimals"&&<div className={styles.quickViews}>{[selected.image_1,selected.image_2].filter((src,index,all)=>typeof src==="string"&&/^https?:\/\//.test(src)&&all.indexOf(src)===index).map(src=><a key={String(src)} href={String(src)} target="_blank" rel="noreferrer"><Image unoptimized src={String(src)} alt="공공 원본 동물 사진" width={140} height={140} style={{objectFit:"cover"}}/></a>)}</div>}
+      {["publicAnimals","registrations"].includes(resource)&&<ActionButton asChild size="small" variant="neutralWeak"><a href={"/friends/"+encodeURIComponent(resource==="registrations"?"direct-"+selected.id:String(selected.id))} target="_blank" rel="noreferrer">공개 페이지 확인</a></ActionButton>}
       <div className={styles.detail}><dl>{Object.entries(selected).filter(([key]) => operationLabels[key] && key !== "evidence_key").map(([key, value]) => <div key={key}><dt>{operationLabels[key]}</dt><dd>{display(value)}</dd></div>)}</dl>
       {typeof selected.evidence_key === "string" && <ActionButton asChild variant="neutralWeak"><a href={"/api/operations/evidence?key=" + encodeURIComponent(selected.evidence_key)} target="_blank" rel="noreferrer">증빙 확인</a></ActionButton>}</div>
       <div className={styles.actions}>{choices(resource, selected, role).map(item => <ActionButton key={item.label} variant={item.critical ? "criticalSolid" : "neutralWeak"} onClick={() => choose(item)}>{item.label}</ActionButton>)}</div>

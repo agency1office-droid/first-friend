@@ -280,7 +280,7 @@ img { display: block; max-width: 100%; }
 .ff-animal-grid-main .ff-animal-row-shelter { display: block; margin-top: 10px; }
 .ff-animal-grid-main .ff-animal-name { overflow-wrap: anywhere; }
 .ff-animal-grid .ff-animal-card-photo { contain-intrinsic-size: auto 200px; }
-.ff-animal-photo-link { display: block; overflow: hidden; border: 1px solid var(--seed-color-stroke-neutral-weak); border-radius: var(--seed-radius-r3); color: inherit; text-decoration: none; }
+.ff-animal-photo-link { display: block; overflow: hidden; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: var(--seed-radius-r3); color: inherit; text-decoration: none; }
 .ff-animal-card-photo .ff-animal-image { display: block; height: 100%; }
 .ff-animal-card-photo .ff-animal-image-wrap { border-radius: 0; }
 .ff-animal-photo-status.ff-detail-gallery-status { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: var(--seed-dimension-x1); min-height: 44px; padding: var(--seed-dimension-x2) var(--seed-dimension-x3); border-bottom: 0; font-size: var(--seed-font-size-t2); line-height: var(--seed-line-height-t2); word-break: keep-all; }

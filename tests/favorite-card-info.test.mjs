@@ -34,6 +34,10 @@ test("saved cards show only photo, name and status while preserving other card l
   const saved = renderToStaticMarkup(createElement(FavoriteAnimalGrid, { animals: [animal] }));
   for (const value of ["진도견 · 00169", "보호자 확인 공고 중", 'src="/dog.jpg"', 'href="/friends/saved-dog"', "ff-animal-photo-caption", "ff-animal-photo-status", "스크랩"]) assert.ok(saved.includes(value), value);
   assert.doesNotMatch(saved, /ff-animal-info|ff-card-photo-count|청조동물병원|연제구|7\.2km|2023년생|수컷|기존 태그|공공데이터/);
+  assert.match(saved, /ff-detail-gallery-status ff-public-status-notice ff-animal-photo-status/);
+  assert.match(saved, /ff-detail-status-day/);
+  assert.ok(saved.indexOf("ff-animal-photo-caption") < saved.indexOf("ff-animal-photo-status"), "name stays on photo above the full-width status footer");
+  assert.doesNotMatch(saved, /seed-badge__root/, "photo card uses the detail status strip instead of a solid badge");
   assert.doesNotMatch(saved, /<a[^>]*>[\s\S]*<button[\s\S]*<\/a>/, "scrap button stays outside the detail link");
   for (const value of ["청조동물병원", "연제구", "7.2km", "2023년생", "ff-card-photo-count"]) assert.ok(home.includes(value), value);
   assert.match(render({}), /기존 태그/);

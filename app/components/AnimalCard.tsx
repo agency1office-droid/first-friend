@@ -7,7 +7,7 @@ import type { Animal } from "../../lib/data";
 import { FavoriteButton } from "./FavoriteButton";
 import { IconPicture2StackedLine } from "@karrotmarket/react-monochrome-icon";
 import { formatDistance } from "../../lib/geo";
-import { getAnimalPublicStatus } from "../../lib/animal-public-status";
+import { getAnimalPublicStatus, getNoticeDaysRemaining } from "../../lib/animal-public-status";
 import { Badge } from "seed-design/ui/badge";
 import { AnimalThumbnail } from "./AnimalThumbnail";
 
@@ -33,8 +33,11 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
     <Link prefetch={false} className="ff-animal-photo-link" href={animalHref} aria-label={`${animal.name}, ${publicStatus.cardLabel}, 상세 보기`}>
       <div className="ff-animal-image-wrap">
         <AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail onUnavailable={() => setImageUnavailable(true)}/>
-        <Badge className="ff-animal-photo-status" tone={publicStatus.tone} variant="solid">{publicStatus.cardLabel}</Badge>
         <div className="ff-animal-photo-caption"><div className="ff-animal-photo-name">{animal.name}</div></div>
+      </div>
+      <div className={`ff-detail-gallery-status ff-public-status-${publicStatus.phase} ff-animal-photo-status`}>
+        {publicStatus.phase === "notice" && getNoticeDaysRemaining(publicStatus.notice) !== null && <span className="ff-detail-status-day">D-{getNoticeDaysRemaining(publicStatus.notice)}</span>}
+        <strong>{publicStatus.cardLabel}</strong>
       </div>
     </Link>
     <FavoriteButton animalId={animal.id} animalName={animal.name} initialSaved={initialSaved} onFavoriteChange={onFavoriteChange}/>

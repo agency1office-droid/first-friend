@@ -34,10 +34,10 @@ export function HomeTopbar() {
     async function hydrate() {
       await Promise.resolve();
       const local = savedLocations();
-      const manualLocal = local.filter((row) => row.source !== "ip" && !/^[A-Za-z\s-]+$/.test(row.label));
-      if (manualLocal.length) {
-        setNeighborhoods(manualLocal);
-        setRegion(manualLocal[0].label);
+      const storedLocal = local.filter((row) => !/^[A-Za-z\s-]+$/.test(row.label));
+      if (storedLocal.length) {
+        setNeighborhoods(storedLocal);
+        setRegion(storedLocal[0].label);
         return;
       }
       const ipLocation = await loadDefaultHomeLocation();

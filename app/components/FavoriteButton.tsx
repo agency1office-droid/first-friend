@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bookmark } from "lucide-react";
 import { useAppFeedback } from "./AppFeedback";
 
@@ -62,6 +63,7 @@ function notify(animalId: string, saved: boolean) {
 }
 
 export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteChange, className }: { animalId: string; animalName: string; initialSaved?: boolean; onFavoriteChange?: (saved: boolean) => void; className?: string }) {
+  const router = useRouter();
   const [saved, setSaved] = useState(initialSaved ?? false);
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
@@ -117,7 +119,7 @@ export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteC
         persistCache();
       }
       onFavoriteChange?.(next);
-      feedback.success(next ? "관심 친구로 스크랩했어요" : "스크랩에서 삭제했어요", next ? { actionLabel: "목록보기", onAction: () => { location.href = "/mypage/favorites"; } } : undefined);
+      feedback.success(next ? "관심 친구로 스크랩했어요" : "스크랩에서 삭제했어요", next ? { actionLabel: "목록보기", onAction: () => { router.push("/mypage/favorites"); } } : undefined);
     } catch {
       const restored = confirmedChanges.get(animalId) ?? favoriteIds?.has(animalId) ?? previous;
       setSaved(restored); notify(animalId, restored);

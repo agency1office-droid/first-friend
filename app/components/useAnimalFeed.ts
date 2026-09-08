@@ -25,7 +25,7 @@ export type AnimalFeedFilters = {
 };
 
 const defaultFilters: AnimalFeedFilters = { sort: "distance", species: "all", publicStatus: "all", breedKeys: [], sex: "all", neutered: "all", color: "all", ageGroup: "all", sizeGroup: "all", ageMin: 0, ageMax: PUBLIC_ANIMAL_AGE_MAX };
-type FeedSnapshot = { url: string; items: Animal[]; total: number; cursor: string | null; syncedAt: string | null; stale: boolean; scrollY: number };
+type FeedSnapshot = { url: string; items: Animal[]; total: number; cursor: string | null; syncedAt: string | null; stale: boolean; scrollY: number; endpoint?: string; fetchedAt?: number };
 const preloadedAnimalImages = new Set<string>();
 const scrollSnapshotKey = `${HOME_FEED_SNAPSHOT_KEY}:scroll`;
 
@@ -36,7 +36,7 @@ function readFeedSnapshot(): FeedSnapshot | null {
     const url = `${window.location.pathname}${window.location.search}`;
     if (!snapshot || snapshot.url !== url || !Array.isArray(snapshot.items)) return null;
     const scroll = JSON.parse(window.sessionStorage.getItem(scrollSnapshotKey) || "null") as { url?: string; scrollY?: number } | null;
-    return { url, items: snapshot.items, total: Number(snapshot.total) || 0, cursor: typeof snapshot.cursor === "string" ? snapshot.cursor : null, syncedAt: typeof snapshot.syncedAt === "string" ? snapshot.syncedAt : null, stale: Boolean(snapshot.stale), scrollY: Number(scroll?.url === url ? scroll.scrollY : snapshot.scrollY) || 0 };
+    return { url, items: snapshot.items, total: Number(snapshot.total) || 0, cursor: typeof snapshot.cursor === "string" ? snapshot.cursor : null, syncedAt: typeof snapshot.syncedAt === "string" ? snapshot.syncedAt : null, stale: Boolean(snapshot.stale), scrollY: Number(scroll?.url === url ? scroll.scrollY : snapshot.scrollY) || 0, endpoint: snapshot.endpoint, fetchedAt: snapshot.fetchedAt };
   } catch { return null; }
 }
 
@@ -96,6 +96,9 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   const [filtersReady, setFiltersReady] = useState(false);
   const [userEngaged, setUserEngaged] = useState(false);
   const requestId = useRef(0);
+  const firstRefresh = useRef(true);
+  const fetchedAt = useRef(0);
+  const fetchedEndpoint = useRef("");
   const prefetchedPage = useRef<Promise<Record<string, unknown> | null> | null>(null);
   const prefetchedUrl = useRef<string | null>(null);
   const loadMoreController = useRef<AbortController | null>(null);
@@ -114,6 +117,8 @@ export function useAnimalFeed(initialPage: AnimalPage) {
       }, 1200);
       setItems(snapshot.items); setTotal(snapshot.total); setCursor(snapshot.cursor);
       setSyncedAt(snapshot.syncedAt); setStale(snapshot.stale);
+      fetchedAt.current = snapshot.fetchedAt || 0;
+      fetchedEndpoint.current = snapshot.endpoint || "";
     };
     const restoreBfcacheScroll = (scrollY: number) => {
       let attempts = 0;
@@ -249,7 +254,12 @@ export function useAnimalFeed(initialPage: AnimalPage) {
 
   useEffect(() => {
     if (!ready || !filtersReady) return;
-    if (restorePending.current) { restorePending.current = false; return; }
+    if (firstRefresh.current) {
+      firstRefresh.current = false;
+      const snapshot = readFeedSnapshot();
+      // Reuse only this public list, with the same location and filters.
+      if (snapshot?.items.length && snapshot.endpoint === endpoint() && snapshot.fetchedAt && Date.now() - snapshot.fetchedAt < 30_000) return;
+    }
     const current = ++requestId.current;
     const controller = new AbortController();
     async function refresh() {
@@ -261,6 +271,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
         const body = await response.json();
         if (!response.ok) throw new Error(body.error || "친구 목록을 불러오지 못했어요.");
         if (current !== requestId.current) return;
+        fetchedAt.current = Date.now(); fetchedEndpoint.current = endpoint();
         setItems(body.items || []); setTotal(body.total || 0); setCursor(body.nextCursor || null);
         setSyncedAt(body.syncedAt || null); setStale(Boolean(body.stale));
       })
@@ -321,10 +332,12 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     try {
       const url = `${window.location.pathname}${window.location.search}`;
       const save = (scrollY = window.scrollY) => {
+        // Client navigation may already have reset the next page's scroll.
+        if (`${window.location.pathname}${window.location.search}` !== url) return;
         try { window.sessionStorage.setItem(scrollSnapshotKey, JSON.stringify({ url, scrollY })); } catch { /* Browsing still works when storage is full. */ }
       };
       const current = readFeedSnapshot();
-      window.sessionStorage.setItem(HOME_FEED_SNAPSHOT_KEY, JSON.stringify({ url, items, total, cursor, syncedAt, stale, scrollY: current?.scrollY || 0 } satisfies FeedSnapshot));
+      window.sessionStorage.setItem(HOME_FEED_SNAPSHOT_KEY, JSON.stringify({ url, items, total, cursor, syncedAt, stale, scrollY: current?.scrollY || 0, endpoint: fetchedEndpoint.current, fetchedAt: fetchedAt.current } satisfies FeedSnapshot));
       save(Number(current?.scrollY) || window.scrollY);
       let saveTimer: number | null = null;
       const onScroll = () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { SnackbarAvoidOverlap } from "seed-design/ui/snackbar";
 import { IconHouseFill,IconHouseLine,IconBookmarkFill,IconBookmarkLine,IconPersonCircleFill,IconPersonCircleLine,IconArticleFill,IconArticleLine,IconHandWaveFill,IconHandWaveLine } from "@karrotmarket/react-monochrome-icon";
 
@@ -15,5 +16,5 @@ const items=[
 export function BottomNav(){
   const path=usePathname();
   const activeHref=items.filter(({href})=>href==="/"?path===href:path===href||path.startsWith(`${href}/`)).sort((a,b)=>b.href.length-a.href.length)[0]?.href;
-  return <SnackbarAvoidOverlap><nav className="ff-bottom-nav" aria-label="주요 메뉴">{items.map(({href,label,Icon,Active})=>{const active=activeHref===href,Symbol=active?Active:Icon;return <a className="ff-nav-item" data-active={active} aria-current={active?"page":undefined} aria-label={label} href={href} key={href}><Symbol aria-hidden/><span>{label}</span></a>})}</nav></SnackbarAvoidOverlap>
+  return <SnackbarAvoidOverlap><nav className="ff-bottom-nav" aria-label="주요 메뉴">{items.map(({href,label,Icon,Active})=>{const active=activeHref===href,Symbol=active?Active:Icon;return <Link prefetch={false} className="ff-nav-item" data-active={active} aria-current={active?"page":undefined} aria-label={label} href={href} key={href}><Symbol aria-hidden/><span>{label}</span></Link>})}</nav></SnackbarAvoidOverlap>
 }

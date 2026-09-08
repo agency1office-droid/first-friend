@@ -119,6 +119,8 @@ test("favorites streams its loading boundary before the session database respond
   let timeout;
   try {
     await Promise.race([first, new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error("Page waited for the database instead of streaming loading UI")), 3000); })]);
+    assert.match(html, /class="ff-visually-hidden" role="status"/);
+    assert.doesNotMatch(html, /class="ff-loading-indicator"/, "page transitions have no visible spinner");
   } finally { clearTimeout(timeout); release(); }
   while (true) { const chunk = await reader.read(); if (chunk.done) break; html += decoder.decode(chunk.value, { stream: true }); }
   assert.match(html, /로그인 후 스크랩한 친구/);

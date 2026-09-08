@@ -275,6 +275,11 @@ img { display: block; max-width: 100%; }
 .ff-animal-grid-main .ff-animal-info { min-width: 0; }
 .ff-animal-grid-main .ff-animal-row-shelter { display: block; margin-top: 10px; }
 .ff-animal-grid-main .ff-animal-name { overflow-wrap: anywhere; }
+.ff-animal-grid-main .ff-animal-home-info { display: grid; gap: var(--seed-dimension-x1); }
+.ff-animal-grid-main .ff-animal-home-info .ff-animal-row-shelter { margin-top: 0; }
+.ff-animal-home-info .ff-animal-name { margin-top: 0; font-size: 18px; line-height: 25px; }
+.ff-animal-home-info .ff-meta { margin-top: 0; font-size: 13px; line-height: 19px; }
+.ff-animal-home-info .ff-animal-row-public-status { max-width: 100%; }
 .ff-animal-image-wrap { position: relative; border-radius: 12px; overflow: hidden; background: var(--seed-color-bg-neutral-weak); }
 .ff-animal-card:not(.ff-animal-card-row) .ff-animal-image-wrap { aspect-ratio: 1 / .9; }
 .ff-card-photo-count { position: absolute; right: 8px; bottom: 8px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 7px; color: #fff; background: rgba(0,0,0,.58); backdrop-filter: blur(6px); }

@@ -8,11 +8,28 @@ import {IconHeartFill,IconHeartLine} from "@karrotmarket/react-monochrome-icon";
 import {useAppFeedback} from "./AppFeedback";
 export function StoryActions({postId,initialCount=0,initialActive=false}:{postId:number;initialCount?:number;initialActive?:boolean}){
  const [active,setActive]=useState(initialActive),[count,setCount]=useState(initialCount),[open,setOpen]=useState(false),[reason,setReason]=useState(""),[reported,setReported]=useState(false),[pending,setPending]=useState(false),[error,setError]=useState("");
- const lock=useRef(false),reportLock=useRef(false),feedback=useAppFeedback();
+ const reaction=useRef({desired:initialActive,confirmed:initialActive,count:initialCount,version:0,running:false}),reportLock=useRef(false),feedback=useAppFeedback();
+ function showReaction(){
+ const state=reaction.current;setActive(state.desired);setCount(Math.max(0,state.count+Number(state.desired)-Number(state.confirmed)));
+ }
  async function react(){
- if(lock.current)return;lock.current=true;const previous=active,previousCount=count;setActive(!previous);setCount(Math.max(0,count+(previous?-1:1)));
- try{const r=await fetch("/api/reactions",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({postId,active:!previous})});if(r.status===401){location.href="/login?return_to="+encodeURIComponent(location.pathname);throw new Error("ログイン");}const result=await r.json();if(!r.ok)throw new Error(result.error);setActive(result.active);setCount(result.count);}
- catch{setActive(previous);setCount(previousCount);feedback.error("응원을 저장하지 못했어요. 다시 시도해 주세요.");}finally{lock.current=false;}
+ const state=reaction.current;state.desired=!state.desired;state.version++;showReaction();
+ if(state.running)return;state.running=true;
+ try{
+ while(true){
+ const version=state.version,target=state.desired;
+ try{
+ const r=await fetch("/api/reactions",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({postId,active:target})});
+ if(r.status===401){state.desired=state.confirmed;showReaction();location.href="/login?return_to="+encodeURIComponent(location.pathname);return;}
+ const result=await r.json();if(!r.ok)throw new Error(result.error);
+ state.confirmed=result.active;state.count=result.count;
+ }catch{
+ if(version===state.version){state.desired=state.confirmed;feedback.error("응원을 저장하지 못했어요. 다시 시도해 주세요.");}
+ }
+ // An older response may update the count, but must never replace a newer click.
+ showReaction();if(version===state.version)break;
+ }
+ }finally{state.running=false;}
  }
  async function report(){
  if(reportLock.current||reason.trim().length<10)return;reportLock.current=true;setPending(true);setError("");

@@ -70,4 +70,18 @@ test('favorite mutation recovers after network failure and does not mistake one 
   reads[0](Response.json({favorites:[{animalId:'cached'}]}));reads[1](Response.json({favorites:[]}));await new Promise(resolve=>setTimeout(resolve,0));
   assert.equal(render({animalId:'cached',animalName:'cached'}).props['aria-pressed'],true,'late GET cannot undo a confirmed POST');
   assert.deepEqual(JSON.parse(storage.get('ff-favorites-display-v1')),{scope:'account-b',ids:['cached']});
+  let confirmRemoval, deletes=0, removed=0;
+  const confirmationProps={animalId:'cached',animalName:'cached',onRemoveRequest:remove=>{confirmRemoval=remove;},onFavoriteChange:saved=>{if(!saved)removed++;}};
+  globalThis.fetch=async(_url,options)=>{assert.equal(options.method,'DELETE');deletes++;return Response.json({saved:false});};
+  await render(confirmationProps).props.onClick();
+  assert.equal(deletes,0,'opening confirmation does not delete');
+  assert.equal(render(confirmationProps).props['aria-pressed'],true,'saved state stays unchanged while deciding');
+  confirmRemoval=null;
+  assert.equal(removed,0,'dismissing confirmation keeps the card');
+  await render(confirmationProps).props.onClick();
+  const firstRemoval=confirmRemoval();
+  await confirmRemoval();
+  await firstRemoval;
+  assert.equal(deletes,1,'confirming twice only sends one DELETE');
+  assert.equal(removed,1,'confirmed success removes the card');
 });

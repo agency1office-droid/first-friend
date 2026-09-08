@@ -63,7 +63,7 @@ function notify(animalId: string, saved: boolean) {
   window.dispatchEvent(new CustomEvent("ff-favorite-change", { detail: { animalId, saved } }));
 }
 
-export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteChange, className }: { animalId: string; animalName: string; initialSaved?: boolean; onFavoriteChange?: (saved: boolean) => void; className?: string }) {
+export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteChange, onRemoveRequest, className }: { animalId: string; animalName: string; initialSaved?: boolean; onFavoriteChange?: (saved: boolean) => void; onRemoveRequest?: (remove: () => Promise<void>) => void; className?: string }) {
   const router = useRouter();
   const [saved, setSaved] = useState(initialSaved ?? false);
   const [busy, setBusy] = useState(false);
@@ -142,5 +142,9 @@ export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteC
       lock.current = false; setBusy(false);
     }
   }
-  return <button type="button" className={className ? "ff-card-scrap " + className : "ff-card-scrap"} aria-pressed={saved} aria-busy={busy} aria-disabled={busy} aria-label={animalName + " " + (saved ? "스크랩에서 삭제" : "스크랩하기")} onClick={toggle}><Bookmark aria-hidden="true" strokeWidth={1.8} fill={saved ? "currentColor" : "none"}/></button>;
+  return <button type="button" className={className ? "ff-card-scrap " + className : "ff-card-scrap"} aria-pressed={saved} aria-busy={busy} aria-disabled={busy} aria-label={animalName + " " + (saved ? "스크랩에서 삭제" : "스크랩하기")} onClick={() => {
+    if (lock.current || pendingChanges.has(animalId)) return;
+    if (saved && onRemoveRequest) return onRemoveRequest(toggle);
+    return toggle();
+  }}><Bookmark aria-hidden="true" strokeWidth={1.8} fill={saved ? "currentColor" : "none"}/></button>;
 }

@@ -10,6 +10,8 @@ import { formatDistance } from "../../lib/geo";
 import { getAnimalPublicStatus, getNoticeDaysRemaining } from "../../lib/animal-public-status";
 import { Badge } from "seed-design/ui/badge";
 import { AnimalThumbnail } from "./AnimalThumbnail";
+import { DialogRoot, DialogContent, DialogFooter } from "seed-design/ui/dialog";
+import { ActionButton } from "seed-design/ui/action-button";
 
 function compactRegion(region: string) {
   const parts = region.trim().split(/\s+/);
@@ -25,6 +27,7 @@ function displayAge(age: string) {
 
 export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,showShelter=true,priority=false }: { animal: Animal;layout?:"grid"|"row"|"photo";initialSaved?:boolean;onFavoriteChange?:(saved:boolean)=>void;showShelter?:boolean;priority?:boolean }) {
   const [imageUnavailable, setImageUnavailable] = useState(false);
+  const [removeScrap, setRemoveScrap] = useState<(() => Promise<void>) | null>(null);
   const publicStatus = getAnimalPublicStatus(animal);
   const animalHref = `/friends/${animal.id}`;
   const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}` : "/shelters";
@@ -40,7 +43,15 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
         <strong>{publicStatus.cardLabel}</strong>
       </div>
     </Link>
-    <FavoriteButton animalId={animal.id} animalName={animal.name} initialSaved={initialSaved} onFavoriteChange={onFavoriteChange}/>
+    <FavoriteButton animalId={animal.id} animalName={animal.name} initialSaved={initialSaved} onFavoriteChange={onFavoriteChange} onRemoveRequest={remove => setRemoveScrap(() => remove)}/>
+    <DialogRoot open={Boolean(removeScrap)} onOpenChange={open => { if (!open) setRemoveScrap(null); }}>
+      <DialogContent title="스크랩을 해제할까요?" description={`${animal.name} 친구가 관심 친구 목록에서 사라져요.`}>
+        <DialogFooter>
+          <ActionButton variant="neutralWeak" onClick={() => setRemoveScrap(null)}>유지하기</ActionButton>
+          <ActionButton variant="neutralSolid" onClick={() => { const remove = removeScrap; setRemoveScrap(null); void remove?.(); }}>해제하기</ActionButton>
+        </DialogFooter>
+      </DialogContent>
+    </DialogRoot>
   </article>;
   const homeInfo = <Link prefetch={false} className="ff-animal-row-animal-link" href={animalHref}>
     <div className="ff-animal-name">{animal.name}</div>

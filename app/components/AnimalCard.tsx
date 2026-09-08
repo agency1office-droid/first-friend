@@ -12,6 +12,7 @@ import { Badge } from "seed-design/ui/badge";
 import { AnimalThumbnail } from "./AnimalThumbnail";
 import { DialogRoot, DialogContent, DialogFooter } from "seed-design/ui/dialog";
 import { ActionButton } from "seed-design/ui/action-button";
+import { Portal } from "@seed-design/react-portal";
 
 function compactRegion(region: string) {
   const parts = region.trim().split(/\s+/);
@@ -45,12 +46,14 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
     </Link>
     <FavoriteButton animalId={animal.id} animalName={animal.name} initialSaved={initialSaved} onFavoriteChange={onFavoriteChange} onRemoveRequest={remove => setRemoveScrap(() => remove)}/>
     <DialogRoot open={Boolean(removeScrap)} onOpenChange={open => { if (!open) setRemoveScrap(null); }}>
+      <Portal>
       <DialogContent title="관심 친구에서 해제할까요?" description={`${animal.name} 친구가 관심 친구 목록에서 사라져요.`}>
         <DialogFooter>
           <ActionButton variant="neutralWeak" onClick={() => setRemoveScrap(null)}>취소</ActionButton>
           <ActionButton variant="neutralSolid" onClick={() => { const remove = removeScrap; setRemoveScrap(null); void remove?.(); }}>해제</ActionButton>
         </DialogFooter>
       </DialogContent>
+      </Portal>
     </DialogRoot>
   </article>;
   const homeInfo = <Link prefetch={false} className="ff-animal-row-animal-link" href={animalHref}>

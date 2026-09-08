@@ -110,6 +110,7 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
 
   useEffect(() => {
     function handlePageKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented) return;
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
       const target = event.target as HTMLElement | null;
       if (target?.closest("input, textarea, select")) return;

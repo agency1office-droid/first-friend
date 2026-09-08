@@ -92,6 +92,8 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   const [filters, setFilters] = useState<AnimalFeedFilters>(defaultFilters);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const failedLoadMore = useRef(false);
   const [ready, setReady] = useState(false);
   const [filtersReady, setFiltersReady] = useState(false);
   const [userEngaged, setUserEngaged] = useState(false);
@@ -225,7 +227,9 @@ export function useAnimalFeed(initialPage: AnimalPage) {
 
   useEffect(() => {
     let active = true;
+    let locationVersion = 0;
     const update = async (event?: Event) => {
+      const version = ++locationVersion;
       const detail = (event as CustomEvent<HomeLocation> | undefined)?.detail;
       let next = detail || readHomeLocation();
       // 상단 주소 표시보다 피드가 먼저 마운트될 수 있습니다.
@@ -233,14 +237,14 @@ export function useAnimalFeed(initialPage: AnimalPage) {
       // 거리순 요청이 최신순으로 대체되는 것을 막습니다.
       if (!next && !detail) {
         next = await loadDefaultHomeLocation();
-        if (next && active) {
+        if (next && active && version === locationVersion) {
           try {
             window.localStorage.setItem("ff-ip-location", JSON.stringify(next));
             window.localStorage.setItem("ff-home-location", JSON.stringify(next));
           } catch { /* A blocked browser store must not prevent the feed loading. */ }
         }
       }
-      if (!active) return;
+      if (!active || version !== locationVersion) return;
       setLocation(current => current?.lat === next?.lat && current?.lng === next?.lng && current?.label === next?.label ? current : next);
       let savedRegion = "";
       try { savedRegion = window.localStorage.getItem("ff-home-region") || ""; } catch { /* Use the resolved location. */ }
@@ -261,6 +265,9 @@ export function useAnimalFeed(initialPage: AnimalPage) {
       if (snapshot?.items.length && snapshot.endpoint === endpoint() && snapshot.fetchedAt && Date.now() - snapshot.fetchedAt < 30_000) return;
     }
     const current = ++requestId.current;
+    loadMoreController.current?.abort();
+    loadMoreController.current = null;
+    failedLoadMore.current = false;
     const controller = new AbortController();
     async function refresh() {
       await Promise.resolve();
@@ -280,7 +287,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     }
     void refresh();
     return () => controller.abort();
-  }, [endpoint, filtersReady, ready]);
+  }, [endpoint, filtersReady, ready, refreshVersion]);
 
   // 현재 페이지를 읽는 동안 다음 페이지를 미리 받아 두어 사용자가
   // sentinel에 도착했을 때 네트워크 대기 시간을 없앱니다.
@@ -360,9 +367,8 @@ export function useAnimalFeed(initialPage: AnimalPage) {
   }, [cursor, filtersReady, items, ready, stale, syncedAt, total]);
 
   const loadMore = useCallback(async () => {
-    if (!cursor || loading) return;
+    if (!cursor || loading || loadMoreController.current) return;
     const requestVersion = requestId.current;
-    loadMoreController.current?.abort();
     const controller = new AbortController();
     loadMoreController.current = controller;
     setLoading(true); setError("");
@@ -371,6 +377,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
       const prefetched = prefetchedUrl.current === url && prefetchedPage.current
         ? await prefetchedPage.current
         : null;
+      if (requestVersion !== requestId.current || controller.signal.aborted) return;
       const body = prefetched ?? await fetch(url, { signal: controller.signal }).then(async response => {
           const result = await response.json() as Record<string, unknown>;
           if (!response.ok) throw new Error(typeof result.error === "string" ? result.error : "다음 친구를 불러오지 못했어요.");
@@ -386,15 +393,24 @@ export function useAnimalFeed(initialPage: AnimalPage) {
       setCursor(typeof body.nextCursor === "string" ? body.nextCursor : null); setTotal(Number(body.total) || total);
       setSyncedAt(typeof body.syncedAt === "string" ? body.syncedAt : syncedAt); setStale(Boolean(body.stale));
     } catch (errorValue) {
-      if (!controller.signal.aborted && requestVersion === requestId.current) setError(errorValue instanceof Error ? errorValue.message : "다음 친구를 불러오지 못했어요.");
+      if (!controller.signal.aborted && requestVersion === requestId.current) {
+        failedLoadMore.current = true;
+        setError(errorValue instanceof Error ? errorValue.message : "다음 친구를 불러오지 못했어요.");
+      }
     } finally {
       if (loadMoreController.current === controller) loadMoreController.current = null;
       if (!controller.signal.aborted && requestVersion === requestId.current) setLoading(false);
     }
   }, [cursor, endpoint, loading, syncedAt, total]);
 
+  const retry = useCallback(() => {
+    if (loading) return;
+    if (failedLoadMore.current) void loadMore();
+    else setRefreshVersion(version => version + 1);
+  }, [loadMore, loading]);
+
   const setFilter = useCallback(<K extends keyof AnimalFeedFilters>(key: K, value: AnimalFeedFilters[K]) => setFilters(current => ({ ...current, [key]: value })), []);
   const resetFilters = useCallback(() => setFilters(defaultFilters), []);
   const activeCount = Number(filters.sort === "recent") + Number(filters.species !== "all") + Number(filters.publicStatus !== "all") + Number(filters.breedKeys.length > 0) + Number(filters.sex !== "all") + Number(filters.neutered !== "all") + Number(filters.color !== "all") + Number(filters.ageGroup !== "all") + Number(filters.sizeGroup !== "all");
-  return { items, total, cursor, syncedAt, stale, location, region, filters, setFilter, resetFilters, activeCount, loading, error, loadMore, isRestoring };
+  return { items, total, cursor, syncedAt, stale, location, region, filters, setFilter, resetFilters, activeCount, loading, error, loadMore, retry, isRestoring };
 }

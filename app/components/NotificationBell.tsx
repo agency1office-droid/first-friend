@@ -3,16 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { IconBellLine } from "@karrotmarket/react-monochrome-icon";
+import { ensureDisplayScope } from "./display-scope";
 
 export function NotificationBell({ home = false }: { home?: boolean }) {
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    if (document.body.dataset.favoriteScope === "guest") return;
     let active = true;
     const load = () => {
-      void fetch("/api/notifications/summary")
-        .then((response) => response.ok ? response.json() : { unread: 0 })
+      void ensureDisplayScope().then(scope => scope === "guest" ? null : fetch("/api/notifications/summary"))
+        .then((response) => response?.ok ? response.json() : { unread: 0 })
         .then((body) => { if (active) setUnread(Number(body.unread) || 0); })
         .catch(() => { if (active) setUnread(0); });
     };

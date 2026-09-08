@@ -1,4 +1,4 @@
-import { createSession, hashPassword, isLocalRequest, safeReturnTo, sessionCookie } from "../../../../lib/app-auth";
+import { createSession, hashPassword, isLocalRequest, safeReturnTo, sessionHeaders } from "../../../../lib/app-auth";
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
 import { enforceRateLimit, requestSubject } from "../../../../lib/api-guards";
 import { readJson } from "../../_helpers";
@@ -25,5 +25,5 @@ export async function POST(request: Request) {
     return Response.json({ error: "계정을 저장하지 못했어요." }, { status: 500 });
   }
   const session = await createSession(undefined, memberId);
-  return Response.json({ ok: true, returnTo: safeReturnTo(String(data.returnTo || "")), emailVerificationRequired: true }, { status: 201, headers: { "set-cookie": sessionCookie(session.token, undefined, !isLocalRequest(request)), "cache-control": "no-store" } });
+  return Response.json({ ok: true, returnTo: safeReturnTo(String(data.returnTo || "")), emailVerificationRequired: true }, { status: 201, headers: await sessionHeaders(session.token, !isLocalRequest(request)) });
 }

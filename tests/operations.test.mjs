@@ -41,7 +41,7 @@ test("operations permissions, real pagination and guarded approval", async t => 
     const method = options.method || "GET";
     requests.push({ table, method, params: url.searchParams });
     if (table === "members") return Response.json([{ id: "operator", display_name: "운영 검증", email: "test@example.test", role, verified, sanctioned }]);
-    if (table === "auth_sessions") return Response.json(db.auth_sessions);
+    if (table === "auth_sessions") return Response.json(db.auth_sessions.map(() => ({ members: { id: "operator", display_name: "운영 검증", email: "test@example.test", role, verified, sanctioned } })));
     if (table === "review_operation") {
       const args = JSON.parse(options.body);
       const tableName = { "registration-status": "direct_animals", "verification-status": "verification_requests", "fundraiser-status": "fundraisers" }[args.p_action];

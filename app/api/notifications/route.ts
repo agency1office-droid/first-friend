@@ -1,7 +1,8 @@
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { getSupabaseServerClient } from "../../../lib/supabase/server";
+import { isSavedSearchCriteria, type SavedSearchCriteria } from "../../../lib/saved-search-criteria";
 
-type Criteria = { species?: string; breed?: string; coat?: string; age?: string; gender?: string; region?: string; query?: string; tags?: string[] };
+type Criteria = SavedSearchCriteria;
 type StoredAnimal = Awaited<ReturnType<typeof import("../../../lib/public-animal-store").getNearbyAnimalsPage>>["items"][number];
 
 function matches(criteria: Criteria, animal: StoredAnimal) {
@@ -36,9 +37,11 @@ export async function GET() {
   const notifications: Array<Record<string, unknown>> = [];
   const matchedSearchIds: number[] = [];
   for (const search of (searches || []).filter(row => row.alerts_enabled)) {
-    let criteria: Criteria;
+    let criteria: unknown;
     try { criteria = JSON.parse(search.criteria_json || "{}"); } catch { continue; }
-    const matched = animals.filter(animal => matches(criteria, animal)).slice(0, 3);
+    if (!isSavedSearchCriteria(criteria)) continue;
+    const validCriteria = criteria;
+    const matched = animals.filter(animal => matches(validCriteria, animal)).slice(0, 3);
     if (!matched.length) continue;
     matchedSearchIds.push(Number(search.id));
     for (const animal of matched) {

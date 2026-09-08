@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bookmark } from "lucide-react";
 import { useAppFeedback } from "./AppFeedback";
+import { ensureDisplayScope, readDisplayScope } from "./display-scope";
 
 const cacheKey = "ff-favorites-display-v1";
 let favoriteIds: Set<string> | null = null;
@@ -17,7 +18,7 @@ const pendingChanges = new Map<string, boolean>();
 
 function readCache(refresh = false) {
   if (typeof document === "undefined") return favoriteIds;
-  const scope = document.body.dataset.favoriteScope || "guest";
+  const scope = readDisplayScope() || "guest";
   if (scope === cacheScope && !refresh) return favoriteIds;
   if (scope !== cacheScope) {
     cacheScope = scope; favoriteIdsRequest = null; checked = false; readGeneration++;
@@ -70,25 +71,32 @@ export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteC
   const feedback = useAppFeedback();
   useEffect(() => {
     let active = true;
+    let useInitialSaved = true;
     const apply = (ids: Set<string> | null) => {
-      if (active) setSaved(pendingChanges.get(animalId) ?? confirmedChanges.get(animalId) ?? initialSaved ?? (ids ? ids.has(animalId) : false));
+      if (active) setSaved(pendingChanges.get(animalId) ?? confirmedChanges.get(animalId) ?? (useInitialSaved ? initialSaved : undefined) ?? (ids ? ids.has(animalId) : false));
     };
-    const cached = readCache();
-    // Restore the display without waiting for a request.
-    void Promise.resolve(cached).then(apply);
-    void loadFavoriteIds().then(apply).catch(() => { /* Keep the last known display; mutations report their own errors. */ });
+    const load = () => {
+      if (!active) return;
+      void Promise.resolve(readCache()).then(apply);
+      void loadFavoriteIds().then(apply).catch(() => {});
+    };
+    // Existing display cookies restore immediately; older sessions migrate once.
+    if (readDisplayScope() || typeof document === "undefined") load();
+    else void ensureDisplayScope().then(load).catch(() => {});
     const sync = (event: Event) => {
       const detail = (event as CustomEvent<{ animalId?: string; saved?: boolean }>).detail;
       if (detail?.animalId === animalId) setSaved(Boolean(detail.saved));
     };
     const restore = (event: PageTransitionEvent) => {
       if (!event.persisted) return;
+      useInitialSaved = false;
       if (restoredEvent !== event) {
         restoredEvent = event; checked = false; favoriteIdsRequest = null; readGeneration++;
-        confirmedChanges.clear(); readCache(true);
+        confirmedChanges.clear();
+        void ensureDisplayScope(true).then(() => { readCache(true); load(); }).catch(() => {});
       }
-      apply(readCache());
-      void loadFavoriteIds().then(apply).catch(() => {});
+      setSaved(false);
+      void ensureDisplayScope().then(load).catch(() => {});
     };
     window.addEventListener("ff-favorite-change", sync);
     window.addEventListener("pageshow", restore);
@@ -104,6 +112,9 @@ export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteC
     setSaved(next); notify(animalId, next);
     try {
       const response = await fetch("/api/favorites", { method: next ? "POST" : "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ animalId }), keepalive: true });
+      // A response for the previous login must not change the current account's display.
+      readCache();
+      if (scope !== cacheScope) return;
       if (!response.ok) {
         const restored = confirmedChanges.get(animalId) ?? favoriteIds?.has(animalId) ?? previous;
         setSaved(restored); notify(animalId, restored);
@@ -121,11 +132,14 @@ export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteC
       onFavoriteChange?.(next);
       feedback.success(next ? "관심 친구로 스크랩했어요" : "스크랩에서 삭제했어요", next ? { actionLabel: "목록보기", onAction: () => { router.push("/mypage/favorites"); } } : undefined);
     } catch {
+      readCache();
+      if (scope !== cacheScope) return;
       const restored = confirmedChanges.get(animalId) ?? favoriteIds?.has(animalId) ?? previous;
       setSaved(restored); notify(animalId, restored);
       feedback.error("연결을 확인해 주세요. 스크랩은 이전 상태로 돌렸어요.");
     } finally {
-      pendingChanges.delete(animalId); lock.current = false; setBusy(false);
+      if (scope === cacheScope) pendingChanges.delete(animalId);
+      lock.current = false; setBusy(false);
     }
   }
   return <button type="button" className={className ? "ff-card-scrap " + className : "ff-card-scrap"} aria-pressed={saved} aria-busy={busy} aria-disabled={busy} aria-label={animalName + " " + (saved ? "스크랩에서 삭제" : "스크랩하기")} onClick={toggle}><Bookmark aria-hidden="true" strokeWidth={1.8} fill={saved ? "currentColor" : "none"}/></button>;

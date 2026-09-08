@@ -49,18 +49,31 @@ export function sessionCookie(token: string, maxAge = SESSION_DAYS * 86400, secu
 
 export function clearSessionCookie(secure = true) { return `${SESSION_COOKIE}=; Path=/; HttpOnly; ${secure ? "Secure; " : ""}SameSite=Lax; Max-Age=0`; }
 
+// Display-cache identity only. This cookie never authorizes a request.
+export async function sessionDisplayScope(token?: string) {
+  return token ? (await sha256(`favorite-display:${token}`)).slice(0, 24) : "guest";
+}
+
+export function displayScopeCookie(scope: string, secure = true) {
+  return `ff_display_scope=${scope}; Path=/; ${secure ? "Secure; " : ""}SameSite=Lax; Max-Age=${SESSION_DAYS * 86400}`;
+}
+
+export async function sessionHeaders(token: string, secure: boolean) {
+  const headers = new Headers({ "cache-control": "private, no-store" });
+  headers.append("set-cookie", sessionCookie(token, undefined, secure));
+  headers.append("set-cookie", displayScopeCookie(await sessionDisplayScope(token), secure));
+  return headers;
+}
+
 export function isLocalRequest(request: Request) {
   const hostname = new URL(request.url).hostname;
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
 }
 
 export async function memberFromSession(db: Db, token: string) {
-  const { data: sessions, error } = await getSupabaseServerClient().from("auth_sessions").select("member_id").eq("token_hash", await sha256(token)).gt("expires_at", new Date().toISOString()).limit(1);
+  const { data: sessions, error } = await getSupabaseServerClient().from("auth_sessions").select("members!inner(*)").eq("token_hash", await sha256(token)).gt("expires_at", new Date().toISOString()).limit(1);
   if (error) throw new Error("로그인 정보를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.", { cause: error });
-  if (!sessions?.[0]) return null;
-  const { data: rows, error: memberError } = await getSupabaseServerClient().from("members").select("*").eq("id", sessions[0].member_id).limit(1);
-  if (memberError) throw new Error("회원 정보를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.", { cause: memberError });
-  return memberRow((rows?.[0] as Record<string, unknown>) || null);
+  return memberRow((sessions?.[0]?.members as unknown as Record<string, unknown>) || null);
 }
 
 export async function findOrCreateSocialMember(db: Db, provider: "google" | "kakao" | "naver", providerUserId: string, email: string, displayName: string, emailVerified = false) {

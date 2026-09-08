@@ -37,8 +37,8 @@ export function NearbyAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
     </section>
     <div className="ff-section-head"><h2 className="ff-section-title">현재 보호 중인 친구</h2><span className="ff-meta">{feed.total.toLocaleString("ko-KR")}마리</span></div>
     <div className="ff-animal-grid">{feed.items.map(animal => <AnimalCard key={animal.id} animal={animal}/>)}</div>
-    {!feed.items.length && !feed.loading && <div className="ff-filter-empty"><strong>현재 조건에 맞는 친구가 없어요</strong><p>조건을 모두 지우면 보호 중인 친구를 다시 볼 수 있어요.</p><ActionButton variant="neutralWeak" onClick={feed.resetFilters}>조건 모두 지우기</ActionButton></div>}
-    {feed.error && <div className="ff-feed-error">{feed.error}<button type="button" onClick={() => void feed.loadMore()}>다시 시도</button></div>}
+    {!feed.items.length && !feed.loading && !feed.error && <div className="ff-filter-empty"><strong>현재 조건에 맞는 친구가 없어요</strong><p>조건을 모두 지우면 보호 중인 친구를 다시 볼 수 있어요.</p><ActionButton variant="neutralWeak" onClick={feed.resetFilters}>조건 모두 지우기</ActionButton></div>}
+    {feed.error && <div className="ff-feed-error" role="alert">{feed.error}<button type="button" onClick={feed.retry}>다시 시도</button></div>}
     <div className="ff-feed-sentinel" ref={sentinel} aria-live="polite">{feed.loading ? <LoadingIndicator label="다음 친구를 불러오는 중" /> : null}</div>
   </>;
 }

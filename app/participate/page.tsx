@@ -1,7 +1,9 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { IconChevronRightLine, IconGiftLine, IconHandWaveLine, IconTrophyLine } from "@karrotmarket/react-monochrome-icon";
 
 export const metadata: Metadata = { title: "함께하기" };
+export const dynamic = "force-static";
 
 const items = [
   { href: "/volunteer", icon: <IconHandWaveLine />, title: "봉사 공고", description: "내가 잘하는 일로 보호소와 동물 곁에 힘을 보태요.", status: "모집 중인 공고 보기" },
@@ -17,9 +19,9 @@ export default function Page() {
       <p className="ff-description">입양을 기다리는 친구들을 위해 봉사하고, 응원하고, 새로운 기회를 만들어보세요.</p>
     </header>
     <div className="ff-participation-grid">
-      {items.map(item => item.href ? <a className="ff-participation-card" href={item.href} key={item.title}>
+      {items.map(item => item.href ? <Link prefetch={false} className="ff-participation-card" href={item.href} key={item.title}>
         <span className="ff-participation-icon">{item.icon}</span><span className="ff-participation-copy"><strong>{item.title}</strong><small>{item.description}</small><em>{item.status}</em></span><IconChevronRightLine />
-      </a> : <div className="ff-participation-card ff-participation-card-disabled" key={item.title}>
+      </Link> : <div className="ff-participation-card ff-participation-card-disabled" key={item.title}>
         <span className="ff-participation-icon">{item.icon}</span><span className="ff-participation-copy"><strong>{item.title}</strong><small>{item.description}</small><em>{item.status}</em></span>
       </div>)}
     </div>

@@ -706,6 +706,19 @@ export async function getStoredLostAnimalById(id: string) {
 
 export const getCachedStoredLostAnimalById = cache(getStoredLostAnimalById);
 
+export async function getStoredLostAnimalsByIds(ids: string[]): Promise<LostAnimal[]> {
+  if (!ids.length) return [];
+  const client = getSupabaseServerClient();
+  let { data, error } = await client.from("public_lost_animals").select("id,legacy_id,rfid_cd,species,breed,sex,age,color,happened_at,region,address,place,happen_place,description,image,synced_at").eq("active", true).in("id", ids);
+  if (missingHappenPlaceColumn(error)) {
+    const legacy = await client.from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image,synced_at").eq("active", true).in("id", ids);
+    data = legacy.data?.map(row => ({ ...row, rfid_cd: "", happen_place: "" })) ?? null;
+    error = legacy.error;
+  }
+  if (error) throw error;
+  return (data || []).map(row => storedLostAnimal(row as Record<string, unknown>));
+}
+
 export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; neutered?: string; ageMin?: number; ageMax?: number; weightMin?: number; weightMax?: number; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {
   const limit = Math.min(50, Math.max(1, options.limit || 20));
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
@@ -767,6 +780,13 @@ export async function getStoredAnimalById(id: string) {
   const images = Array.from(new Set(animal.images || [animal.image].filter(Boolean)));
   const result = { ...animal, image: images[0] || animal.image, images, photoCount: images.length };
   return result;
+}
+
+export async function getStoredAnimalsByIds(ids: string[]): Promise<Animal[]> {
+  if (!ids.length) return [];
+  const { data, error } = await getSupabaseServerClient().from("visible_public_animals").select(LIST_ANIMAL_COLUMNS).in("id", ids);
+  if (error) throw error;
+  return (data || []).map(row => fromStored(storedAnimal(row as Record<string, unknown>)));
 }
 
 export async function getAnimalsByShelterId(shelterId: string, limit = 200) {

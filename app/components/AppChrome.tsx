@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { IconChevronLeftLine } from "@karrotmarket/react-monochrome-icon";
 import { BottomNav } from "./BottomNav";
 import { HomeTopbar } from "./HomeTopbar";
@@ -59,6 +59,7 @@ function readHistory(){try{const value=JSON.parse(window.sessionStorage.getItem(
 function writeHistory(value:string[]){try{window.sessionStorage.setItem(historyKey,JSON.stringify(value.slice(-30)))}catch{return}}
 
 export function AppBackButton({fallback,title,className}:{fallback:string;title:string;className?:string}){
+  const router=useRouter();
   const goBack=()=>{
     const current=`${window.location.pathname}${window.location.search}${window.location.hash}`,stack=readHistory();
     const currentIndex=stack.lastIndexOf(current);
@@ -67,7 +68,7 @@ export function AppBackButton({fallback,title,className}:{fallback:string;title:
     if(hasAppPrevious&&window.history.length>1){writeHistory(stack);window.history.back();return}
     const sameOriginReferrer=Boolean(document.referrer&&new URL(document.referrer).origin===window.location.origin);
     if(sameOriginReferrer&&window.history.length>1){window.history.back();return}
-    window.location.assign(fallback);
+    router.push(fallback);
   };
   return <button className={`ff-app-back${className ? ` ${className}` : ""}`} type="button" onClick={goBack} aria-label={`${title}에서 이전 페이지로 돌아가기`}><IconChevronLeftLine aria-hidden/></button>;
 }

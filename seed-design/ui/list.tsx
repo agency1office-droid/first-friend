@@ -6,6 +6,8 @@
 
 "use client";
 
+import Link from "next/link";
+
 import {
   List as SeedList,
   Divider as SeedDivider,
@@ -117,15 +119,16 @@ export interface ListLinkItemProps
 export const ListLinkItem = React.forwardRef<HTMLAnchorElement, ListLinkItemProps>(
   ({ title, detail, prefix, suffix, alignItems, rootRef, rootProps, ...props }, ref) => {
     const [variantProps, otherProps] = listItem.splitVariantProps(props);
+    const LinkComponent = otherProps.href?.startsWith("/") && !otherProps.href.startsWith("//") && !otherProps.href.startsWith("/api/") ? Link : "a";
 
     return (
       <SeedList.Item ref={rootRef} alignItems={alignItems} {...variantProps} {...rootProps}>
         {prefix && <SeedList.Prefix>{prefix}</SeedList.Prefix>}
         <SeedList.Content asChild>
-          <a ref={ref} {...otherProps}>
+          <LinkComponent ref={ref} {...otherProps} href={otherProps.href ?? "#"} {...(LinkComponent === Link ? { prefetch: false } : {})}>
             <SeedList.Title>{title}</SeedList.Title>
             {detail && <SeedList.Detail>{detail}</SeedList.Detail>}
-          </a>
+          </LinkComponent>
         </SeedList.Content>
         {suffix && <SeedList.Suffix>{suffix}</SeedList.Suffix>}
       </SeedList.Item>

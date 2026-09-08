@@ -1,4 +1,4 @@
-import { createSession, isLocalRequest, safeReturnTo, sessionCookie, verifyPassword } from "../../../../lib/app-auth";
+import { createSession, isLocalRequest, safeReturnTo, sessionHeaders, verifyPassword } from "../../../../lib/app-auth";
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
 import { enforceRateLimit, requestSubject } from "../../../../lib/api-guards";
 import { readJson } from "../../_helpers";
@@ -16,5 +16,5 @@ export async function POST(request: Request) {
   if (error) return Response.json({ error: "로그인을 확인하지 못했어요. 잠시 후 다시 시도해 주세요." }, { status: 503 });
   if (!member || member.sanctioned) return Response.json({ error: "이용이 제한된 계정이에요." }, { status: 403 });
   const session = await createSession(undefined, account.member_id || "");
-  return Response.json({ ok: true, returnTo: safeReturnTo(String(data.returnTo || "")) }, { headers: { "set-cookie": sessionCookie(session.token, undefined, !isLocalRequest(request)), "cache-control": "no-store" } });
+  return Response.json({ ok: true, returnTo: safeReturnTo(String(data.returnTo || "")) }, { headers: await sessionHeaders(session.token, !isLocalRequest(request)) });
 }

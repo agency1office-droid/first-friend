@@ -91,7 +91,7 @@ export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
       return <Fragment key={animal.id}><AnimalCard animal={animal} layout="row" priority={index < 4}/>{lostAnimal && <LostAnimalInsert animal={lostAnimal}/>}</Fragment>;
     })}</div>}
     {!feed.items.length && !feed.loading && !feed.error && <div className="ff-feed-empty-spacer" aria-hidden="true" />}
-    {feed.error && <div className="ff-feed-error" role="alert"><span>{feed.error}</span><button type="button" onClick={() => window.location.reload()}>{feed.items.length ? "다시 불러오기" : "다시 시도"}</button></div>}
+    {feed.error && <div className="ff-feed-error" role="alert"><span>{feed.error}</span><button type="button" onClick={feed.retry}>{feed.items.length ? "다시 불러오기" : "다시 시도"}</button></div>}
     <div className="ff-feed-sentinel" ref={sentinel} aria-hidden="true" />
   </section>;
 }

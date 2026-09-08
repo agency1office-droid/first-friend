@@ -1254,7 +1254,7 @@ test("keeps all 36 product-review pages discoverable and under the shared app-qu
   assert.equal(pages.length, 36);
   const sources = await Promise.all(pages.map(path => readFile(new URL(`../${path}`, import.meta.url), "utf8")));
   assert.match(sources[0], /HomeAnimalFeed/);
-  assert.match(sources[29], /rows.*map[\s\S]*getAnimalById\(row\.animal_id\)/);
+  assert.match(sources[29], /getAnimalsByIds\(\(rows \|\| \[\]\)\.map/);
   assert.match(sources[29], /FavoriteAnimalGrid/);
   for (const source of sources.slice(1)) assert.match(source, /<h1/);
   const [chrome, css] = await Promise.all([
@@ -1267,7 +1267,7 @@ test("keeps all 36 product-review pages discoverable and under the shared app-qu
   assert.match(chrome, /window\.history\.back\(\)/);
   assert.match(chrome, /sessionStorage/);
   assert.match(chrome, /className=\{`ff-app-back/);
-  assert.match(chrome, /window\.location\.assign\(fallback\)/);
+  assert.match(chrome, /router\.push\(fallback\)/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /safe-area-inset-bottom/);
   assert.match(css, /@media \(max-width: 360px\)/);
@@ -1352,7 +1352,7 @@ test("shows interactive local-only dummy shelter updates, volunteering, and need
   assert.match(demo, /LOCAL DUMMY DATA/);
   assert.match(demo, /주말 보호실 청소/);
   assert.match(demo, /고양이 모래 6L/);
-  for (const source of [reaction, volunteer, support]) assert.match(source, /if\(demo\)/);
+  for (const source of [reaction, volunteer, support]) assert.match(source, /if\s*\(demo\)/);
 });
 
 test("uses distinct feed, recruitment, and delivery-progress patterns in shelter channels", async () => {

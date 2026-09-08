@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BottomSheetBody, BottomSheetContent, BottomSheetRoot, BottomSheetTrigger } from "seed-design/ui/bottom-sheet";
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
 import { IconChevronDownLine, IconChevronLeftLine, IconChevronRightLine, IconLocationpinFill, IconLocationpinLine, IconPlusLine, IconQuestionmarkCircleLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
@@ -29,10 +29,15 @@ export function HomeTopbar() {
   const [regionOpen, setRegionOpen] = useState(false);
   const [mode, setMode] = useState<"manage" | "search">("manage");
   const feedback = useAppFeedback();
+  const locationVersion = useRef(0);
 
   useEffect(() => {
+    let active = true;
+    const version = locationVersion.current;
+    const current = () => active && version === locationVersion.current;
     async function hydrate() {
       await Promise.resolve();
+      if (!current()) return;
       const local = savedLocations();
       const storedLocal = local.filter((row) => !/^[A-Za-z\s-]+$/.test(row.label));
       if (storedLocal.length) {
@@ -41,6 +46,7 @@ export function HomeTopbar() {
         return;
       }
       const ipLocation = await loadDefaultHomeLocation();
+      if (!current()) return;
       if (ipLocation) {
         const defaultLocation = { ...ipLocation, source: "ip" as const };
         setNeighborhoods([defaultLocation]);
@@ -51,14 +57,17 @@ export function HomeTopbar() {
         window.dispatchEvent(new CustomEvent("ff-region-change", { detail: defaultLocation }));
       }
       const body = await fetch("/api/profile").then((response) => response.json()).catch(() => ({}));
+      if (!current()) return;
       const savedProfileRegion = typeof body.homeRegion === "string" && !/^[A-Za-z\s-]+$/.test(body.homeRegion) ? body.homeRegion : "";
       if (!savedProfileRegion) return;
       const locationBody = await fetch(`/api/locations?q=${encodeURIComponent(savedProfileRegion)}`).then((response) => response.json()).catch(() => ({}));
+      if (!current()) return;
       const restored = locationBody.locations?.[0] as HomeLocation | undefined;
       if (restored) store([restored]);
       else setRegion(savedProfileRegion);
     }
     void hydrate();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -80,6 +89,7 @@ export function HomeTopbar() {
   }, [draft, mode, regionOpen]);
 
   function store(next: HomeLocation[]) {
+    locationVersion.current++;
     const limited = next.slice(0, 2);
     setNeighborhoods(limited);
     if (!limited.length) {

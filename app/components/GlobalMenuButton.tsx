@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
 import { IconChevronRightLine, IconHorizline3VerticalTightLine } from "@karrotmarket/react-monochrome-icon";
 import { BottomSheetBody, BottomSheetContent, BottomSheetRoot, BottomSheetTrigger } from "seed-design/ui/bottom-sheet";
 
@@ -10,13 +12,14 @@ const menu = [
 ];
 
 export function GlobalMenuButton() {
-  return <BottomSheetRoot>
+  const [open, setOpen] = useState(false);
+  return <BottomSheetRoot open={open} onOpenChange={setOpen}>
     <BottomSheetTrigger asChild>
       <button className="ff-icon-link" type="button" aria-label="전체 메뉴"><IconHorizline3VerticalTightLine aria-hidden /></button>
     </BottomSheetTrigger>
     <BottomSheetContent title="퍼스트 프렌드 메뉴" description="입양과 지역 동물 도움 기능을 찾아보세요.">
       <BottomSheetBody><nav className="ff-home-menu" aria-label="전체 메뉴">
-        {menu.map(([label, href]) => <a href={href} key={href}><span>{label}</span><IconChevronRightLine aria-hidden /></a>)}
+        {menu.map(([label, href]) => <Link prefetch={false} href={href} key={href} onClick={() => setOpen(false)}><span>{label}</span><IconChevronRightLine aria-hidden /></Link>)}
       </nav></BottomSheetBody>
     </BottomSheetContent>
   </BottomSheetRoot>;

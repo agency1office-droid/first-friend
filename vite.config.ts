@@ -1,6 +1,7 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
+import vercelConfig from "./vercel.json";
 import { sites } from "./build/sites-vite-plugin";
 import { nitro } from "nitro/vite";
 import { cp, readFile, realpath } from "node:fs/promises";
@@ -45,6 +46,7 @@ export default defineConfig(async () => {
   if (isVercel) {
     return {
       plugins: [vinext(), nitro({
+        vercel: { functions: { regions: vercelConfig.regions } },
         traceDeps: ["sharp*", "@img/sharp-linux-x64*", "@img/sharp-libvips-linux-x64*"],
         modules: [(nitro) => { nitro.hooks.hook("compiled", async (nitro) => {
           const routing = JSON.parse(await readFile(join(nitro.options.output.dir, "config.json"), "utf8"));

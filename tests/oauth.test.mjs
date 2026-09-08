@@ -33,7 +33,11 @@ test("social login routes and account isolation", async t => {
       return new Response(null, { status: 201 });
     }
     if (options.method === "DELETE") { db[table] = db[table].filter(row => !matches(row)); return new Response(null, { status: 204 }); }
-    return Response.json(db[table].filter(matches));
+    const rows = db[table].filter(matches);
+    if (table === "auth_sessions" && url.searchParams.get("select") === "members!inner(*)") {
+      return Response.json(rows.map(row => ({ members: db.members.find(member => member.id === row.member_id) })).filter(row => row.members));
+    }
+    return Response.json(rows);
   });
   const context = provider => ({ params: Promise.resolve({ provider }) });
   const cookieHeader = response => response.headers.getSetCookie().map(value => value.split(";")[0]).join("; ");
@@ -91,7 +95,9 @@ test("social login routes and account isolation", async t => {
       const sessionCookie = result.headers.getSetCookie().find(value => value.startsWith("ff_session="));
       assert.ok(sessionCookie);
       const token = sessionCookie.split(";")[0].slice("ff_session=".length);
+      const beforeLookup = fetches;
       const member = await memberFromSession(undefined, token);
+      assert.equal(fetches - beforeLookup, 1, "Session and member must be checked in one database request");
       assert.ok(member?.id);
       if (provider === "kakao") { assert.equal(member.email, ""); assert.equal(member.displayName, "퍼스트프렌드 회원"); }
       const memberCount = db.members.length;
@@ -104,6 +110,13 @@ test("social login routes and account isolation", async t => {
     assert.notEqual(db.auth_accounts[0].member_id, db.auth_accounts[2].member_id);
     assert.ok(db.auth_accounts[0].email_verified);
     assert.equal(db.auth_accounts[2].email_verified, false);
+  });
+  await t.test("expired sessions cannot restore an account", async () => {
+    profile = { sub: "google-1" };
+    const result = await finish("google", await begin("google"));
+    const token = result.headers.getSetCookie().find(value => value.startsWith("ff_session=")).split(";")[0].slice("ff_session=".length);
+    db.auth_sessions.at(-1).expires_at = "2000-01-01T00:00:00.000Z";
+    assert.equal(await memberFromSession(undefined, token), null);
   });
   await t.test("invalid profiles and failed account writes do not create login sessions", async () => {
     const before = db.auth_sessions.length;

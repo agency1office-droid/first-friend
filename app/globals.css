@@ -2,12 +2,15 @@
 
 * { box-sizing: border-box; }
 html {
+  /* SEED Foundations: https://seed-design.io/foundations/typography */
+  --ff-font-family-sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-family: var(--ff-font-family-sans);
   background: var(--seed-color-bg-layer-basement);
   overflow-y: scroll;
   scrollbar-gutter: stable;
 }
 html:has(.ff-cost-shell), body:has(.ff-cost-shell) { overflow: hidden; scrollbar-gutter: auto; }
-body { margin: 0; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-layer-basement); font-family: var(--seed-font-family-sans); font-weight: var(--seed-font-weight-regular); }
+body { margin: 0; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-layer-basement); font-family: var(--ff-font-family-sans); font-size: var(--seed-font-size-t5); line-height: var(--seed-line-height-t5); font-weight: var(--seed-font-weight-regular); }
 a { color: inherit; text-decoration: none; }
 button, input, textarea, select { font: inherit; }
 img { display: block; max-width: 100%; }
@@ -1477,7 +1480,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-gender-symbol { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; color: var(--seed-color-fg-neutral-muted); background: var(--seed-color-bg-neutral-weak); font-family: Georgia, serif; font-size: 27px; line-height: 1; }
 .ff-gender-option[data-gender="male"] .ff-gender-symbol { color: #4d83c4; background: #edf5ff; }
 .ff-gender-option[data-gender="female"] .ff-gender-symbol { color: #d76587; background: #fff0f4; }
-.ff-gender-option[data-gender="all"] .ff-gender-symbol { color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); font-family: var(--seed-font-family-sans); font-size: 18px; }
+.ff-gender-option[data-gender="all"] .ff-gender-symbol { color: var(--seed-color-fg-brand); background: var(--seed-color-bg-brand-weak); font-family: var(--ff-font-family-sans); font-size: 18px; }
 .ff-status-filter-body { padding-bottom: var(--seed-dimension-x4); }
 .ff-status-options { display: grid; gap: 10px; }
 .ff-status-option { position: relative; min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 14px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-layer-default); text-align: left; cursor: pointer; }

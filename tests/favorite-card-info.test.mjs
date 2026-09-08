@@ -4,7 +4,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createServer } from "vite";
 
-test("saved cards reuse home information while preserving grid photos and other grids", async t => {
+test("saved cards show only photo, name and status while preserving other card layouts", async t => {
   const modules = {
     "next/link": 'import {createElement} from "react"; export default ({prefetch,...props})=>createElement("a",props);',
     "./FavoriteButton": 'import {createElement} from "react"; export const FavoriteButton=()=>createElement("button",null,"스크랩");',
@@ -26,18 +26,16 @@ test("saved cards reuse home information while preserving grid photos and other 
   const animal = {
     id: "saved-dog", name: "진도견 · 00169", species: "강아지", age: "2023(년생)", sex: "수컷",
     region: "부산광역시 연제구", shelter: "청조동물병원", shelterId: "shelter-id",
-    distanceMeters: 7200, image: "/dog.jpg", source: "공공데이터", traits: ["기존 태그"],
+    distanceMeters: 7200, image: "/dog.jpg", photoCount: 3, source: "공공데이터", traits: ["기존 태그"],
     health: ["현재 상태: 보호중"], life: ["공고 2099. 1. 1. ~ 2099. 1. 10."],
   };
   const render = props => renderToStaticMarkup(createElement(AnimalCard, { animal, ...props }));
   const home = render({ layout: "row" });
   const saved = renderToStaticMarkup(createElement(FavoriteAnimalGrid, { animals: [animal] }));
-  const info = html => html.match(/<a[^>]*class="ff-animal-row-animal-link"[\s\S]*?<\/a>/)?.[0];
-  assert.ok(info(home));
-  assert.equal(info(saved), info(home));
-  for (const value of ["청조동물병원", "연제구", "7.2km", "2023년생", "보호자 확인 공고 중", 'src="/dog.jpg"', "/shelters/shelter-id"]) assert.ok(saved.includes(value), value);
-  assert.doesNotMatch(saved, /ff-animal-card-row-main|기존 태그|공공데이터/);
+  for (const value of ["진도견 · 00169", "보호자 확인 공고 중", 'src="/dog.jpg"', 'href="/friends/saved-dog"', "ff-animal-photo-caption", "ff-animal-photo-status", "스크랩"]) assert.ok(saved.includes(value), value);
+  assert.doesNotMatch(saved, /ff-animal-info|ff-card-photo-count|청조동물병원|연제구|7\.2km|2023년생|수컷|기존 태그|공공데이터/);
+  assert.doesNotMatch(saved, /<a[^>]*>[\s\S]*<button[\s\S]*<\/a>/, "scrap button stays outside the detail link");
+  for (const value of ["청조동물병원", "연제구", "7.2km", "2023년생", "ff-card-photo-count"]) assert.ok(home.includes(value), value);
   assert.match(render({}), /기존 태그/);
-  const withoutDistance = renderToStaticMarkup(createElement(AnimalCard, { animal: { ...animal, distanceMeters: undefined }, showHomeInfo: true }));
-  assert.doesNotMatch(withoutDistance, /ff-animal-distance|NaN/);
+  assert.match(render({ layout: "photo", animal: { ...animal, health: ["현재 상태: 종료(입양)"] } }), /새 가족을 만났어요/);
 });

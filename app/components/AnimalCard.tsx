@@ -23,12 +23,22 @@ function displayAge(age: string) {
   return age.replace(/^(\d{4})(?:\([^)]*\))*\(년생\)$/, "$1년생").replace(/^(\d{4})\(년생\)$/, "$1년생");
 }
 
-export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,showShelter=true,priority=false,showHomeInfo=false }: { animal: Animal;layout?:"grid"|"row";initialSaved?:boolean;onFavoriteChange?:(saved:boolean)=>void;showShelter?:boolean;priority?:boolean;showHomeInfo?:boolean }) {
+export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,showShelter=true,priority=false }: { animal: Animal;layout?:"grid"|"row"|"photo";initialSaved?:boolean;onFavoriteChange?:(saved:boolean)=>void;showShelter?:boolean;priority?:boolean }) {
   const [imageUnavailable, setImageUnavailable] = useState(false);
   const publicStatus = getAnimalPublicStatus(animal);
   const animalHref = `/friends/${animal.id}`;
   const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}` : "/shelters";
   if (imageUnavailable || !animal.image.trim()) return null;
+  if (layout === "photo") return <article className="ff-animal-card ff-animal-card-photo">
+    <Link prefetch={false} className="ff-animal-photo-link" href={animalHref} aria-label={`${animal.name}, ${publicStatus.cardLabel}, 상세 보기`}>
+      <div className="ff-animal-image-wrap">
+        <AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail onUnavailable={() => setImageUnavailable(true)}/>
+        <Badge className="ff-animal-photo-status" tone={publicStatus.tone} variant="solid">{publicStatus.cardLabel}</Badge>
+        <div className="ff-animal-photo-caption"><div className="ff-animal-photo-name">{animal.name}</div></div>
+      </div>
+    </Link>
+    <FavoriteButton animalId={animal.id} animalName={animal.name} initialSaved={initialSaved} onFavoriteChange={onFavoriteChange}/>
+  </article>;
   const homeInfo = <Link prefetch={false} className="ff-animal-row-animal-link" href={animalHref}>
     <div className="ff-animal-name">{animal.name}</div>
     <div className="ff-animal-row-location"><span>{compactRegion(animal.region)}</span>{animal.distanceMeters !== undefined&&<div className="ff-animal-distance ff-animal-row-distance">{formatDistance(animal.distanceMeters)}</div>}</div>
@@ -48,11 +58,11 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
       <Link prefetch={false} href={animalHref} aria-label={`${animal.name} 상세 보기`}>
         <div className="ff-animal-image-wrap"><AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail onUnavailable={() => setImageUnavailable(true)}/>{(animal.photoCount || 1) > 1 && <span className="ff-card-photo-count" role="img" aria-label={`사진 ${animal.photoCount}장`}><IconPicture2StackedLine aria-hidden="true"/></span>}</div>
       </Link>
-      <div className={`ff-animal-info${showHomeInfo ? " ff-animal-home-info" : ""}`}>
+      <div className="ff-animal-info">
         {showShelter && <Link prefetch={false} className="ff-animal-row-shelter" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>{animal.shelter}</Link>}
-        {showHomeInfo ? homeInfo : <Link prefetch={false} className="ff-animal-grid-animal-link" href={animalHref}>
+        <Link prefetch={false} className="ff-animal-grid-animal-link" href={animalHref}>
           <div className="ff-meta">{animal.region} · {animal.source}</div><div className="ff-animal-name">{animal.name}</div><div className="ff-meta">{animal.age} · {animal.sex}</div>{animal.distanceMeters !== undefined&&<div className="ff-animal-distance">우리 동네에서 보호소까지 약 {formatDistance(animal.distanceMeters)}</div>}<div className="ff-tags">{animal.traits.slice(0, 2).map((trait) => <span className="ff-tag" key={trait}>{trait}</span>)}</div>
-        </Link>}
+        </Link>
       </div>
     </div>}
     <FavoriteButton animalId={animal.id} animalName={animal.name} initialSaved={initialSaved} onFavoriteChange={onFavoriteChange}/>

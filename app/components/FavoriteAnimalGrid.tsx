@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Animal } from "../../lib/data";
 import { AnimalCard } from "./AnimalCard";
 import { Chip } from "seed-design/ui/chip";
-import { SimpleOptionSheet } from "./AnimalFilterBar";
+import { FavoriteFilterSheet as SimpleOptionSheet } from "./FavoriteFilterSheet";
 import { getAnimalPublicStatus } from "../../lib/animal-public-status";
 
 const speciesOptions = [["all", "전체"], ["강아지", "강아지"], ["고양이", "고양이"], ["other", "기타 동물"]] as const;

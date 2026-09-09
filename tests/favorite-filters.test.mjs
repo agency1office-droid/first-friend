@@ -13,7 +13,7 @@ test('favorite filters intersect, reset and preserve removal behavior', async ()
     if(id==='react/jsx-runtime')return {jsx,jsxs:jsx,Fragment:'fragment'};
     if(id.includes('animal-public-status'))return {getAnimalPublicStatus:a=>({phase:a.phase})};
     if(id.includes('AnimalCard'))return {AnimalCard:'card'};
-    if(id.includes('AnimalFilterBar'))return {SimpleOptionSheet:'sheet'};
+    if(id.includes('FavoriteFilterSheet'))return {FavoriteFilterSheet:'sheet'};
     return {Chip:{Button:'button',Label:'label'}};
   }});
   const animals=[{id:'dog',species:'강아지',phase:'notice'},{id:'cat',species:'고양이',phase:'protected'},{id:'other',species:'토끼',phase:'unknown'}];

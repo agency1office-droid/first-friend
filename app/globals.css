@@ -272,6 +272,11 @@ img { display: block; max-width: 100%; }
 .ff-promise-icon { width: 32px; height: 32px; display: grid; place-items: center; margin: 0 auto 7px; border-radius: 50%; background: var(--seed-color-bg-brand-weak); color: var(--seed-color-fg-brand); }
 
 .ff-animal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; }
+.ff-favorite-filters { display: grid; gap: var(--seed-dimension-x2); margin-bottom: var(--seed-dimension-x4); }
+.ff-favorite-filter-row { display: flex; gap: var(--seed-dimension-x2); overflow-x: auto; padding-block: var(--seed-dimension-x1); scrollbar-width: none; }
+.ff-favorite-filter-row::-webkit-scrollbar { display: none; }
+.ff-favorite-filter-row > * { flex-shrink: 0; }
+.ff-favorite-filter-summary { display: flex; align-items: center; justify-content: space-between; min-height: 32px; color: var(--seed-color-fg-neutral-muted); font-size: var(--seed-font-size-t3); }
 .ff-animal-card { position: relative; min-width: 0; content-visibility: auto; contain-intrinsic-size: 154px; }
 .ff-animal-grid .ff-animal-card { contain-intrinsic-size: 280px; }
 .ff-animal-grid-main { min-width: 0; }

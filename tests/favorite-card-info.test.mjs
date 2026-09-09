@@ -10,6 +10,7 @@ test("saved cards show only photo, name and status while preserving other card l
     "./FavoriteButton": 'import {createElement} from "react"; export const FavoriteButton=()=>createElement("button",null,"스크랩");',
     "./AnimalThumbnail": 'import {createElement} from "react"; export const AnimalThumbnail=({src,alt})=>createElement("img",{src,alt});',
     "seed-design/ui/badge": 'export {Badge} from "@seed-design/react";',
+    "seed-design/ui/chip": 'export {Chip} from "/seed-design/ui/chip.tsx";',
     "seed-design/ui/dialog": 'export {DialogRoot,DialogContent,DialogFooter} from "/seed-design/ui/dialog.tsx";',
     "seed-design/ui/action-button": 'export {ActionButton} from "/seed-design/ui/action-button.tsx";',
   };

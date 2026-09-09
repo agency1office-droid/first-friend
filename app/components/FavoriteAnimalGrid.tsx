@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Animal } from "../../lib/data";
 import { AnimalCard } from "./AnimalCard";
 import { Chip } from "seed-design/ui/chip";
+import { SimpleOptionSheet } from "./AnimalFilterBar";
 import { getAnimalPublicStatus } from "../../lib/animal-public-status";
 
 const speciesOptions = [["all", "전체"], ["강아지", "강아지"], ["고양이", "고양이"], ["other", "기타 동물"]] as const;
@@ -19,13 +20,12 @@ export function FavoriteAnimalGrid({ animals: initialAnimals }: { animals: Anima
   if (!animals.length) return <div className="ff-empty">아직 스크랩한 친구가 없어요.</div>;
   return <>
     <div className="ff-favorite-filters">
-      <div className="ff-favorite-filter-row" role="group" aria-label="동물 종류">
-        {speciesOptions.map(([value, label]) => <Chip.Button key={value} variant="outlineWeak" size="medium" aria-pressed={species === value} data-checked={species === value || undefined} onClick={() => setSpecies(value)}><Chip.Label>{label}</Chip.Label></Chip.Button>)}
-      </div>
-      <div className="ff-favorite-filter-row" role="group" aria-label="보호 상태">
-        {statusOptions.map(([value, label]) => <Chip.Button key={value} variant="outlineWeak" size="medium" aria-pressed={status === value} data-checked={status === value || undefined} onClick={() => setStatus(value)}><Chip.Label>{label}</Chip.Label></Chip.Button>)}
-      </div>
-      <div className="ff-favorite-filter-summary"><span role="status">{filtered.length}마리</span>{active && <Chip.Button variant="outlineWeak" size="small" onClick={reset}><Chip.Label>필터 초기화</Chip.Label></Chip.Button>}</div>
+      <div className="ff-animal-filter-wrap" aria-label="관심 친구 필터"><div className="ff-animal-filter-scroll">
+        <SimpleOptionSheet title="보호 단계" description="보호 상태에 따라 관심 친구를 골라볼 수 있어요." value={status} options={statusOptions.map(([value, label]) => [value, label, value === "all" ? "스크랩한 친구를 모두 볼 수 있어요." : `${label} 상태의 친구만 볼 수 있어요.`])} active={status !== "all"} onChange={setStatus} onReset={() => setStatus("all")} />
+        <SimpleOptionSheet title="동물 종류" triggerLabel={species === "all" ? "동물 종류" : speciesOptions.find(([value]) => value === species)?.[1]} description="찾고 싶은 친구의 종류를 골라보세요." value={species} options={speciesOptions.map(([value, label]) => [value, label, value === "all" ? "모든 동물 종류를 함께 볼 수 있어요." : `${label} 친구만 볼 수 있어요.`])} active={species !== "all"} onChange={setSpecies} onReset={() => setSpecies("all")} />
+        {active && <Chip.Button className="ff-animal-filter-reset" variant="outlineWeak" size="medium" onClick={reset}><Chip.Label>전체 초기화</Chip.Label></Chip.Button>}
+      </div></div>
+      <div className="ff-favorite-filter-summary"><span role="status">{filtered.length}마리</span></div>
     </div>
     {filtered.length ? <div className="ff-animal-grid">
       {filtered.map(animal => <AnimalCard key={animal.id} animal={animal} layout="photo" initialSaved onFavoriteChange={saved => { if (!saved) setAnimals(current => current.filter(item => item.id !== animal.id)); }}/>) }

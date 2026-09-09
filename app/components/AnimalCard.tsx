@@ -47,8 +47,8 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
     <FavoriteButton animalId={animal.id} animalName={animal.name} initialSaved={initialSaved} onFavoriteChange={onFavoriteChange} onRemoveRequest={remove => setRemoveScrap(() => remove)}/>
     <DialogRoot open={Boolean(removeScrap)} onOpenChange={open => { if (!open) setRemoveScrap(null); }}>
       <Portal>
-      <DialogContent title="관심 친구에서 해제할까요?" description={`${animal.name} 친구가 관심 친구 목록에서 사라져요.`}>
-        <DialogFooter style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "var(--seed-dimension-x2)" }}>
+      <DialogContent title="관심 친구에서 해제할까요?" description={animal.name} style={{ width: "320px", maxWidth: "calc(100vw - 48px)", wordBreak: "keep-all" }}>
+        <DialogFooter style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "var(--seed-dimension-x2)", paddingTop: 0 }}>
           <ActionButton variant="neutralWeak" onClick={() => setRemoveScrap(null)}>취소</ActionButton>
           <ActionButton variant="neutralSolid" onClick={() => { const remove = removeScrap; setRemoveScrap(null); void remove?.(); }}>해제</ActionButton>
         </DialogFooter>

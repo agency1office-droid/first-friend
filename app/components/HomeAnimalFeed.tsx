@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { IconArrowUpRightLine } from "@karrotmarket/react-monochrome-icon";
 import type { LostAnimal } from "../../lib/public-data";
+import { lostDisplayRegion, lostRegionQuery } from "../../lib/lost-region";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { AnimalCard } from "./AnimalCard";
 import { AnimalFilterBar } from "./AnimalFilterBar";
@@ -13,11 +14,6 @@ import { useAnimalFeed } from "./useAnimalFeed";
 function compactLostDate(value: string) {
   const match = value.match(/(\d{4})[-.](\d{1,2})[-.](\d{1,2})/);
   return match ? `${Number(match[2])}월 ${Number(match[3])}일` : value;
-}
-
-function compactLostRegion(value: string) {
-  const parts = value.replace(/특별자치도|특별자치시|특별시|광역시|자치시/g, "").trim().split(/\s+/).filter(Boolean);
-  return parts.slice(-2).join(" ") || value;
 }
 
 function uniqueLostAnimals(animals: LostAnimal[]) {
@@ -52,7 +48,7 @@ function LostAnimalInsert({ animal }: { animal: LostAnimal }) {
       <div className="ff-home-lost-head"><div><div className="ff-kicker">도움이 필요한 친구</div><h2>실종 동물을 찾고 있어요</h2></div><span className="ff-home-lost-external-icon"><IconArrowUpRightLine aria-hidden /></span></div>
       <div className="ff-home-lost-card">
         <Image src={animal.image} alt={`${animal.breed} 실종 동물`} width={104} height={104} unoptimized />
-        <span><strong>{animal.species} · {animal.sex}</strong><small>{compactLostRegion(animal.region)} · {compactLostDate(animal.happenedAt)}</small><small>{compactLostDescription(animal.description || "등록된 특징이 없습니다.")}</small></span>
+        <span><strong>{animal.species} · {animal.sex}</strong><small>{lostDisplayRegion(animal.address, animal.region)} · {compactLostDate(animal.happenedAt)}</small><small>{compactLostDescription(animal.description || "등록된 특징이 없습니다.")}</small></span>
       </div>
     </Link>
   </section>;
@@ -63,7 +59,7 @@ export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
   const [lostAnimals, setLostAnimals] = useState<LostAnimal[]>([]);
   const { cursor, loadMore } = feed;
   const lostRegion = feed.location?.label || feed.region;
-  useEffect(() => { let active = true; const controller = new AbortController(); const query = lostRegion ? `?region=${encodeURIComponent(lostRegion)}` : ""; fetch(`/api/lost-found${query}`, { signal: controller.signal }).then(response => response.ok ? response.json() as Promise<{ animals?: LostAnimal[] }> : Promise.reject(new Error("lost animals unavailable"))).then(body => { if (active) setLostAnimals(uniqueLostAnimals(body.animals || [])); }).catch(() => { if (active && !controller.signal.aborted) setLostAnimals([]); }); return () => { active = false; controller.abort(); }; }, [lostRegion]);
+  useEffect(() => { let active = true; const controller = new AbortController(); const query = lostRegionQuery(lostRegion); const search = query ? `?province=${encodeURIComponent(query.provinces[0])}&prefix=${encodeURIComponent(query.prefix)}${query.dong ? `&dong=${encodeURIComponent(query.dong)}` : ""}` : ""; fetch(`/api/lost-found${search}`, { signal: controller.signal }).then(response => response.ok ? response.json() as Promise<{ animals?: LostAnimal[] }> : Promise.reject(new Error("lost animals unavailable"))).then(body => { if (active) setLostAnimals(uniqueLostAnimals(body.animals || [])); }).catch(() => { if (active && !controller.signal.aborted) setLostAnimals([]); }); return () => { active = false; controller.abort(); }; }, [lostRegion]);
   useEffect(() => {
     const node = sentinel.current;
     if (!node || !cursor) return;

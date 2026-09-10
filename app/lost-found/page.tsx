@@ -1,9 +1,9 @@
-/* eslint-disable @next/next/no-img-element, @next/next/no-html-link-for-pages */
+/* eslint-disable @next/next/no-html-link-for-pages */
 import type { Metadata } from "next";
 import { getShelters } from "../../lib/public-data";
 import { getStoredLostAnimals } from "../../lib/public-animal-store";
 import { LostFoundForm } from "../components/LostFoundForm";
-import { Callout } from "seed-design/ui/callout";
+import { NearbyLostList } from "../components/NearbyLostList";
 import { List, ListDivider, ListItem, ListLinkItem } from "seed-design/ui/list";
 import { IconHospitalcrossBuildingLine, IconPhoneLine } from "@karrotmarket/react-monochrome-icon";
 import { getChatGPTUser } from "../chatgpt-auth";
@@ -25,11 +25,8 @@ export default async function LostFound() {
     {mine.length>0&&<section className="ff-section"><h2 className="ff-section-title">내 신고 관리</h2><List>{mine.map((item,index)=><div key={String(item.id)}><ListLinkItem href={`/lost-found/${item.id}`} title={`${item.kind==="lost"?"실종":"발견"} · ${item.species}`} detail={`${item.region} · ${item.status} · ${String(item.occurredAt || "").replace("T"," ")}`} suffix={<span>관리</span>}/>{index<mine.length-1&&<ListDivider/>}</div>)}</List></section>}
     <div className="ff-divider"/>
     <section className="ff-section">
-      <div className="ff-section-head"><h2 className="ff-section-title">최근 분실동물</h2><a className="ff-more" href="#shelters">보호센터 찾기</a></div>
-      {lostAnimals.length ? <div className="ff-lost-list">{lostAnimals.map((animal) => <article className="ff-lost-card" key={animal.id}>
-        <img src={animal.image} alt={`${animal.breed} 분실 등록 사진`} loading="lazy"/>
-        <div><div className="ff-kicker">{animal.region}</div><h3>{animal.breed} · {animal.sex}</h3><p className="ff-description">{animal.happenedAt}<br/>{animal.place}</p><div className="ff-tags"><span className="ff-tag">{animal.color}</span><span className="ff-tag">{animal.age}</span></div><p className="ff-lost-mark">{animal.description}</p></div>
-      </article>)}</div> : <Callout tone="informative" description="분실동물 정보를 불러오지 못했습니다. 잠시 후 다시 확인해 주세요."/>}
+      <div className="ff-section-head"><h2 className="ff-section-title">우리 동네 분실동물</h2><a className="ff-more" href="#shelters">보호센터 찾기</a></div>
+      <NearbyLostList initialAnimals={lostAnimals} limit={12} heading="h3" emptyText="우리 동네에 공개된 분실동물 정보가 없어요." />
     </section>
     <section className="ff-section" id="shelters">
       <div className="ff-section-head"><h2 className="ff-section-title">가까운 보호센터</h2><a className="ff-more" href="/shelters">전체보기</a></div>

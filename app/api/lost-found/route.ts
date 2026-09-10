@@ -2,14 +2,29 @@ import { getChatGPTUser } from "../../chatgpt-auth";
 import { getSupabaseServerClient } from "../../../lib/supabase/server";
 import { clean, readJson } from "../_helpers";
 import { getNearbyStoredLostAnimals } from "../../../lib/public-animal-store";
+import { provinceVariants } from "../../../lib/lost-region";
+import { logEvent } from "../../../lib/observability";
+
+// 클라이언트가 넘기는 값이므로 LIKE 와일드카드가 섞이지 않도록 문자를 제한합니다.
+const REGION_TOKEN = /^[가-힣A-Za-z0-9\s·-]{1,40}$/;
+
+const FEED_CACHE = { "cache-control": "public, s-maxage=60, stale-while-revalidate=300" };
 
 export async function GET(request: Request) {
-  const homeRegion = new URL(request.url).searchParams.get("region") || "";
+  const params = new URL(request.url).searchParams;
+  const province = (params.get("province") || "").trim();
+  const prefix = (params.get("prefix") || "").trim();
+  const dong = (params.get("dong") || "").trim();
+  // 생활권을 정할 수 없는 방문자는 조회 없이 비웁니다. 비율을 남기려고 캐시하지 않습니다.
+  if (!REGION_TOKEN.test(province) || !REGION_TOKEN.test(prefix) || (dong && !REGION_TOKEN.test(dong))) {
+    logEvent("lost_feed_served", { radius: "", dong: false, count: 0 });
+    return Response.json({ animals: [] }, { headers: { "cache-control": "no-store" } });
+  }
   try {
-    // 지역 우선순위와 상위 8개 선별을 DB에서 처리합니다.
-    return Response.json({ animals: await getNearbyStoredLostAnimals(homeRegion, 8) }, {
-      headers: { "cache-control": "public, s-maxage=60, stale-while-revalidate=300" },
-    });
+    // 생활권 상한과 상위 8개 선별을 DB에서 처리합니다.
+    const animals = await getNearbyStoredLostAnimals({ provinces: provinceVariants(province), prefix, dong: dong || null }, 8);
+    logEvent("lost_feed_served", { radius: prefix, dong: Boolean(dong), count: animals.length });
+    return Response.json({ animals }, { headers: FEED_CACHE });
   } catch {
     return Response.json({ error: "실종·발견 정보를 불러오지 못했어요.", animals: [] }, { status: 503 });
   }

@@ -799,6 +799,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-filter-section-heading { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
 .ff-filter-section-heading h2 { margin:0; color:var(--seed-color-fg-neutral); font-size:16px; font-weight:700; letter-spacing:.02em; }
 .ff-filter-section-icon { display:grid; place-items:center; width:22px; height:22px; color:var(--seed-color-fg-brand); }.ff-filter-section-icon svg { width:20px; height:20px; }
+.ff-filter-section-icon svg.ff-filter-gender-icon { transform:scale(1.25); }
 .ff-filter-section-count { color:var(--seed-color-fg-neutral-muted); font-size:12px; }
 .ff-filter-reference-section { padding:20px 0 2px; }
 .ff-filter-text-action { margin-left:auto; padding:0; border:0; background:transparent; color:var(--seed-color-fg-brand); font:inherit; font-size:13px; font-weight:700; }

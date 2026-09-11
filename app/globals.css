@@ -1383,8 +1383,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 
 /* Home: local-first feed inspired by familiar neighborhood marketplace patterns */
 .ff-home-page { padding-top: 0; }
-.ff-home-topbar { height: auto; display: block; padding-bottom: 10px; position: sticky; }
-.ff-home-brandbar { min-height: 56px; display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; }
+.ff-home-topbar { height: auto; display: block; padding-bottom: 10px; position: sticky; border-bottom: 0; }
+.ff-home-brandbar { min-height: 56px; display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; margin-inline: -12px; padding-inline: 12px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
 .ff-home-brandbar .ff-top-actions:last-child { justify-self: end; }
 .ff-home-logo { margin: 0; justify-self: center; display: flex; align-items: center; }
 .ff-home-logo img { height: 22px; width: auto; }

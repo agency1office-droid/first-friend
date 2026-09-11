@@ -58,7 +58,7 @@ test("keeps every requested home search journey in the floating search menu", as
 
 test("orders the home brand bar as menu, logo, then notifications", async () => {
   const source = await readFile(new URL("../app/components/HomeTopbar.tsx", import.meta.url), "utf8");
-  const brandbar = source.slice(source.indexOf('<div className="ff-home-brandbar">'));
+  const brandbar = source.slice(source.indexOf('<div className="ff-topbar-row">'));
   assert.match(brandbar, /logo-wordmark\.webp/);
   assert.ok(brandbar.indexOf("<GlobalMenuButton />") < brandbar.indexOf("logo-wordmark.webp"));
   assert.ok(brandbar.indexOf("logo-wordmark.webp") < brandbar.indexOf("<NotificationBell home />"));
@@ -73,7 +73,10 @@ test("uses consistent main and stacked app topbars", async () => {
   assert.match(source, /function MainTopbar/);
   assert.match(source, /function StackTopbar/);
   assert.match(source, /ff-topbar-title/);
-  assert.match(source, /<NotificationBell\/><GlobalMenuButton\/>/);
+  const mainTopbar = source.slice(source.indexOf("function MainTopbar"), source.indexOf("function StackTopbar"));
+  assert.match(mainTopbar, /ff-topbar-row/);
+  assert.ok(mainTopbar.indexOf("<GlobalMenuButton/>") < mainTopbar.indexOf("ff-topbar-main-title"));
+  assert.ok(mainTopbar.indexOf("ff-topbar-main-title") < mainTopbar.indexOf("<NotificationBell/>"));
   assert.doesNotMatch(source, /ff-promise-link/);
 });
 

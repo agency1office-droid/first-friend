@@ -75,8 +75,11 @@ export function AppBackButton({fallback,title,className}:{fallback:string;title:
 
 function MainTopbar({title}:{title:string}){
   return <header className="ff-topbar ff-main-topbar">
-    <strong className="ff-topbar-main-title">{title}</strong>
-    <div className="ff-top-actions"><NotificationBell/><GlobalMenuButton/></div>
+    <div className="ff-topbar-row">
+      <div className="ff-top-actions"><GlobalMenuButton/></div>
+      <strong className="ff-topbar-main-title">{title}</strong>
+      <div className="ff-top-actions"><NotificationBell/></div>
+    </div>
   </header>;
 }
 

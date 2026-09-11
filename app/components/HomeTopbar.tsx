@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { BottomSheetBody, BottomSheetContent, BottomSheetRoot, BottomSheetTrigger } from "seed-design/ui/bottom-sheet";
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
-import { IconChevronDownLine, IconChevronLeftLine, IconChevronRightLine, IconLocationpinFill, IconLocationpinLine, IconPlusLine, IconQuestionmarkCircleLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
+import { IconChevronDownLine, IconChevronLeftLine, IconChevronRightLine, IconLocationpinFill, IconLocationpinLine, IconPlusLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import type { HomeLocation } from "../../lib/geo";
 import { ALL_REGIONS_KEY, isKoreaPoint, readAllRegions, readHomeLocation } from "../../lib/geo";
 import { useAppFeedback } from "./AppFeedback";
@@ -45,7 +45,7 @@ export function HomeTopbar() {
       if (readAllRegions()) {
         setNeighborhoods(storedLocal);
         setAllRegions(true);
-        setRegion("전체보기");
+        setRegion("모두 보기");
         return;
       }
       if (storedLocal.length) {
@@ -128,18 +128,18 @@ export function HomeTopbar() {
   function selectAll() {
     locationVersion.current++;
     setAllRegions(true);
-    setRegion("전체보기");
+    setRegion("모두 보기");
     window.localStorage.setItem(ALL_REGIONS_KEY, "1");
     window.localStorage.removeItem("ff-home-region");
     window.localStorage.removeItem("ff-home-location");
     window.localStorage.removeItem("ff-ip-location");
     window.dispatchEvent(new Event("ff-region-change"));
-    feedback.success("전국 친구를 최근 등록순으로 보여드려요");
+    setRegionOpen(false);
   }
 
   function activate(item: HomeLocation) {
     store([item, ...neighborhoods.filter((row) => row.label !== item.label && row.source !== "ip")]);
-    feedback.success(`${item.label} 가까운 순으로 바꿨어요`);
+    setRegionOpen(false);
   }
 
   function add(item: HomeLocation) {
@@ -174,7 +174,7 @@ export function HomeTopbar() {
 
   return <>
     <header className="ff-topbar ff-home-topbar">
-      <div className="ff-home-brandbar">
+      <div className="ff-topbar-row">
         <div className="ff-top-actions"><GlobalMenuButton /></div>
         <h1 className="ff-home-logo"><Image src="/logo-wordmark.webp" alt="퍼스트 프렌드" width={95} height={18} priority unoptimized /></h1>
         <div className="ff-top-actions"><NotificationBell home /></div>
@@ -203,14 +203,13 @@ export function HomeTopbar() {
               </div>)}
               {!neighborhoods.length && <div className="ff-neighborhood-empty"><IconLocationpinLine aria-hidden /><strong>아직 설정한 동네가 없어요</strong><span>가까운 보호소와 친구를 찾을 동네를 추가해 주세요.</span></div>}
               <div className="ff-neighborhood-row">
-                <button type="button" className="ff-neighborhood-select" onClick={selectAll} aria-label={allRegions ? "전체보기, 현재 선택됨" : "전체보기로 전환, 전국 친구를 최근 등록순으로 봅니다"}>
+                <button type="button" className="ff-neighborhood-select" onClick={selectAll} aria-label={allRegions ? "모두 보기, 현재 선택됨" : "모두 보기로 전환"}>
                   <span className={allRegions ? "ff-neighborhood-radio is-active" : "ff-neighborhood-radio"} />
-                  <span className="ff-neighborhood-label"><strong>전체보기</strong><small>전국 친구를 최근 등록순으로 봐요</small></span>
+                  <strong>모두 보기</strong>
                 </button>
               </div>
             </div>
             <button type="button" className="ff-neighborhood-add" onClick={openSearch} disabled={neighborhoods.length >= 2}><IconPlusLine aria-hidden />동네 추가</button>
-            <a className="ff-neighborhood-help" href="/privacy"><IconQuestionmarkCircleLine aria-hidden />내 동네 설정이 무엇인가요?</a>
           </div> : <div className="ff-neighborhood-search">
             <div className="ff-neighborhood-searchbar">
               <button type="button" onClick={() => setMode("manage")} aria-label="동네 설정으로 돌아가기"><IconChevronLeftLine aria-hidden /></button>

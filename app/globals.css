@@ -1384,8 +1384,9 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 /* Home: local-first feed inspired by familiar neighborhood marketplace patterns */
 .ff-home-page { padding-top: 0; }
 .ff-home-topbar { position: sticky; }
-.ff-home-brandbar { width: 100%; display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; }
-.ff-home-brandbar .ff-top-actions:last-child { justify-self: end; }
+.ff-topbar-row { width: 100%; display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; }
+.ff-topbar-row .ff-top-actions:last-child { justify-self: end; }
+.ff-topbar-row .ff-topbar-main-title { text-align: center; }
 .ff-home-logo { margin: 0; justify-self: center; display: flex; align-items: center; }
 .ff-home-logo img { height: 18px; width: auto; }
 .ff-home-regionbar { padding: 10px 12px 0; }
@@ -1398,8 +1399,6 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-neighborhood-row { min-height: 66px; display: grid; grid-template-columns: minmax(0,1fr) 48px; align-items: center; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
 .ff-neighborhood-select { min-width: 0; min-height: 66px; display: flex; align-items: center; gap: 14px; padding: 0 4px; border: 0; background: transparent; color: var(--seed-color-fg-neutral); text-align: left; cursor: pointer; }
 .ff-neighborhood-select strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; line-height: 24px; }
-.ff-neighborhood-label { display: grid; gap: 2px; min-width: 0; }
-.ff-neighborhood-label small { color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 18px; }
 .ff-neighborhood-radio { width: 24px; height: 24px; flex: none; border: 2px solid var(--seed-color-stroke-neutral-contrast); border-radius: 50%; background: var(--seed-color-bg-layer-default); }
 .ff-neighborhood-radio.is-active { border: 7px solid var(--seed-color-bg-brand-solid); }
 .ff-neighborhood-remove { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; color: var(--seed-color-fg-neutral-muted); background: transparent; cursor: pointer; }
@@ -1412,8 +1411,6 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-neighborhood-add { min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 0 18px; border: 0; border-radius: 12px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-neutral-weak); font-size: 17px; font-weight: 750; cursor: pointer; }
 .ff-neighborhood-add:disabled { color: var(--seed-color-fg-neutral-disabled); cursor: not-allowed; }
 .ff-neighborhood-add svg { width: 22px; height: 22px; }
-.ff-neighborhood-help { min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 7px; color: var(--seed-color-fg-neutral-muted); font-size: 15px; font-weight: 650; }
-.ff-neighborhood-help svg { width: 20px; height: 20px; }
 .ff-neighborhood-search { display: grid; gap: 18px; padding-bottom: max(18px,env(safe-area-inset-bottom)); }
 .ff-neighborhood-searchbar { display: grid; grid-template-columns: 44px minmax(0,1fr) 48px; gap: 7px; align-items: center; }
 .ff-neighborhood-searchbar > button { min-height: 44px; display: grid; place-items: center; padding: 0; border: 0; color: var(--seed-color-fg-neutral); background: transparent; font-size: 15px; font-weight: 750; cursor: pointer; }

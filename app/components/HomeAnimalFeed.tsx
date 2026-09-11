@@ -16,16 +16,6 @@ function compactLostDate(value: string) {
   return match ? `${Number(match[2])}월 ${Number(match[3])}일` : value;
 }
 
-function uniqueLostAnimals(animals: LostAnimal[]) {
-  const seen = new Set<string>();
-  return animals.filter(animal => {
-    const key = animal.rfidCd?.trim() || animal.legacyId?.trim() || animal.id;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
 function compactLostDescription(value: string) {
   const text = value.trim();
   return text.length > 25 ? `${text.slice(0, 25)}...` : text;
@@ -59,7 +49,7 @@ export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
   const [lostAnimals, setLostAnimals] = useState<LostAnimal[]>([]);
   const { cursor, loadMore } = feed;
   const lostRegion = feed.location?.label || feed.region;
-  useEffect(() => { let active = true; const controller = new AbortController(); const query = lostRegionQuery(lostRegion); const search = query ? `?province=${encodeURIComponent(query.provinces[0])}&prefix=${encodeURIComponent(query.prefix)}${query.dong ? `&dong=${encodeURIComponent(query.dong)}` : ""}` : ""; fetch(`/api/lost-found${search}`, { signal: controller.signal }).then(response => response.ok ? response.json() as Promise<{ animals?: LostAnimal[] }> : Promise.reject(new Error("lost animals unavailable"))).then(body => { if (active) setLostAnimals(uniqueLostAnimals(body.animals || [])); }).catch(() => { if (active && !controller.signal.aborted) setLostAnimals([]); }); return () => { active = false; controller.abort(); }; }, [lostRegion]);
+  useEffect(() => { let active = true; const controller = new AbortController(); const query = lostRegionQuery(lostRegion); const search = query ? `?province=${encodeURIComponent(query.provinces[0])}&prefix=${encodeURIComponent(query.prefix)}${query.dong ? `&dong=${encodeURIComponent(query.dong)}` : ""}` : ""; fetch(`/api/lost-found${search}`, { signal: controller.signal }).then(response => response.ok ? response.json() as Promise<{ animals?: LostAnimal[] }> : Promise.reject(new Error("lost animals unavailable"))).then(body => { if (active) setLostAnimals(body.animals || []); }).catch(() => { if (active && !controller.signal.aborted) setLostAnimals([]); }); return () => { active = false; controller.abort(); }; }, [lostRegion]);
   useEffect(() => {
     const node = sentinel.current;
     if (!node || !cursor) return;

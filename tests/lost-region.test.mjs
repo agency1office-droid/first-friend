@@ -55,3 +55,34 @@ test('lost animal freshness and card region come from the incident address', asy
   assert.equal(LOST_FRESHNESS_DAYS,90);
   assert.equal(lostFreshnessCutoff(new Date('2026-09-10T00:00:00Z')),'2026-06-12');
 });
+
+test('duplicate public notices never fill the district list with one animal', async t => {
+  const server=await createServer({configFile:false,envFile:false,server:{middlewareMode:true,hmr:false},appType:'custom',logLevel:'error'});
+  const oldFetch=globalThis.fetch, oldUrl=process.env.NEXT_PUBLIC_SUPABASE_URL, oldKey=process.env.SUPABASE_SECRET_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_URL='https://lost.example.test';process.env.SUPABASE_SECRET_KEY='test-only';
+  t.after(async()=>{globalThis.fetch=oldFetch;for(const [key,value] of [['NEXT_PUBLIC_SUPABASE_URL',oldUrl],['SUPABASE_SECRET_KEY',oldKey]]){if(value===undefined)delete process.env[key];else process.env[key]=value;}await server.close();});
+
+  const row=(id,image,address)=>({id,legacy_id:id,species:'강아지',breed:'말티즈',sex:'암컷',age:'11살',color:'흰색',happened_at:'2026년 9월 2일',region:'서울특별시 성북구',address,place:address,description:'특징',image});
+  let params=null;
+  globalThis.fetch=async(url,options)=>{
+    const path=new URL(url).pathname;
+    assert.ok(path.endsWith('/rpc/search_public_lost_animals_nearby'),path);
+    params=JSON.parse(options.body);
+    // 공공 API가 같은 등록 사진으로 같은 건을 세 번 실은 상황입니다.
+    return Response.json([
+      row('a','https://img.test/one.jpg','서울특별시 성북구 정릉동 1'),
+      row('b','https://img.test/one.jpg','서울특별시 성북구 정릉동 1'),
+      row('c','https://img.test/one.jpg','서울특별시 성북구 정릉동 1'),
+      row('d','https://img.test/two.jpg','서울특별시 성북구 길음동 2'),
+    ]);
+  };
+
+  const {getNearbyStoredLostAnimals}=await server.ssrLoadModule('/lib/public-animal-store.ts');
+  const animals=await getNearbyStoredLostAnimals({provinces:['서울'],prefix:'성북구',dong:'성북구 정릉동'},2);
+
+  assert.deepEqual(params.p_provinces,['서울']);
+  assert.equal(params.p_prefix,'성북구');
+  assert.equal(params.p_dong,'성북구 정릉동');
+  assert.equal(params.p_limit,6,'중복을 걷어낸 뒤에도 목록이 차도록 넉넉히 받아옵니다');
+  assert.deepEqual(animals.map(animal=>animal.id),['a','d'],'같은 등록 사진은 한 건으로 합칩니다');
+});

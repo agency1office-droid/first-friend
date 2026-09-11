@@ -95,10 +95,18 @@ function lostPlace(address = "", happenPlace = "", region = "") {
 function missingHappenPlaceColumn(error: { code?: string; message?: string } | null) {
   return error?.code === "42703" && /happen_place|rfid_cd|happened_on/i.test(error.message || "");
 }
+// 공공 API는 같은 실종 건을 응답에 여러 번 싣습니다. 순번으로 키를 만들면
+// 같은 동물이 여러 행으로 저장되어 목록이 한 마리로 채워집니다.
+// 등록 사진 파일명은 중복 사이에서 동일하므로 이를 대체 키로 씁니다.
+function lostPhotoKey(popfile = "") {
+  return popfile.split("?")[0].split("/").filter(Boolean).pop()?.replace(/\.[a-z0-9]+$/i, "").trim() || "";
+}
+
 function mapLostAnimal(item: LossItem, index: number, syncedAt: string) {
-  const id = item.rfidCd?.trim() || `${item.happenDt || "loss"}-${index}`;
   const species = lostSpecies(item.kindCd);
   if (!item.popfile || species === "기타") return null;
+  const photoKey = lostPhotoKey(item.popfile);
+  const id = item.rfidCd?.trim() || (photoKey ? `loss-${photoKey}` : `${item.happenDt || "loss"}-${index}`);
   return { id, legacyId: `${item.happenDt || "loss"}-${index}`, rfidCd: item.rfidCd?.trim() || undefined, species, breed: item.kindCd || "품종 미상", sex: lostSex(item.sexCd), age: item.age || "나이 미상", color: item.colorCd || "털색 미상", happenedAt: lostDate(item.happenDt), happenedOn: lostHappenedOn(item.happenDt), region: item.orgNm || "지역 미상", address: item.happenAddr || "", place: lostPlace(item.happenAddr || "", item.happenPlace || "", item.orgNm || ""), happenPlace: item.happenPlace?.trim() || undefined, description: item.specialMark || "등록된 특징이 없습니다.", image: secureImage(item.popfile), active: true, synced_at: syncedAt };
 }
 function displayName(item: AnimalItem) { return [item.kindNm || species(item), item.noticeNo?.split("-").at(-1)].filter(Boolean).join(" · "); }
@@ -656,16 +664,31 @@ function storedLostAnimal(row: Record<string, unknown>): LostAnimal {
   return { id: String(row.id), legacyId: String(row.legacy_id || ""), rfidCd: String(row.rfid_cd || "").trim() || undefined, species: String(row.species), breed: String(row.breed), sex: String(row.sex), age: String(row.age), color: String(row.color), happenedAt: lostDate(String(row.happened_at)), region, address, place: happenPlace ? lostPlace(address, happenPlace, region) : (storedPlace || lostPlace(address, "", region)), happenPlace: happenPlace || undefined, description: String(row.description || ""), image: String(row.image || ""), updated: compactDate(String(row.synced_at || "")) };
 }
 
+// 이미 저장된 중복 행이 남아 있어도 목록이 한 마리로 채워지지 않게 합니다.
+function uniqueLostAnimals(animals: LostAnimal[], limit: number) {
+  const seen = new Set<string>(), unique: LostAnimal[] = [];
+  for (const animal of animals) {
+    const key = animal.rfidCd?.trim() || animal.image.trim() || animal.id;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(animal);
+    if (unique.length >= limit) break;
+  }
+  return unique;
+}
+
 // 생활권 상한과 정렬은 모두 RPC가 계산합니다. 여기서는 파싱된 값을 그대로 넘깁니다.
 export async function getNearbyStoredLostAnimals(query: LostRegionQuery, limit = 8): Promise<LostAnimal[]> {
+  const safeLimit = Math.max(1, limit);
   const { data, error } = await getSupabaseServerClient().rpc("search_public_lost_animals_nearby", {
     p_provinces: query.provinces,
     p_prefix: query.prefix,
     p_dong: query.dong,
-    p_limit: Math.min(20, Math.max(1, limit)),
+    // 중복을 걷어낸 뒤에도 목록이 차도록 넉넉히 받아옵니다.
+    p_limit: Math.min(20, safeLimit * 3),
   });
   if (error) throw error;
-  return ((data || []) as Array<Record<string, unknown>>).map(storedLostAnimal);
+  return uniqueLostAnimals(((data || []) as Array<Record<string, unknown>>).map(storedLostAnimal), safeLimit);
 }
 
 export async function getStoredLostAnimals(limit = 12): Promise<LostAnimal[]> {
@@ -673,14 +696,14 @@ export async function getStoredLostAnimals(limit = 12): Promise<LostAnimal[]> {
   const supabase = getSupabaseServerClient();
   const cutoff = lostFreshnessCutoff();
   // 발생일이 오래된 공고는 제보로 이어지지 않아 노출하지 않습니다.
-  let { data, error } = await supabase.from("public_lost_animals").select("id,legacy_id,rfid_cd,species,breed,sex,age,color,happened_at,happened_on,region,address,place,happen_place,description,image,synced_at").eq("active", true).or(`happened_on.is.null,happened_on.gte.${cutoff}`).order("happened_on", { ascending: false, nullsFirst: false }).limit(safeLimit);
+  let { data, error } = await supabase.from("public_lost_animals").select("id,legacy_id,rfid_cd,species,breed,sex,age,color,happened_at,happened_on,region,address,place,happen_place,description,image,synced_at").eq("active", true).or(`happened_on.is.null,happened_on.gte.${cutoff}`).order("happened_on", { ascending: false, nullsFirst: false }).limit(Math.min(100, safeLimit * 3));
   if (missingHappenPlaceColumn(error)) {
     const legacy = await supabase.from("public_lost_animals").select("id,legacy_id,species,breed,sex,age,color,happened_at,region,address,place,description,image,synced_at").eq("active", true).order("happened_at", { ascending: false }).limit(safeLimit);
     data = legacy.data?.map(row => ({ ...row, rfid_cd: "", happen_place: "", happened_on: null })) ?? null;
     error = legacy.error;
   }
   if (error) throw error;
-  return (data || []).map(row => storedLostAnimal(row as Record<string, unknown>));
+  return uniqueLostAnimals((data || []).map(row => storedLostAnimal(row as Record<string, unknown>)), safeLimit);
 }
 
 export async function getStoredLostAnimalById(id: string) {

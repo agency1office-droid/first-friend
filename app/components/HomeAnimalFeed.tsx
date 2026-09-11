@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useEffect, useRef, useState } from "react";
-import { IconArrowUpRightLine } from "@karrotmarket/react-monochrome-icon";
+import { IconChevronRightLine } from "@karrotmarket/react-monochrome-icon";
 import type { LostAnimal } from "../../lib/public-data";
 import { lostDisplayRegion, lostRegionQuery } from "../../lib/lost-region";
 import type { AnimalPage } from "../../lib/public-animal-store";
@@ -34,8 +34,8 @@ function FeedLoadingState() {
 function LostAnimalInsert({ animal }: { animal: LostAnimal }) {
   const detailHref = `/lost-found/animals/${encodeURIComponent(animal.id)}`;
   return <section className="ff-home-lost-insert" aria-label="실종 동물 안내">
-    <Link className="ff-home-lost-link" href={detailHref} target="_blank" rel="noreferrer" aria-label={`${animal.species} 실종 동물 상세 정보를 새 탭에서 보기`}>
-      <div className="ff-home-lost-head"><div><div className="ff-kicker">도움이 필요한 친구</div><h2>실종 동물을 찾고 있어요</h2></div><span className="ff-home-lost-external-icon"><IconArrowUpRightLine aria-hidden /></span></div>
+    <Link className="ff-home-lost-link" href={detailHref} aria-label={`${animal.species} 실종 동물 상세 정보 보기`}>
+      <div className="ff-home-lost-head"><div><div className="ff-kicker">도움이 필요한 친구</div><h2>실종 동물을 찾고 있어요</h2></div><span className="ff-home-lost-external-icon"><IconChevronRightLine aria-hidden /></span></div>
       <div className="ff-home-lost-card">
         <Image src={animal.image} alt={`${animal.breed} 실종 동물`} width={104} height={104} unoptimized />
         <span><strong>{animal.species} · {animal.sex}</strong><small>{lostDisplayRegion(animal.address, animal.region)} · {compactLostDate(animal.happenedAt)}</small><small>{compactLostDescription(animal.description || "등록된 특징이 없습니다.")}</small></span>

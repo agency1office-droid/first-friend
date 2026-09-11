@@ -56,10 +56,12 @@ test("keeps every requested home search journey in the floating search menu", as
     assert.match(source, new RegExp(path.replaceAll("/", "\\/")));
 });
 
-test("keeps notifications before the rightmost home menu", async () => {
+test("orders the home brand bar as menu, logo, then notifications", async () => {
   const source = await readFile(new URL("../app/components/HomeTopbar.tsx", import.meta.url), "utf8");
-  const actions = source.slice(source.indexOf('<div className="ff-top-actions">'));
-  assert.ok(actions.indexOf('<NotificationBell home />') < actions.indexOf('<GlobalMenuButton />'));
+  const brandbar = source.slice(source.indexOf('<div className="ff-home-brandbar">'));
+  assert.match(brandbar, /logo-wordmark\.webp/);
+  assert.ok(brandbar.indexOf("<GlobalMenuButton />") < brandbar.indexOf("logo-wordmark.webp"));
+  assert.ok(brandbar.indexOf("logo-wordmark.webp") < brandbar.indexOf("<NotificationBell home />"));
   const notificationBell = await readFile(new URL("../app/components/NotificationBell.tsx", import.meta.url), "utf8");
   assert.match(notificationBell, /ff-home-notification/);
   assert.match(notificationBell, /unread > 99 \? "99\+" : unread/);

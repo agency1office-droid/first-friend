@@ -1488,7 +1488,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-status-filter-body { padding-bottom: var(--seed-dimension-x4); }
 .ff-status-options { display: grid; gap: 10px; }
 .ff-status-option { position: relative; min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 14px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-layer-default); text-align: left; cursor: pointer; }
-.ff-status-option[aria-selected="true"] { border-color: var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-weak); box-shadow: inset 0 0 0 1px var(--seed-color-stroke-brand-solid); }
+.ff-status-option[aria-selected="true"] { border: 1px dashed var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-weak); }
 .ff-status-option > span { display: grid; gap: 4px; min-width: 0; }
 .ff-status-option strong { font-size: 15px; line-height: 21px; }
 .ff-status-option small { color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; }

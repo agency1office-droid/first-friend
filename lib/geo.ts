@@ -31,8 +31,20 @@ export function formatDrivingDuration(seconds: number) {
   return remainder === 0 ? `${hours}시간` : `${hours}시간 ${remainder}분`;
 }
 
+export const ALL_REGIONS_KEY = "ff-home-region-all";
+
+// 전체보기를 켜면 IP 좌표 자동 복구를 막아야 하므로 좌표와 별도로 보관합니다.
+export function readAllRegions(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(ALL_REGIONS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function readHomeLocation(): HomeLocation | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined" || readAllRegions()) return null;
   try {
     const value = JSON.parse(window.localStorage.getItem("ff-home-location") || window.localStorage.getItem("ff-ip-location") || "null") as HomeLocation | null;
     return isKoreaPoint(value) ? value : null;

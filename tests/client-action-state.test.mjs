@@ -33,7 +33,7 @@ test('manual neighborhood selection wins over delayed IP and profile restoration
         };
         if (id === './AppFeedback') return { useAppFeedback: () => ({ success() {}, error() {} }) };
         if (id === './defaultHomeLocation') return { loadDefaultHomeLocation: () => stage === 'ip' || stage === 'unmount' ? delayed : Promise.resolve(automatic) };
-        if (id === '../../lib/geo') return { readHomeLocation: () => null, isKoreaPoint: () => true };
+        if (id === '../../lib/geo') return { readHomeLocation: () => null, isKoreaPoint: () => true, readAllRegions: () => false, ALL_REGIONS_KEY: 'ff-home-region-all' };
         if (id === 'react/jsx-runtime') return require(id);
         return stub;
       },

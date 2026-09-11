@@ -1393,6 +1393,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-neighborhood-row { min-height: 66px; display: grid; grid-template-columns: minmax(0,1fr) 48px; align-items: center; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
 .ff-neighborhood-select { min-width: 0; min-height: 66px; display: flex; align-items: center; gap: 14px; padding: 0 4px; border: 0; background: transparent; color: var(--seed-color-fg-neutral); text-align: left; cursor: pointer; }
 .ff-neighborhood-select strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; line-height: 24px; }
+.ff-neighborhood-label { display: grid; gap: 2px; min-width: 0; }
+.ff-neighborhood-label small { color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 18px; }
 .ff-neighborhood-radio { width: 24px; height: 24px; flex: none; border: 2px solid var(--seed-color-stroke-neutral-contrast); border-radius: 50%; background: var(--seed-color-bg-layer-default); }
 .ff-neighborhood-radio.is-active { border: 7px solid var(--seed-color-bg-brand-solid); }
 .ff-neighborhood-remove { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; color: var(--seed-color-fg-neutral-muted); background: transparent; cursor: pointer; }

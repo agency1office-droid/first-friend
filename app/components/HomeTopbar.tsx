@@ -5,7 +5,7 @@ import { BottomSheetBody, BottomSheetContent, BottomSheetRoot, BottomSheetTrigge
 import { TextField, TextFieldInput } from "seed-design/ui/text-field";
 import { IconChevronDownLine, IconChevronLeftLine, IconChevronRightLine, IconLocationpinFill, IconLocationpinLine, IconPlusLine, IconQuestionmarkCircleLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import type { HomeLocation } from "../../lib/geo";
-import { isKoreaPoint, readHomeLocation } from "../../lib/geo";
+import { ALL_REGIONS_KEY, isKoreaPoint, readAllRegions, readHomeLocation } from "../../lib/geo";
 import { useAppFeedback } from "./AppFeedback";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalMenuButton } from "./GlobalMenuButton";
@@ -28,6 +28,7 @@ export function HomeTopbar() {
   const [searching, setSearching] = useState(false);
   const [regionOpen, setRegionOpen] = useState(false);
   const [mode, setMode] = useState<"manage" | "search">("manage");
+  const [allRegions, setAllRegions] = useState(false);
   const feedback = useAppFeedback();
   const locationVersion = useRef(0);
 
@@ -40,6 +41,12 @@ export function HomeTopbar() {
       if (!current()) return;
       const local = savedLocations();
       const storedLocal = local.filter((row) => !/^[A-Za-z\s-]+$/.test(row.label));
+      if (readAllRegions()) {
+        setNeighborhoods(storedLocal);
+        setAllRegions(true);
+        setRegion("전체보기");
+        return;
+      }
       if (storedLocal.length) {
         setNeighborhoods(storedLocal);
         setRegion(storedLocal[0].label);
@@ -90,6 +97,8 @@ export function HomeTopbar() {
 
   function store(next: HomeLocation[]) {
     locationVersion.current++;
+    setAllRegions(false);
+    window.localStorage.removeItem(ALL_REGIONS_KEY);
     const limited = next.slice(0, 2);
     setNeighborhoods(limited);
     if (!limited.length) {
@@ -113,6 +122,18 @@ export function HomeTopbar() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ homeRegion: active.label }),
     });
+  }
+
+  function selectAll() {
+    locationVersion.current++;
+    setAllRegions(true);
+    setRegion("전체보기");
+    window.localStorage.setItem(ALL_REGIONS_KEY, "1");
+    window.localStorage.removeItem("ff-home-region");
+    window.localStorage.removeItem("ff-home-location");
+    window.localStorage.removeItem("ff-ip-location");
+    window.dispatchEvent(new Event("ff-region-change"));
+    feedback.success("전국 친구를 최근 등록순으로 보여드려요");
   }
 
   function activate(item: HomeLocation) {
@@ -165,13 +186,19 @@ export function HomeTopbar() {
           {mode === "manage" ? <div className="ff-neighborhood-manager">
             <div className="ff-neighborhood-list">
               {neighborhoods.map((item, index) => <div className="ff-neighborhood-row" key={item.label}>
-                <button type="button" className="ff-neighborhood-select" onClick={() => activate(item)} aria-label={`${item.label}${index === 0 ? ", 현재 선택됨" : ", 이 동네로 전환"}`}>
-                  <span className={index === 0 ? "ff-neighborhood-radio is-active" : "ff-neighborhood-radio"} />
+                <button type="button" className="ff-neighborhood-select" onClick={() => activate(item)} aria-label={`${item.label}${index === 0 && !allRegions ? ", 현재 선택됨" : ", 이 동네로 전환"}`}>
+                  <span className={index === 0 && !allRegions ? "ff-neighborhood-radio is-active" : "ff-neighborhood-radio"} />
                   <strong>{item.label}</strong>
                 </button>
                 <button type="button" className="ff-neighborhood-remove" onClick={() => remove(item)} aria-label={`${item.label} 삭제`}><IconXmarkLine aria-hidden /></button>
               </div>)}
               {!neighborhoods.length && <div className="ff-neighborhood-empty"><IconLocationpinLine aria-hidden /><strong>아직 설정한 동네가 없어요</strong><span>가까운 보호소와 친구를 찾을 동네를 추가해 주세요.</span></div>}
+              <div className="ff-neighborhood-row">
+                <button type="button" className="ff-neighborhood-select" onClick={selectAll} aria-label={allRegions ? "전체보기, 현재 선택됨" : "전체보기로 전환, 전국 친구를 최근 등록순으로 봅니다"}>
+                  <span className={allRegions ? "ff-neighborhood-radio is-active" : "ff-neighborhood-radio"} />
+                  <span className="ff-neighborhood-label"><strong>전체보기</strong><small>전국 친구를 최근 등록순으로 봐요</small></span>
+                </button>
+              </div>
             </div>
             <button type="button" className="ff-neighborhood-add" onClick={openSearch} disabled={neighborhoods.length >= 2}><IconPlusLine aria-hidden />동네 추가</button>
             <a className="ff-neighborhood-help" href="/privacy"><IconQuestionmarkCircleLine aria-hidden />내 동네 설정이 무엇인가요?</a>

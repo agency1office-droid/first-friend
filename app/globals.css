@@ -285,8 +285,7 @@ img { display: block; max-width: 100%; }
 .ff-animal-photo-link { display: block; overflow: hidden; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: var(--seed-radius-r3); color: inherit; text-decoration: none; }
 .ff-animal-card-photo .ff-animal-image { display: block; height: 100%; }
 .ff-animal-card-photo .ff-animal-image-wrap { border-radius: 0; }
-.ff-animal-photo-status.ff-detail-gallery-status { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: var(--seed-dimension-x1); min-height: 44px; padding: var(--seed-dimension-x2) var(--seed-dimension-x3); border-bottom: 0; font-size: var(--seed-font-size-t2); line-height: var(--seed-line-height-t2); word-break: keep-all; }
-.ff-animal-photo-status.ff-public-status-ended, .ff-animal-photo-status.ff-public-status-unknown { color: var(--seed-color-fg-neutral-muted); background: var(--seed-color-bg-neutral-weak); border-bottom-color: var(--seed-color-stroke-neutral-muted); }
+.ff-animal-photo-status { position: absolute; left: var(--seed-dimension-x2); bottom: var(--seed-dimension-x2); margin-top: 0; max-width: calc(100% - 16px); }
 .ff-animal-photo-caption { position: absolute; inset: 0 0 auto; padding: var(--seed-dimension-x3) 52px var(--seed-dimension-x8) var(--seed-dimension-x3); background: linear-gradient(to bottom, var(--seed-color-palette-static-black-alpha-900), var(--seed-color-palette-static-black-alpha-700) 45%, transparent); }
 .ff-animal-photo-name { color: var(--seed-color-palette-static-white); font-size: var(--seed-font-size-t5); line-height: var(--seed-line-height-t5); font-weight: var(--seed-font-weight-bold); overflow-wrap: anywhere; }
 .ff-animal-image-wrap { position: relative; border-radius: 12px; overflow: hidden; background: var(--seed-color-bg-neutral-weak); }

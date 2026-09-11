@@ -30,6 +30,7 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
   const [imageUnavailable, setImageUnavailable] = useState(false);
   const [removeScrap, setRemoveScrap] = useState<(() => Promise<void>) | null>(null);
   const publicStatus = getAnimalPublicStatus(animal);
+  const photoNoticeDays = publicStatus.phase === "notice" ? getNoticeDaysRemaining(publicStatus.notice) : null;
   const animalHref = `/friends/${animal.id}`;
   const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}` : "/shelters";
   if (imageUnavailable || !animal.image.trim()) return null;
@@ -38,10 +39,7 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
       <div className="ff-animal-image-wrap">
         <AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail onUnavailable={() => setImageUnavailable(true)}/>
         <div className="ff-animal-photo-caption"><div className="ff-animal-photo-name">{animal.name}</div></div>
-      </div>
-      <div className={`ff-detail-gallery-status ff-public-status-${publicStatus.phase} ff-animal-photo-status`}>
-        {publicStatus.phase === "notice" && getNoticeDaysRemaining(publicStatus.notice) !== null && <span className="ff-detail-status-day">D-{getNoticeDaysRemaining(publicStatus.notice)}</span>}
-        <strong>{publicStatus.cardLabel}</strong>
+        {publicStatus.cardLabel && <Badge className={`ff-animal-row-public-status ff-animal-photo-status ff-public-status-${publicStatus.phase}`} tone={publicStatus.tone} variant="weak">{photoNoticeDays === null ? publicStatus.cardLabel : `D-${photoNoticeDays} ${publicStatus.cardLabel}`}</Badge>}
       </div>
     </Link>
     <FavoriteButton animalId={animal.id} animalName={animal.name} initialSaved={initialSaved} onFavoriteChange={onFavoriteChange} onRemoveRequest={remove => setRemoveScrap(() => remove)}/>

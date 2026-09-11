@@ -172,12 +172,15 @@ export function HomeTopbar() {
     setMode("search");
   }
 
-  return <header className="ff-topbar ff-home-topbar">
-    <div className="ff-home-brandbar">
-      <div className="ff-top-actions"><GlobalMenuButton /></div>
-      <h1 className="ff-home-logo"><Image src="/logo-wordmark.webp" alt="퍼스트 프렌드" width={116} height={22} priority unoptimized /></h1>
-      <div className="ff-top-actions"><NotificationBell home /></div>
-    </div>
+  return <>
+    <header className="ff-topbar ff-home-topbar">
+      <div className="ff-home-brandbar">
+        <div className="ff-top-actions"><GlobalMenuButton /></div>
+        <h1 className="ff-home-logo"><Image src="/logo-wordmark.webp" alt="퍼스트 프렌드" width={95} height={18} priority unoptimized /></h1>
+        <div className="ff-top-actions"><NotificationBell home /></div>
+      </div>
+    </header>
+    <div className="ff-home-regionbar">
     <BottomSheetRoot open={regionOpen} onOpenChange={(open) => { setRegionOpen(open); if (!open) setMode("manage"); }}>
       <BottomSheetTrigger asChild>
         <button className="ff-home-region" type="button" aria-label={`현재 지역 ${region}, 지역 변경`}>
@@ -228,5 +231,6 @@ export function HomeTopbar() {
         </BottomSheetBody>
       </BottomSheetContent>
     </BottomSheetRoot>
-  </header>;
+    </div>
+  </>;
 }

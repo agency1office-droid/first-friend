@@ -1383,11 +1383,12 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 
 /* Home: local-first feed inspired by familiar neighborhood marketplace patterns */
 .ff-home-page { padding-top: 0; }
-.ff-home-topbar { height: auto; display: block; padding-bottom: 10px; position: sticky; border-bottom: 0; }
-.ff-home-brandbar { min-height: 56px; display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; margin-inline: -12px; padding-inline: 12px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
+.ff-home-topbar { position: sticky; }
+.ff-home-brandbar { width: 100%; display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; }
 .ff-home-brandbar .ff-top-actions:last-child { justify-self: end; }
 .ff-home-logo { margin: 0; justify-self: center; display: flex; align-items: center; }
-.ff-home-logo img { height: 22px; width: auto; }
+.ff-home-logo img { height: 18px; width: auto; }
+.ff-home-regionbar { padding: 10px 12px 0; }
 .ff-home-region { max-width: 65%; min-height: 44px; display: inline-flex; align-items: center; gap: 4px; padding: 0 4px; border: 0; color: var(--seed-color-fg-neutral); background: transparent; font-size: 20px; line-height: 28px; font-weight: 700; letter-spacing: -.02em; }
 .ff-home-region span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ff-home-region svg { width: 20px; height: 20px; flex: none; }
@@ -1446,7 +1447,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-home-menu a { min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); font-size: 16px; font-weight: 700; }
 .ff-home-menu a svg { width: 20px; height: 20px; color: var(--seed-color-fg-neutral-muted); }
 .ff-home-feed { min-width: 0; }
-.ff-home-feed-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0 10px; }
+.ff-home-feed-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 2px 0 10px; }
 .ff-home-feed-head > a { min-height: 0; display: inline-flex; align-items: center; flex: none; color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; font-weight: 700; }
 .ff-home-feed [data-part="root"] { margin-bottom: 8px; }
 .ff-home-feed .ff-animal-filter-wrap { margin-bottom: 0; }

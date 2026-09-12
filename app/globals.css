@@ -1423,7 +1423,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-home-logo img { height: 18px; width: auto; }
 .ff-home-regionbar { padding: 10px 12px 0; }
 .ff-home-shortcuts { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); padding: 16px 8px 14px; background: var(--seed-color-bg-layer-basement); border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
-.ff-home-shortcut { display: grid; justify-items: center; gap: 8px; padding: 0; color: var(--seed-color-fg-neutral); font-size: 12px; line-height: 16px; font-weight: var(--seed-font-weight-medium); }
+.ff-home-shortcut { display: grid; justify-items: center; gap: 8px; padding: 0; border: 0; background: none; color: var(--seed-color-fg-neutral); font-size: 12px; line-height: 16px; font-weight: var(--seed-font-weight-medium); cursor: pointer; }
 .ff-home-shortcut-icon { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 16px; background: var(--seed-color-bg-layer-default); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
 .ff-home-shortcut-icon svg { width: 30px; height: 30px; }
 .ff-home-region { max-width: 65%; min-height: 44px; display: inline-flex; align-items: center; gap: 4px; padding: 0 4px; border: 0; color: var(--seed-color-fg-neutral); background: transparent; font-size: 20px; line-height: 28px; font-weight: 700; letter-spacing: -.02em; }

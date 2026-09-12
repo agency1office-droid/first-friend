@@ -2,7 +2,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PUBLIC_ANIMAL_AGE_MAX } from "../../lib/animal-filter-ranges";
 import { IconCalendarLine, IconCheckmarkScaleLine, IconChevronLeftLine, IconChevronDownLine, IconHospitalcrossShieldLine, IconPawprintLine, IconMalesymbolFemalesymbolLine, IconSlider2HorizontalLine, IconTagLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import { Icon } from "@seed-design/react";
@@ -54,18 +54,25 @@ const dogCoatColors = ["흰색", "검정", "갈색", "황색", "회색", "기타
 const catCoatColors = ["흰색", "검정", "갈색", "황색", "회색", "삼색", "고등어", "치즈", "기타·복합색"] as const;
 const colorsForSpecies = (species: AnimalFeedFilters["species"]) => species === "dog" ? dogCoatColors : species === "cat" ? catCoatColors : coatColors;
 
+export const OPEN_ALL_FILTERS_EVENT = "ff-open-all-filters";
+
 export function AllAnimalFilters({ activeCount, filters, setFilter, resetFilters }: Props) {
   const [open, setOpen] = useState(false), [loading, setLoading] = useState(false), [countLoading, setCountLoading] = useState(false), [draftCount, setDraftCount] = useState<number | null>(null), [error, setError] = useState(""), [options, setOptions] = useState<Options | null>(null);
   const [species, setSpecies] = useState<AnimalFeedFilters["species"]>(filters.species), [breeds, setBreeds] = useState<string[]>(filters.breedKeys), [sex, setSex] = useState<string[]>([]), [neutered, setNeutered] = useState<string[]>([]), [color, setColor] = useState(filters.color);
   const [ageGroup, setAgeGroup] = useState(filters.ageGroup), [sizeGroup, setSizeGroup] = useState(filters.sizeGroup), [breedQuery, setBreedQuery] = useState(""), [showBreeds, setShowBreeds] = useState(false);
   const toggle = (setter: React.Dispatch<React.SetStateAction<string[]>>) => (value: string) => setter(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value]);
-  const openPanel = () => {
+  const openPanel = useCallback(() => {
     // 필터 창을 여는 순간 검색 함수를 미리 깨워 첫 조건 선택 때의
     // Vercel cold start를 사용자 대기시간에 포함시키지 않습니다.
     void fetch("/api/animals?limit=1&sort=recent", { cache: "force-cache", keepalive: true }).catch(() => undefined);
     setSpecies(filters.species); setBreeds(filters.breedKeys); setSex(filters.sex === "all" ? [] : filters.sex.split(",").filter(Boolean).map(value => value === "female" ? "암컷" : value === "unknown" ? "미상" : "수컷")); setNeutered(filters.neutered === "all" ? [] : filters.neutered.split(",").map(value => value === "yes" ? "중성화 완료" : "중성화 안 됨"));
     setAgeGroup(filters.ageGroup); setSizeGroup(filters.species === "all" ? "all" : filters.sizeGroup); setColor(filters.color); setBreedQuery(""); setShowBreeds(Boolean(filters.species !== "all")); setError(""); setOpen(true);
-  };
+  }, [filters]);
+  useEffect(() => {
+    // 홈 바로가기 '친구 찾기'가 같은 필터 창을 열 수 있도록 윈도우 이벤트를 받습니다.
+    window.addEventListener(OPEN_ALL_FILTERS_EVENT, openPanel);
+    return () => window.removeEventListener(OPEN_ALL_FILTERS_EVENT, openPanel);
+  }, [openPanel]);
   useEffect(() => {
     if (!open || options) return;
     setLoading(true); fetch("/api/animal-filter-options").then(async response => { const body = await response.json(); if (!response.ok) throw new Error(body.error || "필터를 불러오지 못했어요."); setOptions(body); }).catch(value => setError(value instanceof Error ? value.message : "필터를 불러오지 못했어요.")).finally(() => setLoading(false));

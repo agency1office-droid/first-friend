@@ -202,8 +202,8 @@ export function WorldCupFinder() {
       <p className="ff-care-step-count">{roundLabel(bracket.round.length)} · {bracket.index / 2 + 1}/{Math.ceil(bracket.round.length / 2)}</p>
       <h1 id="care-step-title">더 끌리는 친구를 골라주세요.</h1>
       <p className="ff-care-helper">사진을 누르면 등록된 사진을 모두 볼 수 있어요.{filled > 0 && ` 비슷한 친구 ${filled}마리를 더했어요.`}</p>
-      <RadioGroup aria-label="더 끌리는 친구" value={selected?.id ?? ""} onValueChange={value => setSelected(pair.find(animal => animal.id === value) ?? null)}><div className="ff-worldcup-cards">{pair.map(animal => { const photos = photosOf(animal); const isSelected = selected?.id === animal.id; return <div className="ff-worldcup-candidate" data-selected={isSelected || undefined} key={animal.id}>
-        {/* 사진을 누르면 등록된 사진을 모두 보여 주고, 선택은 아래 라디오 버튼으로 합니다. */}
+      <RadioGroup aria-label="더 끌리는 친구" value={selected?.id ?? ""} onValueChange={value => setSelected(pair.find(animal => animal.id === value) ?? null)}><div className="ff-worldcup-cards">{pair.map(animal => { const photos = photosOf(animal); const isSelected = selected?.id === animal.id; return <div className="ff-worldcup-entry" key={animal.id}><div className="ff-worldcup-candidate" data-selected={isSelected || undefined}>
+        {/* 카드는 사진만 담습니다. 누르면 등록된 사진을 모두 보여 주고, 선택은 카드 밖 라디오 버튼으로 합니다. */}
         <button type="button" className="ff-worldcup-photo" onClick={() => openViewer(animal)} aria-label={`${animal.name}, ${displayAge(animal.age)}, 사진 ${photos.length}장 크게 보기`}>
           <div className="ff-animal-image-wrap">
             <AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt="" priority />
@@ -212,8 +212,7 @@ export function WorldCupFinder() {
             {photos.length > 1 && <span className="ff-card-photo-count" aria-hidden><IconPicture2StackedLine /></span>}
           </div>
         </button>
-        <div className="ff-worldcup-pick-row"><RadioGroupItem value={animal.id} aria-label={`${animal.name} 선택`} /></div>
-      </div>; })}</div></RadioGroup>
+      </div><div className="ff-worldcup-pick-row"><RadioGroupItem value={animal.id} aria-label={`${animal.name} 선택`} /></div></div>; })}</div></RadioGroup>
     </section>
     : <section className="ff-care-step" aria-labelledby="care-step-title">
       <p className="ff-care-step-count">{stepIndex + 1}/{steps.length}</p>

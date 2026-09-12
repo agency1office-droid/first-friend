@@ -10,7 +10,7 @@ async function loadWorldcup(t){
 
 // 공공 데이터 Animal의 최소 형태만 흉내 냅니다. 사진·공고 문구·나이대·털색이 로직에 쓰이는 전부입니다.
 function animal(id,overrides={}){
-  return {id,name:`친구${id}`,image:`https://img/${id}.jpg`,life:[],ageGroup:'어린 친구',colors:['흰색'],...overrides};
+  return {id,name:`친구${id}`,image:`https://img/${id}.jpg`,life:[],ageGroup:'어린 친구',colors:['흰색'],summary:'',...overrides};
 }
 const notice=(start,end)=>`공고 ${start} ~ ${end}`;
 const answers={species:'dog',scope:'nearby',size:'large,xlarge',age:'young',color:'흰색'};
@@ -70,6 +70,18 @@ test('pool samples matched animals at random when a random source is given', asy
   // 무작위여도 첫 페이지 밖의 친구는 섞이지 않고, 순서만 달라집니다.
   assert.ok(pool.every(item=>primary.includes(item)));
   assert.notDeepEqual(pool.map(item=>item.id),primary.slice(0,16).map(item=>item.id));
+});
+
+test('health concerns in the shelter note are recognised', async t=>{
+  const {hasHealthConcern}=await loadWorldcup(t);
+  for(const note of ['교통사고로 폐출혈, 기력소실 .예후불량.','코 주위 및 발 부위 피부병. 털 상태 양호.','허약&탈진','뒷다리 심한 골절, 사고의심, 기력저하, 순함','무기력, 점액변,심한 결막염,허피스의심','기침있음,눈이조금안좋음(안약처치중)','건강 매우 상태 나쁨','외부기생충 감염(구충완료)']) assert.equal(hasHealthConcern(animal('x',{summary:note})),true,note);
+  for(const note of ['온순함','코 분홍. 털 상태 양호.','파보검 음성. 친화적. 활발.','겁이 많아요 예쁘게 생겼어요','아파트 화단에서 구조','노란 목걸이,방울','']) assert.equal(hasHealthConcern(animal('x',{summary:note})),false,note);
+});
+
+test('pool leaves out animals whose note reports injury or illness', async t=>{
+  const {pickPool}=await loadWorldcup(t);
+  const {pool}=pickPool([[animal('ok'),animal('sick',{summary:'교통사고, 의식 없음'}),animal('ok2'),animal('skin',{summary:'피부병'})]],4);
+  assert.deepEqual(pool.map(item=>item.id),['ok','ok2']);
 });
 
 test('pool is empty when fewer than two animals have photos', async t=>{

@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ActionButton } from "seed-design/ui/action-button";
-import { IconCheckmarkCircleFill, IconPicture2StackedLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
+import { RadioGroup, RadioGroupItem } from "seed-design/ui/radio-group";
+import { IconPicture2StackedLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import type { Animal } from "../../lib/data";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
@@ -80,7 +81,8 @@ export function WorldCupFinder() {
   const steps = stepsFor(draft.species);
   const step = steps[stepIndex];
   const answers = toAnswers(draft);
-  const usable = page ? page.items.filter(animal => animal.image.trim()).length : 0;
+  // 32강 노출과 부족 안내는 실제 후보 규칙(사진 있음·건강 문구 없음·중복 제외)과 같은 수로 판단합니다.
+  const usable = page ? pickPool([page.items], page.items.length).pool.length : 0;
   const shortBy = Math.max(0, roundSize - usable);
   const canContinue = step === "species" ? draft.species !== null : step === "size" ? draft.size !== null : step === "color" ? draft.color !== null : !empty;
   const stepProgress = Math.max((stepIndex / steps.length) * 100, 6.25);
@@ -110,6 +112,8 @@ export function WorldCupFinder() {
         picked = pickPool(pages, roundSize, Math.random);
       }
       if (!picked.pool.length) { setEmpty(true); return; }
+      // 압축 썸네일이 없는 최신 동물은 원본을 받아야 하므로, 대결이 시작되기 전에 후보 사진을 모두 미리 받아 둡니다.
+      picked.pool.forEach(animal => { const image = new window.Image(); image.decoding = "async"; image.src = optimizedAnimalImageUrl(animal.thumbnail || animal.image); });
       setPool(picked.pool); setFilled(picked.filled); setHistory([]); setSelected(null);
       setBracket(startBracket(picked.pool, Math.random));
       setPhase("match");
@@ -198,8 +202,8 @@ export function WorldCupFinder() {
       <p className="ff-care-step-count">{roundLabel(bracket.round.length)} · {bracket.index / 2 + 1}/{Math.ceil(bracket.round.length / 2)}</p>
       <h1 id="care-step-title">더 끌리는 친구를 골라주세요.</h1>
       <p className="ff-care-helper">사진을 누르면 등록된 사진을 모두 볼 수 있어요.{filled > 0 && ` 비슷한 친구 ${filled}마리를 더했어요.`}</p>
-      <div className="ff-worldcup-cards">{pair.map(animal => { const photos = photosOf(animal); const isSelected = selected?.id === animal.id; return <div className="ff-worldcup-candidate" data-selected={isSelected || undefined} key={animal.id}>
-        {/* 사진을 누르면 등록된 사진을 모두 보여 주고, 선택은 아래 버튼으로 합니다. */}
+      <RadioGroup aria-label="더 끌리는 친구" value={selected?.id ?? ""} onValueChange={value => setSelected(pair.find(animal => animal.id === value) ?? null)}><div className="ff-worldcup-cards">{pair.map(animal => { const photos = photosOf(animal); const isSelected = selected?.id === animal.id; return <div className="ff-worldcup-candidate" data-selected={isSelected || undefined} key={animal.id}>
+        {/* 사진을 누르면 등록된 사진을 모두 보여 주고, 선택은 아래 라디오 버튼으로 합니다. */}
         <button type="button" className="ff-worldcup-photo" onClick={() => openViewer(animal)} aria-label={`${animal.name}, ${displayAge(animal.age)}, 사진 ${photos.length}장 크게 보기`}>
           <div className="ff-animal-image-wrap">
             <AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt="" priority />
@@ -208,8 +212,8 @@ export function WorldCupFinder() {
             {photos.length > 1 && <span className="ff-card-photo-count" aria-hidden><IconPicture2StackedLine /></span>}
           </div>
         </button>
-        <div className="ff-worldcup-pick-row"><ActionButton size="small" variant={isSelected ? "brandSolid" : "neutralWeak"} className="ff-worldcup-pick" aria-pressed={isSelected} onClick={() => setSelected(animal)}>{isSelected ? <><IconCheckmarkCircleFill aria-hidden /> 선택했어요</> : `${animal.name} 선택`}</ActionButton></div>
-      </div>; })}</div>
+        <div className="ff-worldcup-pick-row"><RadioGroupItem value={animal.id} aria-label={`${animal.name} 선택`} /></div>
+      </div>; })}</div></RadioGroup>
     </section>
     : <section className="ff-care-step" aria-labelledby="care-step-title">
       <p className="ff-care-step-count">{stepIndex + 1}/{steps.length}</p>

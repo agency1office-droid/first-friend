@@ -1660,8 +1660,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 /* 첫 친구 이상형 월드컵: 입양 환경 점검 퀴즈 형식 안에서 쓰는 후보·결과 화면 */
 .ff-worldcup-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .ff-worldcup-candidate { position: relative; overflow: hidden; border: 2px solid transparent; border-radius: 20px; background: var(--seed-color-bg-neutral-weak); transition: border-color .16s ease, box-shadow .16s ease; }
-/* 선택된 카드는 굵은 실선과 바깥 링으로 한눈에 보이게 합니다. */
-.ff-worldcup-candidate[data-selected="true"] { border-color: var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-weak); box-shadow: 0 0 0 3px var(--seed-color-bg-brand-weak), 0 0 0 4px var(--seed-color-stroke-brand-solid); }
+/* 선택된 카드는 다른 선택지와 같은 브랜드 점선입니다. 사진 위에서도 보이도록 2px로 둡니다. */
+.ff-worldcup-candidate[data-selected="true"] { border: 2px dashed var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-weak); }
 .ff-worldcup-photo { display: block; width: 100%; margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
 .ff-worldcup-photo:focus-visible { outline: 3px solid var(--seed-color-stroke-brand-weak); outline-offset: -3px; }
 .ff-worldcup-photo .ff-animal-image-wrap { border-radius: 0; }
@@ -1669,10 +1669,9 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-worldcup-caption { display: grid; gap: 2px; padding: 12px 14px 40px; text-align: left; }
 .ff-worldcup-caption .ff-animal-photo-name { font-size: 17px; line-height: 24px; text-shadow: 0 1px 3px rgba(0,0,0,.28); }
 .ff-worldcup-caption small { color: var(--seed-color-palette-static-white); font-size: 12px; line-height: 16px; opacity: .92; text-shadow: 0 1px 3px rgba(0,0,0,.28); }
-/* 선택 버튼은 카드 아래 가운데에 둡니다. */
+/* 선택은 카드 아래 가운데의 SEED 라디오 버튼 하나로 합니다. */
 .ff-worldcup-pick-row { display: flex; justify-content: center; padding: 10px 12px 12px; }
-.ff-worldcup-pick { min-width: 160px; }
-.ff-worldcup-pick svg { width: 18px; height: 18px; margin-right: 4px; vertical-align: -4px; }
+.ff-worldcup-pick-row label { cursor: pointer; }
 .ff-worldcup-viewer-pick { font-weight: var(--seed-font-weight-bold); }
 .ff-image-dialog-actions .ff-worldcup-viewer-pick { width: auto; padding: 8px 14px; }
 /* 모바일은 상하 배치라 두 후보가 한 화면에 들어오도록 사진 높이를 줄입니다. */

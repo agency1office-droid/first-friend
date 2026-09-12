@@ -38,6 +38,13 @@ export function noticeDates(animal: Pick<Animal, "life">) {
   return { start: dates[0] ?? null, end: dates.at(-1) ?? null };
 }
 
+// 보호소가 적은 특징 문구에서 부상·질병 표현을 찾습니다. 문구가 없거나 성격·외모만 적힌 친구는 통과합니다.
+// 사진만으로 보이는 상태는 알 수 없으므로, 여기서 거르는 것은 문구에 적힌 경우뿐입니다.
+const HEALTH_CONCERN = /사고|출혈|골절|부상|상처|교상|절뚝|절름|보행이상|다리\s*못|마비|기력|무기력|허약|탈진|쇠약|저체온|탈수|마름|설사|점액변|구토|기침|콧물|눈곱|결막염|안질환|실명|눈\s*못|허피스|범백|파보\s*양성|지알디아|호흡기|폐렴|감기|피부병|피부\s*질환|탈모|진드기|기생충|염증|부종|종양|의식\s*없|예후|나쁨|나쁜|안\s*좋|힘들|아픔|다침|다쳐|치료|수술|입원|처치|안락사/;
+export function hasHealthConcern(animal: Pick<Animal, "summary">) {
+  return HEALTH_CONCERN.test(animal.summary ?? "");
+}
+
 function byDeadline(a: Animal, b: Animal) {
   const first = noticeDates(a), second = noticeDates(b);
   return (first.end ?? Infinity) - (second.end ?? Infinity) || (first.start ?? Infinity) - (second.start ?? Infinity);
@@ -56,7 +63,7 @@ export function shuffle<T>(items: T[], random: () => number) {
 // 부족분만 넓힌 조건에서 공고 마감이 가까운 순, 같으면 더 오래 기다린 순으로 채웁니다.
 export function pickPool(pages: Animal[][], size: number, random?: () => number) {
   const seen = new Set<string>();
-  const usable = (items: Animal[]) => items.filter(item => { if (!item.image.trim() || seen.has(item.id)) return false; seen.add(item.id); return true; });
+  const usable = (items: Animal[]) => items.filter(item => { if (!item.image.trim() || hasHealthConcern(item) || seen.has(item.id)) return false; seen.add(item.id); return true; });
   const candidates = usable(pages[0] ?? []);
   const matched = (random ? shuffle(candidates, random) : candidates).slice(0, size);
   const fallback = pages.slice(1).flatMap(usable).sort(byDeadline);

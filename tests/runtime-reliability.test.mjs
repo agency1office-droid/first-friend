@@ -123,7 +123,7 @@ test("favorites streams its loading boundary before the session database respond
     assert.doesNotMatch(html, /class="ff-loading-indicator"/, "page transitions have no visible spinner");
   } finally { clearTimeout(timeout); release(); }
   while (true) { const chunk = await reader.read(); if (chunk.done) break; html += decoder.decode(chunk.value, { stream: true }); }
-  assert.match(html, /로그인 후 스크랩한 친구/);
+  assert.match(html, /관심 친구를 보려면 로그인이 필요해요/);
 });
 
 test("sync checkpoints and auth infrastructure failures preserve existing data", async t => {

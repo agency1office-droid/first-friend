@@ -1,4 +1,5 @@
 import { isLocalRequest, safeReturnTo } from "./app-auth";
+import { LAST_LOGIN_COOKIE } from "./last-login";
 
 export const oauthProviders = {
   google: { client: "GOOGLE_OAUTH_CLIENT_ID", secret: "GOOGLE_OAUTH_CLIENT_SECRET", authorize: "https://accounts.google.com/o/oauth2/v2/auth", scope: "openid email profile", token: "https://oauth2.googleapis.com/token", user: "https://openidconnect.googleapis.com/v1/userinfo" },
@@ -25,6 +26,10 @@ export function oauthCookie(request: Request, provider: OAuthProvider, name: "st
 export function readOAuthCookie(request: Request, provider: OAuthProvider, name: "state" | "return") {
   const value = request.headers.get("cookie")?.match(new RegExp(`(?:^|;\\s*)ff_oauth_${provider}_${name}=([^;]*)`))?.[1];
   try { return value ? decodeURIComponent(value) : ""; } catch { return ""; }
+}
+
+export function lastLoginCookie(request: Request, provider: OAuthProvider) {
+  return `${LAST_LOGIN_COOKIE}=${provider}; Path=/; ${isLocalRequest(request) ? "" : "Secure; "}SameSite=Lax; Max-Age=${60 * 60 * 24 * 365}`;
 }
 
 export function oauthRedirect(request: Request, provider: OAuthProvider, path: string) {

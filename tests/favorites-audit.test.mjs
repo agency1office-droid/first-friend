@@ -17,6 +17,7 @@ test('favorites distinguish failed/missing data and ignore responses from an old
     'supabase/server': 'export const getSupabaseServerClient=()=>({from(){const q={select(){return q},eq(){return q},order(){return Promise.resolve(globalThis.__favoriteAudit.result)}};return q}});',
     'lib/public-data': 'export const getAnimalsByIds=async(ids)=>ids.map(()=>undefined);',
     'FavoriteAnimalGrid': 'export const FavoriteAnimalGrid=()=>globalThis.__favoriteAudit.createElement("div",null,"아직 스크랩한 친구가 없어요.");',
+    'LoginSheet': 'export const LoginSheet=p=>globalThis.__favoriteAudit.createElement("div",null,p.title);',
     'seed-design/ui/callout': 'export const Callout=p=>globalThis.__favoriteAudit.createElement("aside",null,p.title,p.description);',
   };
   const server = await createServer({ configFile: false, envFile: false, appType: 'custom', logLevel: 'error', ssr: { external: ['react/jsx-runtime', 'react/jsx-dev-runtime'], noExternal: [/^react$/, 'lucide-react'] }, server: { middlewareMode: true, hmr: false }, plugins: [{

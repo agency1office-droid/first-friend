@@ -1,5 +1,5 @@
 import { createSession, findOrCreateSocialMember, isLocalRequest, safeReturnTo, sessionHeaders } from "../../../../../../lib/app-auth";
-import { isOAuthProvider, oauthFailure, oauthOrigin, oauthProviders, oauthRedirect, readOAuthCookie } from "../../../../../../lib/oauth";
+import { isOAuthProvider, lastLoginCookie, oauthFailure, oauthOrigin, oauthProviders, oauthRedirect, readOAuthCookie } from "../../../../../../lib/oauth";
 
 export async function GET(request: Request, { params }: { params: Promise<{ provider: string }> }) {
   const { provider } = await params;
@@ -35,6 +35,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
     if (!member || member.sanctioned) return oauthFailure(request, provider, "failed");
     const session = await createSession(undefined, member.id);
     const headers = oauthRedirect(request, provider, safeReturnTo(readOAuthCookie(request, provider, "return")));
+    headers.append("set-cookie", lastLoginCookie(request, provider));
     for (const cookie of (await sessionHeaders(session.token, !isLocalRequest(request))).getSetCookie()) headers.append("set-cookie", cookie);
     return new Response(null, { status: 302, headers });
   } catch {

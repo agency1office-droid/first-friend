@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { chatGPTSignInPath, getChatGPTUser } from "../../chatgpt-auth";
+import { getChatGPTUser } from "../../chatgpt-auth";
 import { getAnimalsByIds } from "../../../lib/public-data";
 import type { Animal } from "../../../lib/data";
 import { getSupabaseServerClient } from "../../../lib/supabase/server";
 import { FavoriteAnimalGrid } from "../../components/FavoriteAnimalGrid";
+import { LoginSheet } from "../../components/LoginSheet";
 import { Callout } from "seed-design/ui/callout";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ export default async function Page() {
   const user = await getChatGPTUser();
   if (!user) return <div className="ff-page">
     <h1 className="ff-visually-hidden">관심 친구</h1>
-    <Callout tone="informative" title="로그인 후 스크랩한 친구를 확인할 수 있어요" description="로그인하면 관심 친구와 저장 검색을 안전하게 이어서 볼 수 있어요." linkProps={{ href: chatGPTSignInPath("/mypage/favorites"), children: "로그인·회원가입" }} />
+    <LoginSheet returnTo="/mypage/favorites" title="관심 친구를 보려면 로그인이 필요해요" description="로그인하면 관심 친구와 저장 검색을 안전하게 이어서 볼 수 있어요."/>
   </div>;
   const { data: rows, error: listError } = await getSupabaseServerClient().from("favorites").select("animal_id").eq("member_id", user.userId).order("created_at", { ascending: false });
   let error: unknown = listError;

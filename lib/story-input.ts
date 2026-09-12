@@ -1,4 +1,12 @@
 export const storyCategories = { memory: '오늘의 일상', neighborhood: '동네 친구', adoption: '입양 일기', rescue: '보호 이야기' } as const;
+export const storyReactions = { cheer: '응원해요', touched: '감동이에요', cute: '귀여워요', thanks: '고마워요', sad: '슬퍼요' } as const;
+export type StoryReaction = keyof typeof storyReactions;
+export const storyReactionKinds = Object.keys(storyReactions) as StoryReaction[];
+export function isStoryReaction(value: unknown): value is StoryReaction { return typeof value === 'string' && Object.hasOwn(storyReactions, value); }
+export function storyReactionCounts(value: unknown) {
+ const source = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+ return Object.fromEntries(storyReactionKinds.map(k => [k, Math.max(0, Number(source[k]) || 0)])) as Record<StoryReaction, number>;
+}
 export const storyPageSize = 20;
 export const storyPhotoLimit = 3;
 export const privateStoryPattern = /(01[016789][\s.-]?\d{3,4}[\s.-]?\d{4})|(\d{1,4}번지)|(\d+동\s*\d+호)|(급식소|밥자리|포획\s*장소).{0,20}(앞|뒤|옆|골목|번지|출구)/;

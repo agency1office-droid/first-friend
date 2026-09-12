@@ -1,11 +1,11 @@
 import { getSupabaseServerClient } from './supabase/server';
-import { storyCategories, storyImageUrl, storyPageSize, storyQuery } from './story-input';
-export type PublicStory={id:string;postId:number;category:string;categoryKey:string;title:string;body:string;author:string;authorId:string;image:string;images:string[];imageKeys:string[];reactions:number;shares:number;views:number;popularity:number;createdAt:string;status:string;hidden:boolean;revision:number};
-const fields='id,member_id,category,title,body,image_key,image_keys,status,hidden,revision,reaction_count,published_at,created_at,updated_at,members(display_name)';
+import { storyCategories, storyImageUrl, storyPageSize, storyQuery, storyReactionCounts, type StoryReaction } from './story-input';
+export type PublicStory={id:string;postId:number;category:string;categoryKey:string;title:string;body:string;author:string;authorId:string;image:string;images:string[];imageKeys:string[];reactions:number;reactionCounts:Record<StoryReaction,number>;shares:number;views:number;popularity:number;createdAt:string;status:string;hidden:boolean;revision:number};
+const fields='id,member_id,category,title,body,image_key,image_keys,status,hidden,revision,reaction_count,reaction_counts,published_at,created_at,updated_at,members(display_name)';
 function map(row:Record<string,unknown>):PublicStory {
  const keys=(Array.isArray(row.image_keys)?row.image_keys:row.image_key?[row.image_key]:[]) as string[];
  const member=row.members as {display_name?:string}|null;
- return {id:`post-${row.id}`,postId:Number(row.id),category:storyCategories[row.category as keyof typeof storyCategories]||String(row.category),categoryKey:String(row.category),title:String(row.title||''),body:String(row.body||''),author:member?.display_name||'퍼스트프렌드 회원',authorId:String(row.member_id),image:keys[0]?storyImageUrl(keys[0],true):'',images:keys.map(k=>storyImageUrl(k)),imageKeys:keys,reactions:Number(row.reaction_count||0),shares:0,views:0,popularity:Number(row.reaction_count||0),createdAt:String(row.published_at||row.created_at),status:String(row.status),hidden:Boolean(row.hidden),revision:Number(row.revision)};
+ return {id:`post-${row.id}`,postId:Number(row.id),category:storyCategories[row.category as keyof typeof storyCategories]||String(row.category),categoryKey:String(row.category),title:String(row.title||''),body:String(row.body||''),author:member?.display_name||'퍼스트프렌드 회원',authorId:String(row.member_id),image:keys[0]?storyImageUrl(keys[0],true):'',images:keys.map(k=>storyImageUrl(k)),imageKeys:keys,reactions:Number(row.reaction_count||0),reactionCounts:storyReactionCounts(row.reaction_counts),shares:0,views:0,popularity:Number(row.reaction_count||0),createdAt:String(row.published_at||row.created_at),status:String(row.status),hidden:Boolean(row.hidden),revision:Number(row.revision)};
 }
 export async function getStoryPage(params=new URLSearchParams(),memberId?:string) {
  const input=storyQuery(params),client=getSupabaseServerClient();

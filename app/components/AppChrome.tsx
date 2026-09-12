@@ -106,7 +106,7 @@ export function AppChrome({children}:{children:React.ReactNode}){
   },[path]);
   if(path==="/find/draw") return <div className="ff-drawing-shell ff-quiz-shell" data-route-path={path}><main className="ff-main" id="main-content" tabIndex={-1}>{children}</main></div>;
   if(path==="/login") return <div className="ff-login-shell" data-route-path={path}><a className="ff-skip-link" href="#main-content">본문으로 바로가기</a><main className="ff-main" id="main-content" tabIndex={-1}>{children}</main></div>;
-  if(path.startsWith("/quiz/")) return <div className="ff-quiz-shell" data-route-path={path}><main className="ff-main" id="main-content" tabIndex={-1}>{children}</main></div>;
+  if(path.startsWith("/quiz/")||path==="/find/worldcup") return <div className="ff-quiz-shell" data-route-path={path}><main className="ff-main" id="main-content" tabIndex={-1}>{children}</main></div>;
   if(path.startsWith("/pet-cost-calculator")) return <div className="ff-cost-shell" data-route-path={path}><main className="ff-main" id="main-content" tabIndex={-1}>{children}</main></div>;
   if(path==="/operations"||path.startsWith("/operations/")) return <div className="ff-operations-shell" data-route-path={path}><a className="ff-skip-link" href="#main-content">본문으로 바로가기</a><main id="main-content" tabIndex={-1}>{children}</main></div>;
   const hideBottom=route?.mode==="detail"||route?.mode==="form";

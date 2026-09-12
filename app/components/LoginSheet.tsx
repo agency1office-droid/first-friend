@@ -8,9 +8,10 @@ import { AuthForm } from "./AuthForm";
 export function LoginSheet({ returnTo, prompt, title, description }: { returnTo: string; prompt: string; title: string; description: string }) {
   const [open, setOpen] = useState(true);
   return <>
-    <div className="ff-login-prompt">
-      <Image className="ff-login-prompt-illust" src="/illust-welcome.webp" alt="" width={233} height={200} priority unoptimized/>
-      <strong>{prompt}</strong>
+    <div className="ff-login-prompt" data-sheet-open={open || undefined}>
+      <strong className="ff-login-heading">여기서 첫 만남이 시작돼요</strong>
+      <Image className="ff-login-illust" src="/illust-welcome.webp" alt="" width={233} height={200} priority unoptimized/>
+      <p className="ff-login-text">{prompt}</p>
       <ActionButton size="large" onClick={() => setOpen(true)}>로그인</ActionButton>
     </div>
     <BottomSheetRoot open={open} onOpenChange={setOpen}>

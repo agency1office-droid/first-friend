@@ -968,7 +968,8 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-login-page { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; padding: 72px 24px 28px; background: var(--seed-color-bg-layer-default); }
 .ff-login-logo { margin: 0 0 12px; }
 .ff-login-logo img { height: 30px; width: auto; }
-.ff-login-illust { height: 180px; width: auto; margin-bottom: 28px; }
+.ff-login-illust { height: 180px; width: auto; margin: 10px 0 20px; }
+.ff-login-prompt .ff-login-illust { height: 200px; margin: 12px 0 16px; }
 .ff-login-card { width: 100%; max-width: 460px; display: grid; gap: 12px; padding: 28px 20px; border: 1px solid var(--seed-color-stroke-neutral-muted); border-radius: 20px; }
 .ff-social-button { position: relative; min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 10px; padding-inline: 16px; border-radius: 12px; font-size: 16px; font-weight: var(--seed-font-weight-bold); }
 .ff-social-icon { flex: none; }
@@ -980,9 +981,10 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-login-hint { margin: 0; text-align: center; color: var(--seed-color-fg-neutral-muted); font-size: 13px; }
 .ff-login-sheet-body .ff-login-card { padding: 4px 0 12px; border: 0; }
 .ff-login-prompt { min-height: calc(100dvh - 220px); display: grid; align-content: center; justify-items: center; gap: 0; padding: 24px; text-align: center; }
-.ff-login-prompt-illust { height: 200px; width: auto; margin-bottom: 20px; }
-.ff-login-prompt strong { margin-bottom: 22px; font-size: 17px; line-height: 24px; }
 .ff-login-prompt button { min-width: 220px; }
+.ff-login-prompt[data-sheet-open] button { visibility: hidden; }
+.ff-login-heading { font-size: 22px; line-height: 30px; letter-spacing: -.02em; }
+.ff-login-text { margin: 0 0 22px; color: var(--seed-color-fg-neutral-muted); font-size: 15px; line-height: 22px; }
 .ff-login-links { margin-top: 24px; display: flex; align-items: center; gap: 10px; color: var(--seed-color-fg-neutral-muted); font-size: 13px; }
 .ff-login-links a { color: var(--seed-color-fg-neutral-muted); }
 .ff-login-copyright { margin: auto 0 0; padding-top: 40px; color: var(--seed-color-fg-placeholder); font-size: 12px; }

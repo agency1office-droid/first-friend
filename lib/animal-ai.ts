@@ -128,7 +128,7 @@ export async function enqueueAnimalAiSummary(animal: Animal, purpose: AnalysisPu
     next_attempt_at: null,
     last_error: null,
     updated_at: new Date().toISOString(),
-  }, { onConflict: "animal_id" }).select("animal_id,analysis_key,generated_summary,status,model_version,source_updated_at,retry_count,last_error").single();
+  }, { onConflict: "animal_id,purpose" }).select("animal_id,analysis_key,generated_summary,status,model_version,source_updated_at,retry_count,last_error").single();
   if (error) throw error;
   return { state: toState(data as SummaryRow), analysisKey };
 }

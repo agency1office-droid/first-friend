@@ -564,6 +564,7 @@ test("adds cached, deferred AI animal introductions without putting image bytes 
   assert.match(worker, /next_attempt_at/);
   assert.match(worker, /status === "processing"/);
   assert.match(worker, /public-data-fallback-v1/);
+  assert.match(worker, /onConflict: "animal_id,purpose"/);
   assert.match(worker, /사진 속 표정과 자세에서 이 친구만의 매력이 느껴져요/);
   assert.doesNotMatch(worker, /함께할 모습을 상상해 보세요/);
   assert.match(worker, /2 \* 60 \* 1000/);

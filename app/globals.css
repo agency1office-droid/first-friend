@@ -1416,10 +1416,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-home-logo { margin: 0; justify-self: center; display: flex; align-items: center; }
 .ff-home-logo img { height: 18px; width: auto; }
 .ff-home-regionbar { padding: 10px 12px 0; }
-.ff-home-shortcuts { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); max-height: 110px; padding: 16px 8px 14px; overflow: hidden; background: var(--seed-color-bg-layer-basement); border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); transition: max-height .3s cubic-bezier(.22,.61,.36,1), padding .3s cubic-bezier(.22,.61,.36,1), opacity .2s ease-out; }
-.ff-home-shortcuts[data-compact] { max-height: 0; padding-block: 0; border-bottom-color: transparent; opacity: 0; }
-.ff-home-shortcut { display: grid; justify-items: center; gap: 8px; padding: 0; color: var(--seed-color-fg-neutral); font-size: 12px; line-height: 16px; font-weight: var(--seed-font-weight-medium); transition: transform .3s cubic-bezier(.22,.61,.36,1); }
-.ff-home-shortcuts[data-compact] .ff-home-shortcut { transform: translateY(-10px); }
+.ff-home-shortcuts { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); padding: 16px 8px 14px; background: var(--seed-color-bg-layer-basement); border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
+.ff-home-shortcut { display: grid; justify-items: center; gap: 8px; padding: 0; color: var(--seed-color-fg-neutral); font-size: 12px; line-height: 16px; font-weight: var(--seed-font-weight-medium); }
 .ff-home-shortcut-icon { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 16px; background: var(--seed-color-bg-layer-default); color: var(--seed-color-fg-brand); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
 .ff-home-shortcut-icon svg { width: 25px; height: 25px; }
 .ff-home-region { max-width: 65%; min-height: 44px; display: inline-flex; align-items: center; gap: 4px; padding: 0 4px; border: 0; color: var(--seed-color-fg-neutral); background: transparent; font-size: 20px; line-height: 28px; font-weight: 700; letter-spacing: -.02em; }

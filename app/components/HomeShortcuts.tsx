@@ -1,6 +1,4 @@
-"use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { IconCheckmarkClipboardLine, IconHeartLine, IconHospitalcrossBuildingLine, IconHousePlusLine, IconMagnifyingglassLine } from "@karrotmarket/react-monochrome-icon";
 
 const shortcuts = [
@@ -12,16 +10,7 @@ const shortcuts = [
 ];
 
 export function HomeShortcuts() {
-  const [opened, setOpened] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
-    onScroll();
-    const frame = window.requestAnimationFrame(() => setOpened(true));
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => { window.cancelAnimationFrame(frame); window.removeEventListener("scroll", onScroll); };
-  }, []);
-  return <nav className="ff-home-shortcuts" data-compact={!opened || scrolled || undefined} aria-label="바로가기">
+  return <nav className="ff-home-shortcuts" aria-label="바로가기">
     {shortcuts.map(({ href, label, icon }) => <Link className="ff-home-shortcut" key={href} href={href}>
       <span className="ff-home-shortcut-icon">{icon}</span>{label}
     </Link>)}

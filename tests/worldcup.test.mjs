@@ -60,6 +60,18 @@ test('pool keeps matched animals in request order and fills the rest by notice d
   assert.equal(filled,2);
 });
 
+test('pool samples matched animals at random when a random source is given', async t=>{
+  const {pickPool}=await loadWorldcup(t);
+  const primary=Array.from({length:50},(_,index)=>animal(String(index)));
+  const {pool,matched,filled}=pickPool([primary],16,()=>0);
+  assert.equal(pool.length,16);
+  assert.equal(matched,16);
+  assert.equal(filled,0);
+  // 무작위여도 첫 페이지 밖의 친구는 섞이지 않고, 순서만 달라집니다.
+  assert.ok(pool.every(item=>primary.includes(item)));
+  assert.notDeepEqual(pool.map(item=>item.id),primary.slice(0,16).map(item=>item.id));
+});
+
 test('pool is empty when fewer than two animals have photos', async t=>{
   const {pickPool}=await loadWorldcup(t);
   assert.deepEqual(pickPool([[animal('only'),animal('blank',{image:''})]],16).pool,[]);

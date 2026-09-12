@@ -1658,16 +1658,21 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-drawing-shell.ff-quiz-shell .ff-readiness-appbar::after { position: absolute; right: -16px; bottom: 0; left: -16px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); pointer-events: none; content: ""; }
 
 /* 첫 친구 이상형 월드컵: 입양 환경 점검 퀴즈 형식 안에서 쓰는 후보·결과 화면 */
-.ff-worldcup-pair { margin-top: 0; }
-.ff-worldcup-pair button { min-height: 0; padding: 0 0 14px; text-align: center; }
-.ff-worldcup-pair button span { font-size: inherit; }
-.ff-worldcup-pair button[data-selected="true"] { border: 2px dashed var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-weak); }
-.ff-worldcup-pair button[data-selected="true"]::after { opacity: 1; transform: translateY(0); }
-.ff-worldcup-pair .ff-animal-image-wrap { border-radius: 22px 22px 0 0; }
-.ff-worldcup-pair .ff-animal-image, .ff-worldcup-pair .ff-animal-image-fallback { height: clamp(150px, 26dvh, 260px); aspect-ratio: auto; object-position: 50% 30%; }
+.ff-worldcup-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ff-worldcup-candidate { overflow: hidden; border: 1px solid transparent; border-radius: 20px; background: var(--seed-color-bg-neutral-weak); }
+.ff-worldcup-candidate[data-selected="true"] { border: 1px dashed var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-weak); }
+.ff-worldcup-photo, .ff-worldcup-pick { display: block; width: 100%; margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.ff-worldcup-photo:focus-visible, .ff-worldcup-pick:focus-visible { outline: 3px solid var(--seed-color-stroke-brand-weak); outline-offset: -3px; }
+.ff-worldcup-photo .ff-animal-image-wrap { border-radius: 0; }
+.ff-worldcup-photo .ff-animal-image, .ff-worldcup-photo .ff-animal-image-fallback { height: clamp(150px, 26dvh, 260px); aspect-ratio: auto; object-position: 50% 30%; }
+.ff-worldcup-pick { display: grid; gap: 4px; padding: 12px 14px 14px; text-align: center; }
+.ff-worldcup-pick strong { font-size: 18px; line-height: 25px; }
+.ff-worldcup-pick small { color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 19px; }
+.ff-worldcup-pick-label { margin-top: 4px; color: var(--seed-color-fg-brand); font-size: 13px; font-weight: var(--seed-font-weight-bold); line-height: 19px; }
+.ff-worldcup-viewer-pick { font-weight: var(--seed-font-weight-bold); }
+.ff-image-dialog-actions .ff-worldcup-viewer-pick { width: auto; padding: 8px 14px; }
 /* 모바일은 상하 배치라 두 후보가 한 화면에 들어오도록 사진 높이를 줄입니다. */
-@media (max-width: 520px) { .ff-worldcup-pair .ff-animal-image, .ff-worldcup-pair .ff-animal-image-fallback { height: clamp(120px, 18dvh, 200px); } .ff-worldcup-pair button { padding-bottom: 10px; } .ff-worldcup-pair { gap: 10px; } }
-.ff-worldcup-pair strong, .ff-worldcup-pair small { display: block; padding: 0 12px; }
+@media (max-width: 520px) { .ff-worldcup-cards { grid-template-columns: 1fr; gap: 10px; } .ff-worldcup-photo .ff-animal-image, .ff-worldcup-photo .ff-animal-image-fallback { height: clamp(120px, 18dvh, 200px); } .ff-worldcup-pick { padding: 10px 14px 12px; } }
 .ff-care-result .ff-animal-card-photo { width: 100%; max-width: 360px; }
 .ff-worldcup-actions { display: grid; gap: 8px; width: 100%; max-width: 360px; }
 .ff-worldcup-others { display: grid; gap: 4px; width: 100%; text-align: left; }

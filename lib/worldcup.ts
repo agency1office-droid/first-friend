@@ -43,23 +43,29 @@ function byDeadline(a: Animal, b: Animal) {
   return (first.end ?? Infinity) - (second.end ?? Infinity) || (first.start ?? Infinity) - (second.start ?? Infinity);
 }
 
-// 조건에 맞는 첫 페이지는 받은 순서(가까운 순·최신순)를 그대로 씁니다.
+export function shuffle<T>(items: T[], random: () => number) {
+  const result = [...items];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(random() * (index + 1));
+    [result[index], result[swap]] = [result[swap], result[index]];
+  }
+  return result;
+}
+
+// 조건에 맞는 첫 페이지(최신순 최대 50마리)에서 무작위로 뽑아 다시 해도 같은 친구만 나오지 않게 합니다. random이 없으면 받은 순서를 지킵니다.
 // 부족분만 넓힌 조건에서 공고 마감이 가까운 순, 같으면 더 오래 기다린 순으로 채웁니다.
-export function pickPool(pages: Animal[][], size: number) {
+export function pickPool(pages: Animal[][], size: number, random?: () => number) {
   const seen = new Set<string>();
   const usable = (items: Animal[]) => items.filter(item => { if (!item.image.trim() || seen.has(item.id)) return false; seen.add(item.id); return true; });
-  const matched = usable(pages[0] ?? []).slice(0, size);
+  const candidates = usable(pages[0] ?? []);
+  const matched = (random ? shuffle(candidates, random) : candidates).slice(0, size);
   const fallback = pages.slice(1).flatMap(usable).sort(byDeadline);
   const pool = [...matched, ...fallback.slice(0, size - matched.length)];
   return { pool: pool.length < 2 ? [] : pool, matched: matched.length, filled: pool.length - matched.length };
 }
 
 export function startBracket(pool: Animal[], random: () => number): Bracket {
-  const round = [...pool];
-  for (let index = round.length - 1; index > 0; index -= 1) {
-    const swap = Math.floor(random() * (index + 1));
-    [round[index], round[swap]] = [round[swap], round[index]];
-  }
+  const round = shuffle(pool, random);
   return { size: round.length, round, index: 0, winners: [], picks: [] };
 }
 

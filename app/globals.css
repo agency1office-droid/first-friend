@@ -1670,9 +1670,11 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-worldcup-caption { display: grid; gap: 2px; padding: 12px 14px 40px; text-align: left; }
 .ff-worldcup-caption .ff-animal-photo-name { font-size: 17px; line-height: 24px; text-shadow: 0 1px 3px rgba(0,0,0,.28); }
 .ff-worldcup-caption small { color: var(--seed-color-palette-static-white); font-size: 12px; line-height: 16px; opacity: .92; text-shadow: 0 1px 3px rgba(0,0,0,.28); }
-/* 라디오 버튼은 카드 밖, 페이지 배경 위에 가운데로 둡니다. */
+/* 라디오 버튼은 카드 밖, 페이지 배경 위에 가운데로 둡니다. 기본 라디오(24px·1px 연회색)는 흰 배경에서 묻혀 크기와 테두리 대비를 키웁니다. */
 .ff-worldcup-pick-row { display: flex; justify-content: center; padding: 0; }
-.ff-worldcup-pick-row label { cursor: pointer; }
+.ff-worldcup-pick-row label { cursor: pointer; padding: 4px 12px; }
+.ff-worldcup-pick-row .seed-radiomark__root { width: 30px; height: 30px; box-shadow: 0 1px 4px rgba(0,0,0,.14); }
+.ff-worldcup-pick-row .seed-radiomark__root:not(:is(:checked, [data-checked])) { border-width: 2px; border-color: var(--seed-color-fg-neutral-muted); background: var(--seed-color-bg-layer-default); }
 .ff-worldcup-viewer-pick { font-weight: var(--seed-font-weight-bold); }
 .ff-image-dialog-actions .ff-worldcup-viewer-pick { width: auto; padding: 8px 14px; }
 /* 모바일은 상하 배치라 두 후보가 한 화면에 들어오도록 사진 높이를 줄입니다. */

@@ -91,7 +91,15 @@ export function WorldCupFinder() {
   async function loadPool() {
     setLoading(true);
     try {
-      setPage(await fetchPage(poolQueries(answers, null)[0]));
+      // 한 페이지는 최대 50마리라 건강 문구로 걸러내면 32강이 안 나올 수 있습니다.
+      // 조건을 넓히기 전에 같은 조건의 다음 페이지를 최대 두 번 더 받아 후보를 채웁니다.
+      const query = poolQueries(answers, null)[0];
+      let loaded = await fetchPage(query);
+      for (let extra = 0; extra < 2 && loaded.nextCursor && pickPool([loaded.items], loaded.items.length).pool.length < 32; extra += 1) {
+        const more = await fetchPage(`${query}&cursor=${encodeURIComponent(loaded.nextCursor)}`);
+        loaded = { ...loaded, items: [...loaded.items, ...more.items], nextCursor: more.nextCursor };
+      }
+      setPage(loaded);
       setRoundSize(16); setEmpty(false); setStepIndex(value => value + 1);
     } catch (error) {
       feedback.error(error instanceof Error ? error.message : "후보를 불러오지 못했어요.");
@@ -212,7 +220,7 @@ export function WorldCupFinder() {
             {photos.length > 1 && <span className="ff-card-photo-count" aria-hidden><IconPicture2StackedLine /></span>}
           </div>
         </button>
-      </div><div className="ff-worldcup-pick-row"><RadioGroupItem value={animal.id} aria-label={`${animal.name} 선택`} /></div></div>; })}</div></RadioGroup>
+      </div><div className="ff-worldcup-pick-row"><RadioGroupItem size="large" value={animal.id} aria-label={`${animal.name} 선택`} /></div></div>; })}</div></RadioGroup>
     </section>
     : <section className="ff-care-step" aria-labelledby="care-step-title">
       <p className="ff-care-step-count">{stepIndex + 1}/{steps.length}</p>

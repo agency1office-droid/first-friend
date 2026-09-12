@@ -197,19 +197,18 @@ export function WorldCupFinder() {
     : phase === "match" && bracket && pair ? <section className="ff-care-step" aria-labelledby="care-step-title">
       <p className="ff-care-step-count">{roundLabel(bracket.round.length)} · {bracket.index / 2 + 1}/{Math.ceil(bracket.round.length / 2)}</p>
       <h1 id="care-step-title">더 끌리는 친구를 골라주세요.</h1>
-      <p className="ff-care-helper">사진을 눌러 고르고, 오른쪽 아래 사진 아이콘으로 등록된 사진을 모두 볼 수 있어요.{filled > 0 && ` 비슷한 친구 ${filled}마리를 더했어요.`}</p>
+      <p className="ff-care-helper">사진을 누르면 등록된 사진을 모두 볼 수 있어요.{filled > 0 && ` 비슷한 친구 ${filled}마리를 더했어요.`}</p>
       <div className="ff-worldcup-cards">{pair.map(animal => { const photos = photosOf(animal); const isSelected = selected?.id === animal.id; return <div className="ff-worldcup-candidate" data-selected={isSelected || undefined} key={animal.id}>
-        {/* 사진을 누르면 이 친구가 선택됩니다. 왼쪽 위 원형은 선택 상태 표시입니다. */}
-        <button type="button" className="ff-worldcup-photo" aria-pressed={isSelected} aria-label={`${animal.name}, ${displayAge(animal.age)} 선택`} onClick={() => setSelected(animal)}>
+        {/* 사진을 누르면 등록된 사진을 모두 보여 주고, 선택은 아래 버튼으로 합니다. */}
+        <button type="button" className="ff-worldcup-photo" onClick={() => openViewer(animal)} aria-label={`${animal.name}, ${displayAge(animal.age)}, 사진 ${photos.length}장 크게 보기`}>
           <div className="ff-animal-image-wrap">
             <AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt="" priority />
-            {/* 이름·나이는 상세 갤러리와 같은 하단 그라데이션 위에 흰 글씨로 올립니다. */}
-            <span className="ff-gallery-bottom-gradient" aria-hidden />
-            <span className="ff-gallery-bottom-meta ff-worldcup-caption" aria-hidden><strong className="ff-gallery-title">{animal.name}</strong><small>{displayAge(animal.age)}</small></span>
-            <span className="ff-worldcup-select-mark" aria-hidden>{isSelected ? <IconCheckmarkCircleFill /> : <span className="ff-worldcup-select-ring" />}</span>
+            {/* 이름·나이는 사진 카드(AnimalCard photo)와 같은 상단 그라데이션 위에 흰 글씨로 올립니다. */}
+            <span className="ff-animal-photo-caption ff-worldcup-caption" aria-hidden><span className="ff-animal-photo-name">{animal.name}</span><small>{displayAge(animal.age)}</small></span>
+            {photos.length > 1 && <span className="ff-card-photo-count" aria-hidden><IconPicture2StackedLine /></span>}
           </div>
         </button>
-        <button type="button" className="ff-worldcup-more" onClick={() => openViewer(animal)} aria-label={`${animal.name} 사진 ${photos.length}장 크게 보기`}><IconPicture2StackedLine aria-hidden />{photos.length > 1 && <span>{photos.length}</span>}</button>
+        <div className="ff-worldcup-pick-row"><ActionButton size="small" variant={isSelected ? "brandSolid" : "neutralWeak"} className="ff-worldcup-pick" aria-pressed={isSelected} onClick={() => setSelected(animal)}>{isSelected ? <><IconCheckmarkCircleFill aria-hidden /> 선택했어요</> : `${animal.name} 선택`}</ActionButton></div>
       </div>; })}</div>
     </section>
     : <section className="ff-care-step" aria-labelledby="care-step-title">

@@ -7,7 +7,7 @@ const choices=[
   {href:"/find/draw",title:"그려서 찾기",description:"그림의 색과 생김새를 태그로 연결",Icon:IconPencilLine},
   {href:"/find/conditions",title:"조건으로 찾기",description:"품종·털색·나이·지역을 직접 선택",Icon:IconSlider2HorizontalLine},
   {href:"/find/photo",title:"사진으로 찾기",description:"사진 특징과 닮은 보호동물 찾기",Icon:IconCameraLine},
-  {href:"/find/worldcup",title:"첫 친구 이상형 월드컵",description:"선택하면서 나의 취향 발견",Icon:IconTrophyLine},
+  {href:"/find/worldcup",title:"첫 친구 이상형 월드컵",description:"보호동물 16강으로 내 친구 찾기",Icon:IconTrophyLine},
   {href:"/drawings",title:"그림 탐정 게시판",description:"사람들과 함께 그림 속 친구 찾기",Icon:IconPencilLine},
 ];
 

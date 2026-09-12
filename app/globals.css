@@ -1656,3 +1656,25 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-drawing-shell.ff-quiz-shell { background: var(--seed-color-bg-layer-default); }
 .ff-drawing-shell.ff-quiz-shell .ff-readiness-appbar { box-sizing: border-box; border-bottom: 0; background: color-mix(in srgb, var(--seed-color-bg-layer-default) 92%, transparent); backdrop-filter: blur(16px); }
 .ff-drawing-shell.ff-quiz-shell .ff-readiness-appbar::after { position: absolute; right: -16px; bottom: 0; left: -16px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); pointer-events: none; content: ""; }
+
+/* 첫 친구 이상형 월드컵: 실제 보호동물 후보 화면 */
+.ff-worldcup-quiz { text-align: left; }
+.ff-worldcup-quiz h2, .ff-worldcup-result h2 { margin: 0; }
+.ff-worldcup-pair button { min-height: 0; padding: 0 0 14px; text-align: center; }
+.ff-worldcup-pair button span { font-size: inherit; }
+.ff-worldcup-pair .ff-animal-image-wrap { border-radius: 22px 22px 0 0; }
+.ff-worldcup-pair .ff-animal-image, .ff-worldcup-pair .ff-animal-image-fallback { height: clamp(160px, 30dvh, 320px); aspect-ratio: auto; object-position: 50% 30%; }
+.ff-worldcup-match { gap: 8px; }
+/* 대결 중에는 페이지 소개 헤더를 접어 모바일에서 두 후보가 한 화면에 들어오게 합니다. 서버 HTML에는 그대로 남습니다. */
+.ff-page:has(.ff-worldcup-match) > .ff-page-header { display: none; }
+.ff-worldcup-match .ff-meta { margin: 0; }
+.ff-worldcup-match .ff-worldcup-pair { margin-top: 6px; }
+/* 모바일은 상하 배치라 두 후보가 한 화면에 들어오도록 사진 높이를 줄입니다. */
+@media (max-width: 520px) { .ff-worldcup-pair .ff-animal-image, .ff-worldcup-pair .ff-animal-image-fallback { height: clamp(130px, 22dvh, 240px); } .ff-worldcup-pair button { padding-bottom: 10px; } }
+.ff-worldcup-pair strong, .ff-worldcup-pair small { display: block; padding: 0 12px; }
+.ff-worldcup-result .ff-animal-card-photo { width: 100%; max-width: 360px; }
+.ff-worldcup-actions { display: grid; gap: 8px; width: 100%; max-width: 360px; }
+.ff-worldcup-others { display: grid; gap: 4px; text-align: left; }
+.ff-worldcup-others h3 { margin: 16px 0 0; }
+.ff-worldcup-sheet-summary { margin: 0 0 12px; font-weight: 700; word-break: keep-all; }
+.ff-worldcup-sheet-note { margin: 12px 0 0; color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 19px; word-break: keep-all; }

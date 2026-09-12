@@ -87,6 +87,9 @@ export async function getAnimalAiState(animalId: string, purpose: AnalysisPurpos
   const row = (data || null) as SummaryRow | null;
   const animal = await getAnimalById(animalId);
   if (!animal) return toState(row);
+  if (row?.model_version === "public-data-fallback-v1") {
+    return { status: "completed", summary: createPublicDataFallback(animal, purpose), available: true, source: "public-data" };
+  }
   if (!row) {
     return { status: "missing", summary: createPublicDataFallback(animal, purpose), available: true, source: "public-data" };
   }
@@ -247,7 +250,7 @@ export function createPublicDataFallback(animal: Animal, purpose: AnalysisPurpos
     return `${date} ${location}에서 실종된 ${animal.species}예요. ${details.length ? `${details.join(", ")} 정보가 등록되어 있어요.` : "공개 정보가 등록되어 있어요."}${traits ? ` 특징은 ${traits}` : ""}`.slice(0, 580);
   }
   const detail = appearance ? `${appearance}이 눈에 띄고` : "사진 속 모습이 인상적이고";
-  return `${detail} 사진 속 표정과 자세에서 이 친구만의 매력이 느껴져요. 공개된 정보와 사진을 천천히 살펴보며 함께할 모습을 상상해 보세요.`;
+  return `${detail} 사진 속 표정과 자세에서 이 친구만의 매력이 느껴져요.`;
 }
 
 export async function processAnimalAiJob(animalId: string, expectedKey?: string, purpose: AnalysisPurpose = "adoption") {

@@ -10,6 +10,7 @@ import { optimizedAnimalImageUrl } from "../../lib/image-url";
 import { buildFindHref, choose, currentPair, isDone, pickPool, poolQueries, progress, roundLabel, startBracket, winnerOf, type Answers, type Bracket } from "../../lib/worldcup";
 import { AnimalCard } from "./AnimalCard";
 import { AnimalThumbnail } from "./AnimalThumbnail";
+import { navigateAppBack } from "./AppChrome";
 import { useAppFeedback } from "./AppFeedback";
 import { closeToDetail } from "./detailReturn";
 import { ReadinessAppBar } from "./ReadinessAppBar";
@@ -49,9 +50,10 @@ async function fetchPage(query: string) {
   if (!response.ok) throw new Error(body.error || "후보를 불러오지 못했어요.");
   return body;
 }
+// 상세에서 열었으면 그 상세로, 아니면 들어온 곳(홈 바로가기 등)으로 돌아갑니다. 기록이 없을 때만 홈으로 갑니다.
 function exitFlow() {
   if (new URLSearchParams(window.location.search).get("return_to")) closeToDetail();
-  else window.location.assign("/find");
+  else navigateAppBack("/");
 }
 
 export function WorldCupFinder() {
@@ -219,7 +221,8 @@ export function WorldCupFinder() {
             <span className="ff-animal-photo-caption ff-worldcup-caption" aria-hidden><span className="ff-animal-photo-name">{animal.name}</span><small>{displayAge(animal.age)}</small></span>
           </div>
         </button>
-        <button type="button" className="ff-worldcup-more" onClick={() => openViewer(animal)} aria-label={`${animal.name} 사진 ${photos.length}장 크게 보기`}><IconPicture2StackedLine aria-hidden />{photos.length > 1 && <span>{photos.length}</span>}</button>
+        {/* 카드 아래 40%는 통째로 사진 보기 영역입니다. 아이콘은 그 안의 오른쪽 아래 표시일 뿐입니다. */}
+        <button type="button" className="ff-worldcup-more" onClick={() => openViewer(animal)} aria-label={`${animal.name} 사진 ${photos.length}장 크게 보기`}><span className="ff-worldcup-more-badge" aria-hidden><IconPicture2StackedLine />{photos.length > 1 && <span>{photos.length}</span>}</span></button>
       </div>; })}</div>
     </section>
     : <section className="ff-care-step" aria-labelledby="care-step-title">

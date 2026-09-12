@@ -1669,16 +1669,17 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-worldcup-caption { display: grid; gap: 2px; padding: 12px 14px 40px; text-align: left; }
 .ff-worldcup-caption .ff-animal-photo-name { font-size: 17px; line-height: 24px; text-shadow: 0 1px 3px rgba(0,0,0,.28); }
 .ff-worldcup-caption small { color: var(--seed-color-palette-static-white); font-size: 12px; line-height: 16px; opacity: .92; text-shadow: 0 1px 3px rgba(0,0,0,.28); }
-/* 오른쪽 아래 아이콘을 누르면 원본 사진 뷰어가 열립니다. 사진이 한 장이어도 잘린 부분을 볼 수 있게 항상 보여 줍니다. */
-.ff-worldcup-more { position: absolute; z-index: 5; right: 10px; bottom: 10px; min-width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 10px; border: 0; border-radius: 10px; color: #fff; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); font: inherit; font-size: 13px; font-weight: var(--seed-font-weight-bold); cursor: pointer; }
-.ff-worldcup-more svg { width: 18px; height: 18px; }
-.ff-worldcup-more:focus-visible { outline: 3px solid var(--seed-color-stroke-brand-weak); outline-offset: 2px; }
+/* 카드 아래 40%가 통째로 사진 보기 영역입니다(투명). 아이콘은 그 안의 오른쪽 아래에 표시만 합니다. 사진이 한 장이어도 잘린 부분을 볼 수 있게 항상 보여 줍니다. */
+.ff-worldcup-more { position: absolute; z-index: 5; right: 0; bottom: 0; left: 0; height: 40%; display: flex; align-items: flex-end; justify-content: flex-end; margin: 0; padding: 0 10px 10px; border: 0; background: transparent; color: #fff; font: inherit; cursor: pointer; }
+.ff-worldcup-more-badge { min-width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 10px; border-radius: 10px; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); font-size: 13px; font-weight: var(--seed-font-weight-bold); }
+.ff-worldcup-more-badge svg { width: 18px; height: 18px; }
+.ff-worldcup-more:focus-visible { outline: 3px solid var(--seed-color-stroke-brand-weak); outline-offset: -3px; }
 .ff-worldcup-photo:active .ff-animal-image { transform: scale(.985); }
 .ff-worldcup-photo .ff-animal-image { transition: transform .12s ease; }
 .ff-worldcup-viewer-pick { font-weight: var(--seed-font-weight-bold); }
 .ff-image-dialog-actions .ff-worldcup-viewer-pick { width: auto; padding: 8px 14px; }
 /* 모바일도 PC처럼 좌우 2열입니다. 좁은 폭에서는 카드를 세로로 길게 두고 캡션을 줄입니다. */
-@media (max-width: 520px) { .ff-worldcup-cards { gap: 10px; } .ff-worldcup-photo .ff-animal-image, .ff-worldcup-photo .ff-animal-image-fallback { height: clamp(200px, 32dvh, 300px); } .ff-worldcup-caption { padding: 10px 12px 32px; } .ff-worldcup-caption .ff-animal-photo-name { font-size: 15px; line-height: 21px; } .ff-worldcup-more { right: 8px; bottom: 8px; } }
+@media (max-width: 520px) { .ff-worldcup-cards { gap: 10px; } .ff-worldcup-photo .ff-animal-image, .ff-worldcup-photo .ff-animal-image-fallback { height: clamp(200px, 32dvh, 300px); } .ff-worldcup-caption { padding: 10px 12px 32px; } .ff-worldcup-caption .ff-animal-photo-name { font-size: 15px; line-height: 21px; } .ff-worldcup-more { padding: 0 8px 8px; } }
 .ff-care-result .ff-animal-card-photo { width: 100%; max-width: 360px; }
 .ff-worldcup-actions { display: grid; gap: 8px; width: 100%; max-width: 360px; }
 .ff-worldcup-others { display: grid; gap: 4px; width: 100%; text-align: left; }

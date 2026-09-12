@@ -57,18 +57,22 @@ const historyKey="ff-app-navigation-history";
 function readHistory(){try{const value=JSON.parse(window.sessionStorage.getItem(historyKey)||"[]");return Array.isArray(value)?value.filter(item=>typeof item==="string").slice(-30):[]}catch{return[]}}
 function writeHistory(value:string[]){try{window.sessionStorage.setItem(historyKey,JSON.stringify(value.slice(-30)))}catch{return}}
 
+// 앱 안에서 들어온 곳(예: 홈 바로가기)으로 돌아갑니다. 기록이 없으면 fallback 경로로 이동합니다.
+// 앱바 뒤로 버튼과 퀴즈형 화면(이상형 월드컵)이 같은 규칙을 쓰도록 분리했습니다.
+export function navigateAppBack(fallback:string,push:(href:string)=>void=href=>window.location.assign(href)){
+  const current=`${window.location.pathname}${window.location.search}${window.location.hash}`,stack=readHistory();
+  const currentIndex=stack.lastIndexOf(current);
+  if(currentIndex>=0)stack.splice(currentIndex,1);else if(stack.length)stack.pop();
+  const hasAppPrevious=stack.length>0;
+  if(hasAppPrevious&&window.history.length>1){writeHistory(stack);window.history.back();return}
+  const sameOriginReferrer=Boolean(document.referrer&&new URL(document.referrer).origin===window.location.origin);
+  if(sameOriginReferrer&&window.history.length>1){window.history.back();return}
+  push(fallback);
+}
+
 export function AppBackButton({fallback,title,className}:{fallback:string;title:string;className?:string}){
   const router=useRouter();
-  const goBack=()=>{
-    const current=`${window.location.pathname}${window.location.search}${window.location.hash}`,stack=readHistory();
-    const currentIndex=stack.lastIndexOf(current);
-    if(currentIndex>=0)stack.splice(currentIndex,1);else if(stack.length)stack.pop();
-    const hasAppPrevious=stack.length>0;
-    if(hasAppPrevious&&window.history.length>1){writeHistory(stack);window.history.back();return}
-    const sameOriginReferrer=Boolean(document.referrer&&new URL(document.referrer).origin===window.location.origin);
-    if(sameOriginReferrer&&window.history.length>1){window.history.back();return}
-    router.push(fallback);
-  };
+  const goBack=()=>navigateAppBack(fallback,()=>router.push(fallback));
   return <button className={`ff-app-back${className ? ` ${className}` : ""}`} type="button" onClick={goBack} aria-label={`${title}에서 이전 페이지로 돌아가기`}><IconChevronLeftLine aria-hidden/></button>;
 }
 

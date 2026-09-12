@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ActionButton } from "seed-design/ui/action-button";
-import { RadioGroup, RadioGroupItem } from "seed-design/ui/radio-group";
 import { IconPicture2StackedLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import type { Animal } from "../../lib/data";
 import type { AnimalPage } from "../../lib/public-animal-store";
@@ -68,7 +67,6 @@ export function WorldCupFinder() {
   const [filled, setFilled] = useState(0);
   const [bracket, setBracket] = useState<Bracket | null>(null);
   const [history, setHistory] = useState<Bracket[]>([]);
-  const [selected, setSelected] = useState<Animal | null>(null);
   const [viewer, setViewer] = useState<{ animal: Animal; index: number } | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -122,7 +120,7 @@ export function WorldCupFinder() {
       if (!picked.pool.length) { setEmpty(true); return; }
       // 압축 썸네일이 없는 최신 동물은 원본을 받아야 하므로, 대결이 시작되기 전에 후보 사진을 모두 미리 받아 둡니다.
       picked.pool.forEach(animal => { const image = new window.Image(); image.decoding = "async"; image.src = optimizedAnimalImageUrl(animal.thumbnail || animal.image); });
-      setPool(picked.pool); setFilled(picked.filled); setHistory([]); setSelected(null);
+      setPool(picked.pool); setFilled(picked.filled); setHistory([]);
       setBracket(startBracket(picked.pool, Math.random));
       setPhase("match");
     } catch (error) {
@@ -132,15 +130,17 @@ export function WorldCupFinder() {
     }
   }
 
+  // 월드컵답게 사진을 누르면 바로 고르고 다음 대결로 넘어갑니다. 되돌리기는 앱바 뒤로가기(previous)로 합니다.
+  function pick(animal: Animal) {
+    if (!bracket) return;
+    const following = choose(bracket, animal);
+    setHistory(value => [...value, bracket]); setBracket(following);
+    if (isDone(following)) setPhase("result");
+  }
+
   function next() {
     if (phase === "intro") { setPhase("steps"); setStepIndex(0); return; }
-    if (phase === "match") {
-      if (!bracket || !selected) return;
-      const following = choose(bracket, selected);
-      setHistory(value => [...value, bracket]); setBracket(following); setSelected(null);
-      if (isDone(following)) setPhase("result");
-      return;
-    }
+    if (phase === "match") return;
     if (!canContinue) return;
     if (step === "color") { void loadPool(); return; }
     if (step === "round") { void startMatch(); return; }
@@ -151,7 +151,7 @@ export function WorldCupFinder() {
     if (phase === "intro") return exitFlow();
     if (phase === "match") {
       const last = history.at(-1);
-      if (last) { setHistory(value => value.slice(0, -1)); setBracket(last); setSelected(null); return; }
+      if (last) { setHistory(value => value.slice(0, -1)); setBracket(last); return; }
       setPhase("steps"); setStepIndex(steps.length - 1); return;
     }
     if (phase === "result") { setPhase("steps"); setStepIndex(steps.length - 1); setBracket(null); return; }
@@ -160,7 +160,7 @@ export function WorldCupFinder() {
   }
 
   function retry() {
-    setPhase("steps"); setStepIndex(0); setDraft(EMPTY_DRAFT); setPage(null); setRoundSize(16); setEmpty(false); setPool([]); setFilled(0); setBracket(null); setHistory([]); setSelected(null);
+    setPhase("steps"); setStepIndex(0); setDraft(EMPTY_DRAFT); setPage(null); setRoundSize(16); setEmpty(false); setPool([]); setFilled(0); setBracket(null); setHistory([]);
   }
 
   // 사진을 누르면 원본 사진을 모두 보여 줍니다. 목록 사진은 잘려 있거나 얼굴이 두 번째 사진에만 있을 수 있어요.
@@ -209,18 +209,18 @@ export function WorldCupFinder() {
     : phase === "match" && bracket && pair ? <section className="ff-care-step" aria-labelledby="care-step-title">
       <p className="ff-care-step-count">{roundLabel(bracket.round.length)} · {bracket.index / 2 + 1}/{Math.ceil(bracket.round.length / 2)}</p>
       <h1 id="care-step-title">더 끌리는 친구를 골라주세요.</h1>
-      <p className="ff-care-helper">사진을 누르면 등록된 사진을 모두 볼 수 있어요.{filled > 0 && ` 비슷한 친구 ${filled}마리를 더했어요.`}</p>
-      <RadioGroup aria-label="더 끌리는 친구" value={selected?.id ?? ""} onValueChange={value => setSelected(pair.find(animal => animal.id === value) ?? null)}><div className="ff-worldcup-cards">{pair.map(animal => { const photos = photosOf(animal); const isSelected = selected?.id === animal.id; return <div className="ff-worldcup-entry" key={animal.id}><div className="ff-worldcup-candidate" data-selected={isSelected || undefined}>
-        {/* 카드는 사진만 담습니다. 누르면 등록된 사진을 모두 보여 주고, 선택은 카드 밖 라디오 버튼으로 합니다. */}
-        <button type="button" className="ff-worldcup-photo" onClick={() => openViewer(animal)} aria-label={`${animal.name}, ${displayAge(animal.age)}, 사진 ${photos.length}장 크게 보기`}>
+      <p className="ff-care-helper">사진을 누르면 그 친구를 고르고 바로 다음 대결로 넘어가요. 오른쪽 아래 아이콘으로 사진을 모두 볼 수 있어요.{filled > 0 && ` 비슷한 친구 ${filled}마리를 더했어요.`}</p>
+      <div className="ff-worldcup-cards">{pair.map(animal => { const photos = photosOf(animal); return <div className="ff-worldcup-candidate" key={animal.id}>
+        {/* 사진 전체가 선택 버튼입니다. 크게 보기는 오른쪽 아래 아이콘으로만 엽니다. */}
+        <button type="button" className="ff-worldcup-photo" onClick={() => pick(animal)} aria-label={`${animal.name}, ${displayAge(animal.age)} 선택`}>
           <div className="ff-animal-image-wrap">
             <AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt="" priority />
             {/* 이름·나이는 사진 카드(AnimalCard photo)와 같은 상단 그라데이션 위에 흰 글씨로 올립니다. */}
             <span className="ff-animal-photo-caption ff-worldcup-caption" aria-hidden><span className="ff-animal-photo-name">{animal.name}</span><small>{displayAge(animal.age)}</small></span>
-            {photos.length > 1 && <span className="ff-card-photo-count" aria-hidden><IconPicture2StackedLine /></span>}
           </div>
         </button>
-      </div><div className="ff-worldcup-pick-row"><RadioGroupItem size="large" value={animal.id} aria-label={`${animal.name} 선택`} /></div></div>; })}</div></RadioGroup>
+        <button type="button" className="ff-worldcup-more" onClick={() => openViewer(animal)} aria-label={`${animal.name} 사진 ${photos.length}장 크게 보기`}><IconPicture2StackedLine aria-hidden />{photos.length > 1 && <span>{photos.length}</span>}</button>
+      </div>; })}</div>
     </section>
     : <section className="ff-care-step" aria-labelledby="care-step-title">
       <p className="ff-care-step-count">{stepIndex + 1}/{steps.length}</p>
@@ -229,18 +229,18 @@ export function WorldCupFinder() {
       {step === "color" && <><h1 id="care-step-title">어떤 털색에<br />끌리나요?</h1><div className="ff-care-size-grid">{["상관없음", ...(draft.species === "cat" ? CAT_COLORS : DOG_COLORS)].map(label => { const value = label === "상관없음" ? "all" : label; return <button type="button" className="ff-care-size-choice" data-selected={draft.color === value || undefined} key={value} onClick={() => setDraft(current => ({ ...current, color: value }))}>{label}</button>; })}</div></>}
       {step === "round" && page && <><h1 id="care-step-title">몇 강으로<br />시작할까요?</h1><div className="ff-care-size-grid"><button type="button" className="ff-care-size-choice" data-selected={roundSize === 16 || undefined} onClick={() => setRoundSize(16)}>16강</button>{usable >= 32 && <button type="button" className="ff-care-size-choice" data-selected={roundSize === 32 || undefined} onClick={() => setRoundSize(32)}>32강</button>}</div>{empty ? <p className="ff-care-helper">조건을 넓혀도 대결할 친구가 부족해요. 조건을 바꿔 다시 골라 주세요.</p> : shortBy > 0 ? <p className="ff-care-helper">조건에 맞는 친구가 부족해 비슷한 친구 {shortBy}마리를 더해요.</p> : null}</>}
     </section>}
-    <div className={`ff-readiness-actions ${isResult ? "is-result" : "is-single"}`}>
+    {/* 대결 화면은 사진 탭이 곧 선택이라 하단 버튼이 없습니다. */}
+    {phase !== "match" && <div className={`ff-readiness-actions ${isResult ? "is-result" : "is-single"}`}>
       {phase === "intro" ? <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={next}>시작하기</ActionButton>
       : isResult && winner ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={retry}>다시 하기</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" asChild><a href={`/friends/${winner.id}`}>입양 문의하기</a></ActionButton></>
-      : phase === "match" ? <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!selected} onClick={next}>{bracket && bracket.round.length === 2 ? "결과 보기" : "다음"}</ActionButton>
       : empty ? <ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={() => { setEmpty(false); setStepIndex(0); }}>조건 다시 고르기</ActionButton>
       : <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!canContinue || loading} loading={loading} onClick={next}>{step === "color" ? "후보 찾기" : step === "round" ? "시작하기" : "다음"}</ActionButton>}
-    </div>
+    </div>}
     {/* 원본 사진 뷰어: 상세 페이지 갤러리(AnimalGallery)의 ff-image-dialog 구조를 그대로 씁니다. */}
     <dialog ref={dialogRef} className="ff-image-dialog" tabIndex={-1} onClose={() => setViewer(null)}>
       {viewer && <div className="ff-image-dialog-inner">
         <div className="ff-image-dialog-actions">
-          {phase === "match" && <button type="button" className="ff-worldcup-viewer-pick" onClick={() => { setSelected(viewer.animal); closeViewer(); }}>이 친구 선택</button>}
+          {phase === "match" && <button type="button" className="ff-worldcup-viewer-pick" onClick={() => { closeViewer(); pick(viewer.animal); }}>이 친구 선택</button>}
           <button type="button" onClick={closeViewer} aria-label="사진 닫기"><IconXmarkLine /></button>
         </div>
         {/* eslint-disable-next-line @next/next/no-img-element -- 공공데이터 원본 사진을 그대로 보여 줍니다 */}

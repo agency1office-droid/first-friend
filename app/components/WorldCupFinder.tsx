@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ActionButton } from "seed-design/ui/action-button";
-import { IconPicture2StackedLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
+import { IconCheckmarkCircleFill, IconPicture2StackedLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import type { Animal } from "../../lib/data";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
@@ -199,10 +199,16 @@ export function WorldCupFinder() {
       <h1 id="care-step-title">더 끌리는 친구를 골라주세요.</h1>
       <p className="ff-care-helper">사진을 누르면 등록된 사진을 모두 볼 수 있어요.{filled > 0 && ` 비슷한 친구 ${filled}마리를 더했어요.`}</p>
       <div className="ff-worldcup-cards">{pair.map(animal => { const photos = photosOf(animal); const isSelected = selected?.id === animal.id; return <div className="ff-worldcup-candidate" data-selected={isSelected || undefined} key={animal.id}>
-        <button type="button" className="ff-worldcup-photo" onClick={() => openViewer(animal)} aria-label={`${animal.name} 사진 ${photos.length}장 크게 보기`}>
-          <div className="ff-animal-image-wrap"><AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt="" priority />{photos.length > 1 && <span className="ff-card-photo-count" aria-hidden><IconPicture2StackedLine /></span>}</div>
+        <button type="button" className="ff-worldcup-photo" onClick={() => openViewer(animal)} aria-label={`${animal.name}, ${displayAge(animal.age)}, 사진 ${photos.length}장 크게 보기`}>
+          <div className="ff-animal-image-wrap">
+            <AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt="" priority />
+            {photos.length > 1 && <span className="ff-card-photo-count" aria-hidden><IconPicture2StackedLine /></span>}
+            {/* 이름·나이는 상세 갤러리와 같은 하단 그라데이션 위에 흰 글씨로 올립니다. */}
+            <span className="ff-gallery-bottom-gradient" aria-hidden />
+            <span className="ff-gallery-bottom-meta ff-worldcup-caption" aria-hidden><strong className="ff-gallery-title">{animal.name}</strong><small>{displayAge(animal.age)}</small></span>
+          </div>
         </button>
-        <button type="button" className="ff-worldcup-pick" aria-pressed={isSelected} onClick={() => setSelected(animal)}><strong>{animal.name}</strong><small>{meta(animal)}</small><span className="ff-worldcup-pick-label">{isSelected ? "선택했어요" : "이 친구 선택"}</span></button>
+        <button type="button" className="ff-worldcup-select" aria-pressed={isSelected} aria-label={`${animal.name} 선택`} onClick={() => setSelected(animal)}>{isSelected ? <IconCheckmarkCircleFill aria-hidden /> : <span className="ff-worldcup-select-ring" aria-hidden />}</button>
       </div>; })}</div>
     </section>
     : <section className="ff-care-step" aria-labelledby="care-step-title">

@@ -14,7 +14,7 @@ export default async function Page() {
   const user = await getChatGPTUser();
   if (!user) return <div className="ff-page">
     <h1 className="ff-visually-hidden">관심 친구</h1>
-    <LoginSheet returnTo="/mypage/favorites" prompt="로그인하고 관심 친구를 모아보세요" title="관심 친구를 보려면 로그인이 필요해요" description="로그인하면 관심 친구와 저장 검색을 안전하게 이어서 볼 수 있어요."/>
+    <LoginSheet returnTo="/mypage/favorites" prompt="로그인하고 관심 친구를 모아보세요" title="퍼스트프렌드 로그인" description="관심 친구를 보려면 로그인이 필요해요"/>
   </div>;
   const { data: rows, error: listError } = await getSupabaseServerClient().from("favorites").select("animal_id").eq("member_id", user.userId).order("created_at", { ascending: false });
   let error: unknown = listError;

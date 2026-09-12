@@ -7,9 +7,9 @@ import { LAST_LOGIN_COOKIE } from "../../lib/last-login";
 
 // 심볼과 문구는 각 플랫폼의 로그인 버튼 디자인 가이드에서 내려받은 공식 에셋을 따릅니다.
 const socialProviders = [
-  { key: "kakao", label: "카카오 로그인", icon: "/logo-kakao.webp", width: 20, height: 19 },
-  { key: "naver", label: "네이버 로그인", icon: "/logo-naver.webp", width: 20, height: 18 },
-  { key: "google", label: "Google로 로그인", icon: "/logo-google.svg", width: 19, height: 19 },
+  { key: "kakao", label: "카카오로 시작하기", icon: "/logo-kakao.webp", width: 21, height: 20 },
+  { key: "naver", label: "네이버로 시작하기", icon: "/logo-naver.webp", width: 21, height: 19 },
+  { key: "google", label: "Google로 시작하기", icon: "/logo-google.svg", width: 20, height: 20 },
 ] as const;
 
 export function AuthForm({ returnTo = "/mypage", oauthStatus = "", provider = "" }: { returnTo?: string; oauthStatus?: string; provider?: string }) {

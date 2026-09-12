@@ -209,4 +209,15 @@ test("operations permissions, real pagination and guarded approval", async t => 
     assert.equal(body.rows[0].login_methods,"google (이메일 확인됨)");assert.ok(!JSON.stringify(body).includes("secret"));assert.ok(!JSON.stringify(body).includes("private"));
     assert.equal((await get("resource=members&field=password_hash")).status,400);
   });
+  await t.test("admins soft-delete a story from its page with an audited reason", async()=>{
+    globalThis.__operationsUser={userId:"operator"};role="admin";verified=true;sanctioned=false;
+    db.posts.push({id:7,member_id:"author",title:"삭제 대상",status:"published",hidden:false,revision:1});
+    assert.equal((await post({action:"post-delete",id:7,note:"운"})).status,400,"a reason of at least 2 characters is required");
+    role="shelter";assert.equal((await post({action:"post-delete",id:7,note:"운영 정책 위반"})).status,403,"verified guardians cannot delete stories");role="admin";
+    assert.equal((await post({action:"post-delete",id:99,note:"운영 정책 위반"})).status,404);
+    const r=await post({action:"post-delete",id:7,note:"운영 정책 위반"});assert.equal(r.status,200,await r.clone().text());
+    assert.equal(db.posts.find(row=>row.id===7).status,"deleted");
+    assert.ok(db.admin_audit_logs.some(log=>log.action==="post:deleted"),"the deletion is audited");
+    assert.equal((await post({action:"post-delete",id:7,note:"다시 삭제"})).status,409,"already deleted stories are not deleted twice");
+  });
 });

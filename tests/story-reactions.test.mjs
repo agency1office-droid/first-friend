@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {readFile} from "node:fs/promises";
 import test from "node:test";
 import {createServer} from "vite";
 
@@ -34,4 +35,17 @@ test("story reactions validate input, save through the RPC and notify authors on
  r=await send({postId:1,reaction:null});body=await r.json();assert.equal(body.reaction,null);assert.equal(body.count,0);assert.equal(notifications.length,1);
  assert.equal((await send({postId:2,reaction:"cheer"})).status,200);assert.equal(notifications.length,1,"authors are not notified about their own reaction");
  rpcError={message:"story unavailable"};assert.equal((await send({postId:1,reaction:"cheer"})).status,409);
+});
+
+test("story screens open the sign-in sheet in place and expose admin moderation only to admins", async()=>{
+ const read=path=>readFile(new URL("../"+path,import.meta.url),"utf8");
+ const [actions,detail,admin,create,manage,sheet,feed,list]=await Promise.all(["app/components/StoryActions.tsx","app/stories/[id]/page.tsx","app/components/StoryAdminActions.tsx","app/stories/new/page.tsx","app/stories/manage/page.tsx","app/components/LoginSheet.tsx","app/components/StoryFeed.tsx","app/stories/page.tsx"].map(read));
+ assert.match(feed,/new IntersectionObserver/);assert.match(feed,/params\.set\("page",String\(page\+1\)\)/);assert.match(feed,/seen\.has\(s\.id\)/,"appended pages skip stories already shown");
+ assert.doesNotMatch(list,/ff-board-pagination/,"the story list scrolls instead of paging");assert.match(list,/<StoryFeed key=\{params\.toString\(\)\}/);
+ assert.match(sheet,/export function LoginBottomSheet/);
+ assert.match(actions,/LoginBottomSheet/);assert.doesNotMatch(actions,/location\.href="\/login/,"guests stay on the story instead of leaving for /login");
+ assert.match(actions,/if\(!signedIn\)\{askLogin\(\);return;\}/);
+ assert.match(detail,/getAuthenticatedMember/);assert.match(detail,/member\?\.role==="admin"&&<StoryAdminActions/);assert.match(detail,/signedIn=\{Boolean\(member\)\}/);
+ assert.match(admin,/"post-visibility"/);assert.match(admin,/"post-delete"/);assert.match(admin,/"idempotency-key"/);assert.match(admin,/note\.trim\(\)\.length<2/);
+ for(const source of [create,manage]){assert.match(source,/<LoginSheet returnTo="\/stories\//);assert.doesNotMatch(source,/requireChatGPTUser/);}
 });

@@ -1677,8 +1677,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-worldcup-photo .ff-animal-image { transition: transform .12s ease; }
 .ff-worldcup-viewer-pick { font-weight: var(--seed-font-weight-bold); }
 .ff-image-dialog-actions .ff-worldcup-viewer-pick { width: auto; padding: 8px 14px; }
-/* 모바일은 상하 배치라 두 후보가 한 화면에 들어오도록 사진 높이를 줄입니다. */
-@media (max-width: 520px) { .ff-worldcup-cards { grid-template-columns: 1fr; gap: 10px; } .ff-worldcup-photo .ff-animal-image, .ff-worldcup-photo .ff-animal-image-fallback { height: clamp(140px, 22dvh, 220px); } }
+/* 모바일도 PC처럼 좌우 2열입니다. 좁은 폭에서는 카드를 세로로 길게 두고 캡션을 줄입니다. */
+@media (max-width: 520px) { .ff-worldcup-cards { gap: 10px; } .ff-worldcup-photo .ff-animal-image, .ff-worldcup-photo .ff-animal-image-fallback { height: clamp(200px, 32dvh, 300px); } .ff-worldcup-caption { padding: 10px 12px 32px; } .ff-worldcup-caption .ff-animal-photo-name { font-size: 15px; line-height: 21px; } .ff-worldcup-more { right: 8px; bottom: 8px; } }
 .ff-care-result .ff-animal-card-photo { width: 100%; max-width: 360px; }
 .ff-worldcup-actions { display: grid; gap: 8px; width: 100%; max-width: 360px; }
 .ff-worldcup-others { display: grid; gap: 4px; width: 100%; text-align: left; }

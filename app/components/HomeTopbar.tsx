@@ -10,6 +10,7 @@ import { ALL_REGIONS_KEY, isKoreaPoint, readAllRegions, readHomeLocation } from 
 import { useAppFeedback } from "./AppFeedback";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalMenuButton } from "./GlobalMenuButton";
+import { HomeShortcuts } from "./HomeShortcuts";
 import { loadDefaultHomeLocation } from "./defaultHomeLocation";
 
 function savedLocations() {
@@ -180,6 +181,7 @@ export function HomeTopbar() {
         <div className="ff-top-actions"><NotificationBell home /></div>
       </div>
     </header>
+    <HomeShortcuts/>
     <div className="ff-home-regionbar">
     <BottomSheetRoot open={regionOpen} onOpenChange={(open) => { setRegionOpen(open); if (!open) setMode("manage"); }}>
       <BottomSheetTrigger asChild>

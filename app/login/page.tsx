@@ -8,6 +8,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
   const query = await searchParams;
   return <div className="ff-login-page">
     <h1 className="ff-login-logo"><Image src="/logo-wordmark.webp" alt="퍼스트 프렌드" width={158} height={30} priority unoptimized/></h1>
+    <Image className="ff-login-illust" src="/illust-welcome.webp" alt="" width={210} height={180} priority unoptimized/>
     <AuthForm returnTo={safeReturnTo(query.return_to)} oauthStatus={query.oauth} provider={query.provider}/>
     <nav className="ff-login-links" aria-label="이용 안내"><Link href="/terms">이용약관</Link><span aria-hidden>|</span><Link href="/privacy">개인정보 처리방침</Link><span aria-hidden>|</span><Link href="/about">퍼스트 프렌드 소개</Link></nav>
     <p className="ff-login-copyright">© First Friend</p>

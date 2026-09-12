@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { IconCheckmarkClipboardLine, IconHeartLine, IconHospitalcrossBuildingLine, IconHousePlusLine, IconMagnifyingglassLine } from "@karrotmarket/react-monochrome-icon";
+import { IconBook, IconCheckmarkCalendar, IconPersonMagnifyingglass, IconTrophy, IconWindow4House } from "@karrotmarket/react-multicolor-icon";
 
 const shortcuts = [
-  { href: "/lost-found/animals", label: "실종 동물", icon: <IconMagnifyingglassLine aria-hidden/> },
-  { href: "/shelters", label: "보호소", icon: <IconHospitalcrossBuildingLine aria-hidden/> },
-  { href: "/readiness", label: "입양 준비", icon: <IconCheckmarkClipboardLine aria-hidden/> },
-  { href: "/foster", label: "임시 보호", icon: <IconHousePlusLine aria-hidden/> },
-  { href: "/support", label: "후원하기", icon: <IconHeartLine aria-hidden/> },
+  { href: "/find/worldcup", label: "월드컵", icon: <IconTrophy aria-hidden/> },
+  { href: "/find", label: "친구 찾기", icon: <IconPersonMagnifyingglass aria-hidden/> },
+  { href: "/quiz/pet-knowledge", label: "상식 퀴즈", icon: <IconBook aria-hidden/> },
+  { href: "/quiz/care-readiness", label: "입양 점검", icon: <IconWindow4House aria-hidden/> },
+  { href: "/quiz/adoption-prep", label: "입양 준비", icon: <IconCheckmarkCalendar aria-hidden/> },
 ];
 
 export function HomeShortcuts() {

@@ -995,7 +995,8 @@ test("explains public notice deadlines without presenting them as adoption deadl
   ]);
   assert.match(detail, /getAnimalPublicStatus/);
   assert.match(status, /보호자 확인 공고 중/);
-  assert.match(styles, /\.ff-detail-gallery-status \{[^}]*min-height: 44px;[^}]*padding: 10px 28px;/);
+  assert.match(styles, /\.ff-detail-gallery-status \{[^}]*min-height: 44px;[^}]*padding: 10px 40px 10px 28px;/);
+  assert.match(styles, /\.ff-detail-gallery-status \{[^}]*clip-path: polygon\(0 0, 100% 0, calc\(100% - 14px\) 50%, 100% 100%, 0 100%\);/);
   assert.doesNotMatch(styles, /\.ff-detail-gallery-status \{[^}]*margin-inline: 16px;/);
   assert.match(styles, /\.ff-detail-gallery-status \.ff-detail-status-day \{[^}]*font-size: 11px;/);
   assert.match(status, /잃어버린 동물일 수 있어 원래 보호자를 확인하고 있어요/);

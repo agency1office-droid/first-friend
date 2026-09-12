@@ -439,9 +439,15 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-detail-container { border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
 .ff-detail-body { padding: 20px 16px calc(12px + 76px + env(safe-area-inset-bottom)); }
 .ff-detail-animal-info-group { margin-inline: -16px; padding: 0 16px 20px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
-.ff-detail-gallery-status { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; min-height: 44px; padding: 10px 28px; overflow-wrap: anywhere; color: var(--seed-color-fg-positive); background: var(--seed-color-bg-positive-weak); border-bottom: 1px solid var(--seed-color-stroke-positive-weak); font-size: 14px; font-weight: var(--seed-font-weight-bold); line-height: 20px; }
-.ff-detail-gallery-status.ff-public-status-notice { color: var(--seed-color-fg-informative); background: var(--seed-color-bg-informative-weak); border-bottom-color: var(--seed-color-stroke-informative-weak); }
-.ff-detail-gallery-status.ff-lost-status { color: #5f3dc4; background: #f5f2ff; border-bottom-color: #ddd2ff; }
+/* 상태 바는 오른쪽 끝을 리본처럼 자릅니다. clip-path가 border까지 잘라내므로 바깥(선 색)·::before(채움 색) 두 겹으로 테두리를 그립니다. */
+.ff-detail-gallery-status { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; min-height: 44px; margin-right: 16px; padding: 10px 40px 10px 28px; overflow-wrap: anywhere; color: var(--seed-color-fg-positive); background: var(--seed-color-stroke-positive-weak); clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 50%, 100% 100%, 0 100%); font-size: 14px; font-weight: var(--seed-font-weight-bold); line-height: 20px; }
+.ff-detail-gallery-status::before { content: ""; position: absolute; inset: 1px 1px 1px 0; z-index: -1; background: var(--seed-color-bg-positive-weak); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 50%, 100% 100%, 0 100%); }
+.ff-detail-gallery-status:has(details[open]) { margin-right: 0; padding-right: 28px; clip-path: none; }
+.ff-detail-gallery-status:has(details[open])::before { inset: 0 0 1px; clip-path: none; }
+.ff-detail-gallery-status.ff-public-status-notice { color: var(--seed-color-fg-informative); background: var(--seed-color-stroke-informative-weak); }
+.ff-detail-gallery-status.ff-public-status-notice::before { background: var(--seed-color-bg-informative-weak); }
+.ff-detail-gallery-status.ff-lost-status { color: #5f3dc4; background: #ddd2ff; }
+.ff-detail-gallery-status.ff-lost-status::before { background: #f5f2ff; }
 .ff-detail-gallery-status.ff-lost-status .ff-detail-status-description { color: #665c7a; }
 .ff-detail-gallery-status.ff-lost-status .ff-detail-status-description strong { color: #3f2a82; }
 .ff-detail-status-main { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
@@ -1418,8 +1424,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-home-regionbar { padding: 10px 12px 0; }
 .ff-home-shortcuts { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); padding: 16px 8px 14px; background: var(--seed-color-bg-layer-basement); border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); }
 .ff-home-shortcut { display: grid; justify-items: center; gap: 8px; padding: 0; color: var(--seed-color-fg-neutral); font-size: 12px; line-height: 16px; font-weight: var(--seed-font-weight-medium); }
-.ff-home-shortcut-icon { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 16px; background: var(--seed-color-bg-layer-default); color: var(--seed-color-fg-brand); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-.ff-home-shortcut-icon svg { width: 25px; height: 25px; }
+.ff-home-shortcut-icon { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 16px; background: var(--seed-color-bg-layer-default); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+.ff-home-shortcut-icon svg { width: 30px; height: 30px; }
 .ff-home-region { max-width: 65%; min-height: 44px; display: inline-flex; align-items: center; gap: 4px; padding: 0 4px; border: 0; color: var(--seed-color-fg-neutral); background: transparent; font-size: 20px; line-height: 28px; font-weight: 700; letter-spacing: -.02em; }
 .ff-home-region span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ff-home-region svg { width: 20px; height: 20px; flex: none; }
@@ -1552,8 +1558,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
   .ff-animal-row-distance { flex: none; margin-top: 0; padding: 2px 7px; border-radius: 7px; font-size: 12px; line-height: 18px; white-space: nowrap; }
   .ff-animal-card-row .ff-animal-row-info .ff-animal-name { overflow: hidden; height: auto; margin-top: 2px; text-overflow: ellipsis; white-space: nowrap; }
   .ff-animal-card-row .ff-animal-row-info .ff-meta { overflow: hidden; margin-top: 0; text-overflow: ellipsis; white-space: nowrap; }
-  .ff-animal-row-public-status.ff-public-status-protected { color: var(--seed-color-fg-positive); background: var(--seed-color-bg-positive-weak); border: 1px solid var(--seed-color-stroke-positive-weak); }
-  .ff-animal-row-public-status.ff-public-status-notice { color: var(--seed-color-fg-informative); background: var(--seed-color-bg-informative-weak); border: 1px solid var(--seed-color-stroke-informative-weak); }
+  .ff-animal-row-public-status.ff-public-status-protected { color: var(--seed-color-fg-brand-contrast); background: var(--seed-color-bg-brand-weak); border: 1px solid var(--seed-color-stroke-brand-weak); }
+  .ff-animal-row-public-status.ff-public-status-notice { color: var(--seed-color-fg-neutral-muted); background: var(--seed-color-bg-neutral-weak); border: 1px solid var(--seed-color-stroke-neutral-muted); }
 .ff-animal-card-row .ff-card-scrap { right: 0; top: auto; bottom: 18px; color: var(--seed-color-fg-placeholder); background: transparent; transition: color var(--seed-duration-color-transition), transform var(--seed-duration-d3); }
 .ff-animal-card-row .ff-card-scrap:hover { color: var(--seed-color-fg-placeholder); }
 .ff-animal-card-row .ff-card-scrap:active { color: var(--seed-color-fg-neutral); transform: scale(var(--seed-scale-s95)); }

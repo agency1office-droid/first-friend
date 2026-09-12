@@ -1,14 +1,21 @@
-"use client";
-import { useState } from "react";
-import { ActionButton } from "seed-design/ui/action-button";
+import Image from "next/image";
 import { Callout } from "seed-design/ui/callout";
-import { Checkbox } from "seed-design/ui/checkbox";
-import { SegmentedControl, SegmentedControlItem } from "seed-design/ui/segmented-control";
-import { TextField, TextFieldInput } from "seed-design/ui/text-field";
+
+// 심볼과 문구는 각 플랫폼의 로그인 버튼 디자인 가이드를 따릅니다.
+const socialProviders = [
+  { key: "kakao", label: "카카오 로그인", icon: "/logo-kakao.webp", width: 19, height: 18 },
+  { key: "naver", label: "네이버 로그인", icon: "/logo-naver.webp", width: 20, height: 18 },
+  { key: "google", label: "Google로 로그인", icon: "/logo-google.svg", width: 18, height: 18 },
+] as const;
 
 export function AuthForm({ returnTo = "/mypage", oauthStatus = "", provider = "" }: { returnTo?: string; oauthStatus?: string; provider?: string }) {
-  const [mode, setMode] = useState("login"), [terms, setTerms] = useState(false), [error, setError] = useState(""), [busy, setBusy] = useState(false);
-  async function submit(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); setBusy(true); setError(""); try { const form = new FormData(event.currentTarget); const response = await fetch(`/api/auth/${mode}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: form.get("email"), password: form.get("password"), displayName: form.get("displayName"), termsAccepted: terms, returnTo }) }); const body = await response.json().catch(() => ({})) as { error?: string; returnTo?: string }; if (response.ok) location.href = body.returnTo || returnTo; else setError(body.error || "계정을 확인하지 못했어요."); } catch { setError("네트워크 연결을 확인하고 다시 시도해 주세요."); } finally { setBusy(false); } }
-  return <div className="ff-auth-card"><SegmentedControl aria-label="로그인 방식" value={mode} onValueChange={value => setMode(String(value))}><SegmentedControlItem value="login">로그인</SegmentedControlItem><SegmentedControlItem value="register">이메일 가입</SegmentedControlItem></SegmentedControl>{oauthStatus === "unconfigured" && <Callout tone="warning" title={`${providerLabel(provider)} 로그인 준비 중`} description="이 로그인은 아직 준비 중이에요. 다른 로그인 방법을 선택해 주세요."/>}{oauthStatus && oauthStatus !== "unconfigured" && <Callout tone="critical" description={oauthStatus === "cancelled" ? "로그인이 취소됐어요. 원할 때 다시 시작해 주세요." : oauthStatus === "state" ? "로그인 시간이 지났거나 요청을 확인하지 못했어요. 다시 시작해 주세요." : "로그인을 완료하지 못했어요. 잠시 후 다시 시도해 주세요."}/>}<form className="ff-form" onSubmit={submit}>{mode === "register" && <TextField label="이름"><TextFieldInput name="displayName" autoComplete="name" required/></TextField>}<TextField label="이메일"><TextFieldInput name="email" type="email" autoComplete="email" required/></TextField><TextField label="비밀번호" description={mode === "register" ? "10자 이상으로 설정해 주세요." : undefined}><TextFieldInput name="password" type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} minLength={10} required/></TextField>{mode === "register" && <Checkbox label="이용약관과 개인정보 처리방침에 동의합니다" checked={terms} onCheckedChange={setTerms}/>} {error && <Callout tone="critical" description={error}/>}<ActionButton size="large" disabled={busy || (mode === "register" && !terms)}>{busy ? "확인 중" : mode === "register" ? "계정 만들기" : "로그인"}</ActionButton></form><div className="ff-auth-divider"><span>또는</span></div><div className="ff-social-login"><ActionButton asChild size="large" variant="neutralOutline"><a href={`/api/auth/oauth/kakao?return_to=${encodeURIComponent(returnTo)}`}>카카오로 계속</a></ActionButton><ActionButton asChild size="large" variant="neutralOutline"><a href={`/api/auth/oauth/naver?return_to=${encodeURIComponent(returnTo)}`}>네이버로 계속</a></ActionButton><ActionButton asChild size="large" variant="neutralOutline"><a href={`/api/auth/oauth/google?return_to=${encodeURIComponent(returnTo)}`}>Google로 계속</a></ActionButton></div></div>;
+  return <div className="ff-login-card">
+    {oauthStatus === "unconfigured" && <Callout tone="warning" title={`${providerLabel(provider)} 로그인 준비 중`} description="이 로그인은 아직 준비 중이에요. 다른 방법으로 시작해 주세요."/>}
+    {oauthStatus && oauthStatus !== "unconfigured" && <Callout tone="critical" description={oauthStatus === "cancelled" ? "로그인이 취소됐어요. 원할 때 다시 시작해 주세요." : oauthStatus === "state" ? "로그인 시간이 지났거나 요청을 확인하지 못했어요. 다시 시작해 주세요." : "로그인을 완료하지 못했어요. 잠시 후 다시 시도해 주세요."}/>}
+    <div className="ff-social-login">
+      {socialProviders.map(({ key, label, icon, width, height }) => <a className={`ff-social-button ff-social-${key}`} key={key} href={`/api/auth/oauth/${key}?return_to=${encodeURIComponent(returnTo)}`}><Image className="ff-social-icon" src={icon} alt="" width={width} height={height} unoptimized/>{label}</a>)}
+    </div>
+  </div>;
 }
+
 function providerLabel(value: string) { return value === "kakao" ? "카카오" : value === "naver" ? "네이버" : "Google"; }

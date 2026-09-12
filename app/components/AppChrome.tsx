@@ -35,7 +35,6 @@ const routes:RouteChrome[]=[
   {rule:/^\/verification/,title:"역할 인증",back:"/mypage",mode:"form"},
   {rule:/^\/adoption-verification/,title:"외부 입양 인증",back:"/mypage",mode:"form"},
   {rule:/^\/appeal/,title:"제재 이의제기",back:"/mypage",mode:"form"},
-  {rule:/^\/login/,title:"로그인·회원가입",back:"/",mode:"form"},
   {rule:/^\/quiz\/adoption-prep/,title:"입양 준비도",back:"/guide"},
   {rule:/^\/readiness/,title:"입양 준비도",back:"/guide"},
   {rule:/^\/prepare/,title:"입양 전 준비",back:"/guide"},
@@ -106,6 +105,7 @@ export function AppChrome({children}:{children:React.ReactNode}){
     if(stack.at(-1)!==current){stack.push(current);writeHistory(stack)}
   },[path]);
   if(path==="/find/draw") return <div className="ff-drawing-shell ff-quiz-shell" data-route-path={path}><main className="ff-main" id="main-content" tabIndex={-1}>{children}</main></div>;
+  if(path==="/login") return <div className="ff-login-shell" data-route-path={path}><a className="ff-skip-link" href="#main-content">본문으로 바로가기</a><main className="ff-main" id="main-content" tabIndex={-1}>{children}</main></div>;
   if(path.startsWith("/quiz/")) return <div className="ff-quiz-shell" data-route-path={path}><main className="ff-main" id="main-content" tabIndex={-1}>{children}</main></div>;
   if(path.startsWith("/pet-cost-calculator")) return <div className="ff-cost-shell" data-route-path={path}><main className="ff-main" id="main-content" tabIndex={-1}>{children}</main></div>;
   if(path==="/operations"||path.startsWith("/operations/")) return <div className="ff-operations-shell" data-route-path={path}><a className="ff-skip-link" href="#main-content">본문으로 바로가기</a><main id="main-content" tabIndex={-1}>{children}</main></div>;

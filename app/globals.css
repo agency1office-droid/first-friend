@@ -1665,8 +1665,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-worldcup-photo:focus-visible { outline: 3px solid var(--seed-color-stroke-brand-weak); outline-offset: -3px; }
 /* SEED 버튼의 배경 전환을 끕니다(퀴즈 푸터와 같은 방식). 주황으로 바뀌는 순간이 바로 보여야 합니다. */
 .ff-worldcup-select { width: 100%; font-weight: var(--seed-font-weight-bold); transition: none !important; }
-/* 누르는 순간과 넘어가기 전 180ms 동안 브랜드 주황 + 흰 글씨로 바뀝니다. */
-.ff-worldcup-candidate .seed-action-button.ff-worldcup-select:active, .ff-worldcup-candidate .seed-action-button.ff-worldcup-select[data-picked="true"] { color: var(--seed-color-palette-static-white); background: var(--seed-color-bg-brand-solid); }
+/* 누르는 순간과 넘어가기 전 180ms 동안 SEED neutralSolid 버튼과 같은 짙은 회색 + 반전 글씨로 바뀝니다. */
+.ff-worldcup-candidate .seed-action-button.ff-worldcup-select:active, .ff-worldcup-candidate .seed-action-button.ff-worldcup-select[data-picked="true"] { color: var(--seed-color-fg-neutral-inverted); background: var(--seed-color-bg-neutral-inverted); }
 /* 스크롤 영역과 하단 버튼이 만나는 곳에 흰 그라데이션을 깔아 끊겨 보이지 않게 하고, 아래에 내용이 더 있음을 알립니다. */
 .ff-quiz-shell [data-quiz-id="worldcup"] .ff-readiness-actions::before { content: ""; position: absolute; right: 0; left: 0; top: -32px; height: 32px; background: linear-gradient(to bottom, transparent, var(--seed-color-bg-layer-default)); pointer-events: none; }
 .ff-worldcup-photo .ff-animal-image-wrap { border-radius: 0; }

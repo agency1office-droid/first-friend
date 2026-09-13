@@ -14,6 +14,7 @@ import { AnimalThumbnail } from "./AnimalThumbnail";
 import { navigateAppBack } from "./AppChrome";
 import { useAppFeedback } from "./AppFeedback";
 import { closeToDetail } from "./detailReturn";
+import { FavoriteButton } from "./FavoriteButton";
 import { LoadingIndicator } from "./LoadingIndicator";
 import { ReadinessAppBar } from "./ReadinessAppBar";
 
@@ -281,6 +282,8 @@ export function WorldCupFinder() {
             <span className="ff-worldcup-more-badge" aria-hidden><IconPicture2StackedLine /></span>
           </div>
         </button>
+        {/* 관심 친구 카드와 같은 스크랩 버튼을 사진 오른쪽 위에 둡니다. 사진 버튼 안에 넣을 수 없어(버튼 중첩) 형제로 두고 절대 위치로 올립니다. */}
+        <FavoriteButton animalId={animal.id} animalName={animal.name} />
         {/* 이름·나이는 사진과 선택 버튼 사이에 둡니다. 선택 버튼의 aria-label이 같은 내용을 읽어 주므로 시각용입니다. */}
         <div className="ff-worldcup-meta" aria-hidden><strong>{animal.name}</strong><small>{displayAge(animal.age)}</small></div>
         <ActionButton size="medium" variant="neutralWeak" className="ff-worldcup-select" data-picked={picking === animal.id || undefined} onClick={() => select(animal)} aria-label={`${animal.name}, ${displayAge(animal.age)} 선택`}>선택</ActionButton>

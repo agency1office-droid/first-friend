@@ -1713,6 +1713,10 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-worldcup-round-string { display: block; width: 140%; max-width: none; height: auto; margin-left: -40%; }
 /* 털색 선택 칩: 가로로 흐르다 줄바꿈합니다(목록 필터의 가로 스크롤 칩과 달리 전부 보이게). */
 .ff-worldcup-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+/* 고른 칩은 SEED 기본(짙은 배경) 대신 크기 선택과 같은 브랜드 점선 테두리 + 연한 주황 배경, 글씨는 그대로 둡니다. 테두리 폭 때문에 크기가 튀지 않게 안 고른 칩에도 투명 테두리를 둡니다. */
+.ff-worldcup-chips .seed-chip__root { border: 1px solid transparent; }
+.ff-worldcup-chips .seed-chip__root[data-checked] { border: 1px dashed var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-weak); }
+.ff-worldcup-chips .seed-chip__root[data-checked] .seed-chip__label { color: var(--seed-color-fg-neutral); }
 /* 후보 찾기·대결 준비 중 화면 가운데 로딩. 목록의 ff-loading-indicator를 키워서 씁니다. */
 [data-quiz-id="worldcup"] .ff-care-step[aria-busy="true"] { grid-template-rows: auto 1fr; }
 .ff-worldcup-loading { display: grid; align-content: center; justify-items: center; gap: 16px; min-height: 0; padding: 0 0 48px; text-align: center; }

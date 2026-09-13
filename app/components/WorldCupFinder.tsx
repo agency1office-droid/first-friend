@@ -202,7 +202,7 @@ export function WorldCupFinder() {
   return <div className={`ff-readiness ff-care-readiness${phase === "intro" ? " ff-readiness-intro" : ""}`} data-quiz-id="worldcup" data-care-step={careStep}>
     <ReadinessAppBar title="이상형 월드컵" className={phase === "intro" ? "ff-readiness-intro-appbar" : ""} onBack={previous} />
     {phase !== "intro" && <div className="ff-readiness-progress" role="progressbar" aria-label="이상형 월드컵 진행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progressPercent)}><div style={{ width: `${progressPercent}%` }} /></div>}
-    {phase === "intro" ? <section className="ff-readiness-intro-content" aria-labelledby="worldcup-intro-title"><div className="ff-readiness-intro-badge">첫 친구 이상형 월드컵</div><h1 id="worldcup-intro-title">보호 중인 친구들 중<br />내 첫 친구를 찾아볼까요?</h1><p className="ff-readiness-intro-lead">조건을 고르면 실제 보호동물 16마리가 대결해요.<br />끝까지 남은 친구를 바로 만나러 갈 수 있어요.</p></section>
+    {phase === "intro" ? <section className="ff-readiness-intro-content" aria-labelledby="worldcup-intro-title"><div className="ff-readiness-intro-badge">보호소 동물 이상형 월드컵</div><h1 id="worldcup-intro-title">나와 인연이 될<br />친구를 찾아볼까요?</h1></section>
     : isResult && winner ? <section className="ff-care-result" aria-labelledby="care-result-title">
       <h1 id="care-result-title">내 첫 친구 이상형</h1>
       <AnimalCard animal={winner} layout="photo" priority />

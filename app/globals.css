@@ -1684,6 +1684,12 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 /* 모바일도 PC처럼 좌우 2열입니다. 좁은 폭에서는 카드를 세로로 길게 두고 캡션을 줄입니다. */
 @media (max-width: 520px) { .ff-worldcup-cards { gap: 10px; } .ff-worldcup-photo .ff-animal-image, .ff-worldcup-photo .ff-animal-image-fallback { height: clamp(200px, 32dvh, 300px); } .ff-worldcup-caption { padding: 16px 12px 32px; } .ff-worldcup-caption .ff-animal-photo-name { font-size: 15px; line-height: 21px; } .ff-worldcup-more-badge { right: 8px; bottom: 8px; } }
 .ff-care-result .ff-animal-card-photo { width: 100%; max-width: 360px; }
+/* 후보 찾기·대결 준비 중 화면 가운데 로딩. 목록의 ff-loading-indicator를 키워서 씁니다. */
+[data-quiz-id="worldcup"] .ff-care-step[aria-busy="true"] { grid-template-rows: auto 1fr; }
+.ff-worldcup-loading { display: grid; align-content: center; justify-items: center; gap: 16px; min-height: 0; padding: 0 0 48px; text-align: center; }
+.ff-worldcup-loading .ff-loading-indicator { width: 48px; height: 48px; }
+.ff-worldcup-loading .ff-loading-indicator span { width: 40px; height: 40px; border-width: 3px; }
+.ff-worldcup-loading h1 { margin: 0; font-size: 17px; line-height: 24px; font-weight: var(--seed-font-weight-bold); color: var(--seed-color-fg-neutral-subtle); }
 .ff-worldcup-actions { display: grid; gap: 8px; width: 100%; max-width: 360px; }
 .ff-worldcup-others { display: grid; gap: 4px; width: 100%; text-align: left; }
 .ff-worldcup-others h2 { margin: 12px 0 0; font-size: 17px; line-height: 24px; }

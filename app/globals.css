@@ -527,8 +527,8 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-intro { background-color: #ffe4d3; background-image: url("/readiness-intro.webp"); background-position: center bottom; background-repeat: no-repeat; background-size: cover; color: #263238; }
 .ff-readiness[data-quiz-id="care-readiness"].ff-readiness-intro { background-image: url("/care-readiness-intro.webp"); }
 .ff-readiness[data-quiz-id="pet-knowledge"].ff-readiness-intro { background-image: url("/pet-knowledge-intro.webp"); }
-/* 월드컵 인트로: 그림 위 제목은 흰색에 옅은 그림자. 넓은 화면에서는 위쪽을 살려 캐릭터가 글 아래에 온전히 보이게 합니다. */
-.ff-readiness[data-quiz-id="worldcup"].ff-readiness-intro { background-image: url("/worldcup-intro.webp"); background-position: center top; }
+/* 월드컵 인트로: 위쪽에 검정 그라데이션을 깔아 흰 제목이 읽히게 합니다. 넓은 화면에서는 세로 가운데를 보여 캐릭터가 글과 버튼 사이에 온전히 들어오게 합니다. */
+.ff-readiness[data-quiz-id="worldcup"].ff-readiness-intro { background-image: linear-gradient(to bottom, var(--seed-color-palette-static-black-alpha-800), var(--seed-color-palette-static-black-alpha-600) 30%, transparent 58%), url("/worldcup-intro.webp"); background-position: center; }
 .ff-readiness[data-quiz-id="worldcup"].ff-readiness-intro .ff-readiness-intro-content h1 { color: var(--seed-color-palette-static-white); text-shadow: 0 1px 6px rgba(0, 0, 0, .45); }
 .ff-readiness-intro .ff-readiness-appbar { background: transparent; }
 .ff-readiness-intro .ff-readiness-appbar strong { display: none; }

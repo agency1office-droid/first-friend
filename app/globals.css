@@ -1688,6 +1688,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 /* 모바일도 PC처럼 좌우 2열입니다. 좁은 폭에서는 카드를 세로로 길게 두고 캡션을 줄입니다. */
 @media (max-width: 520px) { .ff-worldcup-cards { gap: 10px; } .ff-worldcup-photo .ff-animal-image, .ff-worldcup-photo .ff-animal-image-fallback { height: clamp(200px, 32dvh, 300px); } .ff-worldcup-meta strong { font-size: 15px; line-height: 21px; } .ff-worldcup-more-badge { right: 8px; bottom: 8px; } }
 .ff-care-result .ff-animal-card-photo { width: 100%; max-width: 360px; }
+/* 월드컵의 스크롤 영역(질문·대결·결과)은 셸의 좌우 패딩 밖까지 내어 스크롤바가 화면 오른쪽 끝에 붙게 합니다. 내용 위치는 안쪽 패딩으로 그대로 맞춥니다. */
+.ff-quiz-shell [data-quiz-id="worldcup"] > .ff-care-step, .ff-quiz-shell [data-quiz-id="worldcup"] > .ff-care-result { margin-right: -16px; margin-left: -16px; padding-right: 32px; padding-left: 32px; }
 /* 8강·4강·결승 진입 안내: 가운데 큰 강 수(브랜드 주황)와 그 아래 빨간 실. 실은 화면 폭에 꽉 차게 둡니다. */
 .ff-care-step.ff-worldcup-round { align-content: center; padding-top: 0; padding-bottom: 96px; overflow: visible; }
 .ff-worldcup-round-button { display: grid; justify-items: center; gap: 72px; width: calc(100% + 32px); margin: 0 -16px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }

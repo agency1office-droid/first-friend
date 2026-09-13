@@ -4,6 +4,7 @@ import type { LostAnimal } from "./public-data";
 import { cache } from "react";
 import { distanceMeters } from "./geo";
 import { matchesAnimalPublicStatus } from "./animal-public-status";
+import { classifyHealth, type HealthState } from "./animal-health";
 import { getSupabaseServerClient } from "./supabase/server";
 import { PUBLIC_ANIMAL_AGE_MAX, PUBLIC_ANIMAL_WEIGHT_MAX } from "./animal-filter-ranges";
 import { lostFreshnessCutoff, lostHappenedOn, type LostRegionQuery } from "./lost-region";
@@ -23,7 +24,7 @@ type AnimalItem = { desertionNo?: string; happenDt?: string; kindFullNm?: string
 type LossItem = { happenDt?: string; happenAddr?: string; happenPlace?: string; orgNm?: string; popfile?: string; kindCd?: string; sexCd?: string; age?: string; colorCd?: string; specialMark?: string; rfidCd?: string };
 type ShelterItem = { careRegNo?: string; careNm?: string; orgNm?: string; careAddr?: string; careTel?: string; weekOprStime?: string; weekOprEtime?: string; closeDay?: string; lat?: string; lng?: string };
 type ShelterRecord = typeof publicShelters.$inferInsert;
-type AnimalRecord = Omit<typeof publicAnimals.$inferInsert, "ageGroup"> & { ageGroup: Animal["ageGroup"]; noticeNo?: string };
+type AnimalRecord = Omit<typeof publicAnimals.$inferInsert, "ageGroup"> & { ageGroup: Animal["ageGroup"]; noticeNo?: string; healthState?: HealthState };
 type StoredAnimal = typeof publicAnimals.$inferSelect & { image1Storage?: string; image2Storage?: string };
 
 export type AnimalPage = {
@@ -219,7 +220,7 @@ function storedAnimalRow(row: AnimalRecord) {
     updated: row.updated, image_1: row.image1, image_2: row.image2, colors_json: row.colorsJson, traits_json: row.traitsJson,
     summary: row.summary, health_json: row.healthJson, life_json: row.lifeJson, match_reason: row.matchReason,
     process_state: row.processState, active: row.active, last_seen_sync: row.lastSeenSync, synced_at: row.syncedAt,
-    updated_at: isoDate(row.updated), notice_end_at: noticeEndAt, public_phase: publicPhase, color_search: (row.colorsJson || "").toLocaleLowerCase("ko-KR"), size_group: sizeGroup(row), has_multiple_photos: Boolean(row.image2 && row.image2 !== row.image1), has_exact_location: !row.approximateShelterLocation,
+    updated_at: isoDate(row.updated), notice_end_at: noticeEndAt, public_phase: publicPhase, color_search: (row.colorsJson || "").toLocaleLowerCase("ko-KR"), size_group: sizeGroup(row), has_multiple_photos: Boolean(row.image2 && row.image2 !== row.image1), has_exact_location: !row.approximateShelterLocation, health_state: row.healthState ?? "ok",
   };
 }
 
@@ -367,6 +368,8 @@ function mapAnimal(item: AnimalItem, shelterMap: Map<string, ShelterRecord>, syn
     lifeJson: JSON.stringify([notice, `발견 지역: ${(item.orgNm || "관할 지역").split(" ").slice(0, 2).join(" ")} 인근`, "성격과 건강 상태는 보호센터 상담을 통해 확인해 주세요"]),
     matchReason: `${item.colorCd || "등록된 털색"}과 ${item.kindNm || animalSpecies} 외형을 중심으로 비교했어요.`,
     processState: state,
+    // 건강 필터: 특징 메모를 표현·예외 규칙으로 분류해 저장합니다(양호·미확인 ok / 치료·관리 care).
+    healthState: classifyHealth(item.specialMark),
     active: true,
     lastSeenSync: syncId,
     syncedAt,
@@ -737,7 +740,7 @@ export async function getStoredLostAnimalsByIds(ids: string[]): Promise<LostAnim
   return (data || []).map(row => storedLostAnimal(row as Record<string, unknown>));
 }
 
-export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; neutered?: string; ageMin?: number; ageMax?: number; weightMin?: number; weightMax?: number; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; thumbnailOnly?: boolean; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {
+export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; neutered?: string; ageMin?: number; ageMax?: number; weightMin?: number; weightMax?: number; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; thumbnailOnly?: boolean; healthState?: string; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {
   const limit = Math.min(50, Math.max(1, options.limit || 20));
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
   const cursor = decodeSearchCursor(options.cursor);
@@ -769,6 +772,8 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
       p_weight_max: options.weightMax ?? PUBLIC_ANIMAL_WEIGHT_MAX,
       // 이상형 월드컵만 씁니다(서버 썸네일이 있는 친구만). 요청하지 않으면 인자를 보내지 않아 목록 화면은 전과 같습니다.
       ...(options.thumbnailOnly ? { p_thumbnail_only: true } : {}),
+      // 건강 필터는 동기화가 저장한 health_state로만 거릅니다. 전체(또는 이상한 값)면 인자를 보내지 않습니다.
+      ...(options.healthState === "ok" || options.healthState === "care" ? { p_health: options.healthState } : {}),
     }),
     ensurePublicAnimals({ allowSync: false }),
   ]);

@@ -16,13 +16,20 @@ test('animal feed filters stay in SQL and empty results never read the full feed
     assert.equal(params.p_neutered,'yes');assert.equal(params.p_size_group,'small');assert.equal(params.p_age_max,5);assert.equal(params.p_weight_max,10);
     // 썸네일 필터는 월드컵이 요청할 때만 RPC 인자로 갑니다. 홈 목록 요청은 인자 자체를 보내지 않습니다.
     assert.equal(params.p_thumbnail_only,expectThumbnailOnly?true:undefined);
+    // 건강 필터도 고른 값(ok|care)이 있을 때만 RPC 인자로 갑니다. 그 밖의 값은 전체와 같습니다.
+    assert.equal(params.p_health,expectHealth);
     return Response.json(rows);
   };
   const {getNearbyAnimalsPage}=await server.ssrLoadModule('/lib/public-animal-store.ts');
-  let expectThumbnailOnly=true;
+  let expectThumbnailOnly=true, expectHealth;
   const thumbnailOnly=await getNearbyAnimalsPage({neutered:'yes',sizeGroup:'small',ageMax:5,weightMax:10,limit:1,thumbnailOnly:true});
   assert.deepEqual(thumbnailOnly.items,[]);assert.equal(calls.length,2);
-  expectThumbnailOnly=false;calls.length=0;
+  expectThumbnailOnly=false;expectHealth='care';calls.length=0;
+  const care=await getNearbyAnimalsPage({neutered:'yes',sizeGroup:'small',ageMax:5,weightMax:10,limit:1,healthState:'care'});
+  assert.deepEqual(care.items,[]);assert.equal(calls.length,2);
+  expectHealth=undefined;calls.length=0;
+  await getNearbyAnimalsPage({neutered:'yes',sizeGroup:'small',ageMax:5,weightMax:10,limit:1,healthState:'bogus'});
+  calls.length=0;
   const options={neutered:'yes',sizeGroup:'small',ageMax:5,weightMax:10,limit:1};
   const empty=await getNearbyAnimalsPage(options);
   assert.deepEqual(empty.items,[]);assert.equal(empty.total,0);assert.equal(empty.nextCursor,null);assert.equal(calls.length,2);

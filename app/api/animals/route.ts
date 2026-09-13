@@ -27,6 +27,7 @@ export async function GET(request: Request) {
       multiplePhotos: params.get("multiplePhotos") === "1",
       exactLocation: params.get("exactLocation") === "1",
       thumbnailOnly: params.get("thumbnail") === "1",
+      healthState: params.get("health") || "",
       cursor: params.get("cursor"),
       limit: Math.min(50, Math.max(1, Number(params.get("limit")) || 20)),
     });

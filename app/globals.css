@@ -527,8 +527,8 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-intro { background-color: #ffe4d3; background-image: url("/readiness-intro.webp"); background-position: center bottom; background-repeat: no-repeat; background-size: cover; color: #263238; }
 .ff-readiness[data-quiz-id="care-readiness"].ff-readiness-intro { background-image: url("/care-readiness-intro.webp"); }
 .ff-readiness[data-quiz-id="pet-knowledge"].ff-readiness-intro { background-image: url("/pet-knowledge-intro.webp"); }
-/* 월드컵 인트로: 위쪽이 하늘이라 글씨는 다른 인트로와 같은 짙은 색을 그대로 씁니다. */
-.ff-readiness[data-quiz-id="worldcup"].ff-readiness-intro { background-image: url("/worldcup-intro.webp"); }
+/* 월드컵 인트로: 밝은 그림이라 글씨는 다른 인트로와 같은 짙은 색을 그대로 씁니다. 넓은 화면에서는 위쪽을 살려 캐릭터가 글 아래에 온전히 보이게 합니다. */
+.ff-readiness[data-quiz-id="worldcup"].ff-readiness-intro { background-image: url("/worldcup-intro.webp"); background-position: center top; }
 .ff-readiness-intro .ff-readiness-appbar { background: transparent; }
 .ff-readiness-intro .ff-readiness-appbar strong { display: none; }
 .ff-readiness-intro-appbar { grid-template-columns: 44px minmax(0, 1fr) 44px; }

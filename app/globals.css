@@ -1667,8 +1667,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-worldcup-select { width: 100%; font-weight: var(--seed-font-weight-bold); transition: none !important; }
 /* 누르는 순간과 넘어가기 전 180ms 동안 SEED neutralSolid 버튼과 같은 짙은 회색 + 반전 글씨로 바뀝니다. */
 .ff-worldcup-candidate .seed-action-button.ff-worldcup-select:active, .ff-worldcup-candidate .seed-action-button.ff-worldcup-select[data-picked="true"] { color: var(--seed-color-fg-neutral-inverted); background: var(--seed-color-bg-neutral-inverted); }
-/* 스크롤 영역과 하단 버튼이 만나는 곳에 흰 그라데이션을 깔아 끊겨 보이지 않게 하고, 아래에 내용이 더 있음을 알립니다. */
-.ff-quiz-shell [data-quiz-id="worldcup"] .ff-readiness-actions::before { content: ""; position: absolute; right: 0; left: 0; top: -32px; height: 32px; background: linear-gradient(to bottom, transparent, var(--seed-color-bg-layer-default)); pointer-events: none; }
+/* 스크롤 영역과 하단 버튼이 만나는 곳에 흰 그라데이션을 깔아 끊겨 보이지 않게 하고, 아래에 내용이 더 있음을 알립니다. 인트로(일러스트 위)는 제외합니다. */
+.ff-quiz-shell [data-quiz-id="worldcup"]:not(.ff-readiness-intro) .ff-readiness-actions::before { content: ""; position: absolute; right: 0; left: 0; top: -32px; height: 32px; background: linear-gradient(to bottom, transparent, var(--seed-color-bg-layer-default)); pointer-events: none; }
 .ff-worldcup-photo .ff-animal-image-wrap { border-radius: 0; }
 .ff-worldcup-photo .ff-animal-image, .ff-worldcup-photo .ff-animal-image-fallback { height: clamp(200px, 30dvh, 320px); aspect-ratio: auto; object-position: 50% 30%; }
 .ff-worldcup-caption { display: grid; gap: 2px; padding: 18px 14px 40px; text-align: left; }

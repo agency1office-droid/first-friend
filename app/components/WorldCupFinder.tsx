@@ -52,14 +52,16 @@ async function fetchPage(query: string) {
   if (!response.ok) throw new Error(body.error || "후보를 불러오지 못했어요.");
   return body;
 }
-// 결과 화면에 도달한 판을 같은 탭 안에 남겨 둡니다. 결과에서 상세·홈 등으로 나갔다가 뒤로 오면 처음이 아니라 그 결과로 돌아옵니다.
-// 다시 하기를 누르거나 탭을 닫으면 사라집니다.
+// 결과 화면에 도달한 판을 같은 탭 안에 남겨 두고, 결과를 본 히스토리 항목에 같은 id를 표식으로 남깁니다.
+// 상세·홈 등으로 나갔다가 뒤로(또는 앞으로) 그 항목에 돌아오면 결과를 복원하고, 홈 바로가기처럼 새 항목으로 들어오면 처음부터 시작합니다.
+// 다시 하기를 누르거나 탭을 닫으면 사라집니다. (vinext는 history.state의 추가 키를 이동 후에도 보존합니다.)
 const RESULT_KEY = "ff-worldcup-result-v1";
-type SavedRun = { draft: Draft; page: AnimalPage | null; roundSize: number; pool: Animal[]; filled: number; bracket: Bracket };
+const RESULT_MARK = "ffWorldcupResult";
+type SavedRun = { id: string; draft: Draft; page: AnimalPage | null; roundSize: number; pool: Animal[]; filled: number; bracket: Bracket };
 function readSavedRun(): SavedRun | null {
   try {
     const saved = JSON.parse(window.sessionStorage.getItem(RESULT_KEY) || "null") as SavedRun | null;
-    return saved && Array.isArray(saved.pool) && saved.bracket && isDone(saved.bracket) ? saved : null;
+    return saved && typeof saved.id === "string" && Array.isArray(saved.pool) && saved.bracket && isDone(saved.bracket) ? saved : null;
   } catch { return null; }
 }
 function writeSavedRun(run: SavedRun | null) {
@@ -67,6 +69,12 @@ function writeSavedRun(run: SavedRun | null) {
     if (run) window.sessionStorage.setItem(RESULT_KEY, JSON.stringify(run));
     else window.sessionStorage.removeItem(RESULT_KEY);
   } catch { /* 저장소가 막혀 있어도 월드컵은 계속 진행됩니다. */ }
+  try {
+    window.history.replaceState({ ...(window.history.state ?? {}), [RESULT_MARK]: run?.id ?? null }, "");
+  } catch { /* history.state를 막는 환경에서는 복원 없이 처음부터 시작합니다. */ }
+}
+function arrivedAtSavedRun(saved: SavedRun) {
+  try { return (window.history.state ?? {})[RESULT_MARK] === saved.id; } catch { return false; }
 }
 // 상세에서 열었으면 그 상세로, 아니면 들어온 곳(홈 바로가기 등)으로 돌아갑니다. 기록이 없을 때만 홈으로 갑니다.
 function exitFlow() {
@@ -108,7 +116,7 @@ export function WorldCupFinder() {
   // 뒤로 가기로 돌아온 경우 남겨 둔 결과를 그대로 보여 줍니다. 홈 피드 스냅샷과 같이 다음 틱에 적용해 서버 렌더와 어긋나지 않게 합니다.
   useEffect(() => {
     const saved = readSavedRun();
-    if (!saved) return;
+    if (!saved || !arrivedAtSavedRun(saved)) return;
     const timer = window.setTimeout(() => {
       setDraft(saved.draft); setPage(saved.page); setRoundSize(saved.roundSize); setPool(saved.pool); setFilled(saved.filled); setBracket(saved.bracket); setHistory([]);
       setPhase("result");
@@ -177,7 +185,7 @@ export function WorldCupFinder() {
     if (!bracket) return;
     const following = choose(bracket, animal);
     setHistory(value => [...value, bracket]); setBracket(following);
-    if (isDone(following)) { setPhase("result"); writeSavedRun({ draft, page, roundSize, pool, filled, bracket: following }); return; }
+    if (isDone(following)) { setPhase("result"); writeSavedRun({ id: `${Date.now().toString(36)}-${following.picks.length}`, draft, page, roundSize, pool, filled, bracket: following }); return; }
     // 라운드가 줄어드는 순간(8강·4강·결승 시작)에만 강 수를 보여 줍니다.
     if (following.round.length < bracket.round.length && following.round.length <= 8) setRoundIntro(following.round.length);
   }

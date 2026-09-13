@@ -1687,6 +1687,12 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 /* 모바일도 PC처럼 좌우 2열입니다. 좁은 폭에서는 카드를 세로로 길게 두고 캡션을 줄입니다. */
 @media (max-width: 520px) { .ff-worldcup-cards { gap: 10px; } .ff-worldcup-photo .ff-animal-image, .ff-worldcup-photo .ff-animal-image-fallback { height: clamp(200px, 32dvh, 300px); } .ff-worldcup-caption { padding: 16px 12px 32px; } .ff-worldcup-caption .ff-animal-photo-name { font-size: 15px; line-height: 21px; } .ff-worldcup-more-badge { right: 8px; bottom: 8px; } }
 .ff-care-result .ff-animal-card-photo { width: 100%; max-width: 360px; }
+/* 8강·4강·결승 진입 안내: 가운데 큰 강 수(브랜드 주황)와 그 아래 빨간 실. 실은 화면 폭에 꽉 차게 둡니다. */
+.ff-care-step.ff-worldcup-round { align-content: center; padding-top: 0; padding-bottom: 96px; }
+.ff-worldcup-round-button { display: grid; justify-items: center; gap: 72px; width: calc(100% + 32px); margin: 0 -16px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.ff-worldcup-round-button:focus-visible { outline: 3px solid var(--seed-color-stroke-brand-weak); outline-offset: -3px; }
+.ff-worldcup-round-title { font-size: 104px; line-height: 1; font-weight: var(--seed-font-weight-bold); letter-spacing: -.05em; color: var(--seed-color-fg-brand); }
+.ff-worldcup-round-string { width: 100%; height: auto; }
 /* 털색 선택 칩: 가로로 흐르다 줄바꿈합니다(목록 필터의 가로 스크롤 칩과 달리 전부 보이게). */
 .ff-worldcup-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 /* 후보 찾기·대결 준비 중 화면 가운데 로딩. 목록의 ff-loading-indicator를 키워서 씁니다. */

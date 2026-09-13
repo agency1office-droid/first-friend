@@ -89,6 +89,8 @@ export function WorldCupFinder() {
   const [history, setHistory] = useState<Bracket[]>([]);
   const [viewer, setViewer] = useState<{ animal: Animal; index: number } | null>(null);
   const [picking, setPicking] = useState<string | null>(null);
+  // 8강·4강·결승에 들어설 때 잠깐 보여 주는 라운드 안내(강 수). 누르거나 2초가 지나면 대결로 넘어갑니다.
+  const [roundIntro, setRoundIntro] = useState<number | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -96,6 +98,12 @@ export function WorldCupFinder() {
     if (scroller) scroller.scrollTop = 0;
     else window.scrollTo(0, 0);
   }, [phase, stepIndex, bracket]);
+
+  useEffect(() => {
+    if (roundIntro === null) return;
+    const timer = window.setTimeout(() => setRoundIntro(null), 2000);
+    return () => window.clearTimeout(timer);
+  }, [roundIntro]);
 
   // 뒤로 가기로 돌아온 경우 남겨 둔 결과를 그대로 보여 줍니다. 홈 피드 스냅샷과 같이 다음 틱에 적용해 서버 렌더와 어긋나지 않게 합니다.
   useEffect(() => {
@@ -167,7 +175,9 @@ export function WorldCupFinder() {
     if (!bracket) return;
     const following = choose(bracket, animal);
     setHistory(value => [...value, bracket]); setBracket(following);
-    if (isDone(following)) { setPhase("result"); writeSavedRun({ draft, page, roundSize, pool, filled, bracket: following }); }
+    if (isDone(following)) { setPhase("result"); writeSavedRun({ draft, page, roundSize, pool, filled, bracket: following }); return; }
+    // 라운드가 줄어드는 순간(8강·4강·결승 시작)에만 강 수를 보여 줍니다.
+    if (following.round.length < bracket.round.length && following.round.length <= 8) setRoundIntro(following.round.length);
   }
 
   // 선택 버튼은 잠깐 브랜드 주황으로 바뀐 뒤 넘어갑니다. 탭이 짧아도 눌렸다는 느낌이 보이게 하고, 그동안 두 번 누름은 무시합니다.
@@ -189,6 +199,7 @@ export function WorldCupFinder() {
   function previous() {
     if (phase === "intro") return exitFlow();
     if (phase === "match") {
+      setRoundIntro(null);
       const last = history.at(-1);
       if (last) { setHistory(value => value.slice(0, -1)); setBracket(last); return; }
       setPhase("steps"); setStepIndex(steps.length - 1); return;
@@ -245,6 +256,14 @@ export function WorldCupFinder() {
         <div className="ff-animal-list">{pool.filter(animal => animal.id !== winner.id).map(animal => <AnimalCard key={animal.id} animal={animal} layout="row" showShelter={false} />)}</div>
       </section>
       <p className="ff-care-result-note">입양 문의를 누르면 친구의 상세 페이지에서 보호소에 바로 연락할 수 있어요.</p>
+    </section>
+    : phase === "match" && bracket && roundIntro !== null ? <section className="ff-care-step ff-worldcup-round" aria-labelledby="care-step-title">
+      <h1 id="care-step-title" className="ff-visually-hidden">{roundLabel(roundIntro)} 시작</h1>
+      {/* 화면 어디를 눌러도 대결로 넘어갑니다. 글자와 실 외에 다른 안내 문구는 두지 않습니다. */}
+      <button type="button" className="ff-worldcup-round-button" onClick={() => setRoundIntro(null)} aria-label={`${roundLabel(roundIntro)} 시작, 누르면 계속`}>
+        <span className="ff-worldcup-round-title" aria-hidden>{roundLabel(roundIntro)}</span>
+        <Image className="ff-worldcup-round-string" src="/worldcup-string.webp" alt="" width={1600} height={533} unoptimized priority />
+      </button>
     </section>
     : phase === "match" && bracket && pair ? <section className="ff-care-step" aria-labelledby="care-step-title">
       <p className="ff-care-step-count">{roundLabel(bracket.round.length)} · {bracket.index / 2 + 1}/{Math.ceil(bracket.round.length / 2)}</p>

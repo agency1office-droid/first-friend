@@ -97,7 +97,7 @@ export function WorldCupFinder() {
   const [history, setHistory] = useState<Bracket[]>([]);
   const [viewer, setViewer] = useState<{ animal: Animal; index: number } | null>(null);
   const [picking, setPicking] = useState<string | null>(null);
-  // 8강·4강·결승에 들어설 때 잠깐 보여 주는 라운드 안내(강 수). 누르거나 2초가 지나면 대결로 넘어갑니다.
+  // 8강·4강·결승에 들어설 때 보여 주는 라운드 안내(강 수). 화면을 누르면 대결로 넘어갑니다.
   const [roundIntro, setRoundIntro] = useState<number | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -106,12 +106,6 @@ export function WorldCupFinder() {
     if (scroller) scroller.scrollTop = 0;
     else window.scrollTo(0, 0);
   }, [phase, stepIndex, bracket]);
-
-  useEffect(() => {
-    if (roundIntro === null) return;
-    const timer = window.setTimeout(() => setRoundIntro(null), 2000);
-    return () => window.clearTimeout(timer);
-  }, [roundIntro]);
 
   // 뒤로 가기로 돌아온 경우 남겨 둔 결과를 그대로 보여 줍니다. 홈 피드 스냅샷과 같이 다음 틱에 적용해 서버 렌더와 어긋나지 않게 합니다.
   useEffect(() => {
@@ -272,7 +266,7 @@ export function WorldCupFinder() {
       {/* 화면 어디를 눌러도 대결로 넘어갑니다. 글자와 실 외에 다른 안내 문구는 두지 않습니다. */}
       <button type="button" className="ff-worldcup-round-button" onClick={() => setRoundIntro(null)} aria-label={`${roundLabel(roundIntro)} 시작, 누르면 계속`}>
         <span className="ff-worldcup-round-title" aria-hidden>{roundLabel(roundIntro)}</span>
-        <Image className="ff-worldcup-round-string" src="/worldcup-string.webp" alt="" width={1600} height={533} unoptimized priority />
+        <span className="ff-worldcup-round-string-wrap"><Image className="ff-worldcup-round-string" src="/worldcup-string.webp" alt="" width={1600} height={533} unoptimized priority /></span>
       </button>
     </section>
     : phase === "match" && bracket && pair ? <section className="ff-care-step" aria-labelledby="care-step-title">
@@ -284,11 +278,11 @@ export function WorldCupFinder() {
         <button type="button" className="ff-worldcup-photo" onClick={() => openViewer(animal)} aria-label={`${animal.name} 사진 ${photos.length}장 크게 보기`}>
           <div className="ff-animal-image-wrap">
             <AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt="" priority />
-            {/* 이름·나이는 사진 카드(AnimalCard photo)와 같은 상단 그라데이션 위에 흰 글씨로 올립니다. */}
-            <span className="ff-animal-photo-caption ff-worldcup-caption" aria-hidden><span className="ff-animal-photo-name">{animal.name}</span><small>{displayAge(animal.age)}</small></span>
             <span className="ff-worldcup-more-badge" aria-hidden><IconPicture2StackedLine /></span>
           </div>
         </button>
+        {/* 이름·나이는 사진과 선택 버튼 사이에 둡니다. 선택 버튼의 aria-label이 같은 내용을 읽어 주므로 시각용입니다. */}
+        <div className="ff-worldcup-meta" aria-hidden><strong>{animal.name}</strong><small>{displayAge(animal.age)}</small></div>
         <ActionButton size="medium" variant="neutralWeak" className="ff-worldcup-select" data-picked={picking === animal.id || undefined} onClick={() => select(animal)} aria-label={`${animal.name}, ${displayAge(animal.age)} 선택`}>선택</ActionButton>
       </div>; })}</div>
     </section>

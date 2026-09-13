@@ -21,12 +21,15 @@ img { display: block; max-width: 100%; }
 .ff-quiz-shell .ff-main { display: flex; height: 100dvh; min-height: 100dvh; overflow: hidden; padding: 0; }
 .ff-quiz-shell .ff-readiness { width: 100%; height: 100%; min-height: 0; padding: 0 16px calc(24px + env(safe-area-inset-bottom)); gap: 0; overflow: hidden; }
 .ff-quiz-shell .ff-readiness > section { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
-/* PC에서도 모바일처럼 화살표 없는 가는 회색 스크롤바. Chrome·Safari는 ::-webkit-scrollbar, Firefox는 scrollbar-width/color를 씁니다(둘을 함께 쓰면 Chrome이 표준 속성을 우선해 webkit 규칙을 무시하므로 나눕니다). */
-.ff-quiz-shell .ff-readiness > section::-webkit-scrollbar { width: 6px; height: 6px; }
-.ff-quiz-shell .ff-readiness > section::-webkit-scrollbar-track { background: transparent; }
-.ff-quiz-shell .ff-readiness > section::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--seed-color-palette-gray-600); }
-.ff-quiz-shell .ff-readiness > section::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
-@supports not selector(::-webkit-scrollbar) { .ff-quiz-shell .ff-readiness > section { scrollbar-width: thin; scrollbar-color: var(--seed-color-palette-gray-600) transparent; } }
+/* PC(마우스 환경) 전체에서 모바일처럼 화살표 없는 가는 회색 스크롤바. 문서 스크롤과 안쪽 스크롤 영역 모두에 적용합니다.
+   Chrome·Safari는 ::-webkit-scrollbar, Firefox는 scrollbar-width/color를 씁니다(둘을 함께 쓰면 Chrome이 표준 속성을 우선해 webkit 규칙을 무시하므로 나눕니다). */
+@media (hover: hover) and (pointer: fine) {
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--seed-color-palette-gray-600); }
+  *::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+  @supports not selector(::-webkit-scrollbar) { * { scrollbar-width: thin; scrollbar-color: var(--seed-color-palette-gray-600) transparent; } }
+}
 /* 스크롤되는 섹션(질문·대결·결과, 좌우 패딩 16px)은 셸의 좌우 패딩 밖까지 내어 스크롤바가 화면 오른쪽 끝에 붙게 합니다. 내용 위치는 안쪽 패딩 32px로 그대로 맞춥니다. 인트로와 그리기 화면은 제외합니다. */
 .ff-quiz-shell:not(.ff-drawing-shell) .ff-readiness > section:not(.ff-readiness-intro-content) { margin-right: -16px; margin-left: -16px; padding-right: 32px; padding-left: 32px; }
 .ff-quiz-shell .ff-readiness-actions { position: relative; bottom: auto; flex: 0 0 auto; margin-top: 0; }

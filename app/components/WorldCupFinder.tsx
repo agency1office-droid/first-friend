@@ -8,7 +8,7 @@ import { IconPicture2StackedLine, IconXmarkLine } from "@karrotmarket/react-mono
 import type { Animal } from "../../lib/data";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
-import { buildFindHref, choose, currentPair, isDone, pickPool, poolQueries, progress, roundLabel, startBracket, winnerOf, type Answers, type Bracket } from "../../lib/worldcup";
+import { buildFindHref, choose, currentPair, expandColorQueries, isDone, pickPool, poolQueries, progress, roundLabel, startBracket, winnerOf, type Answers, type Bracket } from "../../lib/worldcup";
 import { AnimalCard } from "./AnimalCard";
 import { AnimalThumbnail } from "./AnimalThumbnail";
 import { navigateAppBack } from "./AppChrome";
@@ -22,9 +22,11 @@ import { ReadinessAppBar } from "./ReadinessAppBar";
 type Species = "cat" | "dog";
 type Step = "species" | "size" | "color" | "round";
 type Phase = "intro" | "steps" | "match" | "result";
-type Draft = { species: Species | null; size: string | null; color: string | null };
+// 크기·털색은 여러 개 고를 수 있습니다. null은 아직 고르지 않음, ["all"]은 상관없음입니다.
+type Draft = { species: Species | null; size: string[] | null; color: string[] | null };
 
 const EMPTY_DRAFT: Draft = { species: null, size: null, color: null };
+const STEPS: Step[] = ["species", "size", "color", "round"];
 // 크기 기준은 공공 데이터 체중 분류(lib/public-animal-store.ts sizeGroup)와 같습니다.
 const SIZE_OPTIONS = [["all", "상관없음"], ["small", "소형"], ["medium", "중형"], ["large,xlarge", "대형"]] as const;
 const DOG_COLORS = ["흰색", "검정", "갈색", "황색", "회색", "기타·복합색"];
@@ -33,12 +35,27 @@ const CAT_COLORS = ["흰색", "검정", "갈색", "황색", "회색", "삼색", 
 // 라운드 안내 문구의 남은 친구 수를 우리말로 읽습니다. (8강·4강만 안내하므로 둘이면 충분하지만 32강 흐름을 위해 16도 둡니다.)
 const KOREAN_COUNT: Record<number, string> = { 16: "열여섯", 8: "여덟", 4: "네" };
 
-function stepsFor(species: Species | null): Step[] {
-  return species === "cat" ? ["species", "color", "round"] : ["species", "size", "color", "round"];
+// 예전에 저장된 결과(문자열 답)도 배열로 읽습니다.
+function toList(values: string[] | string | null | undefined) {
+  return Array.isArray(values) ? values : values ? [values] : null;
+}
+function normalizeDraft(draft: Draft): Draft {
+  return { species: draft.species, size: toList(draft.size), color: toList(draft.color) };
+}
+// 상관없음은 단독 선택이고, 다른 값을 고르면 상관없음이 빠집니다. 마지막 값을 해제하면 비워 두어 다음 버튼이 잠깁니다.
+function toggleValue(current: string[] | null, value: string) {
+  if (value === "all") return ["all"];
+  const rest = (toList(current) ?? []).filter(item => item !== "all");
+  const next = rest.includes(value) ? rest.filter(item => item !== value) : [...rest, value];
+  return next.length ? next : null;
+}
+function csv(values: string[] | null) {
+  const list = toList(values) ?? [];
+  return !list.length || list.includes("all") ? "all" : list.join(",");
 }
 // 지역은 전국, 나이대는 제한 없음으로 고정합니다. 나이대는 결과의 닮은 친구 링크에서 선택 결과로 추론합니다.
 function toAnswers(draft: Draft): Answers {
-  return { species: draft.species ?? "dog", scope: "nationwide", size: draft.size ?? "all", age: "all", color: draft.color ?? "all" };
+  return { species: draft.species ?? "dog", scope: "nationwide", size: csv(draft.size), age: "all", color: csv(draft.color) };
 }
 function displayAge(age: string) {
   if (age.includes("60일미만")) return "60일 미만";
@@ -116,13 +133,13 @@ export function WorldCupFinder() {
     const saved = readSavedRun();
     if (!saved || !arrivedAtSavedRun(saved)) return;
     const timer = window.setTimeout(() => {
-      setDraft(saved.draft); setPage(saved.page); setRoundSize(saved.roundSize); setPool(saved.pool); setFilled(saved.filled); setBracket(saved.bracket); setHistory([]);
+      setDraft(normalizeDraft(saved.draft)); setPage(saved.page); setRoundSize(saved.roundSize); setPool(saved.pool); setFilled(saved.filled); setBracket(saved.bracket); setHistory([]);
       setPhase("result");
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
-  const steps = stepsFor(draft.species);
+  const steps = STEPS;
   const step = steps[stepIndex];
   const answers = toAnswers(draft);
   // 32강 노출과 부족 안내는 실제 후보 규칙(서버 썸네일 있음·건강 문구 없음·중복 제외)과 같은 수로 판단합니다.
@@ -138,10 +155,19 @@ export function WorldCupFinder() {
       // 한 페이지는 최대 50마리라 건강 문구로 걸러내면 32강이 안 나올 수 있습니다.
       // 조건을 넓히기 전에 같은 조건의 다음 페이지를 최대 두 번 더 받아 후보를 채웁니다.
       const query = poolQueries(answers, null)[0];
-      let loaded = await fetchPage(query);
-      for (let extra = 0; extra < 2 && loaded.nextCursor && pickPool([loaded.items], loaded.items.length).pool.length < 32; extra += 1) {
-        const more = await fetchPage(`${query}&cursor=${encodeURIComponent(loaded.nextCursor)}`);
-        loaded = { ...loaded, items: [...loaded.items, ...more.items], nextCursor: more.nextCursor };
+      const perColor = expandColorQueries(query);
+      let loaded: AnimalPage;
+      if (perColor.length > 1) {
+        // 털색을 여러 개 고르면 색마다 첫 페이지를 받아 합칩니다(같은 친구는 한 번만). 후보가 넉넉해 다음 페이지는 받지 않습니다.
+        const pages = await Promise.all(perColor.map(fetchPage));
+        const seen = new Set<string>();
+        loaded = { ...pages[0], items: pages.flatMap(item => item.items).filter(animal => { if (seen.has(animal.id)) return false; seen.add(animal.id); return true; }), total: pages.reduce((sum, item) => sum + item.total, 0), nextCursor: null };
+      } else {
+        loaded = await fetchPage(query);
+        for (let extra = 0; extra < 2 && loaded.nextCursor && pickPool([loaded.items], loaded.items.length).pool.length < 32; extra += 1) {
+          const more = await fetchPage(`${query}&cursor=${encodeURIComponent(loaded.nextCursor)}`);
+          loaded = { ...loaded, items: [...loaded.items, ...more.items], nextCursor: more.nextCursor };
+        }
       }
       setPage(loaded);
       setRoundSize(16); setEmpty(false); setStepIndex(value => value + 1);
@@ -299,10 +325,10 @@ export function WorldCupFinder() {
       <p className="ff-care-step-count">{stepIndex + 1}/{steps.length}</p>
       {/* 후보를 찾거나 대결을 준비하는 동안은 질문 대신 화면 가운데 로딩을 보여 줍니다. */}
       {loading ? <div className="ff-worldcup-loading" role="status"><LoadingIndicator label={step === "round" ? "대결을 준비하는 중" : "후보를 찾는 중"} /><h1 id="care-step-title">{step === "round" ? "대결을 준비하고 있어요" : "조건에 맞는 친구를 찾고 있어요"}</h1></div>
-      : <>{step === "species" && <><h1 id="care-step-title">어떤 친구를 만나고 싶나요?</h1><div className="ff-care-choice-grid"><button type="button" className="ff-care-species-choice" data-selected={draft.species === "cat" || undefined} onClick={() => setDraft(value => ({ ...value, species: "cat", size: null }))}><Image src="/cat-selection.webp" alt="" width={104} height={104} unoptimized /><strong>고양이</strong></button><button type="button" className="ff-care-species-choice" data-selected={draft.species === "dog" || undefined} onClick={() => setDraft(value => ({ ...value, species: "dog" }))}><Image src="/dog-selection.webp" alt="" width={104} height={104} unoptimized /><strong>강아지</strong></button></div></>}
-      {step === "size" && <><h1 id="care-step-title">어느 정도 크기가<br />좋나요?</h1><p className="ff-care-helper">홈에서 사용하는 크기 기준과 같아요.</p><div className="ff-care-size-grid">{SIZE_OPTIONS.map(([value, label]) => <button type="button" className="ff-care-size-choice" data-selected={draft.size === value || undefined} key={value} onClick={() => setDraft(current => ({ ...current, size: value }))}>{label}</button>)}</div></>}
-      {/* 털색은 선택지가 많아 큰 버튼 대신 SEED 칩(라디오)으로 줄여 보여 줍니다. name을 고정해야 SSR과 클라이언트의 radio name이 같습니다. */}
-      {step === "color" && <><h1 id="care-step-title">어떤 털색이<br />마음에 드나요?</h1><Chip.RadioRoot className="ff-worldcup-chips" name="worldcup-color" value={draft.color ?? ""} onValueChange={value => setDraft(current => ({ ...current, color: value as string }))}>{["상관없음", ...(draft.species === "cat" ? CAT_COLORS : DOG_COLORS)].map(label => { const value = label === "상관없음" ? "all" : label; return <Chip.RadioItem key={value} value={value} size="large"><Chip.Label>{label}</Chip.Label></Chip.RadioItem>; })}</Chip.RadioRoot></>}
+      : <>{step === "species" && <><h1 id="care-step-title">어떤 친구를 만나고 싶나요?</h1><div className="ff-care-choice-grid"><button type="button" className="ff-care-species-choice" data-selected={draft.species === "cat" || undefined} onClick={() => setDraft(value => ({ ...value, species: "cat", color: value.species === "cat" ? value.color : null }))}><Image src="/cat-selection.webp" alt="" width={104} height={104} unoptimized /><strong>고양이</strong></button><button type="button" className="ff-care-species-choice" data-selected={draft.species === "dog" || undefined} onClick={() => setDraft(value => ({ ...value, species: "dog", color: value.species === "dog" ? value.color : null }))}><Image src="/dog-selection.webp" alt="" width={104} height={104} unoptimized /><strong>강아지</strong></button></div></>}
+      {step === "size" && <><h1 id="care-step-title">어느 정도 크기가<br />좋나요?</h1><p className="ff-care-helper">홈에서 사용하는 크기 기준과 같아요. 여러 개 고를 수 있어요.</p><div className="ff-care-size-grid" role="group" aria-label="크기">{SIZE_OPTIONS.map(([value, label]) => <button type="button" className="ff-care-size-choice" aria-pressed={draft.size?.includes(value) ?? false} data-selected={draft.size?.includes(value) || undefined} key={value} onClick={() => setDraft(current => ({ ...current, size: toggleValue(current.size, value) }))}>{label}</button>)}</div></>}
+      {/* 털색은 선택지가 많아 큰 버튼 대신 SEED 칩(토글)으로 줄여 보여 줍니다. name을 고정해야 SSR과 클라이언트의 input name이 같습니다. */}
+      {step === "color" && <><h1 id="care-step-title">어떤 털색이<br />마음에 드나요?</h1><p className="ff-care-helper">여러 개 고를 수 있어요.</p><div className="ff-worldcup-chips" role="group" aria-label="털색">{["상관없음", ...(draft.species === "cat" ? CAT_COLORS : DOG_COLORS)].map(label => { const value = label === "상관없음" ? "all" : label; return <Chip.Toggle key={value} inputProps={{ name: "worldcup-color", value }} size="large" checked={draft.color?.includes(value) ?? false} onCheckedChange={() => setDraft(current => ({ ...current, color: toggleValue(current.color, value) }))}><Chip.Label>{label}</Chip.Label></Chip.Toggle>; })}</div></>}
       {step === "round" && page && <><h1 id="care-step-title">몇 강으로<br />시작할까요?</h1><div className="ff-care-size-grid"><button type="button" className="ff-care-size-choice" data-selected={roundSize === 16 || undefined} onClick={() => setRoundSize(16)}>16강</button>{usable >= 32 && <button type="button" className="ff-care-size-choice" data-selected={roundSize === 32 || undefined} onClick={() => setRoundSize(32)}>32강</button>}</div>{empty ? <p className="ff-care-helper">조건을 넓혀도 대결할 친구가 부족해요. 조건을 바꿔 다시 골라 주세요.</p> : shortBy > 0 ? <p className="ff-care-helper">조건에 맞는 친구가 부족해 비슷한 친구 {shortBy}마리를 더해요.</p> : null}</>}</>}
     </section>}
     {/* 대결 화면은 카드 아래 선택 버튼이 곧 다음이라 하단 버튼이 없습니다. */}

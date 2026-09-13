@@ -105,12 +105,20 @@ function mostCommon(values: string[]) {
 }
 
 // 답한 조건은 그대로 두고, 상관없음으로 둔 나이대·털색만 고른 친구들에서 가장 잦은 값으로 채웁니다.
+// 털색을 여러 개 고르면 색마다 한 번씩 요청해 합칩니다(API의 color는 한 값만 받음). 색이 하나 이하면 그대로 한 번입니다.
+export function expandColorQueries(query: string) {
+  const colors = (new URLSearchParams(query).get("color") ?? "").split(",").map(value => value.trim()).filter(Boolean);
+  if (colors.length < 2) return [query];
+  return colors.map(color => { const next = new URLSearchParams(query); next.set("color", color); return next.toString(); });
+}
+
 export function buildFindHref(answers: Answers, picks: Animal[]) {
   const params = new URLSearchParams({ species: answers.species });
   if (answers.size !== "all") params.set("size", answers.size);
   const age = answers.age !== "all" ? answers.age : AGE_KEYS[mostCommon(picks.map(pick => pick.ageGroup))] ?? "";
   if (age) params.set("age", age);
-  const color = answers.color !== "all" ? answers.color : mostCommon(picks.map(pick => pick.colors[0] ?? ""));
+  // 친구 찾기는 털색을 하나만 받으므로, 여러 색을 골랐을 때는 상관없음과 같이 선택 결과에서 추론합니다.
+  const color = answers.color !== "all" && !answers.color.includes(",") ? answers.color : mostCommon(picks.map(pick => pick.colors[0] ?? ""));
   if (color) params.set("color", color);
   if (answers.scope === "nationwide") params.set("sort", "recent");
   return `/find?${params}`;

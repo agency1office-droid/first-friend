@@ -137,3 +137,22 @@ test('find link keeps answered filters and infers only the open ones from picks'
   assert.equal(inferred.searchParams.get('color'),'검정');
   assert.equal(inferred.searchParams.get('sort'),'recent');
 });
+
+test('several colors become one request per color, other conditions kept', async t=>{
+  const {poolQueries,expandColorQueries}=await loadWorldcup(t);
+  const [first]=poolQueries({...answers,scope:'nationwide',size:'small,medium',color:'흰색,검정'},null);
+  const expanded=expandColorQueries(first).map(q=>new URLSearchParams(q));
+  assert.deepEqual(expanded.map(q=>q.get('color')),['흰색','검정']);
+  for(const q of expanded){ assert.equal(q.get('size'),'small,medium'); assert.equal(q.get('species'),'dog'); assert.equal(q.get('thumbnail'),'1'); }
+  // 색이 하나이거나 없으면 그대로 한 번만 요청합니다.
+  assert.deepEqual(expandColorQueries('species=cat&color=%ED%9D%B0%EC%83%89&limit=50'),['species=cat&color=%ED%9D%B0%EC%83%89&limit=50']);
+  assert.deepEqual(expandColorQueries('species=cat&limit=50'),['species=cat&limit=50']);
+});
+
+test('find link infers a colour from picks when several colours were chosen', async t=>{
+  const {buildFindHref}=await loadWorldcup(t);
+  const picks=[animal('1',{colors:['검정']}),animal('2',{colors:['검정']}),animal('3',{colors:['흰색']})];
+  const url=new URL(buildFindHref({...answers,size:'small,medium',color:'흰색,검정'},picks),'https://x');
+  assert.equal(url.searchParams.get('size'),'small,medium');
+  assert.equal(url.searchParams.get('color'),'검정');
+});

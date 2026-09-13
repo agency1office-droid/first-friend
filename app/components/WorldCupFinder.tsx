@@ -52,6 +52,22 @@ async function fetchPage(query: string) {
   if (!response.ok) throw new Error(body.error || "후보를 불러오지 못했어요.");
   return body;
 }
+// 결과 화면에 도달한 판을 같은 탭 안에 남겨 둡니다. 결과에서 상세·홈 등으로 나갔다가 뒤로 오면 처음이 아니라 그 결과로 돌아옵니다.
+// 다시 하기를 누르거나 탭을 닫으면 사라집니다.
+const RESULT_KEY = "ff-worldcup-result-v1";
+type SavedRun = { draft: Draft; page: AnimalPage | null; roundSize: number; pool: Animal[]; filled: number; bracket: Bracket };
+function readSavedRun(): SavedRun | null {
+  try {
+    const saved = JSON.parse(window.sessionStorage.getItem(RESULT_KEY) || "null") as SavedRun | null;
+    return saved && Array.isArray(saved.pool) && saved.bracket && isDone(saved.bracket) ? saved : null;
+  } catch { return null; }
+}
+function writeSavedRun(run: SavedRun | null) {
+  try {
+    if (run) window.sessionStorage.setItem(RESULT_KEY, JSON.stringify(run));
+    else window.sessionStorage.removeItem(RESULT_KEY);
+  } catch { /* 저장소가 막혀 있어도 월드컵은 계속 진행됩니다. */ }
+}
 // 상세에서 열었으면 그 상세로, 아니면 들어온 곳(홈 바로가기 등)으로 돌아갑니다. 기록이 없을 때만 홈으로 갑니다.
 function exitFlow() {
   if (new URLSearchParams(window.location.search).get("return_to")) closeToDetail();
@@ -80,6 +96,17 @@ export function WorldCupFinder() {
     if (scroller) scroller.scrollTop = 0;
     else window.scrollTo(0, 0);
   }, [phase, stepIndex, bracket]);
+
+  // 뒤로 가기로 돌아온 경우 남겨 둔 결과를 그대로 보여 줍니다. 홈 피드 스냅샷과 같이 다음 틱에 적용해 서버 렌더와 어긋나지 않게 합니다.
+  useEffect(() => {
+    const saved = readSavedRun();
+    if (!saved) return;
+    const timer = window.setTimeout(() => {
+      setDraft(saved.draft); setPage(saved.page); setRoundSize(saved.roundSize); setPool(saved.pool); setFilled(saved.filled); setBracket(saved.bracket); setHistory([]);
+      setPhase("result");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const steps = stepsFor(draft.species);
   const step = steps[stepIndex];
@@ -140,7 +167,7 @@ export function WorldCupFinder() {
     if (!bracket) return;
     const following = choose(bracket, animal);
     setHistory(value => [...value, bracket]); setBracket(following);
-    if (isDone(following)) setPhase("result");
+    if (isDone(following)) { setPhase("result"); writeSavedRun({ draft, page, roundSize, pool, filled, bracket: following }); }
   }
 
   // 선택 버튼은 잠깐 브랜드 주황으로 바뀐 뒤 넘어갑니다. 탭이 짧아도 눌렸다는 느낌이 보이게 하고, 그동안 두 번 누름은 무시합니다.
@@ -172,6 +199,7 @@ export function WorldCupFinder() {
   }
 
   function retry() {
+    writeSavedRun(null);
     setPhase("steps"); setStepIndex(0); setDraft(EMPTY_DRAFT); setPage(null); setRoundSize(16); setEmpty(false); setPool([]); setFilled(0); setBracket(null); setHistory([]);
   }
 

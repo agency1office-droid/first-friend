@@ -737,7 +737,7 @@ export async function getStoredLostAnimalsByIds(ids: string[]): Promise<LostAnim
   return (data || []).map(row => storedLostAnimal(row as Record<string, unknown>));
 }
 
-export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; neutered?: string; ageMin?: number; ageMax?: number; weightMin?: number; weightMax?: number; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {
+export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number; species?: string; publicStatus?: string; breedKeys?: string[]; ageGroup?: string; sizeGroup?: string; sex?: string; neutered?: string; ageMin?: number; ageMax?: number; weightMin?: number; weightMax?: number; color?: string; sort?: string; maxDistance?: number; multiplePhotos?: boolean; exactLocation?: boolean; thumbnailOnly?: boolean; cursor?: string | null; limit?: number } = {}): Promise<AnimalPage> {
   const limit = Math.min(50, Math.max(1, options.limit || 20));
   const hasHome = validPoint(Number(options.lat), Number(options.lng));
   const cursor = decodeSearchCursor(options.cursor);
@@ -767,6 +767,8 @@ export async function getNearbyAnimalsPage(options: { lat?: number; lng?: number
       p_age_max: options.ageMax ?? PUBLIC_ANIMAL_AGE_MAX,
       p_weight_min: options.weightMin ?? 0,
       p_weight_max: options.weightMax ?? PUBLIC_ANIMAL_WEIGHT_MAX,
+      // 이상형 월드컵만 씁니다(서버 썸네일이 있는 친구만). 요청하지 않으면 인자를 보내지 않아 목록 화면은 전과 같습니다.
+      ...(options.thumbnailOnly ? { p_thumbnail_only: true } : {}),
     }),
     ensurePublicAnimals({ allowSync: false }),
   ]);

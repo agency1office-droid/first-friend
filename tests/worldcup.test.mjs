@@ -10,7 +10,7 @@ async function loadWorldcup(t){
 
 // 공공 데이터 Animal의 최소 형태만 흉내 냅니다. 사진·공고 문구·나이대·털색이 로직에 쓰이는 전부입니다.
 function animal(id,overrides={}){
-  return {id,name:`친구${id}`,image:`https://img/${id}.jpg`,life:[],ageGroup:'어린 친구',colors:['흰색'],summary:'',...overrides};
+  return {id,name:`친구${id}`,image:`https://img/${id}.jpg`,thumbnail:`https://storage/thumb-v1/${id}.webp`,life:[],ageGroup:'어린 친구',colors:['흰색'],summary:'',...overrides};
 }
 const notice=(start,end)=>`공고 ${start} ~ ${end}`;
 const answers={species:'dog',scope:'nearby',size:'large,xlarge',age:'young',color:'흰색'};
@@ -36,6 +36,17 @@ test('pool queries relax color, age, size, then region in that order', async t=>
   assert.equal(queries[4].get('sort'),'recent'); assert.equal(queries[4].get('lat'),null); assert.equal(queries[4].get('species'),'dog');
 });
 
+test('every pool query asks the server for animals that already have a compressed thumbnail', async t=>{
+  const {poolQueries}=await loadWorldcup(t);
+  for(const query of poolQueries(answers,seoul)) assert.equal(new URLSearchParams(query).get('thumbnail'),'1',query);
+});
+
+test('pool leaves out animals without a server thumbnail even when the original photo exists', async t=>{
+  const {pickPool}=await loadWorldcup(t);
+  const {pool}=pickPool([[animal('thumb'),animal('original-only',{thumbnail:undefined}),animal('thumb2'),animal('blank-thumb',{thumbnail:' '})]],4);
+  assert.deepEqual(pool.map(item=>item.id),['thumb','thumb2']);
+});
+
 test('pool queries skip duplicate steps and use recent order without coordinates', async t=>{
   const {poolQueries}=await loadWorldcup(t);
   const queries=poolQueries({...answers,size:'all',age:'all',color:'all',scope:'nationwide'},null);
@@ -46,7 +57,7 @@ test('pool queries skip duplicate steps and use recent order without coordinates
 
 test('pool keeps matched animals in request order and fills the rest by notice deadline', async t=>{
   const {pickPool}=await loadWorldcup(t);
-  const primary=[animal('a'),animal('b',{image:' '}),animal('c'),animal('a')];
+  const primary=[animal('a'),animal('b',{thumbnail:' '}),animal('c'),animal('a')];
   const fallback=[
     animal('late',{life:[notice('2026. 9. 1.','2026. 9. 30.')]}),
     animal('undated',{life:['공고 기간은 상세 상담에서 확인해 주세요']}),
@@ -84,9 +95,9 @@ test('pool leaves out animals whose note reports injury or illness', async t=>{
   assert.deepEqual(pool.map(item=>item.id),['ok','ok2']);
 });
 
-test('pool is empty when fewer than two animals have photos', async t=>{
+test('pool is empty when fewer than two animals have server thumbnails', async t=>{
   const {pickPool}=await loadWorldcup(t);
-  assert.deepEqual(pickPool([[animal('only'),animal('blank',{image:''})]],16).pool,[]);
+  assert.deepEqual(pickPool([[animal('only'),animal('blank',{thumbnail:''})]],16).pool,[]);
 });
 
 test('a 16 bracket ends after exactly 15 choices with the chosen friend winning', async t=>{

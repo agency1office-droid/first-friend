@@ -14,9 +14,15 @@ test('animal feed filters stay in SQL and empty results never read the full feed
     assert.ok(path.endsWith('/rpc/search_public_animals_filtered_with_storage'),path);
     const params=JSON.parse(options.body);
     assert.equal(params.p_neutered,'yes');assert.equal(params.p_size_group,'small');assert.equal(params.p_age_max,5);assert.equal(params.p_weight_max,10);
+    // 썸네일 필터는 월드컵이 요청할 때만 RPC 인자로 갑니다. 홈 목록 요청은 인자 자체를 보내지 않습니다.
+    assert.equal(params.p_thumbnail_only,expectThumbnailOnly?true:undefined);
     return Response.json(rows);
   };
   const {getNearbyAnimalsPage}=await server.ssrLoadModule('/lib/public-animal-store.ts');
+  let expectThumbnailOnly=true;
+  const thumbnailOnly=await getNearbyAnimalsPage({neutered:'yes',sizeGroup:'small',ageMax:5,weightMax:10,limit:1,thumbnailOnly:true});
+  assert.deepEqual(thumbnailOnly.items,[]);assert.equal(calls.length,2);
+  expectThumbnailOnly=false;calls.length=0;
   const options={neutered:'yes',sizeGroup:'small',ageMax:5,weightMax:10,limit:1};
   const empty=await getNearbyAnimalsPage(options);
   assert.deepEqual(empty.items,[]);assert.equal(empty.total,0);assert.equal(empty.nextCursor,null);assert.equal(calls.length,2);

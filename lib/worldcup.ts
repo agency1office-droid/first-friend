@@ -13,7 +13,8 @@ const NOTICE_DATE = /(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\./g;
 export function poolQueries(answers: Answers, location: GeoPointLike) {
   const nearby = answers.scope === "nearby" && location ? location : null;
   const build = (step: { color: boolean; age: boolean; size: boolean; nearby: boolean }) => {
-    const params = new URLSearchParams({ species: answers.species, limit: "50" });
+    // 서버에 압축 썸네일(webp)이 이미 있는 친구만 받습니다. 원본만 있는 친구는 느리고, 원본이 사라진 친구는 "사진 준비 중"으로 나오기 때문입니다.
+    const params = new URLSearchParams({ species: answers.species, limit: "50", thumbnail: "1" });
     if (step.size && answers.size !== "all") params.set("size", answers.size);
     if (step.age && answers.age !== "all") params.set("age", answers.age);
     if (step.color && answers.color !== "all") params.set("color", answers.color);
@@ -63,7 +64,7 @@ export function shuffle<T>(items: T[], random: () => number) {
 // 부족분만 넓힌 조건에서 공고 마감이 가까운 순, 같으면 더 오래 기다린 순으로 채웁니다.
 export function pickPool(pages: Animal[][], size: number, random?: () => number) {
   const seen = new Set<string>();
-  const usable = (items: Animal[]) => items.filter(item => { if (!item.image.trim() || hasHealthConcern(item) || seen.has(item.id)) return false; seen.add(item.id); return true; });
+  const usable = (items: Animal[]) => items.filter(item => { if (!item.thumbnail?.trim() || hasHealthConcern(item) || seen.has(item.id)) return false; seen.add(item.id); return true; });
   const candidates = usable(pages[0] ?? []);
   const matched = (random ? shuffle(candidates, random) : candidates).slice(0, size);
   const fallback = pages.slice(1).flatMap(usable).sort(byDeadline);

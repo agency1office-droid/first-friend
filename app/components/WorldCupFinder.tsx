@@ -81,7 +81,7 @@ export function WorldCupFinder() {
   const steps = stepsFor(draft.species);
   const step = steps[stepIndex];
   const answers = toAnswers(draft);
-  // 32강 노출과 부족 안내는 실제 후보 규칙(사진 있음·건강 문구 없음·중복 제외)과 같은 수로 판단합니다.
+  // 32강 노출과 부족 안내는 실제 후보 규칙(서버 썸네일 있음·건강 문구 없음·중복 제외)과 같은 수로 판단합니다.
   const usable = page ? pickPool([page.items], page.items.length).pool.length : 0;
   const shortBy = Math.max(0, roundSize - usable);
   const canContinue = step === "species" ? draft.species !== null : step === "size" ? draft.size !== null : step === "color" ? draft.color !== null : !empty;
@@ -120,7 +120,7 @@ export function WorldCupFinder() {
         picked = pickPool(pages, roundSize, Math.random);
       }
       if (!picked.pool.length) { setEmpty(true); return; }
-      // 압축 썸네일이 없는 최신 동물은 원본을 받아야 하므로, 대결이 시작되기 전에 후보 사진을 모두 미리 받아 둡니다.
+      // 후보는 모두 서버 압축 썸네일(webp)이 있는 친구입니다. 대결이 시작되기 전에 미리 받아 두어 첫 화면부터 바로 보이게 합니다.
       picked.pool.forEach(animal => { const image = new window.Image(); image.decoding = "async"; image.src = optimizedAnimalImageUrl(animal.thumbnail || animal.image); });
       setPool(picked.pool); setFilled(picked.filled); setHistory([]);
       setBracket(startBracket(picked.pool, Math.random));

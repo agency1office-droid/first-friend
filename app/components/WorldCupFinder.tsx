@@ -30,6 +30,9 @@ const SIZE_OPTIONS = [["all", "상관없음"], ["small", "소형"], ["medium", "
 const DOG_COLORS = ["흰색", "검정", "갈색", "황색", "회색", "기타·복합색"];
 const CAT_COLORS = ["흰색", "검정", "갈색", "황색", "회색", "삼색", "고등어", "치즈", "기타·복합색"];
 
+// 라운드 안내 문구의 남은 친구 수를 우리말로 읽습니다. (8강·4강만 안내하므로 둘이면 충분하지만 32강 흐름을 위해 16도 둡니다.)
+const KOREAN_COUNT: Record<number, string> = { 16: "열여섯", 8: "여덟", 4: "네" };
+
 function stepsFor(species: Species | null): Step[] {
   return species === "cat" ? ["species", "color", "round"] : ["species", "size", "color", "round"];
 }
@@ -266,7 +269,10 @@ export function WorldCupFinder() {
       <h1 id="care-step-title" className="ff-visually-hidden">{roundLabel(roundIntro)} 시작</h1>
       {/* 화면 어디를 눌러도 대결로 넘어갑니다. 글자와 실 외에 다른 안내 문구는 두지 않습니다. */}
       <button type="button" className="ff-worldcup-round-button" onClick={() => setRoundIntro(null)} aria-label={`${roundLabel(roundIntro)} 시작, 누르면 계속`}>
-        <span className="ff-worldcup-round-title" aria-hidden>{roundLabel(roundIntro)}</span>
+        <span className="ff-worldcup-round-heading" aria-hidden>
+          <span className="ff-worldcup-round-title">{roundLabel(roundIntro)}</span>
+          <span className="ff-worldcup-round-sub">{roundIntro === 2 ? "이제 마지막 선택만 남았어요" : `선택한 ${KOREAN_COUNT[roundIntro] ?? roundIntro} 친구가 남았어요`}</span>
+        </span>
         <span className="ff-worldcup-round-string-wrap"><Image className="ff-worldcup-round-string" src="/worldcup-string.webp" alt="" width={1600} height={533} unoptimized priority /></span>
       </button>
     </section>

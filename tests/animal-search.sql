@@ -1,6 +1,7 @@
 begin;
 do $$ begin
-  if to_regprocedure('public.search_public_animals_filtered(integer,timestamp with time zone,text,double precision,double precision,double precision,text,text,text,text,text[],text,text,text,boolean,boolean,double precision,text,double precision,double precision,double precision,double precision,boolean)') is null then raise exception 'missing exact 23-argument search'; end if;
+  if to_regprocedure('public.search_public_animals_filtered(integer,timestamp with time zone,text,double precision,double precision,double precision,text,text,text,text,text[],text,text,text,boolean,boolean,double precision,text,double precision,double precision,double precision,double precision,boolean,text)') is null then raise exception 'missing exact 24-argument search'; end if;
+  if to_regprocedure('public.search_public_animals_filtered(integer,timestamp with time zone,text,double precision,double precision,double precision,text,text,text,text,text[],text,text,text,boolean,boolean,double precision,text,double precision,double precision,double precision,double precision,boolean)') is not null then raise exception 'stale 23-argument search must be dropped so PostgREST has one candidate'; end if;
   if to_regprocedure('public.search_public_animals_filtered(integer,timestamp with time zone,text,double precision,double precision,double precision,text,text,text,text,text[],text,text,text,boolean,boolean,double precision,text,double precision,double precision,double precision,double precision)') is not null then raise exception 'stale 22-argument search must be dropped so PostgREST has one candidate'; end if;
   if public.animal_weight_kg('["1~3(Kg)"]') <> 2 then raise exception 'range weight'; end if;
   if public.animal_weight_kg('["350kg"]') is not null then raise exception 'invalid weight'; end if;
@@ -41,5 +42,15 @@ do $$ declare r record; n integer; begin
   if r.total_count <> 2 then raise exception 'thumbnail-only count'; end if;
   select count(*) into n from search_public_animals_filtered_with_storage(p_size_group=>'small',p_thumbnail_only=>true,p_cursor_updated_at=>'2026-09-01',p_cursor_id=>'search-b');
   if n <> 0 then raise exception 'thumbnail-only end cursor'; end if;
+end $$;
+-- 건강 필터: 동기화가 저장한 health_state(ok|care)로만 거르고, 기본값(null)은 전과 같이 모두 돌려줍니다.
+update public_animals set health_state='care' where id='search-c';
+do $$ declare r record; n integer; begin
+  select count(*) into n from search_public_animals_filtered_with_storage(p_size_group=>'small');
+  if n <> 3 then raise exception 'health default keeps every visible row'; end if;
+  select * into r from search_public_animals_filtered_with_storage(p_limit=>1,p_size_group=>'small',p_health=>'care');
+  if r.id <> 'search-c' or r.total_count <> 1 then raise exception 'health=care returns only 치료·관리 rows'; end if;
+  select count(*) into n from search_public_animals_filtered_with_storage(p_size_group=>'small',p_health=>'ok');
+  if n <> 2 then raise exception 'health=ok returns only 양호·미확인 rows'; end if;
 end $$;
 rollback;

@@ -527,8 +527,9 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-intro { background-color: #ffe4d3; background-image: url("/readiness-intro.webp"); background-position: center bottom; background-repeat: no-repeat; background-size: cover; color: #263238; }
 .ff-readiness[data-quiz-id="care-readiness"].ff-readiness-intro { background-image: url("/care-readiness-intro.webp"); }
 .ff-readiness[data-quiz-id="pet-knowledge"].ff-readiness-intro { background-image: url("/pet-knowledge-intro.webp"); }
-/* 월드컵 인트로: 밝은 그림이라 글씨는 다른 인트로와 같은 짙은 색을 그대로 씁니다. 넓은 화면에서는 위쪽을 살려 캐릭터가 글 아래에 온전히 보이게 합니다. */
+/* 월드컵 인트로: 그림 위 제목은 흰색에 옅은 그림자. 넓은 화면에서는 위쪽을 살려 캐릭터가 글 아래에 온전히 보이게 합니다. */
 .ff-readiness[data-quiz-id="worldcup"].ff-readiness-intro { background-image: url("/worldcup-intro.webp"); background-position: center top; }
+.ff-readiness[data-quiz-id="worldcup"].ff-readiness-intro .ff-readiness-intro-content h1 { color: var(--seed-color-palette-static-white); text-shadow: 0 1px 6px rgba(0, 0, 0, .45); }
 .ff-readiness-intro .ff-readiness-appbar { background: transparent; }
 .ff-readiness-intro .ff-readiness-appbar strong { display: none; }
 .ff-readiness-intro-appbar { grid-template-columns: 44px minmax(0, 1fr) 44px; }
@@ -1686,6 +1687,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 /* 모바일도 PC처럼 좌우 2열입니다. 좁은 폭에서는 카드를 세로로 길게 두고 캡션을 줄입니다. */
 @media (max-width: 520px) { .ff-worldcup-cards { gap: 10px; } .ff-worldcup-photo .ff-animal-image, .ff-worldcup-photo .ff-animal-image-fallback { height: clamp(200px, 32dvh, 300px); } .ff-worldcup-caption { padding: 16px 12px 32px; } .ff-worldcup-caption .ff-animal-photo-name { font-size: 15px; line-height: 21px; } .ff-worldcup-more-badge { right: 8px; bottom: 8px; } }
 .ff-care-result .ff-animal-card-photo { width: 100%; max-width: 360px; }
+/* 털색 선택 칩: 가로로 흐르다 줄바꿈합니다(목록 필터의 가로 스크롤 칩과 달리 전부 보이게). */
+.ff-worldcup-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 /* 후보 찾기·대결 준비 중 화면 가운데 로딩. 목록의 ff-loading-indicator를 키워서 씁니다. */
 [data-quiz-id="worldcup"] .ff-care-step[aria-busy="true"] { grid-template-rows: auto 1fr; }
 .ff-worldcup-loading { display: grid; align-content: center; justify-items: center; gap: 16px; min-height: 0; padding: 0 0 48px; text-align: center; }

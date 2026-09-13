@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ActionButton } from "seed-design/ui/action-button";
+import { Chip } from "seed-design/ui/chip";
 import { IconPicture2StackedLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import type { Animal } from "../../lib/data";
 import type { AnimalPage } from "../../lib/public-animal-store";
@@ -202,7 +203,7 @@ export function WorldCupFinder() {
   return <div className={`ff-readiness ff-care-readiness${phase === "intro" ? " ff-readiness-intro" : ""}`} data-quiz-id="worldcup" data-care-step={careStep}>
     <ReadinessAppBar title="이상형 월드컵" className={phase === "intro" ? "ff-readiness-intro-appbar" : ""} onBack={previous} />
     {phase !== "intro" && <div className="ff-readiness-progress" role="progressbar" aria-label="이상형 월드컵 진행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progressPercent)}><div style={{ width: `${progressPercent}%` }} /></div>}
-    {phase === "intro" ? <section className="ff-readiness-intro-content" aria-labelledby="worldcup-intro-title"><div className="ff-readiness-intro-badge">보호소 동물 이상형 월드컵</div><h1 id="worldcup-intro-title">나와 인연이 될<br />친구를 찾아볼까요?</h1></section>
+    {phase === "intro" ? <section className="ff-readiness-intro-content" aria-labelledby="worldcup-intro-title"><div className="ff-readiness-intro-badge">이상형 월드컵</div><h1 id="worldcup-intro-title">나와 인연이 될<br />친구를 찾아볼까요?</h1></section>
     : isResult && winner ? <section className="ff-care-result" aria-labelledby="care-result-title">
       <h1 id="care-result-title">내 첫 친구 이상형</h1>
       <AnimalCard animal={winner} layout="photo" priority />
@@ -240,7 +241,8 @@ export function WorldCupFinder() {
       {loading ? <div className="ff-worldcup-loading" role="status"><LoadingIndicator label={step === "round" ? "대결을 준비하는 중" : "후보를 찾는 중"} /><h1 id="care-step-title">{step === "round" ? "대결을 준비하고 있어요" : "조건에 맞는 친구를 찾고 있어요"}</h1></div>
       : <>{step === "species" && <><h1 id="care-step-title">어떤 친구를 만나고 싶나요?</h1><div className="ff-care-choice-grid"><button type="button" className="ff-care-species-choice" data-selected={draft.species === "cat" || undefined} onClick={() => setDraft(value => ({ ...value, species: "cat", size: null }))}><Image src="/cat-selection.webp" alt="" width={104} height={104} unoptimized /><strong>고양이</strong></button><button type="button" className="ff-care-species-choice" data-selected={draft.species === "dog" || undefined} onClick={() => setDraft(value => ({ ...value, species: "dog" }))}><Image src="/dog-selection.webp" alt="" width={104} height={104} unoptimized /><strong>강아지</strong></button></div></>}
       {step === "size" && <><h1 id="care-step-title">어느 정도 크기가<br />좋나요?</h1><p className="ff-care-helper">홈에서 사용하는 크기 기준과 같아요.</p><div className="ff-care-size-grid">{SIZE_OPTIONS.map(([value, label]) => <button type="button" className="ff-care-size-choice" data-selected={draft.size === value || undefined} key={value} onClick={() => setDraft(current => ({ ...current, size: value }))}>{label}</button>)}</div></>}
-      {step === "color" && <><h1 id="care-step-title">어떤 털색이<br />마음에 드나요?</h1><div className="ff-care-size-grid">{["상관없음", ...(draft.species === "cat" ? CAT_COLORS : DOG_COLORS)].map(label => { const value = label === "상관없음" ? "all" : label; return <button type="button" className="ff-care-size-choice" data-selected={draft.color === value || undefined} key={value} onClick={() => setDraft(current => ({ ...current, color: value }))}>{label}</button>; })}</div></>}
+      {/* 털색은 선택지가 많아 큰 버튼 대신 SEED 칩(라디오)으로 줄여 보여 줍니다. name을 고정해야 SSR과 클라이언트의 radio name이 같습니다. */}
+      {step === "color" && <><h1 id="care-step-title">어떤 털색이<br />마음에 드나요?</h1><Chip.RadioRoot className="ff-worldcup-chips" name="worldcup-color" value={draft.color ?? ""} onValueChange={value => setDraft(current => ({ ...current, color: value as string }))}>{["상관없음", ...(draft.species === "cat" ? CAT_COLORS : DOG_COLORS)].map(label => { const value = label === "상관없음" ? "all" : label; return <Chip.RadioItem key={value} value={value} size="large"><Chip.Label>{label}</Chip.Label></Chip.RadioItem>; })}</Chip.RadioRoot></>}
       {step === "round" && page && <><h1 id="care-step-title">몇 강으로<br />시작할까요?</h1><div className="ff-care-size-grid"><button type="button" className="ff-care-size-choice" data-selected={roundSize === 16 || undefined} onClick={() => setRoundSize(16)}>16강</button>{usable >= 32 && <button type="button" className="ff-care-size-choice" data-selected={roundSize === 32 || undefined} onClick={() => setRoundSize(32)}>32강</button>}</div>{empty ? <p className="ff-care-helper">조건을 넓혀도 대결할 친구가 부족해요. 조건을 바꿔 다시 골라 주세요.</p> : shortBy > 0 ? <p className="ff-care-helper">조건에 맞는 친구가 부족해 비슷한 친구 {shortBy}마리를 더해요.</p> : null}</>}</>}
     </section>}
     {/* 대결 화면은 카드 아래 선택 버튼이 곧 다음이라 하단 버튼이 없습니다. */}

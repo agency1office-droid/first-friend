@@ -160,6 +160,8 @@ export function WorldCupFinder() {
       if (!picked.pool.length) { setEmpty(true); return; }
       // 후보는 모두 서버 압축 썸네일(webp)이 있는 친구입니다. 대결이 시작되기 전에 미리 받아 두어 첫 화면부터 바로 보이게 합니다.
       picked.pool.forEach(animal => { const image = new window.Image(); image.decoding = "async"; image.src = optimizedAnimalImageUrl(animal.thumbnail || animal.image); });
+      // 8강 안내에 쓰는 빨간 실도 미리 받아 두어 첫 안내에서 늦게 뜨지 않게 합니다.
+      const string = new window.Image(); string.src = "/worldcup-string.webp";
       setPool(picked.pool); setFilled(picked.filled); setHistory([]);
       setBracket(startBracket(picked.pool, Math.random));
       setPhase("match");

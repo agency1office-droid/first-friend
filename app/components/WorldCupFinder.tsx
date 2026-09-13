@@ -70,6 +70,7 @@ export function WorldCupFinder() {
   const [bracket, setBracket] = useState<Bracket | null>(null);
   const [history, setHistory] = useState<Bracket[]>([]);
   const [viewer, setViewer] = useState<{ animal: Animal; index: number } | null>(null);
+  const [picking, setPicking] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -138,6 +139,13 @@ export function WorldCupFinder() {
     const following = choose(bracket, animal);
     setHistory(value => [...value, bracket]); setBracket(following);
     if (isDone(following)) setPhase("result");
+  }
+
+  // 선택 버튼은 잠깐 브랜드 주황으로 바뀐 뒤 넘어갑니다. 탭이 짧아도 눌렸다는 느낌이 보이게 하고, 그동안 두 번 누름은 무시합니다.
+  function select(animal: Animal) {
+    if (picking) return;
+    setPicking(animal.id);
+    window.setTimeout(() => { setPicking(null); pick(animal); }, 180);
   }
 
   function next() {
@@ -219,10 +227,10 @@ export function WorldCupFinder() {
             <AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt="" priority />
             {/* 이름·나이는 사진 카드(AnimalCard photo)와 같은 상단 그라데이션 위에 흰 글씨로 올립니다. */}
             <span className="ff-animal-photo-caption ff-worldcup-caption" aria-hidden><span className="ff-animal-photo-name">{animal.name}</span><small>{displayAge(animal.age)}</small></span>
-            <span className="ff-worldcup-more-badge" aria-hidden><IconPicture2StackedLine />{photos.length > 1 && <span>{photos.length}</span>}</span>
+            <span className="ff-worldcup-more-badge" aria-hidden><IconPicture2StackedLine /></span>
           </div>
         </button>
-        <ActionButton size="medium" variant="neutralWeak" className="ff-worldcup-select" onClick={() => pick(animal)} aria-label={`${animal.name}, ${displayAge(animal.age)} 선택`}>선택</ActionButton>
+        <ActionButton size="medium" variant="neutralWeak" className="ff-worldcup-select" data-picked={picking === animal.id || undefined} onClick={() => select(animal)} aria-label={`${animal.name}, ${displayAge(animal.age)} 선택`}>선택</ActionButton>
       </div>; })}</div>
     </section>
     : <section className="ff-care-step" aria-labelledby="care-step-title">

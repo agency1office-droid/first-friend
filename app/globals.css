@@ -1663,15 +1663,20 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-worldcup-candidate { display: grid; gap: 8px; width: 100%; }
 .ff-worldcup-photo { position: relative; display: block; width: 100%; margin: 0; padding: 0; overflow: hidden; border: 0; border-radius: 20px; background: none; color: inherit; font: inherit; cursor: pointer; }
 .ff-worldcup-photo:focus-visible { outline: 3px solid var(--seed-color-stroke-brand-weak); outline-offset: -3px; }
-.ff-worldcup-select { width: 100%; font-weight: var(--seed-font-weight-bold); }
+/* SEED 버튼의 배경 전환을 끕니다(퀴즈 푸터와 같은 방식). 주황으로 바뀌는 순간이 바로 보여야 합니다. */
+.ff-worldcup-select { width: 100%; font-weight: var(--seed-font-weight-bold); transition: none !important; }
+/* 누르는 순간과 넘어가기 전 180ms 동안 브랜드 주황 + 흰 글씨로 바뀝니다. */
+.ff-worldcup-candidate .seed-action-button.ff-worldcup-select:active, .ff-worldcup-candidate .seed-action-button.ff-worldcup-select[data-picked="true"] { color: var(--seed-color-palette-static-white); background: var(--seed-color-bg-brand-solid); }
+/* 스크롤 영역과 하단 버튼이 만나는 곳에 흰 그라데이션을 깔아 끊겨 보이지 않게 하고, 아래에 내용이 더 있음을 알립니다. */
+.ff-quiz-shell [data-quiz-id="worldcup"] .ff-readiness-actions::before { content: ""; position: absolute; right: 0; left: 0; top: -32px; height: 32px; background: linear-gradient(to bottom, transparent, var(--seed-color-bg-layer-default)); pointer-events: none; }
 .ff-worldcup-photo .ff-animal-image-wrap { border-radius: 0; }
 .ff-worldcup-photo .ff-animal-image, .ff-worldcup-photo .ff-animal-image-fallback { height: clamp(200px, 30dvh, 320px); aspect-ratio: auto; object-position: 50% 30%; }
 .ff-worldcup-caption { display: grid; gap: 2px; padding: 18px 14px 40px; text-align: left; }
 .ff-worldcup-caption .ff-animal-photo-name { font-size: 17px; line-height: 24px; text-shadow: 0 1px 3px rgba(0,0,0,.28); }
 .ff-worldcup-caption small { color: var(--seed-color-palette-static-white); font-size: 12px; line-height: 16px; opacity: .92; text-shadow: 0 1px 3px rgba(0,0,0,.28); }
 /* 사진 장수 배지는 카드 오른쪽 아래 표시일 뿐입니다. 사진이 한 장이어도 잘린 부분을 볼 수 있다는 뜻으로 항상 보여 줍니다. */
-.ff-worldcup-more-badge { position: absolute; z-index: 5; right: 10px; bottom: 10px; min-width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 10px; border-radius: 10px; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); color: #fff; font-size: 13px; font-weight: var(--seed-font-weight-bold); pointer-events: none; }
-.ff-worldcup-more-badge svg { width: 18px; height: 18px; }
+.ff-worldcup-more-badge { position: absolute; z-index: 5; right: 10px; bottom: 10px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 9px; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); color: #fff; pointer-events: none; }
+.ff-worldcup-more-badge svg { width: 16px; height: 16px; }
 .ff-worldcup-photo:active .ff-animal-image { transform: scale(.985); }
 .ff-worldcup-photo .ff-animal-image { transition: transform .12s ease; }
 .ff-worldcup-viewer-pick { font-weight: var(--seed-font-weight-bold); }

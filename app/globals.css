@@ -541,6 +541,8 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 /* 월드컵 인트로: 위쪽에 검정 그라데이션을 깔아 흰 제목이 읽히게 합니다. 넓은 화면에서는 세로 가운데를 보여 캐릭터가 글과 버튼 사이에 온전히 들어오게 합니다. */
 .ff-readiness[data-quiz-id="worldcup"].ff-readiness-intro { background-image: linear-gradient(to bottom, var(--seed-color-palette-static-black-alpha-800), var(--seed-color-palette-static-black-alpha-600) 30%, transparent 58%), url("/worldcup-intro.webp"); background-position: center; }
 .ff-readiness[data-quiz-id="worldcup"].ff-readiness-intro .ff-readiness-intro-content h1 { color: var(--seed-color-palette-static-white); text-shadow: 0 1px 6px rgba(0, 0, 0, .45); }
+/* 위쪽 검정 그라데이션 위에 놓이는 뒤로가기·홈 아이콘도 흰색으로. */
+.ff-readiness[data-quiz-id="worldcup"].ff-readiness-intro .ff-readiness-back, .ff-readiness[data-quiz-id="worldcup"].ff-readiness-intro .ff-readiness-home { color: var(--seed-color-palette-static-white); }
 .ff-readiness-intro .ff-readiness-appbar { background: transparent; }
 .ff-readiness-intro .ff-readiness-appbar strong { display: none; }
 .ff-readiness-intro-appbar { grid-template-columns: 44px minmax(0, 1fr) 44px; }

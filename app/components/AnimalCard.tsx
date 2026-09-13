@@ -32,7 +32,7 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
   const publicStatus = getAnimalPublicStatus(animal);
   const photoNoticeDays = publicStatus.phase === "notice" ? getNoticeDaysRemaining(publicStatus.notice) : null;
   const animalHref = `/friends/${animal.id}`;
-  const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}` : "/shelters";
+  const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}?tab=animals` : "/shelters";
   if (imageUnavailable || !animal.image.trim()) return null;
   if (layout === "photo") return <article className="ff-animal-card ff-animal-card-photo">
     <Link prefetch={false} className="ff-animal-photo-link" href={animalHref} aria-label={`${animal.name}, ${publicStatus.cardLabel}, 상세 보기`}>

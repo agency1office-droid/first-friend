@@ -152,7 +152,8 @@ export default async function AnimalPage({
   const colors = detailColors(animal.colors);
   const shelterAddress = animal.shelterAddress || animal.region;
   const shelterAddressLabel = displayShelterAddress(shelterAddress);
-  const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}` : null;
+  // 동물에서 보호소로 넘어가면 그 보호소의 다른 친구들을 보려는 것이므로 보호동물 탭으로 바로 연다.
+  const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}?tab=animals` : null;
   const shelterMapHref = `https://map.kakao.com/link/search/${encodeURIComponent(`${animal.shelter} ${shelterAddress}`)}`;
   const weight = detailWeight(animal);
   const knowledge = animalKnowledge(animal);

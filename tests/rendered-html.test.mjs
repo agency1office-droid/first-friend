@@ -1377,3 +1377,15 @@ test("uses distinct feed, recruitment, and delivery-progress patterns in shelter
   assert.match(css, /\.ff-need-progress > span[^}]*background: var\(--seed-color-bg-brand-solid\)/);
   assert.match(support, /size\?:"small"\|"medium"/);
 });
+
+test("animal-to-shelter links open the shelter animals tab and the shelter list sorts by timestamp", async () => {
+  const [detail, card, store] = await Promise.all([
+    readFile(new URL("../app/friends/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/AnimalCard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8"),
+  ]);
+  for (const source of [detail, card]) assert.match(source, /`\/shelters\/\$\{encodeURIComponent\(animal\.shelterId\)\}\?tab=animals`/);
+  const shelterList = store.slice(store.indexOf("export async function getAnimalsByShelterId"));
+  assert.match(shelterList, /\.eq\("shelter_id", shelterId\)\.order\("updated_at", \{ ascending: false \}\)/);
+  assert.doesNotMatch(shelterList.slice(0, shelterList.indexOf("return { items, total")), /order\("updated",/, "the text column `updated` sorts \"9. 11.\" before \"9. 2.\"");
+});

@@ -814,7 +814,8 @@ export async function getAnimalsByShelterId(shelterId: string, limit = 200) {
     await ensurePublicAnimals();
     const supabase = getSupabaseServerClient(), safeLimit = Math.min(500, Math.max(1, limit));
     const [{ data, error }, { count: total, error: countError }] = await Promise.all([
-      supabase.from("visible_public_animals").select(LIST_ANIMAL_COLUMNS).eq("active", true).eq("shelter_id", shelterId).order("updated", { ascending: false }).limit(safeLimit),
+      // `updated`는 "2026. 9. 11." 같은 텍스트라 문자열 순서로 섞인다. 타임스탬프인 updated_at으로 정렬한다.
+      supabase.from("visible_public_animals").select(LIST_ANIMAL_COLUMNS).eq("active", true).eq("shelter_id", shelterId).order("updated_at", { ascending: false }).limit(safeLimit),
       supabase.from("visible_public_animals").select("id", { count: "exact", head: true }).eq("active", true).eq("shelter_id", shelterId),
     ]);
     if (error || countError) throw error || countError;

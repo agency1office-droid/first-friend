@@ -11,7 +11,7 @@ import { AllAnimalFilters } from "./AllAnimalFilters";
 
 const statusOptions = [["all", "모두", "현재 보호 중인 친구를 모두 볼 수 있어요."], ["checking", "입양 상담 가능", "보호자 확인이 끝나 상담을 시작할 수 있어요."], ["notice", "보호자 확인 공고 중", "보호자를 찾는 절차가 진행 중인 친구예요."]] as const;
 const sortOptions = [["distance", "가까운 보호소 순", "내 동네에서 가까운 보호소부터 볼 수 있어요."], ["recent", "최근 등록순", "새로 등록된 친구부터 볼 수 있어요."]] as const;
-const healthOptions = [["all", "전체", "건강 상태와 상관없이 모두 볼 수 있어요."], ["ok", "양호·미확인", "보호소 특징 메모에 치료·관리가 필요한 내용이 없는 친구예요."], ["care", "치료·관리", "보호소 특징 메모에 질병·부상이나 치료 중인 내용이 있는 친구예요."]] as const;
+const healthOptions = [["all", "전체", "건강 상태와 상관없이 모두 볼 수 있어요."], ["ok", "양호·미확인", "보호소 특징 메모에 치료 및 관리가 필요한 내용이 없는 친구예요."], ["care", "치료 및 관리 필요", "보호소 특징 메모에 질병·부상이나 치료 중인 내용이 있는 친구예요."]] as const;
 const coatColors = ["흰색", "검정", "갈색", "황색", "회색", "삼색", "고등어", "치즈"] as const;
 const dogCoatColors = ["흰색", "검정", "갈색", "황색", "회색"] as const;
 const catCoatColors = ["흰색", "검정", "갈색", "회색", "삼색", "고등어", "치즈"] as const;

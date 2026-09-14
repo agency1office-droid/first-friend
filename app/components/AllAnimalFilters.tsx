@@ -49,7 +49,7 @@ const ageOptions = [
   ["senior", "노령", "11살 이상"],
 ] as const;
 const sizeOptions = () => [["small", "소형"], ["medium", "중형"], ["large", "대형"], ["xlarge", "초대형"]] as const;
-const healthOptions = [["all", "전체"], ["ok", "양호·미확인"], ["care", "치료·관리"]] as const;
+const healthOptions = [["all", "전체"], ["ok", "양호·미확인"], ["care", "치료 및 관리 필요"]] as const;
 const coatColors = ["흰색", "검정", "갈색", "황색", "회색", "삼색", "고등어", "치즈"] as const;
 const dogCoatColors = ["흰색", "검정", "갈색", "황색", "회색", "기타·복합색"] as const;
 const catCoatColors = ["흰색", "검정", "갈색", "황색", "회색", "삼색", "고등어", "치즈", "기타·복합색"] as const;

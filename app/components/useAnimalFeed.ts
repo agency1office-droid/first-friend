@@ -14,7 +14,7 @@ export type AnimalFeedFilters = {
   sort: "distance" | "recent";
   species: "all" | "cat" | "dog";
   publicStatus: "all" | "notice" | "checking";
-  // 동기화가 특징 메모를 분류해 저장한 값으로 거릅니다. ok = 양호·미확인, care = 치료·관리
+  // 동기화가 특징 메모를 분류해 저장한 값으로 거릅니다. ok = 양호·미확인, care = 치료 및 관리 필요
   health: "all" | "ok" | "care";
   breedKeys: string[];
   sex: string;

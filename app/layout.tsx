@@ -15,5 +15,5 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="ko" data-seed data-seed-color-mode="light-only"><head><meta name="color-scheme" content="light" /></head><body><AppFeedbackProvider><AppChrome>{children}</AppChrome></AppFeedbackProvider></body></html>;
+  return <html lang="ko" data-seed data-seed-color-mode="light-only"><head><meta name="color-scheme" content="light" /><meta name="naver-site-verification" content="1a37f03970ad7c604ca0073b7df81d9fbe22e8fa" /></head><body><AppFeedbackProvider><AppChrome>{children}</AppChrome></AppFeedbackProvider></body></html>;
 }

@@ -63,10 +63,12 @@ async function processThumbnailBatch(options: { maxJobs?: number; durationMs?: n
   // Fail a broken deployment before claiming or consuming any image retries.
   await import("sharp");
   const db = getSupabaseServerClient();
-  const deadline = Date.now() + Math.min(options.durationMs ?? 200000, 200000);
+  // 하루 한 번 도는 크론이 유입량(동물당 사진 2장)을 따라잡도록 한 실행의 처리량을 잡습니다.
+  // 240초는 함수 한도 300초에서 사진 다운로드 타임아웃(15초)·변환·업로드 여유를 뺀 값입니다. 동시 12장은 SQL claim 상한(20) 안입니다.
+  const deadline = Date.now() + Math.min(options.durationMs ?? 240000, 240000);
   const maxJobs = Math.min(options.maxJobs ?? 5000, 5000);
   while (Date.now() < deadline && result.completed + result.failed < maxJobs) {
-    const { data: jobs } = await db.rpc("claim_animal_thumbnails", { p_limit: Math.min(Math.max(1, options.concurrency ?? 8), 8, maxJobs - result.completed - result.failed) }).throwOnError();
+    const { data: jobs } = await db.rpc("claim_animal_thumbnails", { p_limit: Math.min(Math.max(1, options.concurrency ?? 12), 12, maxJobs - result.completed - result.failed) }).throwOnError();
     if (!jobs?.length) break;
     await Promise.all(jobs.map(async (job: { id: number; animal_id: string; slot: number; source_url: string; updated_at: string; attempt_count: number }) => {
       try {

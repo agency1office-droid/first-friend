@@ -5,7 +5,7 @@ const server=await createServer({configFile:false,envFile:false,server:{middlewa
 try {
   const {processAnimalThumbnails}=await server.ssrLoadModule('/lib/animal-thumbnails.ts');
   for(let batch=1;batch<=100;batch++) {
-    const result=await processAnimalThumbnails({maxJobs:1000,durationMs:200000,concurrency:8});
+    const result=await processAnimalThumbnails({maxJobs:1000,durationMs:240000,concurrency:12});
     console.log(JSON.stringify({batch,...result}));
     if(!result.completed&&!result.failed)break;
   }

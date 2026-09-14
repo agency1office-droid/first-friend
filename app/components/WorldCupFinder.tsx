@@ -151,21 +151,33 @@ export function WorldCupFinder() {
 
   // 크기·털색 단계에서 선택지마다 해당하는 친구 수를 보여 줍니다(믹스·품종 미상이 많아 크기를 고르면 후보가 크게 줄기 때문).
   // 후보를 찾을 때와 같은 조건(종·서버 썸네일 있음·건강 양호, 털색 단계에서는 고른 크기까지)으로 세어 실제 후보 수와 맞습니다.
-  // 단계·종·크기를 묶은 키로만 다시 세고, 응답이 늦게 와도 키가 다르면 버립니다.
-  const countKey = phase === "steps" && (step === "size" || step === "color") && draft.species ? `${step}:${draft.species}:${step === "color" ? answers.size : ""}` : "";
-  const [counts, setCounts] = useState<{ key: string; values: Record<string, number> } | null>(null);
+  // 단계·종·크기를 묶은 키마다 한 번만 세고, 다음 단계의 수는 미리 받아 두어 넘어갈 때 선택지와 수가 함께 보이게 합니다.
+  // 미리 받지 못했으면(크기를 고르자마자 다음을 누른 경우 등) 수가 올 때까지 가운데 로딩을 보여 주고 선택지를 감춥니다.
+  const countKeyFor = (stepName: Step | undefined, size: string) => draft.species && (stepName === "size" || stepName === "color") ? `${stepName}:${draft.species}:${stepName === "color" ? size : ""}` : "";
+  const countKey = phase === "steps" ? countKeyFor(step, answers.size) : "";
+  const nextCountKey = phase === "steps" ? countKeyFor(steps[stepIndex + 1], answers.size) : "";
+  const [counts, setCounts] = useState<Record<string, Record<string, number>>>({});
+  const countRequests = useRef(new Set<string>());
   useEffect(() => {
-    if (!countKey) return;
-    const [stepName, species, size] = countKey.split(":");
-    const entries = stepName === "size"
-      ? SIZE_OPTIONS.map(([value]): [string, Record<string, string>] => [value, value === "all" ? {} : { size: value }])
-      : ["all", ...(species === "cat" ? CAT_COLORS : DOG_COLORS)].map((label): [string, Record<string, string>] => { const extra: Record<string, string> = {}; if (size && size !== "all") extra.size = size; if (label !== "all") extra.color = label; return [label, extra]; });
-    void Promise.all(entries.map(async ([key, extra]) => {
-      try { return [key, (await fetchPage(new URLSearchParams({ species, limit: "1", thumbnail: "1", health: "ok", sort: "recent", ...extra }).toString())).total] as const; }
-      catch { return null; }
-    })).then(rows => setCounts({ key: countKey, values: Object.fromEntries(rows.filter((row): row is readonly [string, number] => row !== null)) }));
-  }, [countKey]);
-  const countOf = (key: string) => counts?.key === countKey ? counts.values[key] : undefined;
+    const load = async (key: string) => {
+      const [stepName, species, size] = key.split(":");
+      const entries = stepName === "size"
+        ? SIZE_OPTIONS.map(([value]): [string, Record<string, string>] => [value, value === "all" ? {} : { size: value }])
+        : ["all", ...(species === "cat" ? CAT_COLORS : DOG_COLORS)].map((label): [string, Record<string, string>] => { const extra: Record<string, string> = {}; if (size && size !== "all") extra.size = size; if (label !== "all") extra.color = label; return [label, extra]; });
+      const rows = await Promise.all(entries.map(async ([option, extra]) => {
+        try { return [option, (await fetchPage(new URLSearchParams({ species, limit: "1", thumbnail: "1", health: "ok", sort: "recent", ...extra }).toString())).total] as const; }
+        catch { return null; }
+      }));
+      setCounts(current => ({ ...current, [key]: Object.fromEntries(rows.filter((row): row is readonly [string, number] => row !== null)) }));
+    };
+    const request = (key: string) => { if (key && !countRequests.current.has(key)) { countRequests.current.add(key); void load(key); } };
+    request(countKey);
+    // 다음 단계(털색)의 키는 크기를 고를 때마다 바뀌므로 잠시 기다렸다가 받습니다.
+    const timer = window.setTimeout(() => request(nextCountKey), 300);
+    return () => window.clearTimeout(timer);
+  }, [countKey, nextCountKey]);
+  const countsReady = !countKey || counts[countKey] !== undefined;
+  const countOf = (option: string) => counts[countKey]?.[option];
 
   async function loadPool() {
     setLoading(true);
@@ -342,7 +354,7 @@ export function WorldCupFinder() {
     : <section className="ff-care-step" aria-labelledby="care-step-title" aria-busy={loading}>
       <p className="ff-care-step-count">{stepIndex + 1}/{steps.length}</p>
       {/* 후보를 찾거나 대결을 준비하는 동안은 질문 대신 화면 가운데 로딩을 보여 줍니다. */}
-      {loading ? <div className="ff-worldcup-loading" role="status"><LoadingIndicator label={step === "round" ? "대결을 준비하는 중" : "후보를 찾는 중"} /><h1 id="care-step-title">{step === "round" ? "대결을 준비하고 있어요" : "조건에 맞는 친구를 찾고 있어요"}</h1></div>
+      {loading || !countsReady ? <div className="ff-worldcup-loading" role="status"><LoadingIndicator label={!loading ? "친구 수를 세는 중" : step === "round" ? "대결을 준비하는 중" : "후보를 찾는 중"} /><h1 id="care-step-title">{!loading ? "조건별 친구 수를 세고 있어요" : step === "round" ? "대결을 준비하고 있어요" : "조건에 맞는 친구를 찾고 있어요"}</h1></div>
       : <>{step === "species" && <><h1 id="care-step-title">어떤 친구를 만나고 싶나요?</h1><div className="ff-care-choice-grid"><button type="button" className="ff-care-species-choice" data-selected={draft.species === "cat" || undefined} onClick={() => setDraft(value => ({ ...value, species: "cat", color: value.species === "cat" ? value.color : null }))}><Image src="/cat-selection.webp" alt="" width={104} height={104} unoptimized /><strong>고양이</strong></button><button type="button" className="ff-care-species-choice" data-selected={draft.species === "dog" || undefined} onClick={() => setDraft(value => ({ ...value, species: "dog", color: value.species === "dog" ? value.color : null }))}><Image src="/dog-selection.webp" alt="" width={104} height={104} unoptimized /><strong>강아지</strong></button></div></>}
       {step === "size" && <><h1 id="care-step-title">어느 정도 크기가<br />좋나요?</h1><p className="ff-care-helper">품종으로 나눈 크기예요. 믹스·품종 미상 친구는 상관없음에서만 만나요.</p><div className="ff-care-size-grid" role="group" aria-label="크기">{SIZE_OPTIONS.map(([value, label]) => <button type="button" className="ff-care-size-choice" aria-pressed={draft.size?.includes(value) ?? false} data-selected={draft.size?.includes(value) || undefined} key={value} onClick={() => setDraft(current => ({ ...current, size: toggleValue(current.size, value) }))}>{label}{countOf(value) !== undefined && <small>{countOf(value)?.toLocaleString("ko-KR")}마리</small>}</button>)}</div></>}
       {/* 털색은 선택지가 많아 큰 버튼 대신 SEED 칩(토글)으로 줄여 보여 줍니다. name을 고정해야 SSR과 클라이언트의 input name이 같습니다. */}

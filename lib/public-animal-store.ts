@@ -113,25 +113,19 @@ function mapLostAnimal(item: LossItem, index: number, syncedAt: string) {
 function displayName(item: AnimalItem) { return [item.kindNm || species(item), item.noticeNo?.split("-").at(-1)].filter(Boolean).join(" · "); }
 function validPoint(lat: number, lng: number) { return Number.isFinite(lat) && Number.isFinite(lng) && lat > 30 && lat < 40 && lng > 120 && lng < 135; }
 function jsonArray(value: string) { try { const result = JSON.parse(value); return Array.isArray(result) ? result.map(String) : []; } catch { return []; } }
-function weightKg(row: { traitsJson?: string | null }) { const value = jsonArray(row.traitsJson || "[]").find(item => /kg/i.test(item)); if (!value) return undefined; const values = [...value.matchAll(/\d+(?:\.\d+)?/g)].map(match => Number(match[0])).filter(number => number > 0 && number <= 150); return values.length ? values.reduce((sum, number) => sum + number, 0) / values.length : undefined; }
-const breedSizeHints: Record<string, string[]> = {
-  small: ["치와와", "말티즈", "포메라니안", "요크셔", "토이 푸들", "미니어쳐 푸들", "미니어쳐 핀셔", "빠삐용", "파피용", "이탈리안 그레이 하운드", "페키니즈", "시츄", "싱가푸라"],
-  medium: ["비숑", "프렌치 불독", "보스턴 테리어", "시바", "코카 스파니엘", "아메리칸 코카", "스탠다드 닥스훈트", "웰시 코기", "진도견", "진돗개", "샴", "먼치킨", "스코티시폴드", "러시안 블루", "아메리칸 쇼트헤어", "브리티시 쇼트헤어", "페르시안", "터키시 앙고라"],
-  large: ["보더 콜리", "푸들", "스피츠", "골든 리트리버", "라브라도", "래브라도", "셰퍼드", "도베르만", "포인터", "사모예드", "시베리안 허스키", "허스키", "마리노이즈", "콜리", "플랫 코티드 리트리버", "비즐라", "샤페이", "벵갈"],
-  xlarge: ["말라뮤트", "알래스칸 맬러뮤트", "도사", "그레이트 데인", "마스티프", "세인트 버나드", "뉴펀들랜드", "로트와일러", "버니즈", "메인쿤", "랙돌", "노르웨이숲", "사바나"],
-};
-function hintedSizeGroup(breed: string) {
-  const normalized = String(breed || "").replace(/[\s·()_-]/g, "").toLocaleLowerCase("ko-KR");
-  for (const [group, hints] of Object.entries(breedSizeHints)) if (hints.some(hint => normalized.includes(hint.replace(/[\s·()_-]/g, "").toLocaleLowerCase("ko-KR")))) return group;
-  return undefined;
-}
-function sizeGroup(row: { traitsJson?: string | null; species: string; breed?: string | null }) {
-  const hinted = hintedSizeGroup(row.breed || "");
-  if (hinted) return hinted;
-  const weight = weightKg(row);
-  if (weight === undefined) return "unknown";
-  if (row.species === "고양이") return weight < 3 ? "small" : weight < 6 ? "medium" : weight < 10 ? "large" : "xlarge";
-  return weight < 5 ? "small" : weight < 15 ? "medium" : weight < 30 ? "large" : "xlarge";
+// 크기는 품종으로만 나눕니다(공공데이터 품종명을 정규화한 뒤 정확히 일치). 체중은 보지 않습니다.
+// 믹스견·믹스묘·한국 고양이·기타·품종 미상은 unknown이라 크기 필터의 "상관없음"에서만 보입니다.
+// SQL의 public.animal_size_group()(supabase/migrations/20260914000200_breed_only_size_groups.sql)과 같은 표를 유지해야 합니다.
+const breedSizeTable = [
+  ["small", ["푸들", "토이푸들", "미니어쳐푸들", "말티즈", "포메라니안", "비숑프리제", "치와와", "시츄", "스피츠", "재패니즈스피츠", "요크셔테리어", "이탈리안그레이하운드", "미니어쳐핀셔", "빠삐용콘티넨탈토이스파니엘", "빠삐용", "파피용", "퍼그", "페키니즈", "라사압소", "미니어쳐슈나우저", "슈나우져", "슈나우저", "캐벌리어킹찰스스파니엘", "닥스훈트", "보스턴테리어", "잭러셀테리어", "먼치킨", "싱가푸라"]],
+  ["medium", ["진도견", "진돗개", "시바", "프렌치불독", "보더콜리", "웰시코기펨브로크", "웰시코기카디건", "웰시코기", "코카스파니엘", "아메리칸코카스파니엘", "미디엄푸들", "비글", "스탠다드닥스훈트", "라이카", "불테리어", "페르시안", "페르시안페르시안친칠라", "러시안블루", "브리티시쇼트헤어", "스코티시폴드", "하일랜드폴드", "터키시앙고라", "샴", "아메리칸쇼트헤어", "스핑크스", "아비시니안"]],
+  ["large", ["골든리트리버", "라브라도리트리버", "래브라도리트리버", "플랫코티드리트리버", "시베리안허스키", "허스키", "스탠다드푸들", "사모예드", "마리노이즈", "삽살개", "차우차우", "풍산견", "그레이하운드", "도베르만", "올드잉글리쉬불독", "와이마라너", "포인터", "셰퍼드", "저먼셰퍼드", "콜리", "비즐라", "샤페이", "달마시안", "아키다", "벵갈"]],
+  ["xlarge", ["도사", "아메리칸아키다", "말라뮤트", "알래스칸말라뮤트", "알래스칸맬러뮤트", "그레이트데인", "마스티프", "세인트버나드", "뉴펀들랜드", "로트와일러", "버니즈마운틴독", "그레이트피레니즈", "메인쿤", "랙돌", "노르웨이숲", "사바나"]],
+] as const;
+const breedSizeGroups: Record<string, string> = Object.fromEntries(breedSizeTable.flatMap(([group, breeds]) => breeds.map(breed => [breed, group])));
+const normalizeBreed = (breed: string) => String(breed || "").replace(/[\s·()_-]/g, "").toLocaleLowerCase("ko-KR");
+function sizeGroup(row: { breed?: string | null }) {
+  return breedSizeGroups[normalizeBreed(row.breed || "")] || "unknown";
 }
 
 function storedBreedKey(row: StoredAnimal) { const upKindCd = /^(417000|422400)$/.test(row.upKindCd) ? row.upKindCd : row.species === "고양이" ? "422400" : "417000"; const kindCd = /^\d{6}$/.test(row.kindCd) ? row.kindCd : "000000"; return `${upKindCd}:${kindCd}`; }

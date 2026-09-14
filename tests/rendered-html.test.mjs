@@ -481,7 +481,6 @@ test("replaces species tabs with actionable shelter-distance animal filters", as
   assert.match(store, /export async function getBreedCounts/);
   assert.doesNotMatch(store, /row\.breed\.toLocaleLowerCase/);
   assert.match(store, /return "나이 미상"/);
-  assert.match(store, /function weightKg/);
   assert.match(store, /function sizeGroup/);
   assert.match(store, /ageGroupAliases/);
   assert.doesNotMatch(homeFeed, /현재 조건에 맞는 친구가 없어요/);
@@ -582,6 +581,24 @@ test("normalizes public API weight formats before assigning size groups", async 
   assert.match(migration, /parsed\.weight_kg < 3/);
   assert.match(migration, /parsed\.weight_kg < 5/);
   assert.match(migration, /unknown/);
+});
+
+test("assigns size groups by breed only, with the same table in sync and SQL", async () => {
+  const [store, migration] = await Promise.all([
+    readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260914000200_breed_only_size_groups.sql", import.meta.url), "utf8"),
+  ]);
+  const start = store.indexOf("const breedSizeTable");
+  const table = store.slice(start, store.indexOf("] as const;", start));
+  const fromStore = [...table.matchAll(/\["(small|medium|large|xlarge)", \[([^\]]+)\]\]/g)].flatMap(([, group, breeds]) => [...breeds.matchAll(/"([^"]+)"/g)].map(([, breed]) => `${breed}:${group}`));
+  const fromSql = [...migration.matchAll(/\('([^']+)','(small|medium|large|xlarge)'\)/g)].map(([, breed, group]) => `${breed}:${group}`);
+  assert.ok(fromStore.length > 80, "breed table covers the public data breeds");
+  assert.equal(new Set(fromStore).size, fromStore.length, "no duplicate breed keys");
+  assert.deepEqual([...fromStore].sort(), [...fromSql].sort());
+  assert.match(store, /return breedSizeGroups\[normalizeBreed\(row\.breed \|\| ""\)\] \|\| "unknown"/);
+  assert.doesNotMatch(store, /weight < 5 \? "small"/);
+  assert.doesNotMatch(migration, /weight <|animal_weight_kg/);
+  assert.match(migration, /update public\.public_animals set size_group = public\.animal_size_group/);
 });
 
 test("accepts legacy age-group labels while the public data is normalized", async () => {

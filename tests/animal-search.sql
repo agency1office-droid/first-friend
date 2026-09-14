@@ -6,8 +6,12 @@ do $$ begin
   if public.animal_weight_kg('["1~3(Kg)"]') <> 2 then raise exception 'range weight'; end if;
   if public.animal_weight_kg('["350kg"]') is not null then raise exception 'invalid weight'; end if;
   if public.animal_weight_kg('invalid json') is not null then raise exception 'invalid traits'; end if;
-  if public.animal_size_group('강아지','토이 푸들','["10kg"]') <> 'small' then raise exception 'breed hint priority'; end if;
-  if public.animal_size_group('고양이','믹스','["4(Kg)"]') <> 'medium' then raise exception 'species threshold'; end if;
+  if public.animal_size_group('강아지','토이 푸들','["10kg"]') <> 'small' then raise exception 'breed decides size, not weight'; end if;
+  if public.animal_size_group('강아지','푸들','["20kg"]') <> 'small' then raise exception 'domestic poodle is small'; end if;
+  if public.animal_size_group('강아지','빠삐용(콘티넨탈 토이 스파니엘)','[]') <> 'small' then raise exception 'normalized exact match'; end if;
+  if public.animal_size_group('강아지','믹스견','["20kg"]') <> 'unknown' then raise exception 'mixed breeds stay unknown'; end if;
+  if public.animal_size_group('고양이','한국 고양이','["4(Kg)"]') <> 'unknown' then raise exception 'domestic cats stay unknown'; end if;
+  if public.animal_size_group('고양이','믹스','["4(Kg)"]') <> 'unknown' then raise exception 'weight never assigns a size'; end if;
   if public.animal_age_years('6개월') <> 0.5 then raise exception 'months'; end if;
   if public.animal_age_years('미상') is not null then raise exception 'unknown age'; end if;
 end $$;

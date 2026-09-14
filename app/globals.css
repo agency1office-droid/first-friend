@@ -1635,6 +1635,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-care-option small { color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 20px; }
 .ff-care-size-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .ff-care-size-choice { min-height: 64px; border-radius: 16px; font-size: 16px; font-weight: var(--seed-font-weight-bold); }
+.ff-care-size-choice small { display: block; margin-top: 2px; color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 16px; font-weight: var(--seed-font-weight-regular); }
+.ff-worldcup-chip-count { margin-left: 4px; color: var(--seed-color-fg-neutral-muted); font-weight: var(--seed-font-weight-regular); }
 .ff-care-species-choice[data-selected="true"], .ff-care-option[data-selected="true"], .ff-care-size-choice[data-selected="true"] { border: 1px dashed var(--seed-color-stroke-brand-solid); background: var(--seed-color-bg-brand-weak); }
 .ff-care-species-choice:focus-visible, .ff-care-option:focus-visible, .ff-care-size-choice:focus-visible { outline: 3px solid var(--seed-color-stroke-brand-weak); outline-offset: 2px; }
 .ff-care-slider-value { margin-top: 10px; color: var(--seed-color-fg-neutral); font-size: 24px; font-weight: var(--seed-font-weight-bold); line-height: 32px; text-align: center; }

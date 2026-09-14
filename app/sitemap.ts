@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { getAnimals } from "../lib/public-data";
 import { getStories } from "../lib/stories";
 
-const base = "https://first-friend-home.saebyeok-e.chatgpt.site";
+const base = "https://www.firstfriend.me";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [animals, stories] = await Promise.all([getAnimals(100), getStories()]);
   const staticRoutes = [

@@ -142,7 +142,7 @@ export function WorldCupFinder() {
   const steps = STEPS;
   const step = steps[stepIndex];
   const answers = toAnswers(draft);
-  // 32강 노출과 부족 안내는 실제 후보 규칙(서버 썸네일 있음·건강 문구 없음·중복 제외)과 같은 수로 판단합니다.
+  // 32강 노출과 부족 안내는 실제 후보 규칙(서버 썸네일 있음·중복 제외, 건강은 서버 health=ok로 거름)과 같은 수로 판단합니다.
   const usable = page ? pickPool([page.items], page.items.length).pool.length : 0;
   const shortBy = Math.max(0, roundSize - usable);
   const canContinue = step === "species" ? draft.species !== null : step === "size" ? draft.size !== null : step === "color" ? draft.color !== null : !empty;
@@ -150,7 +150,7 @@ export function WorldCupFinder() {
   const isResult = phase === "result";
 
   // 크기·털색 단계에서 선택지마다 해당하는 친구 수를 보여 줍니다(믹스·품종 미상이 많아 크기를 고르면 후보가 크게 줄기 때문).
-  // 후보를 찾을 때와 같은 조건(종·서버 썸네일 있음, 털색 단계에서는 고른 크기까지)으로 세어 실제 후보 수와 맞습니다.
+  // 후보를 찾을 때와 같은 조건(종·서버 썸네일 있음·건강 양호, 털색 단계에서는 고른 크기까지)으로 세어 실제 후보 수와 맞습니다.
   // 단계·종·크기를 묶은 키로만 다시 세고, 응답이 늦게 와도 키가 다르면 버립니다.
   const countKey = phase === "steps" && (step === "size" || step === "color") && draft.species ? `${step}:${draft.species}:${step === "color" ? answers.size : ""}` : "";
   const [counts, setCounts] = useState<{ key: string; values: Record<string, number> } | null>(null);
@@ -161,7 +161,7 @@ export function WorldCupFinder() {
       ? SIZE_OPTIONS.map(([value]): [string, Record<string, string>] => [value, value === "all" ? {} : { size: value }])
       : ["all", ...(species === "cat" ? CAT_COLORS : DOG_COLORS)].map((label): [string, Record<string, string>] => { const extra: Record<string, string> = {}; if (size && size !== "all") extra.size = size; if (label !== "all") extra.color = label; return [label, extra]; });
     void Promise.all(entries.map(async ([key, extra]) => {
-      try { return [key, (await fetchPage(new URLSearchParams({ species, limit: "1", thumbnail: "1", sort: "recent", ...extra }).toString())).total] as const; }
+      try { return [key, (await fetchPage(new URLSearchParams({ species, limit: "1", thumbnail: "1", health: "ok", sort: "recent", ...extra }).toString())).total] as const; }
       catch { return null; }
     })).then(rows => setCounts({ key: countKey, values: Object.fromEntries(rows.filter((row): row is readonly [string, number] => row !== null)) }));
   }, [countKey]);
@@ -170,7 +170,7 @@ export function WorldCupFinder() {
   async function loadPool() {
     setLoading(true);
     try {
-      // 한 페이지는 최대 50마리라 건강 문구로 걸러내면 32강이 안 나올 수 있습니다.
+      // 한 페이지는 최대 50마리라 중복을 걷어내면 32강이 안 나올 수 있습니다.
       // 조건을 넓히기 전에 같은 조건의 다음 페이지를 최대 두 번 더 받아 후보를 채웁니다.
       const query = poolQueries(answers, null)[0];
       const perColor = expandColorQueries(query);

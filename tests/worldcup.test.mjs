@@ -36,9 +36,9 @@ test('pool queries relax color, age, size, then region in that order', async t=>
   assert.equal(queries[4].get('sort'),'recent'); assert.equal(queries[4].get('lat'),null); assert.equal(queries[4].get('species'),'dog');
 });
 
-test('every pool query asks the server for animals that already have a compressed thumbnail', async t=>{
+test('every pool query asks the server for animals with a compressed thumbnail and no care-level health note', async t=>{
   const {poolQueries}=await loadWorldcup(t);
-  for(const query of poolQueries(answers,seoul)) assert.equal(new URLSearchParams(query).get('thumbnail'),'1',query);
+  for(const query of poolQueries(answers,seoul)){ const q=new URLSearchParams(query); assert.equal(q.get('thumbnail'),'1',query); assert.equal(q.get('health'),'ok',query); }
 });
 
 test('pool leaves out animals without a server thumbnail even when the original photo exists', async t=>{
@@ -83,16 +83,10 @@ test('pool samples matched animals at random when a random source is given', asy
   assert.notDeepEqual(pool.map(item=>item.id),primary.slice(0,16).map(item=>item.id));
 });
 
-test('health concerns in the shelter note are recognised', async t=>{
-  const {hasHealthConcern}=await loadWorldcup(t);
-  for(const note of ['교통사고로 폐출혈, 기력소실 .예후불량.','코 주위 및 발 부위 피부병. 털 상태 양호.','허약&탈진','뒷다리 심한 골절, 사고의심, 기력저하, 순함','무기력, 점액변,심한 결막염,허피스의심','기침있음,눈이조금안좋음(안약처치중)','건강 매우 상태 나쁨','외부기생충 감염(구충완료)']) assert.equal(hasHealthConcern(animal('x',{summary:note})),true,note);
-  for(const note of ['온순함','코 분홍. 털 상태 양호.','파보검 음성. 친화적. 활발.','겁이 많아요 예쁘게 생겼어요','아파트 화단에서 구조','노란 목걸이,방울','']) assert.equal(hasHealthConcern(animal('x',{summary:note})),false,note);
-});
-
-test('pool leaves out animals whose note reports injury or illness', async t=>{
+test('pool no longer judges health from the note itself; the query already asked the server for health=ok', async t=>{
   const {pickPool}=await loadWorldcup(t);
-  const {pool}=pickPool([[animal('ok'),animal('sick',{summary:'교통사고, 의식 없음'}),animal('ok2'),animal('skin',{summary:'피부병'})]],4);
-  assert.deepEqual(pool.map(item=>item.id),['ok','ok2']);
+  const {pool}=pickPool([[animal('ok'),animal('noted',{summary:'교통사고, 의식 없음'}),animal('ok2')]],4);
+  assert.deepEqual(pool.map(item=>item.id),['ok','noted','ok2']);
 });
 
 test('pool is empty when fewer than two animals have server thumbnails', async t=>{
@@ -143,7 +137,7 @@ test('several colors become one request per color, other conditions kept', async
   const [first]=poolQueries({...answers,scope:'nationwide',size:'small,medium',color:'흰색,검정'},null);
   const expanded=expandColorQueries(first).map(q=>new URLSearchParams(q));
   assert.deepEqual(expanded.map(q=>q.get('color')),['흰색','검정']);
-  for(const q of expanded){ assert.equal(q.get('size'),'small,medium'); assert.equal(q.get('species'),'dog'); assert.equal(q.get('thumbnail'),'1'); }
+  for(const q of expanded){ assert.equal(q.get('size'),'small,medium'); assert.equal(q.get('species'),'dog'); assert.equal(q.get('thumbnail'),'1'); assert.equal(q.get('health'),'ok'); }
   // 색이 하나이거나 없으면 그대로 한 번만 요청합니다.
   assert.deepEqual(expandColorQueries('species=cat&color=%ED%9D%B0%EC%83%89&limit=50'),['species=cat&color=%ED%9D%B0%EC%83%89&limit=50']);
   assert.deepEqual(expandColorQueries('species=cat&limit=50'),['species=cat&limit=50']);

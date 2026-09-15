@@ -79,6 +79,11 @@ function tasteLabel(answers: Answers) {
 function detailUrl(animal: Animal) {
   return `${window.location.origin}/friends/${animal.id}?via=worldcup`;
 }
+// 카드에 크게 쓰는 이름: 공공 데이터 품종. "기타"·"품종 미상"처럼 이름이 못 되는 값은 종으로 대신합니다.
+function cardBreed(animal: Animal) {
+  const breed = animal.name.split(" · ")[0]?.trim() || animal.breed;
+  return /^(기타|품종\s*미상|미상)$/.test(breed) ? (animal.species === "고양이" ? "고양이 친구" : "강아지 친구") : breed;
+}
 async function fetchPage(query: string) {
   const response = await fetch(`/api/animals?${query}`, { cache: "no-store" });
   const body = await response.json() as AnimalPage & { error?: string };
@@ -364,7 +369,7 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
     {phase === "intro" ? <section className="ff-readiness-intro-content" aria-labelledby="worldcup-intro-title"><div className="ff-readiness-intro-badge">이상형 월드컵</div><h1 id="worldcup-intro-title">나와 인연이 될<br />친구를 찾아볼까요?</h1>{member?.admin && <ActionButton size="small" variant="neutralWeak" loading={loading} onClick={() => void previewResult()}>관리자 · 결과 화면 미리보기</ActionButton>}</section>
     : isResult && winner ? <section className="ff-care-result" aria-labelledby="care-result-title">
       <h1 id="care-result-title">{(bracket?.size ?? 1) - 1}번의 선택으로 만난 내 첫 친구</h1>
-      <WorldCupCard ref={cardRef} headline={member?.name.trim() ? `${member.name.trim().slice(0, 8)}님과 이어진 첫 친구` : "나와 이어진 첫 친구"} breed={winner.name.split(" · ")[0] || winner.breed} number={winner.name.split(" · ")[1] ?? ""} meta={meta(winner)} journey={`${bracket?.size ?? 16}강 · ${(bracket?.size ?? 1) - 1}번의 선택`} taste={tasteLabel(answers)} shelter={winner.shelter} status={getAnimalPublicStatus(winner)} assets={cardReady ? cardAssets : null} />
+      <WorldCupCard ref={cardRef} headline={member?.name.trim() ? `${member.name.trim().slice(0, 8)}님과 이어진 첫 친구` : "나와 이어진 첫 친구"} breed={cardBreed(winner)} number={winner.name.split(" · ")[1] ?? ""} meta={meta(winner)} journey={`${bracket?.size ?? 16}강 · ${(bracket?.size ?? 1) - 1}번의 선택`} taste={tasteLabel(answers)} shelter={winner.shelter} status={getAnimalPublicStatus(winner)} assets={cardReady ? cardAssets : null} />
       <p className="ff-care-result-note">공유하기를 누르면 이 카드가 이미지로 저장·공유되고, 자세히 보기에서 보호소에 바로 연락할 수 있어요.</p>
     </section>
     : phase === "match" && bracket && roundIntro !== null ? <section className="ff-care-step ff-worldcup-round" aria-labelledby="care-step-title">

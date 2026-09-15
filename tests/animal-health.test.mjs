@@ -76,6 +76,8 @@ test('memos naming a current illness, injury or ongoing treatment become 치료�
     '심장사상충 양성',
     '치석 심함, 구내염',
     '영양 상태 불량(복부팽만)',
+    '복부팽만',
+    '설사, 복부 팽만',
     '5마리구조,모질상태불량',
     '마이크로칩 미등록, 건강상태 불량',
     '불량(쇠약)',

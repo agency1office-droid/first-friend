@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getAnimalById } from "../../../lib/public-data";
 import type { Animal } from "../../../lib/data";
 import { getAnimalPublicStatus, getNoticeDaysRemaining } from "../../../lib/animal-public-status";
@@ -130,6 +131,19 @@ function DetailInfoRow({ icon: Icon, label, value, secondaryValue, helper, class
 
 function animalKnowledge(animal: Animal) {
   return getBreedKnowledge(animal);
+}
+
+// 공유한 링크가 카카오톡·문자·SNS에서 펼쳐질 때 사이트 공통 카드가 아니라 이 친구의 사진과 정보가 보이게 한다.
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const animal = await getAnimalById((await params).id);
+  if (!animal) return { title: "보호동물 친구" };
+  const description = [animal.breed, animal.sex, animal.age, animal.shelter, animal.region].filter(Boolean).join(" · ");
+  return {
+    title: animal.name,
+    description,
+    openGraph: { title: animal.name, description, type: "website", images: [{ url: animal.image }] },
+    twitter: { card: "summary_large_image", title: animal.name, description, images: [animal.image] },
+  };
 }
 
 export default async function AnimalPage({

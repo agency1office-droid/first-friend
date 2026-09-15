@@ -1406,3 +1406,13 @@ test("animal-to-shelter links open the shelter animals tab and the shelter list 
   assert.match(shelterList, /\.eq\("shelter_id", shelterId\)\.order\("updated_at", \{ ascending: false \}\)/);
   assert.doesNotMatch(shelterList.slice(0, shelterList.indexOf("return { items, total")), /order\("updated",/, "the text column `updated` sorts \"9. 11.\" before \"9. 2.\"");
 });
+
+test("animal detail pages expose per-animal Open Graph tags so shared links unfurl with the animal", async () => {
+  const page = await readFile(new URL("../app/friends/[id]/page.tsx", import.meta.url), "utf8");
+  const metadata = page.slice(page.indexOf("export async function generateMetadata"), page.indexOf("export default async function AnimalPage"));
+  assert.ok(metadata.length > 0, "generateMetadata must be defined before the page");
+  assert.match(metadata, /title: animal\.name/);
+  assert.match(metadata, /openGraph: \{[^}]*images: \[\{ url: animal\.image/);
+  assert.match(metadata, /twitter: \{ card: "summary_large_image"/);
+  assert.match(metadata, /animal\.shelter/);
+});

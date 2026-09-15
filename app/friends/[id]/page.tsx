@@ -138,11 +138,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const animal = await getAnimalById((await params).id);
   if (!animal) return { title: "보호동물 친구" };
   const description = [animal.breed, animal.sex, animal.age, animal.shelter, animal.region].filter(Boolean).join(" · ");
+  // 공공데이터 서버는 사진을 octet-stream으로 주므로, 같은 도메인의 캐시된 프록시를 거쳐 image/jpeg로 내보낸다.
+  const ogImage = /^https:\/\/([a-z0-9-]+\.)*openapi\.animal\.go\.kr\//i.test(animal.image) ? `/api/media?url=${encodeURIComponent(animal.image)}` : animal.image;
   return {
     title: animal.name,
     description,
-    openGraph: { title: animal.name, description, type: "website", images: [{ url: animal.image }] },
-    twitter: { card: "summary_large_image", title: animal.name, description, images: [animal.image] },
+    openGraph: { title: animal.name, description, type: "website", images: [{ url: ogImage }] },
+    twitter: { card: "summary_large_image", title: animal.name, description, images: [ogImage] },
   };
 }
 

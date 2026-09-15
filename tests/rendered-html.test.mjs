@@ -1412,7 +1412,8 @@ test("animal detail pages expose per-animal Open Graph tags so shared links unfu
   const metadata = page.slice(page.indexOf("export async function generateMetadata"), page.indexOf("export default async function AnimalPage"));
   assert.ok(metadata.length > 0, "generateMetadata must be defined before the page");
   assert.match(metadata, /title: animal\.name/);
-  assert.match(metadata, /openGraph: \{[^}]*images: \[\{ url: animal\.image/);
+  assert.match(metadata, /openGraph: \{[^}]*images: \[\{ url: ogImage/);
+  assert.match(metadata, /\/api\/media\?url=\$\{encodeURIComponent\(animal\.image\)\}/, "public-data photos go through the same-origin image proxy so crawlers get image/jpeg");
   assert.match(metadata, /twitter: \{ card: "summary_large_image"/);
   assert.match(metadata, /animal\.shelter/);
 });

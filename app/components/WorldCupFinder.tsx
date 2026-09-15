@@ -318,7 +318,8 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
     }
   }
 
-  // 인연 카드를 PNG로 뽑아 기기 공유 시트로 보냅니다(인스타 스토리·카톡에 이미지로). 파일 공유가 안 되는 환경은 저장 + 링크 복사로 대신합니다.
+  // 인연 카드를 PNG로 뽑아 모바일에서는 기기 공유 시트로 보냅니다(인스타 스토리·카톡에 이미지로).
+  // PC(768px 이상, openDetailFlow와 같은 기준)나 파일 공유가 안 되는 환경은 PNG 저장 + 링크 복사로 대신합니다.
   async function share(winner: Animal) {
     const url = detailUrl(winner);
     const title = `퍼스트 프렌드 · ${winner.name}`, text = `이상형 월드컵에서 끝까지 남은 ${winner.name} 친구예요.`;
@@ -327,11 +328,12 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
       const card = cardRef.current;
       const png = card && cardAssets?.id === winner.id ? await exportCardPng(card) : null;
       const file = png ? new File([png], `firstfriend-${winner.id}.png`, { type: "image/png" }) : null;
-      if (file && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title, text: `${text}\n${url}` }); return; }
+      const mobile = window.matchMedia("(max-width: 767px)").matches;
+      if (mobile && file && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title, text: `${text}\n${url}` }); return; }
       if (file) {
         const link = document.createElement("a"); link.href = URL.createObjectURL(file); link.download = file.name; link.click();
         window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-      } else if (navigator.share) { await navigator.share({ title, text, url }); return; }
+      } else if (mobile && navigator.share) { await navigator.share({ title, text, url }); return; }
       await navigator.clipboard.writeText(url);
       feedback.success(file ? "카드를 저장하고 링크를 복사했어요" : "공유 링크를 복사했어요");
     } catch (error) {

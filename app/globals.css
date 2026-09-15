@@ -1741,3 +1741,5 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result h1 { color: var(--seed-color-palette-static-white); font-size: 17px; line-height: 24px; opacity: .85; }
 .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result-note { color: var(--seed-color-palette-static-white-alpha-700); text-align: center; }
 .ff-worldcup-card { display: block; width: 100%; max-width: 400px; height: auto; border-radius: 22px; box-shadow: 0 18px 44px rgba(0, 0, 0, .35); }
+.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-actions { background: var(--ff-worldcup-night); }
+.ff-quiz-shell [data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-actions::before { background: linear-gradient(to bottom, transparent, var(--ff-worldcup-night)); }

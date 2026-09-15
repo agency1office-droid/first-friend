@@ -10,7 +10,7 @@ const quizDefinitions: Record<string, QuizDefinition> = {
     questions: careReadinessQuestions,
     showSpeciesSelection: false,
     persistResult: false,
-    shareable: false,
+    shareable: true,
     metadata: {
       title: "함께할 수 있는 생활인지 확인",
       description: "시간·공간·비용을 기준으로 반려동물과 함께할 생활을 점검해 보세요.",

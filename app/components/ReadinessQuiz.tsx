@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ActionButton } from "seed-design/ui/action-button";
 import { IconPawprintFill, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import { educationScore as calculateEducation } from "../../lib/readiness-score";
 import { createReadinessSharePath } from "../../lib/readiness-share";
 import { getQuizDefinition } from "../../lib/quiz/registry";
+import { CertificateResult, type CertificateHandle } from "./CertificateCard";
 import { closeToDetail } from "./detailReturn";
 import { SpeciesSelectionStep } from "./SpeciesSelectionStep";
 import { ReadinessAppBar } from "./ReadinessAppBar";
@@ -44,8 +45,9 @@ const speciesSafety: Record<Species, Question["options"]> = {
   dog: ["몸에 맞는 하네스·리드줄·인식표를 확인해요", "목줄 없이 자유롭게 걸어요", "짧은 줄이면 충분해요"],
 };
 
-export function ReadinessQuiz({ onClose, quizId = "adoption-prep" }: { onClose?: () => void; quizId?: string }) {
+export function ReadinessQuiz({ onClose, quizId = "adoption-prep", memberName = null }: { onClose?: () => void; quizId?: string; memberName?: string | null }) {
   const quizDefinition = getQuizDefinition(quizId);
+  const certRef = useRef<CertificateHandle>(null);
   const [phase, setPhase] = useState<"intro" | "species" | "questions" | "result">("intro");
   const [step, setStep] = useState(0);
   const [species, setSpecies] = useState<Species | null>(null);
@@ -64,6 +66,7 @@ export function ReadinessQuiz({ onClose, quizId = "adoption-prep" }: { onClose?:
     else window.scrollTo(0, 0);
   }, [phase, step, feedbackAnswer, retryAnswerHintsVisible, revealedAnswer]);
   const selectedSpecies = species ?? "cat";
+  const knowledge = quizDefinition?.slug === "pet-knowledge";
   const questions = useMemo(() => {
     if (quizDefinition?.questions) return quizDefinition.questions;
     return commonChapters.map((question, index) => index === 8 ? { ...question, question: selectedSpecies === "cat" ? "고양이에게 필요한 안전 준비는 무엇인가요?" : "강아지에게 필요한 안전 준비는 무엇인가요?", options: speciesSafety[selectedSpecies], answer: 0, explanation: selectedSpecies === "cat" ? "추락과 탈출은 짧은 순간에 일어날 수 있어요. 고정된 방묘 장치를 준비해 주세요." : "낯선 환경에서의 이탈을 막을 수 있도록 몸에 맞는 안전장비와 인식표를 준비해 주세요." } : question);
@@ -105,7 +108,11 @@ export function ReadinessQuiz({ onClose, quizId = "adoption-prep" }: { onClose?:
   }
   async function shareCertificate() {
     const shareUrl = new URL(createReadinessSharePath(correctCount, questions.length), window.location.origin).toString();
-    const shareData = { title: `퍼스트프렌드 ${certificatePraise.title}`, text: `${questions.length}문제 중 ${correctCount}문제 정답이에요. 입양 전 준비 확인을 마쳤어요.`, url: shareUrl };
+    // 상식 퀴즈는 공유 페이지 문구가 입양 준비 전용이라 퀴즈 진입 주소를 공유합니다.
+    const url = knowledge ? new URL("/quiz/pet-knowledge", window.location.origin).toString() : shareUrl;
+    // 통과하면 인증서 카드가 PNG를 만들어 공유하고, 카드가 없을 때만 링크를 공유합니다.
+    if (certRef.current) { await certRef.current.share(url); return; }
+    const shareData = { title: `퍼스트프렌드 ${certificatePraise.title}`, text: `${questions.length}문제 중 ${correctCount}문제 정답이에요. 입양 전 준비 확인을 마쳤어요.`, url };
     try {
       if (navigator.share) await navigator.share(shareData);
       else await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
@@ -267,7 +274,15 @@ export function ReadinessQuiz({ onClose, quizId = "adoption-prep" }: { onClose?:
 
     {phase === "questions" && <section className={`ff-readiness-chapter${hasAnswered ? " is-feedback" : ""}`} aria-labelledby={hasAnswered ? "readiness-feedback-title" : "readiness-question-title"}>{hasAnswered ? <div className="ff-readiness-feedback-page"><div className="ff-readiness-feedback is-incorrect" role="status" aria-live="polite" aria-label="오답 확인"><span className="ff-readiness-feedback-mark" aria-hidden><IconXmarkLine /></span><strong id="readiness-feedback-title" className="ff-readiness-feedback-title">오답이에요!</strong><p className="ff-readiness-feedback-selected" aria-label="내가 고른 답변"><span>내가 고른 답변:</span><span>{question.options[selectedAnswer as number]}</span></p><p className="ff-readiness-feedback-detail">{question.explanation}</p></div></div> : <><h2 id="readiness-question-title"><span className="ff-readiness-question-label" aria-hidden="true">Q.</span>{question.question}<span className="ff-readiness-question-count" aria-label={`${questionIndex + 1}/${questions.length} 문제`}>{questionIndex + 1}/{questions.length}</span></h2><fieldset className="ff-quiz-question ff-quiz-question-single"><legend className="ff-visually-hidden">{question.question}</legend>{question.options.map((option, optionIndex) => { const showCorrectPaw = retryAnswerHintsVisible && pendingAnswer === null && optionIndex === question.answer; return <label key={option} data-correct={showCorrectPaw || undefined}><input type="radio" name={`readiness-chapter-${questionIndex}`} checked={pendingAnswer === optionIndex} onChange={() => setPendingAnswer(optionIndex)} /><span className="ff-quiz-option-label">{option}{showCorrectPaw && <span className="ff-readiness-correct-label" aria-label="정답"><IconPawprintFill aria-hidden /></span>}</span></label>; })}</fieldset></>}</section>}
 
-    {showResult && <section className="ff-readiness-result" role="status"><Image className="ff-readiness-result-illustration" src={passed ? "/readiness-result.webp" : "/readiness-result-failed.webp"} alt={passed ? "강아지와 고양이 캐릭터" : "아쉬워하는 강아지와 고양이 캐릭터"} width={224} height={180} unoptimized /><h2>{correctCount === questions.length ? <span className="ff-readiness-result-count">🎉정답을 모두 맞혔어요!</span> : <><span className="ff-readiness-result-count">{correctCount}문제</span> 정답이에요</>}</h2><div className="ff-readiness-result-praise"><h3>{certificatePraise.title}<span className="ff-readiness-result-score"> · {correctCount}/{questions.length}</span></h3><p>{certificatePraise.description}</p>{!passed && <p className="ff-readiness-result-passing">{passingCount - correctCount}문제를 더 맞히면 통과할 수 있어요.</p>}</div></section>}
+    {/* 통과하면 인증서 카드(이미지 저장·공유), 아니면 기존 결과 안내 그대로입니다. */}
+    {showResult && <section className={`ff-readiness-result${passed ? " is-certificate" : ""}`} role="status">
+      {!passed && <Image className="ff-readiness-result-illustration" src="/readiness-result-failed.webp" alt="아쉬워하는 강아지와 고양이 캐릭터" width={224} height={180} unoptimized />}
+      <h2>{correctCount === questions.length ? <span className="ff-readiness-result-count">🎉정답을 모두 맞혔어요!</span> : <><span className="ff-readiness-result-count">{correctCount}문제</span> 정답이에요</>}</h2>
+      {passed ? <>
+        <CertificateResult ref={certRef} badge={knowledge ? "반려 상식 수료증" : "입양 준비 수료증"} illustration={knowledge ? "/readiness-result.webp" : `/${selectedSpecies}-selection.webp`} memberName={memberName} rows={[{ label: "점수", value: `${correctCount}/${questions.length}` }, knowledge ? { label: "등급", value: certificatePraise.title } : { label: "함께할 친구", value: selectedSpecies === "cat" ? "고양이" : "강아지" }]} share={{ title: `퍼스트프렌드 ${certificatePraise.title}`, text: `${questions.length}문제 중 ${correctCount}문제 정답이에요.` }} />
+        <p>{certificatePraise.description}</p>
+      </> : <div className="ff-readiness-result-praise"><h3>{certificatePraise.title}<span className="ff-readiness-result-score"> · {correctCount}/{questions.length}</span></h3><p>{certificatePraise.description}</p><p className="ff-readiness-result-passing">{passingCount - correctCount}문제를 더 맞히면 통과할 수 있어요.</p></div>}
+    </section>}
 
     <footer className={`ff-readiness-actions${phase === "intro" || phase === "species" || phase === "questions" ? " is-single" : ""}${feedbackAnswer !== null ? " is-feedback" : ""}`}>{renderFooter()}</footer>
   </div>;

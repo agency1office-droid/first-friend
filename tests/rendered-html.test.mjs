@@ -106,7 +106,7 @@ test("uses a contextual animal detail topbar", async () => {
   const quizRoute = await readFile(new URL("../app/quiz/[slug]/page.tsx", import.meta.url), "utf8");
   const quizRegistry = await readFile(new URL("../lib/quiz/registry.ts", import.meta.url), "utf8");
   assert.match(adoptionQuizPage, /getQuizDefinition\("adoption-prep"\)/);
-  assert.match(adoptionQuizPage, /<ReadinessQuiz quizId=\{definition\?\.slug \?\? "adoption-prep"\} \/>/);
+  assert.match(adoptionQuizPage, /<ReadinessQuiz quizId=\{definition\?\.slug \?\? "adoption-prep"\} memberName=\{memberName\} \/>/);
   assert.match(quizRegistry, /"adoption-prep"/);
   assert.match(quizRegistry, /"care-readiness"/);
   assert.match(quizRegistry, /"pet-knowledge"/);
@@ -118,7 +118,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(careReadinessConfig, /매달 필요한 비용과 갑자기 병원에 갈 비용/);
   assert.match(quizTypes, /"care-readiness"/);
   assert.match(quizRoute, /definition\.renderer === "care-readiness"/);
-  assert.match(quizRoute, /<CareReadinessFlow \/>/);
+  assert.match(quizRoute, /<CareReadinessFlow memberName=\{memberName\} \/>/);
   assert.match(careReadinessFlow, /import \{ Slider \} from "seed-design\/ui\/slider"/);
   assert.match(careReadinessFlow, /import \{ QuantityPicker \} from "seed-design\/ui\/quantity-picker"/);
   assert.match(careReadinessFlow, /import \{ Checkbox \} from "seed-design\/ui\/checkbox"/);
@@ -134,11 +134,12 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(careReadinessFlow, /집을 오래 비울 때/);
   assert.match(careReadinessFlow, /경제적인 준비/);
   assert.match(careReadinessFlow, /이 결과는 입양 가능 여부를 판단하지 않아요/);
+  assert.match(careReadinessFlow, /<CertificateResult ref=\{certRef\} badge="입양 환경 점검 확인서"/);
   assert.equal((petKnowledgeConfig.match(/options: \[/g) ?? []).length, 15);
   assert.equal((petKnowledgeConfig.match(/options: \[[^\]]+, [^\]]+, [^\]]+\]/g) ?? []).length, 15);
   assert.equal((petKnowledgeConfig.match(/chapter:/g) ?? []).length, 15);
   assert.match(quizRoute, /getQuizDefinition\(params\.slug\)/);
-  assert.match(quizRoute, /<ReadinessQuiz quizId=\{definition\.slug\} \/>/);
+  assert.match(quizRoute, /<ReadinessQuiz quizId=\{definition\.slug\} memberName=\{memberName\} \/>/);
   assert.doesNotMatch(adoptionQuizPage, /from "\.\.\/\.\.\/readiness\/page"/);
   assert.match(styles, /\.ff-shell\[data-route-path\^="\/friends\/"\] \.ff-detail-image-back/);
   assert.doesNotMatch(bridge, /FavoriteButton/);
@@ -268,7 +269,16 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(readinessQuiz, /window\.location\.href = "\/login\?return_to=%2Fquiz%2Fadoption-prep"/);
   assert.doesNotMatch(readinessQuiz, /onClick=\{shareCertificate\} disabled=\{authState === "checking"\}/);
   assert.doesNotMatch(readinessQuiz, /수료증 받기/);
+  // 인증서 카드: 통과 시에만 렌더, 로그인 게이트 없음, 이미지 저장·기기 공유 시트 지원
+  const certificateCard = await readFile(new URL("../app/components/CertificateCard.tsx", import.meta.url), "utf8");
+  assert.match(readinessQuiz, /\{passed \? <>\s*<CertificateResult ref=\{certRef\}/);
+  assert.match(certificateCard, /이미지 저장/);
+  assert.match(certificateCard, /navigator\.canShare\(\{ files: \[file\] \}\)/);
+  assert.match(certificateCard, /첫 친구 예비 반려인/);
+  assert.match(certificateCard, /발급일 \{date\}/);
+  assert.doesNotMatch(certificateCard, /foreignObject|authState|\/login/);
   const readinessStyles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(readinessStyles, /\.ff-certificate-card \{[^}]*max-width: 360px;/);
   const readinessIntroAsset = await readFile(new URL("../public/readiness-intro.webp", import.meta.url));
   assert.ok(readinessIntroAsset.byteLength > 0);
   const readinessResultAsset = await readFile(new URL("../public/readiness-result.webp", import.meta.url));

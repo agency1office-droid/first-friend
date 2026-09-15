@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Checkbox } from "seed-design/ui/checkbox";
@@ -8,6 +8,7 @@ import { QuantityPicker } from "seed-design/ui/quantity-picker";
 import { Slider } from "seed-design/ui/slider";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "seed-design/ui/accordion";
 import { IconChevronDownSmallLine, IconChevronLeftLine, IconHouseLine } from "@karrotmarket/react-monochrome-icon";
+import { CertificateResult, type CertificateHandle } from "./CertificateCard";
 import { closeToDetail } from "./detailReturn";
 
 type Species = "cat" | "dog";
@@ -77,7 +78,7 @@ const preparationCategoriesFor = (items: PreparationItem[]): PreparationCategory
   },
 ];
 
-export function CareReadinessFlow() {
+export function CareReadinessFlow({ memberName = null }: { memberName?: string | null } = {}) {
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [species, setSpecies] = useState<Species | null>(null);
@@ -120,6 +121,8 @@ export function CareReadinessFlow() {
   }, [absence, budget, existingCatCount, existingDogCount, householdCount, home, petSize, preparationCount, preparationItems, species, time]);
 
   const readyCount = results.filter(result => result.ready).length;
+  const percent = Math.round((readyCount / results.length) * 100);
+  const certRef = useRef<CertificateHandle>(null);
 
   function next() {
     if (!canContinue) return;
@@ -159,9 +162,8 @@ export function CareReadinessFlow() {
     {started && <div className="ff-readiness-progress" role="progressbar" aria-label="생활 점검 진행률" aria-valuemin={1} aria-valuemax={totalSteps} aria-valuenow={isResult ? totalSteps : step + 1}><div style={{ width: `${isResult ? 100 : Math.max(progress, 6.25)}%` }} /></div>}
     {!started ? <section className="ff-readiness-intro-content" aria-labelledby="care-readiness-intro-title"><div className="ff-readiness-intro-badge">입양 환경 점검</div><h1 id="care-readiness-intro-title">반려동물과<br />함께할 수 있을까요?</h1></section> : isResult ? <section className="ff-care-result" aria-labelledby="care-result-title">
       <h1 id="care-result-title">함께할 생활 준비도</h1>
-      <div className="ff-care-result-score" style={{ background: `conic-gradient(var(--seed-color-bg-brand-solid) ${Math.round((readyCount / results.length) * 100)}%, var(--seed-color-bg-neutral-weak) 0)` }}>
-        <div><strong>{Math.round((readyCount / results.length) * 100)}</strong><span>%</span></div>
-      </div>
+      {/* 준비도는 인증서 카드가 보여 줍니다. 항목별 상세는 아래 아코디언 그대로입니다. */}
+      <CertificateResult ref={certRef} badge="입양 환경 점검 확인서" illustration={`/${species ?? "cat"}-selection.webp`} memberName={memberName} rows={[{ label: "준비도", value: `${percent}%` }, { label: "확인한 항목", value: `${readyCount}/${results.length}` }]} share={{ title: "퍼스트프렌드 입양 환경 점검", text: `${results.length}가지 항목 중 ${readyCount}가지를 확인했어요.` }} extraAction={<button type="button" onClick={retry}>다시 확인하기</button>} />
       <p className="ff-care-result-summary">{results.length}가지 항목 중 <strong>{readyCount}가지</strong>를 확인했어요. 준비물은 <strong>{preparationCount}/{preparationItems.length}개</strong>예요.</p>
       <Accordion className="ff-care-result-accordion" multiple>
         {results.map(result => <AccordionItem value={result.label} key={result.label}>
@@ -183,7 +185,7 @@ export function CareReadinessFlow() {
       {isChecklist && currentChecklist && <><h1 id="care-step-title">{currentChecklist.title}</h1><p className="ff-care-helper">준비했거나 준비할 예정인 항목을 확인해요.</p><p className="ff-care-helper ff-care-helper-detail">{currentChecklist.description}</p><div className="ff-care-checklist" aria-label={`${currentChecklist.title} 준비 목록`}>{currentChecklist.items.map(item => <div className="ff-care-checklist-row" key={item.id}><Checkbox checked={Boolean(preparations[item.id])} onCheckedChange={checked => setPreparations(current => ({ ...current, [item.id]: Boolean(checked) }))} label={<><strong>{item.label}</strong><small>{item.detail}</small></>} /></div>)}</div></>}
     </section>}
     <div className={`ff-readiness-actions ${!started ? "is-single" : isResult ? "is-result" : "is-single"}`}>
-      {!started ? <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={start}>시작하기</ActionButton> : isResult ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={retry}>다시 확인하기</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={closeToDetail}>닫기</ActionButton></> : <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!canContinue} onClick={next}>{step === totalSteps - 1 ? "결과 보기" : "다음"}</ActionButton>}
+      {!started ? <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={start}>시작하기</ActionButton> : isResult ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={closeToDetail}>닫기</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={() => void certRef.current?.share(new URL("/quiz/care-readiness", window.location.origin).toString())}>공유하기</ActionButton></> : <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!canContinue} onClick={next}>{step === totalSteps - 1 ? "결과 보기" : "다음"}</ActionButton>}
     </div>
   </div>;
 }

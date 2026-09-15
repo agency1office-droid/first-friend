@@ -1732,3 +1732,12 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-worldcup-loading .ff-loading-indicator { width: 48px; height: 48px; }
 .ff-worldcup-loading .ff-loading-indicator span { width: 40px; height: 40px; border-width: 3px; }
 .ff-worldcup-loading h1 { margin: 0; font-size: 17px; line-height: 24px; font-weight: var(--seed-font-weight-bold); color: var(--seed-color-fg-neutral-subtle); }
+
+/* 이상형 월드컵 결과: 화면이 곧 공유되는 인연 카드. 카드 이미지와 같은 남색 바탕에 흰 앱바·문구. 남색은 카드 이미지 자산 색(인트로 일러스트 톤)입니다. */
+.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] { --ff-worldcup-night: #1c2340; background: var(--ff-worldcup-night); }
+.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-appbar strong, .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-back, .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-home { color: var(--seed-color-palette-static-white); }
+.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-progress { background: var(--seed-color-palette-static-white-alpha-200); }
+.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result { gap: 12px; padding: 14px 16px 24px; }
+.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result h1 { color: var(--seed-color-palette-static-white); font-size: 17px; line-height: 24px; opacity: .85; }
+.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result-note { color: var(--seed-color-palette-static-white-alpha-700); text-align: center; }
+.ff-worldcup-card { display: block; width: 100%; max-width: 400px; height: auto; border-radius: 22px; box-shadow: 0 18px 44px rgba(0, 0, 0, .35); }

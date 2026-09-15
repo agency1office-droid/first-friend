@@ -9,8 +9,9 @@ import type { Animal } from "../../lib/data";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
 import { choose, currentPair, expandColorQueries, isDone, pickPool, poolQueries, progress, roundLabel, startBracket, winnerOf, type Answers, type Bracket } from "../../lib/worldcup";
-import { AnimalCard } from "./AnimalCard";
+import { getAnimalPublicStatus } from "../../lib/animal-public-status";
 import { AnimalThumbnail } from "./AnimalThumbnail";
+import { exportCardPng, loadCardAssets, WorldCupCard, type CardAssets } from "./WorldCupCard";
 import { navigateAppBack } from "./AppChrome";
 import { useAppFeedback } from "./AppFeedback";
 import { closeToDetail } from "./detailReturn";
@@ -67,6 +68,17 @@ function meta(animal: Animal) {
 function photosOf(animal: Animal) {
   return [...new Set([animal.image, ...(animal.images ?? [])].map(value => value.trim()).filter(Boolean))];
 }
+// 인연 카드의 "취향" 줄: 종 + 고른 크기·털색. 상관없음은 적지 않습니다.
+const SIZE_LABEL: Record<string, string> = { small: "소형", medium: "중형", large: "대형", xlarge: "대형" };
+function tasteLabel(answers: Answers) {
+  const parts = [answers.species === "cat" ? "고양이" : "강아지"];
+  if (answers.size !== "all") parts.push([...new Set(answers.size.split(",").map(value => SIZE_LABEL[value] ?? value))].join("·"));
+  if (answers.color !== "all") parts.push(answers.color.split(",").join("·"));
+  return parts.join(" · ");
+}
+function detailUrl(animal: Animal) {
+  return `${window.location.origin}/friends/${animal.id}?via=worldcup`;
+}
 async function fetchPage(query: string) {
   const response = await fetch(`/api/animals?${query}`, { cache: "no-store" });
   const body = await response.json() as AnimalPage & { error?: string };
@@ -103,7 +115,8 @@ function exitFlow() {
   else navigateAppBack("/");
 }
 
-export function WorldCupFinder() {
+// member: 로그인한 회원(카드에 이름을 씀). admin이면 인트로에서 결과 화면을 바로 미리 볼 수 있습니다.
+export function WorldCupFinder({ member = null }: { member?: { name: string; admin: boolean } | null }) {
   const feedback = useAppFeedback();
   const [phase, setPhase] = useState<Phase>("intro");
   const [stepIndex, setStepIndex] = useState(0);
@@ -121,6 +134,10 @@ export function WorldCupFinder() {
   // 8강·4강·결승에 들어설 때 보여 주는 라운드 안내(강 수). 화면을 누르면 대결로 넘어갑니다.
   const [roundIntro, setRoundIntro] = useState<number | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  // 인연 카드: 화면에 보이는 SVG(cardRef)를 그대로 PNG로 뽑아 공유합니다. 사진·QR 등은 data URL로 받아 두어야 이미지로 변환됩니다.
+  const cardRef = useRef<SVGSVGElement>(null);
+  const [cardAssets, setCardAssets] = useState<CardAssets | null>(null);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     const scroller = document.querySelector<HTMLElement>(".ff-quiz-shell .ff-readiness > section");
@@ -282,18 +299,59 @@ export function WorldCupFinder() {
     dialogRef.current?.close();
   }
 
-  async function share(winner: Animal) {
-    const url = `${window.location.origin}/friends/${winner.id}`;
+  // 관리자 전용: 인트로에서 결과 화면(인연 카드)을 바로 봅니다. 강아지 후보 16마리를 받아 대결을 자동으로 끝냅니다. 저장하지 않습니다.
+  async function previewResult() {
+    setLoading(true);
     try {
-      if (navigator.share) await navigator.share({ title: `퍼스트 프렌드 · ${winner.name}`, text: `이상형 월드컵에서 끝까지 남은 ${winner.name} 친구예요.`, url });
-      else { await navigator.clipboard.writeText(url); feedback.success("공유 링크를 복사했어요"); }
-    } catch {
+      const preview: Answers = { species: "dog", scope: "nationwide", size: "all", age: "all", color: "all" };
+      const sample = await fetchPage(poolQueries(preview, null)[0]);
+      const picked = pickPool([sample.items], 16, Math.random);
+      if (picked.pool.length < 2) throw new Error("미리보기에 쓸 후보가 부족해요.");
+      let run = startBracket(picked.pool, Math.random);
+      while (!isDone(run)) { const pair = currentPair(run); if (!pair) break; run = choose(run, pair[0]); }
+      setDraft({ species: "dog", size: ["all"], color: ["all"] }); setPage(sample); setRoundSize(picked.pool.length); setEmpty(false);
+      setPool(picked.pool); setFilled(picked.filled); setHistory([]); setBracket(run); setPhase("result");
+    } catch (error) {
+      feedback.error(error instanceof Error ? error.message : "미리보기를 열지 못했어요.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 인연 카드를 PNG로 뽑아 기기 공유 시트로 보냅니다(인스타 스토리·카톡에 이미지로). 파일 공유가 안 되는 환경은 저장 + 링크 복사로 대신합니다.
+  async function share(winner: Animal) {
+    const url = detailUrl(winner);
+    const title = `퍼스트 프렌드 · ${winner.name}`, text = `이상형 월드컵에서 끝까지 남은 ${winner.name} 친구예요.`;
+    setSharing(true);
+    try {
+      const card = cardRef.current;
+      const png = card && cardAssets?.id === winner.id ? await exportCardPng(card) : null;
+      const file = png ? new File([png], `firstfriend-${winner.id}.png`, { type: "image/png" }) : null;
+      if (file && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title, text: `${text}\n${url}` }); return; }
+      if (file) {
+        const link = document.createElement("a"); link.href = URL.createObjectURL(file); link.download = file.name; link.click();
+        window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      } else if (navigator.share) { await navigator.share({ title, text, url }); return; }
+      await navigator.clipboard.writeText(url);
+      feedback.success(file ? "카드를 저장하고 링크를 복사했어요" : "공유 링크를 복사했어요");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return; // 공유 시트를 그냥 닫은 경우
       feedback.error("공유를 완료하지 못했어요");
+    } finally {
+      setSharing(false);
     }
   }
 
   const pair = phase === "match" && bracket ? currentPair(bracket) : null;
   const winner = isResult && bracket ? winnerOf(bracket) : null;
+  // 결과에 도달하면 카드에 넣을 사진·붉은 실·워드마크·QR을 data URL로 받아 둡니다(같은 친구면 다시 받지 않음).
+  useEffect(() => {
+    if (!winner || cardAssets?.id === winner.id) return;
+    let active = true;
+    loadCardAssets(winner, detailUrl(winner)).then(assets => { if (active) setCardAssets(assets); }).catch(() => { if (active) feedback.error("카드 이미지를 준비하지 못했어요"); });
+    return () => { active = false; };
+  }, [winner, cardAssets, feedback]);
+  const cardReady = Boolean(winner && cardAssets?.id === winner.id);
   const careStep = phase === "intro" ? "intro" : isResult ? "result" : phase === "match" ? "match" : step;
   const progressPercent = isResult ? 100 : phase === "match" && bracket ? Math.max(progress(bracket) * 100, 6.25) : stepProgress;
   const viewerPhotos = viewer ? photosOf(viewer.animal) : [];
@@ -301,12 +359,11 @@ export function WorldCupFinder() {
   return <div className={`ff-readiness ff-care-readiness${phase === "intro" ? " ff-readiness-intro" : ""}`} data-quiz-id="worldcup" data-care-step={careStep}>
     <ReadinessAppBar title="이상형 월드컵" className={phase === "intro" ? "ff-readiness-intro-appbar" : ""} onBack={previous} />
     {phase !== "intro" && <div className="ff-readiness-progress" role="progressbar" aria-label="이상형 월드컵 진행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progressPercent)}><div style={{ width: `${progressPercent}%` }} /></div>}
-    {phase === "intro" ? <section className="ff-readiness-intro-content" aria-labelledby="worldcup-intro-title"><div className="ff-readiness-intro-badge">이상형 월드컵</div><h1 id="worldcup-intro-title">나와 인연이 될<br />친구를 찾아볼까요?</h1></section>
+    {phase === "intro" ? <section className="ff-readiness-intro-content" aria-labelledby="worldcup-intro-title"><div className="ff-readiness-intro-badge">이상형 월드컵</div><h1 id="worldcup-intro-title">나와 인연이 될<br />친구를 찾아볼까요?</h1>{member?.admin && <ActionButton size="small" variant="neutralWeak" loading={loading} onClick={() => void previewResult()}>관리자 · 결과 화면 미리보기</ActionButton>}</section>
     : isResult && winner ? <section className="ff-care-result" aria-labelledby="care-result-title">
-      <h1 id="care-result-title">내 첫 친구 이상형</h1>
-      <AnimalCard animal={winner} layout="photo" priority />
-      <p className="ff-care-result-summary">{(bracket?.size ?? 1) - 1}번의 선택으로 만난 <strong>{winner.name}</strong><br />{meta(winner)} · {winner.shelter}</p>
-      <p className="ff-care-result-note">자세히 보기를 누르면 친구의 상세 페이지에서 보호소에 바로 연락할 수 있어요.</p>
+      <h1 id="care-result-title">{(bracket?.size ?? 1) - 1}번의 선택으로 만난 내 첫 친구</h1>
+      <WorldCupCard ref={cardRef} headline={member?.name.trim() ? `${member.name.trim().slice(0, 8)}님과 이어진 첫 친구` : "나와 이어진 첫 친구"} breed={winner.name.split(" · ")[0] || winner.breed} number={winner.name.split(" · ")[1] ?? ""} meta={meta(winner)} journey={`${bracket?.size ?? 16}강 · ${(bracket?.size ?? 1) - 1}번의 선택`} taste={tasteLabel(answers)} shelter={winner.shelter} status={getAnimalPublicStatus(winner)} assets={cardReady ? cardAssets : null} />
+      <p className="ff-care-result-note">공유하기를 누르면 이 카드가 이미지로 저장·공유되고, 자세히 보기에서 보호소에 바로 연락할 수 있어요.</p>
     </section>
     : phase === "match" && bracket && roundIntro !== null ? <section className="ff-care-step ff-worldcup-round" aria-labelledby="care-step-title">
       <h1 id="care-step-title" className="ff-visually-hidden">{roundLabel(roundIntro)} 시작</h1>
@@ -351,7 +408,7 @@ export function WorldCupFinder() {
     {/* 대결 화면은 카드 아래 선택 버튼이 곧 다음이라 하단 버튼이 없습니다. */}
     {phase !== "match" && <div className={`ff-readiness-actions ${isResult ? "is-result" : "is-single"}`}>
       {phase === "intro" ? <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={next}>시작하기</ActionButton>
-      : isResult && winner ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={() => void share(winner)}>공유하기</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" asChild><a href={`/friends/${winner.id}`}>자세히 보기</a></ActionButton></>
+      : isResult && winner ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" loading={sharing} disabled={!cardReady || sharing} onClick={() => void share(winner)}>공유하기</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" asChild><a href={`/friends/${winner.id}`}>자세히 보기</a></ActionButton></>
       : empty ? <ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={() => { setEmpty(false); setStepIndex(0); }}>조건 다시 고르기</ActionButton>
       : <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!canContinue || loading} loading={loading} onClick={next}>{step === "color" ? "후보 찾기" : step === "round" ? "시작하기" : "다음"}</ActionButton>}
     </div>}

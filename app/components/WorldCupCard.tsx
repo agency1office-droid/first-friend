@@ -35,7 +35,7 @@ export function WorldCupCard({ ref, headline, breed, number, meta, journey, tast
   const pillWidth = status.statusLabel.length * 20 + 40;
   // 세로 배분(1350): 남색 바탕 위 카드 120~1290. 위쪽 띠(~290)는 붉은 실, 머리 → 사진 → 이름 → 지표 두 줄 → QR·보호소, 카드 아래 띠에 날짜·출처.
   return <svg ref={ref} className="ff-worldcup-card" viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`} role="img" aria-label={`${headline}, ${breed} 인연 카드`} fontFamily={FONT}>
-    <defs><clipPath id="wc-photo"><rect x={330} y={486} width={420} height={420} rx={40} /></clipPath></defs>
+    <defs><clipPath id="wc-photo"><rect x={350} y={486} width={380} height={380} rx={40} /></clipPath></defs>
     <rect width={CARD_WIDTH} height={CARD_HEIGHT} fill={COLOR.night} />
     <rect x={60} y={120} width={960} height={1170} rx={48} fill={COLOR.cream} />
     {/* 붉은 실(인연)이 카드 위쪽을 가로지르며 걸려 있는 모습 */}
@@ -47,27 +47,27 @@ export function WorldCupCard({ ref, headline, breed, number, meta, journey, tast
     <text x={540} y={395} textAnchor="middle" fontSize={23} fontWeight={700} fill={COLOR.brand}>이상형 월드컵 · 인연 카드</text>
     <text x={540} y={458} textAnchor="middle" fontSize={fitFontSize(headline, 40, 880)} fontWeight={700} fill={COLOR.ink}>{headline}</text>
     {/* 주인공 사진 */}
-    <rect x={330} y={486} width={420} height={420} rx={40} fill={COLOR.neutralWeak} />
-    {assets && <image href={assets.photo} x={330} y={486} width={420} height={420} preserveAspectRatio="xMidYMid slice" clipPath="url(#wc-photo)" />}
-    <rect x={330} y={486} width={420} height={420} rx={40} fill="none" stroke={COLOR.line} strokeWidth={2} />
-    <text x={540} y={972} textAnchor="middle" fontSize={fitFontSize(breed, 54, 820)} fontWeight={800} fill={COLOR.ink}>{breed}</text>
-    <text x={540} y={1012} textAnchor="middle" fontSize={25} fontWeight={500} fill={COLOR.muted}>{meta}</text>
+    <rect x={350} y={486} width={380} height={380} rx={40} fill={COLOR.neutralWeak} />
+    {assets && <image href={assets.photo} x={350} y={486} width={380} height={380} preserveAspectRatio="xMidYMid slice" clipPath="url(#wc-photo)" />}
+    <rect x={350} y={486} width={380} height={380} rx={40} fill="none" stroke={COLOR.line} strokeWidth={2} />
+    <text x={540} y={926} textAnchor="middle" fontSize={fitFontSize(breed, 54, 820)} fontWeight={800} fill={COLOR.ink}>{breed}</text>
+    <text x={540} y={962} textAnchor="middle" fontSize={25} fontWeight={500} fill={COLOR.muted}>{meta}</text>
     {/* 여정 지표: 선택 · 취향 */}
-    <line x1={108} y1={1040} x2={972} y2={1040} stroke={COLOR.line} strokeWidth={2} />
-    <text x={108} y={1080} fontSize={25} fontWeight={500} fill={COLOR.muted}>선택</text>
-    <text x={972} y={1080} textAnchor="end" fontSize={25} fontWeight={700} fill={COLOR.ink}>{journey}</text>
-    <line x1={108} y1={1100} x2={972} y2={1100} stroke={COLOR.line} strokeWidth={2} />
-    <text x={108} y={1140} fontSize={25} fontWeight={500} fill={COLOR.muted}>취향</text>
-    <text x={972} y={1140} textAnchor="end" fontSize={fitFontSize(taste, 25, 640)} fontWeight={700} fill={COLOR.ink}>{taste}</text>
-    <line x1={108} y1={1160} x2={972} y2={1160} stroke={COLOR.line} strokeWidth={2} />
-    {/* 발: 상세 페이지 QR · 보호소 · 공고 상태 */}
-    <rect x={108} y={1178} width={100} height={100} rx={12} fill={COLOR.white} stroke={COLOR.line} strokeWidth={2} />
-    {assets && <image href={assets.qr} x={114} y={1184} width={88} height={88} />}
-    <text x={232} y={1210} fontSize={fitFontSize(shelter, 24, 972 - 232 - pillWidth - 24)} fontWeight={700} fill={COLOR.ink}>{shelter}</text>
-    <rect x={972 - pillWidth} y={1184} width={pillWidth} height={34} rx={17} fill={toneBg} />
-    <text x={972 - pillWidth / 2} y={1208} textAnchor="middle" fontSize={20} fontWeight={700} fill={toneFg}>{status.statusLabel}</text>
-    <text x={232} y={1246} fontSize={22} fontWeight={500} fill={COLOR.muted}>지금 보호소에서 기다리고 있어요</text>
-    <text x={232} y={1274} fontSize={19} fontWeight={500} fill={COLOR.subtle}>QR을 찍으면 이 친구의 상세 페이지로 바로 가요</text>
+    <line x1={108} y1={990} x2={972} y2={990} stroke={COLOR.line} strokeWidth={2} />
+    <text x={108} y={1026} fontSize={25} fontWeight={500} fill={COLOR.muted}>선택</text>
+    <text x={972} y={1026} textAnchor="end" fontSize={25} fontWeight={700} fill={COLOR.ink}>{journey}</text>
+    <line x1={108} y1={1046} x2={972} y2={1046} stroke={COLOR.line} strokeWidth={2} />
+    <text x={108} y={1082} fontSize={25} fontWeight={500} fill={COLOR.muted}>취향</text>
+    <text x={972} y={1082} textAnchor="end" fontSize={fitFontSize(taste, 25, 640)} fontWeight={700} fill={COLOR.ink}>{taste}</text>
+    <line x1={108} y1={1102} x2={972} y2={1102} stroke={COLOR.line} strokeWidth={2} />
+    {/* 발: 상세 페이지 QR(폰 화면에서 다른 폰으로 찍을 수 있게 140px, 흰 여백 15px) · 보호소 · 공고 상태 */}
+    <rect x={108} y={1118} width={170} height={170} rx={14} fill={COLOR.white} stroke={COLOR.line} strokeWidth={2} />
+    {assets && <image href={assets.qr} x={123} y={1133} width={140} height={140} />}
+    <text x={302} y={1160} fontSize={fitFontSize(shelter, 24, 972 - 302 - pillWidth - 24)} fontWeight={700} fill={COLOR.ink}>{shelter}</text>
+    <rect x={972 - pillWidth} y={1134} width={pillWidth} height={34} rx={17} fill={toneBg} />
+    <text x={972 - pillWidth / 2} y={1158} textAnchor="middle" fontSize={20} fontWeight={700} fill={toneFg}>{status.statusLabel}</text>
+    <text x={302} y={1204} fontSize={22} fontWeight={500} fill={COLOR.muted}>지금 보호소에서 기다리고 있어요</text>
+    <text x={302} y={1238} fontSize={19} fontWeight={500} fill={COLOR.subtle}>QR을 찍으면 이 친구의 상세 페이지로 바로 가요</text>
     {/* 카드 아래 띠: 날짜 · 출처 */}
     <text x={540} y={1326} textAnchor="middle" fontSize={20} fontWeight={500} fill={COLOR.white} opacity={0.72}>{assets?.date ? `${assets.date} · ` : ""}국가동물보호정보시스템 공고 기준 · firstfriend.me</text>
   </svg>;

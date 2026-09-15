@@ -355,7 +355,8 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
   useEffect(() => {
     if (!winner || cardAssets?.id === winner.id) return;
     let active = true;
-    loadCardAssets(winner, detailUrl(winner)).then(assets => { if (active) setCardAssets(assets); }).catch(() => { if (active) feedback.error("카드 이미지를 준비하지 못했어요"); });
+    // QR에는 짧은 주소만 넣어 모듈 수를 줄입니다(폰 화면에서 찍을 때 한 칸이 커져 잘 읽힘).
+    loadCardAssets(winner, `${window.location.origin}/friends/${winner.id}`).then(assets => { if (active) setCardAssets(assets); }).catch(() => { if (active) feedback.error("카드 이미지를 준비하지 못했어요"); });
     return () => { active = false; };
   }, [winner, cardAssets, feedback]);
   const cardReady = Boolean(winner && cardAssets?.id === winner.id);

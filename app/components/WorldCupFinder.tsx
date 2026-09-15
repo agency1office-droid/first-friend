@@ -8,7 +8,7 @@ import { IconPicture2StackedLine, IconXmarkLine } from "@karrotmarket/react-mono
 import type { Animal } from "../../lib/data";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
-import { buildFindHref, choose, currentPair, expandColorQueries, isDone, pickPool, poolQueries, progress, roundLabel, startBracket, winnerOf, type Answers, type Bracket } from "../../lib/worldcup";
+import { choose, currentPair, expandColorQueries, isDone, pickPool, poolQueries, progress, roundLabel, startBracket, winnerOf, type Answers, type Bracket } from "../../lib/worldcup";
 import { AnimalCard } from "./AnimalCard";
 import { AnimalThumbnail } from "./AnimalThumbnail";
 import { navigateAppBack } from "./AppChrome";
@@ -75,7 +75,7 @@ async function fetchPage(query: string) {
 }
 // 결과 화면에 도달한 판을 같은 탭 안에 남겨 두고, 결과를 본 히스토리 항목에 같은 id를 표식으로 남깁니다.
 // 상세·홈 등으로 나갔다가 뒤로(또는 앞으로) 그 항목에 돌아오면 결과를 복원하고, 홈 바로가기처럼 새 항목으로 들어오면 처음부터 시작합니다.
-// 다시 하기를 누르거나 탭을 닫으면 사라집니다. (vinext는 history.state의 추가 키를 이동 후에도 보존합니다.)
+// 탭을 닫으면 사라집니다. (vinext는 history.state의 추가 키를 이동 후에도 보존합니다.)
 const RESULT_KEY = "ff-worldcup-result-v1";
 const RESULT_MARK = "ffWorldcupResult";
 type SavedRun = { id: string; draft: Draft; page: AnimalPage | null; roundSize: number; pool: Animal[]; filled: number; bracket: Bracket };
@@ -273,11 +273,6 @@ export function WorldCupFinder() {
     setStepIndex(value => value - 1);
   }
 
-  function retry() {
-    writeSavedRun(null);
-    setPhase("steps"); setStepIndex(0); setDraft(EMPTY_DRAFT); setPage(null); setRoundSize(16); setEmpty(false); setPool([]); setFilled(0); setBracket(null); setHistory([]);
-  }
-
   // 사진을 누르면 원본 사진을 모두 보여 줍니다. 목록 사진은 잘려 있거나 얼굴이 두 번째 사진에만 있을 수 있어요.
   function openViewer(animal: Animal) {
     setViewer({ animal, index: 0 });
@@ -311,15 +306,7 @@ export function WorldCupFinder() {
       <h1 id="care-result-title">내 첫 친구 이상형</h1>
       <AnimalCard animal={winner} layout="photo" priority />
       <p className="ff-care-result-summary">{(bracket?.size ?? 1) - 1}번의 선택으로 만난 <strong>{winner.name}</strong><br />{meta(winner)} · {winner.shelter}</p>
-      <div className="ff-worldcup-actions">
-        <ActionButton size="large" variant="neutralWeak" onClick={() => void share(winner)}>공유하기</ActionButton>
-        <ActionButton size="large" variant="neutralWeak" asChild><a href={buildFindHref(answers, bracket?.picks ?? [])}>닮은 친구 더 보기</a></ActionButton>
-      </div>
-      <section className="ff-worldcup-others" aria-labelledby="worldcup-others-title">
-        <h2 id="worldcup-others-title">함께 대결한 친구들</h2>
-        <div className="ff-animal-list">{pool.filter(animal => animal.id !== winner.id).map(animal => <AnimalCard key={animal.id} animal={animal} layout="row" showShelter={false} />)}</div>
-      </section>
-      <p className="ff-care-result-note">입양 문의를 누르면 친구의 상세 페이지에서 보호소에 바로 연락할 수 있어요.</p>
+      <p className="ff-care-result-note">자세히 보기를 누르면 친구의 상세 페이지에서 보호소에 바로 연락할 수 있어요.</p>
     </section>
     : phase === "match" && bracket && roundIntro !== null ? <section className="ff-care-step ff-worldcup-round" aria-labelledby="care-step-title">
       <h1 id="care-step-title" className="ff-visually-hidden">{roundLabel(roundIntro)} 시작</h1>
@@ -364,7 +351,7 @@ export function WorldCupFinder() {
     {/* 대결 화면은 카드 아래 선택 버튼이 곧 다음이라 하단 버튼이 없습니다. */}
     {phase !== "match" && <div className={`ff-readiness-actions ${isResult ? "is-result" : "is-single"}`}>
       {phase === "intro" ? <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={next}>시작하기</ActionButton>
-      : isResult && winner ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={retry}>다시 하기</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" asChild><a href={`/friends/${winner.id}`}>입양 문의하기</a></ActionButton></>
+      : isResult && winner ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={() => void share(winner)}>공유하기</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" asChild><a href={`/friends/${winner.id}`}>자세히 보기</a></ActionButton></>
       : empty ? <ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={() => { setEmpty(false); setStepIndex(0); }}>조건 다시 고르기</ActionButton>
       : <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!canContinue || loading} loading={loading} onClick={next}>{step === "color" ? "후보 찾기" : step === "round" ? "시작하기" : "다음"}</ActionButton>}
     </div>}

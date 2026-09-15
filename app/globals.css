@@ -1732,6 +1732,3 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-worldcup-loading .ff-loading-indicator { width: 48px; height: 48px; }
 .ff-worldcup-loading .ff-loading-indicator span { width: 40px; height: 40px; border-width: 3px; }
 .ff-worldcup-loading h1 { margin: 0; font-size: 17px; line-height: 24px; font-weight: var(--seed-font-weight-bold); color: var(--seed-color-fg-neutral-subtle); }
-.ff-worldcup-actions { display: grid; gap: 8px; width: 100%; max-width: 360px; }
-.ff-worldcup-others { display: grid; gap: 4px; width: 100%; text-align: left; }
-.ff-worldcup-others h2 { margin: 12px 0 0; font-size: 17px; line-height: 24px; }

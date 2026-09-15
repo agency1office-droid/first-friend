@@ -116,22 +116,6 @@ test('a 16 bracket ends after exactly 15 choices with the chosen friend winning'
   assert.equal(bracket.picks.length,15);
 });
 
-test('find link keeps answered filters and infers only the open ones from picks', async t=>{
-  const {buildFindHref}=await loadWorldcup(t);
-  const picks=[animal('1',{ageGroup:'어른 친구',colors:['검정']}),animal('2',{ageGroup:'어른 친구',colors:['갈색']}),animal('3',{ageGroup:'어린 친구',colors:['검정']})];
-  const answered=new URL(buildFindHref(answers,picks),'https://x');
-  assert.equal(answered.pathname,'/find');
-  assert.equal(answered.searchParams.get('size'),'large,xlarge');
-  assert.equal(answered.searchParams.get('age'),'young');
-  assert.equal(answered.searchParams.get('color'),'흰색');
-  assert.equal(answered.searchParams.get('sort'),null);
-  const inferred=new URL(buildFindHref({...answers,scope:'nationwide',size:'all',age:'all',color:'all'},picks),'https://x');
-  assert.equal(inferred.searchParams.get('size'),null);
-  assert.equal(inferred.searchParams.get('age'),'mature');
-  assert.equal(inferred.searchParams.get('color'),'검정');
-  assert.equal(inferred.searchParams.get('sort'),'recent');
-});
-
 test('several colors become one request per color, other conditions kept', async t=>{
   const {poolQueries,expandColorQueries}=await loadWorldcup(t);
   const [first]=poolQueries({...answers,scope:'nationwide',size:'small,medium',color:'흰색,검정'},null);
@@ -141,12 +125,4 @@ test('several colors become one request per color, other conditions kept', async
   // 색이 하나이거나 없으면 그대로 한 번만 요청합니다.
   assert.deepEqual(expandColorQueries('species=cat&color=%ED%9D%B0%EC%83%89&limit=50'),['species=cat&color=%ED%9D%B0%EC%83%89&limit=50']);
   assert.deepEqual(expandColorQueries('species=cat&limit=50'),['species=cat&limit=50']);
-});
-
-test('find link infers a colour from picks when several colours were chosen', async t=>{
-  const {buildFindHref}=await loadWorldcup(t);
-  const picks=[animal('1',{colors:['검정']}),animal('2',{colors:['검정']}),animal('3',{colors:['흰색']})];
-  const url=new URL(buildFindHref({...answers,size:'small,medium',color:'흰색,검정'},picks),'https://x');
-  assert.equal(url.searchParams.get('size'),'small,medium');
-  assert.equal(url.searchParams.get('color'),'검정');
 });

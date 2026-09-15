@@ -6,7 +6,6 @@ export type Answers = { species: "dog" | "cat"; scope: "nearby" | "nationwide"; 
 export type GeoPointLike = { lat: number; lng: number } | null | undefined;
 export type Bracket = { size: number; round: Animal[]; index: number; winners: Animal[]; picks: Animal[] };
 
-const AGE_KEYS: Record<string, string> = { "어린 친구": "young", "청년 친구": "adult", "어른 친구": "mature", "나이 많은 친구": "senior" };
 const NOTICE_DATE = /(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\./g;
 
 // 조건을 덜 중요한 것부터 하나씩 넓힙니다: 털색 → 나이대 → 크기 → 전국. 종은 끝까지 유지합니다.
@@ -92,28 +91,9 @@ export function roundLabel(count: number) { return count === 2 ? "결승" : `${c
 // 한 번 고를 때마다 한 친구가 탈락하므로 전체 선택 수는 항상 후보 수 - 1입니다.
 export function progress(bracket: Bracket) { return bracket.size > 1 ? bracket.picks.length / (bracket.size - 1) : 1; }
 
-function mostCommon(values: string[]) {
-  const counts = new Map<string, number>();
-  for (const value of values) if (value) counts.set(value, (counts.get(value) ?? 0) + 1);
-  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "";
-}
-
-// 답한 조건은 그대로 두고, 상관없음으로 둔 나이대·털색만 고른 친구들에서 가장 잦은 값으로 채웁니다.
 // 털색을 여러 개 고르면 색마다 한 번씩 요청해 합칩니다(API의 color는 한 값만 받음). 색이 하나 이하면 그대로 한 번입니다.
 export function expandColorQueries(query: string) {
   const colors = (new URLSearchParams(query).get("color") ?? "").split(",").map(value => value.trim()).filter(Boolean);
   if (colors.length < 2) return [query];
   return colors.map(color => { const next = new URLSearchParams(query); next.set("color", color); return next.toString(); });
-}
-
-export function buildFindHref(answers: Answers, picks: Animal[]) {
-  const params = new URLSearchParams({ species: answers.species });
-  if (answers.size !== "all") params.set("size", answers.size);
-  const age = answers.age !== "all" ? answers.age : AGE_KEYS[mostCommon(picks.map(pick => pick.ageGroup))] ?? "";
-  if (age) params.set("age", age);
-  // 친구 찾기는 털색을 하나만 받으므로, 여러 색을 골랐을 때는 상관없음과 같이 선택 결과에서 추론합니다.
-  const color = answers.color !== "all" && !answers.color.includes(",") ? answers.color : mostCommon(picks.map(pick => pick.colors[0] ?? ""));
-  if (color) params.set("color", color);
-  if (answers.scope === "nationwide") params.set("sort", "recent");
-  return `/find?${params}`;
 }

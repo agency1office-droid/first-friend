@@ -17,6 +17,7 @@ type Props = {
   assets: CardAssets | null;
 };
 
+const QR_SIZE = 145;
 const TONE: Record<Tone, [string, string]> = { positive: [COLOR.positive, COLOR.positiveWeak], informative: [COLOR.informative, COLOR.informativeWeak], neutral: [COLOR.muted, COLOR.neutralWeak] };
 
 /** 카드에 들어갈 사진(서버 압축 썸네일)·붉은 실·워드마크·상세 페이지 QR을 data URL로 받습니다. */
@@ -25,8 +26,9 @@ export async function loadCardAssets(animal: Animal, detailUrl: string): Promise
     toDataUrl(animal.thumbnail || animal.image),
     toDataUrl("/worldcup-string-heart.webp"),
     toDataUrl("/logo-wordmark.webp"),
-    // 오류정정 L(7%)이면 짧은 주소가 29×29 모듈(버전 3)에 들어가 한 칸이 커져 폰 화면에서도 잘 읽힙니다.
-    QRCode.toDataURL(detailUrl, { width: 240, margin: 0, errorCorrectionLevel: "L", color: { dark: COLOR.ink, light: COLOR.cream } }),
+    // 오류정정 L(7%)이면 짧은 주소가 29×29 모듈(버전 3)에 들어갑니다. 카드에 놓는 크기(145px = 29×5px)로 바로 만들어
+    // 브라우저가 다시 축소하며 흐려지는 일을 막습니다(축소본은 폰 화면 폭에서 판독이 깨졌음).
+    QRCode.toDataURL(detailUrl, { width: QR_SIZE, margin: 0, errorCorrectionLevel: "L", color: { dark: COLOR.ink, light: COLOR.white } }),
   ]);
   return { id: animal.id, photo, string, wordmark, qr, date: cardDate() };
 }
@@ -66,9 +68,9 @@ export function WorldCupCard({ ref, headline, breed, number, meta, journey, tast
     {/* 여정 지표 한 줄: 왼쪽 선택, 오른쪽 취향 */}
     <text x={108} y={1108} fontSize={22} fontWeight={500} fill={COLOR.muted}>선택 <tspan fontWeight={700} fill={COLOR.ink}>{journey}</tspan></text>
     <text x={972} y={1108} textAnchor="end" fontSize={22} fontWeight={500} fill={COLOR.muted}>취향 <tspan fontWeight={700} fill={COLOR.ink} fontSize={fitFontSize(taste, 22, 520)}>{taste}</tspan></text>
-    {/* 발: 상세 페이지 QR(146px, 흰 여백 7px. 폰 화면 폭에서도 읽히는 크기) · 보호소 · 공고 상태 */}
+    {/* 발: 상세 페이지 QR(145px, 흰 여백 ~8px. 폰 화면 폭에서도 읽히는 크기) · 보호소 · 공고 상태 */}
     <rect x={108} y={1122} width={160} height={160} rx={14} fill={COLOR.white} stroke={COLOR.line} strokeWidth={2} />
-    {assets && <image href={assets.qr} x={115} y={1129} width={146} height={146} />}
+    {assets && <image href={assets.qr} x={116} y={1130} width={QR_SIZE} height={QR_SIZE} />}
     <text x={292} y={1166} fontSize={fitFontSize(shelter, 24, 972 - 292 - pillWidth - 24)} fontWeight={700} fill={COLOR.ink}>{shelter}</text>
     <rect x={972 - pillWidth} y={1142} width={pillWidth} height={34} rx={17} fill={toneBg} />
     <text x={972 - pillWidth / 2} y={1166} textAnchor="middle" fontSize={20} fontWeight={700} fill={toneFg}>{status.statusLabel}</text>

@@ -23,7 +23,7 @@ const TONE: Record<Tone, [string, string]> = { positive: [COLOR.positive, COLOR.
 export async function loadCardAssets(animal: Animal, detailUrl: string): Promise<CardAssets> {
   const [photo, string, wordmark, qr] = await Promise.all([
     toDataUrl(animal.thumbnail || animal.image),
-    toDataUrl("/worldcup-string.webp"),
+    toDataUrl("/worldcup-string-heart.webp"),
     toDataUrl("/logo-wordmark.webp"),
     QRCode.toDataURL(detailUrl, { width: 240, margin: 0, color: { dark: COLOR.ink, light: COLOR.cream } }),
   ]);
@@ -33,11 +33,11 @@ export async function loadCardAssets(animal: Animal, detailUrl: string): Promise
 export function WorldCupCard({ ref, headline, breed, number, meta, journey, taste, shelter, status, assets }: Props) {
   const [toneFg, toneBg] = TONE[status.tone] ?? TONE.neutral;
   const pillWidth = status.statusLabel.length * 20 + 40;
-  // 세로 배분(1350): 흐린 사진 바탕 위 카드 120~1290. 위쪽 띠(~290)는 붉은 실, 머리 → 사진 → 이름 → 지표 두 줄 → QR·보호소, 카드 아래 띠에 날짜·출처.
+  // 세로 배분(1350): 흐린 사진 바탕 위 카드 120~1290. 하트 실이 카드 위를 가로지르고, 머리 → 큰 사진(568px) → 이름 → 선택·취향 한 줄 → QR·보호소, 카드 아래 띠에 날짜·출처.
   // 바탕(.wc-backdrop)은 우승 친구 사진을 크게 흐린 뒤 어둡게 덮은 것. 화면에서는 CSS로 숨기고 페이지 배경(같은 사진)이 비치며, 내보낸 PNG에는 그대로 들어갑니다(독립 SVG에는 페이지 CSS가 안 먹음).
   return <svg ref={ref} className="ff-worldcup-card" viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`} role="img" aria-label={`${headline}, ${breed} 인연 카드`} fontFamily={FONT}>
     <defs>
-      <clipPath id="wc-photo"><rect x={350} y={486} width={380} height={380} rx={40} /></clipPath>
+      <clipPath id="wc-photo"><rect x={256} y={412} width={568} height={568} rx={44} /></clipPath>
       <filter id="wc-backdrop-blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="38" /></filter>
       <filter id="wc-card-shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="16" stdDeviation="20" floodColor="#000000" floodOpacity="0.35" /></filter>
       <linearGradient id="wc-shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#101424" stopOpacity="0.55" /><stop offset="0.45" stopColor="#101424" stopOpacity="0.28" /><stop offset="1" stopColor="#101424" stopOpacity="0.62" /></linearGradient>
@@ -48,36 +48,31 @@ export function WorldCupCard({ ref, headline, breed, number, meta, journey, tast
       <rect width={CARD_WIDTH} height={CARD_HEIGHT} fill="url(#wc-shade)" />
     </g>
     <rect x={60} y={120} width={960} height={1170} rx={48} fill={COLOR.cream} filter="url(#wc-card-shadow)" />
-    {/* 붉은 실(인연)이 카드 위쪽을 가로지르며 걸려 있는 모습 */}
-    {assets && <image href={assets.string} x={-160} y={-20} width={1400} height={466} preserveAspectRatio="xMidYMid meet" opacity={0.92} />}
+    {/* 하트 모양 붉은 실(인연)이 카드 위쪽을 가로지르는 모습. 하트는 카드 오른쪽 위에 옵니다. */}
+    {assets && <image href={assets.string} x={-70} y={-70} width={1250} height={442} preserveAspectRatio="xMidYMid meet" />}
     {/* 머리: 워드마크 · 카드 번호(공고 번호 끝자리) · 카드 종류 · 헤드라인 */}
-    {assets && <image href={assets.wordmark} x={108} y={300} width={240} height={36} preserveAspectRatio="xMinYMid meet" />}
-    {number && <text x={972} y={330} textAnchor="end" fontSize={26} fontWeight={600} fill={COLOR.subtle}>No. {number}</text>}
-    <rect x={350} y={362} width={380} height={48} rx={24} fill={COLOR.brandWeak} />
-    <text x={540} y={395} textAnchor="middle" fontSize={23} fontWeight={700} fill={COLOR.brand}>이상형 월드컵 · 인연 카드</text>
-    <text x={540} y={458} textAnchor="middle" fontSize={fitFontSize(headline, 40, 880)} fontWeight={700} fill={COLOR.ink}>{headline}</text>
+    {assets && <image href={assets.wordmark} x={108} y={246} width={240} height={36} preserveAspectRatio="xMinYMid meet" />}
+    {number && <text x={972} y={276} textAnchor="end" fontSize={26} fontWeight={600} fill={COLOR.subtle}>No. {number}</text>}
+    <rect x={350} y={300} width={380} height={46} rx={23} fill={COLOR.brandWeak} />
+    <text x={540} y={331} textAnchor="middle" fontSize={23} fontWeight={700} fill={COLOR.brand}>이상형 월드컵 · 인연 카드</text>
+    <text x={540} y={388} textAnchor="middle" fontSize={fitFontSize(headline, 40, 880)} fontWeight={700} fill={COLOR.ink}>{headline}</text>
     {/* 주인공 사진 */}
-    <rect x={350} y={486} width={380} height={380} rx={40} fill={COLOR.neutralWeak} />
-    {assets && <image href={assets.photo} x={350} y={486} width={380} height={380} preserveAspectRatio="xMidYMid slice" clipPath="url(#wc-photo)" />}
-    <rect x={350} y={486} width={380} height={380} rx={40} fill="none" stroke={COLOR.line} strokeWidth={2} />
-    <text x={540} y={926} textAnchor="middle" fontSize={fitFontSize(breed, 54, 820)} fontWeight={800} fill={COLOR.ink}>{breed}</text>
-    <text x={540} y={962} textAnchor="middle" fontSize={25} fontWeight={500} fill={COLOR.muted}>{meta}</text>
-    {/* 여정 지표: 선택 · 취향 */}
-    <line x1={108} y1={990} x2={972} y2={990} stroke={COLOR.line} strokeWidth={2} />
-    <text x={108} y={1026} fontSize={25} fontWeight={500} fill={COLOR.muted}>선택</text>
-    <text x={972} y={1026} textAnchor="end" fontSize={25} fontWeight={700} fill={COLOR.ink}>{journey}</text>
-    <line x1={108} y1={1046} x2={972} y2={1046} stroke={COLOR.line} strokeWidth={2} />
-    <text x={108} y={1082} fontSize={25} fontWeight={500} fill={COLOR.muted}>취향</text>
-    <text x={972} y={1082} textAnchor="end" fontSize={fitFontSize(taste, 25, 640)} fontWeight={700} fill={COLOR.ink}>{taste}</text>
-    <line x1={108} y1={1102} x2={972} y2={1102} stroke={COLOR.line} strokeWidth={2} />
-    {/* 발: 상세 페이지 QR(폰 화면에서 다른 폰으로 찍을 수 있게 140px, 흰 여백 15px) · 보호소 · 공고 상태 */}
-    <rect x={108} y={1118} width={170} height={170} rx={14} fill={COLOR.white} stroke={COLOR.line} strokeWidth={2} />
-    {assets && <image href={assets.qr} x={123} y={1133} width={140} height={140} />}
-    <text x={302} y={1160} fontSize={fitFontSize(shelter, 24, 972 - 302 - pillWidth - 24)} fontWeight={700} fill={COLOR.ink}>{shelter}</text>
-    <rect x={972 - pillWidth} y={1134} width={pillWidth} height={34} rx={17} fill={toneBg} />
-    <text x={972 - pillWidth / 2} y={1158} textAnchor="middle" fontSize={20} fontWeight={700} fill={toneFg}>{status.statusLabel}</text>
-    <text x={302} y={1204} fontSize={22} fontWeight={500} fill={COLOR.muted}>지금 보호소에서 기다리고 있어요</text>
-    <text x={302} y={1238} fontSize={19} fontWeight={500} fill={COLOR.subtle}>QR을 찍으면 이 친구의 상세 페이지로 바로 가요</text>
+    <rect x={256} y={412} width={568} height={568} rx={44} fill={COLOR.neutralWeak} />
+    {assets && <image href={assets.photo} x={256} y={412} width={568} height={568} preserveAspectRatio="xMidYMid slice" clipPath="url(#wc-photo)" />}
+    <rect x={256} y={412} width={568} height={568} rx={44} fill="none" stroke={COLOR.line} strokeWidth={2} />
+    <text x={540} y={1040} textAnchor="middle" fontSize={fitFontSize(breed, 54, 820)} fontWeight={800} fill={COLOR.ink}>{breed}</text>
+    <text x={540} y={1074} textAnchor="middle" fontSize={25} fontWeight={500} fill={COLOR.muted}>{meta}</text>
+    {/* 여정 지표 한 줄: 왼쪽 선택, 오른쪽 취향 */}
+    <text x={108} y={1108} fontSize={22} fontWeight={500} fill={COLOR.muted}>선택 <tspan fontWeight={700} fill={COLOR.ink}>{journey}</tspan></text>
+    <text x={972} y={1108} textAnchor="end" fontSize={22} fontWeight={500} fill={COLOR.muted}>취향 <tspan fontWeight={700} fill={COLOR.ink} fontSize={fitFontSize(taste, 22, 520)}>{taste}</tspan></text>
+    {/* 발: 상세 페이지 QR(132px, 흰 여백 9px) · 보호소 · 공고 상태 */}
+    <rect x={108} y={1130} width={150} height={150} rx={14} fill={COLOR.white} stroke={COLOR.line} strokeWidth={2} />
+    {assets && <image href={assets.qr} x={117} y={1139} width={132} height={132} />}
+    <text x={282} y={1168} fontSize={fitFontSize(shelter, 24, 972 - 282 - pillWidth - 24)} fontWeight={700} fill={COLOR.ink}>{shelter}</text>
+    <rect x={972 - pillWidth} y={1144} width={pillWidth} height={34} rx={17} fill={toneBg} />
+    <text x={972 - pillWidth / 2} y={1168} textAnchor="middle" fontSize={20} fontWeight={700} fill={toneFg}>{status.statusLabel}</text>
+    <text x={282} y={1208} fontSize={22} fontWeight={500} fill={COLOR.muted}>지금 보호소에서 기다리고 있어요</text>
+    <text x={282} y={1240} fontSize={19} fontWeight={500} fill={COLOR.subtle}>QR을 찍으면 이 친구의 상세 페이지로 바로 가요</text>
     {/* 카드 아래 띠: 날짜 · 출처 */}
     <text x={540} y={1326} textAnchor="middle" fontSize={20} fontWeight={500} fill={COLOR.white} opacity={0.72}>{assets?.date ? `${assets.date} · ` : ""}국가동물보호정보시스템 공고 기준 · firstfriend.me</text>
   </svg>;

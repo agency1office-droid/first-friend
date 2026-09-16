@@ -1753,5 +1753,10 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-worldcup-card { display: block; width: 100%; max-width: 400px; height: auto; }
 /* 화면에서는 SVG 안 배경을 숨겨 페이지의 흐린 사진이 비치게 하고, 내보낸 PNG에는 SVG 안 배경이 들어갑니다(독립 SVG에는 이 CSS가 적용되지 않음). */
 .ff-worldcup-card .wc-backdrop { display: none; }
-.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-actions { background: rgba(16, 20, 36, .42); -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2); }
-.ff-quiz-shell [data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-actions::before { background: linear-gradient(to bottom, transparent, rgba(16, 20, 36, .42)); }
+/* 결과 화면 하단 버튼은 흐린 사진 위에 바로 놓입니다(바 배경·위쪽 그라데이션 없음). */
+.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-actions { background: transparent; }
+.ff-quiz-shell [data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-actions::before { display: none; }
+/* 카드 아래 공유하기: 아이콘 + 글자만 있는 흰 텍스트 버튼 */
+.ff-worldcup-share { display: inline-flex; align-items: center; gap: 8px; margin: 4px auto 0; padding: 10px 16px; border: 0; border-radius: 12px; background: transparent; color: var(--seed-color-palette-static-white); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.ff-worldcup-share svg { width: 20px; height: 20px; }
+.ff-worldcup-share:disabled { opacity: .5; cursor: default; }

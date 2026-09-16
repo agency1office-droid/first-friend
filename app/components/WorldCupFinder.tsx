@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Chip } from "seed-design/ui/chip";
-import { IconPicture2StackedLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
+import { IconArrowDownLine, IconArrowUpBracketDownLine, IconChevronRightLine, IconPicture2StackedLine, IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import type { Animal } from "../../lib/data";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
@@ -147,6 +147,7 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
   const cardRef = useRef<SVGSVGElement>(null);
   const [cardAssets, setCardAssets] = useState<CardAssets | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const scroller = document.querySelector<HTMLElement>(".ff-quiz-shell .ff-readiness > section");
@@ -327,24 +328,39 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
     }
   }
 
-  // 인연 카드를 PNG로 뽑아 모바일에서는 기기 공유 시트로 보냅니다(인스타 스토리·카톡에 이미지로).
-  // PC(768px 이상, openDetailFlow와 같은 기준)나 파일 공유가 안 되는 환경은 PNG 저장 + 링크 복사로 대신합니다.
+  // 화면의 카드 SVG를 PNG 파일로 뽑습니다(자산이 준비된 뒤에만 버튼이 눌림).
+  async function cardPng(winner: Animal) {
+    const card = cardRef.current;
+    if (!card || cardAssets?.id !== winner.id) throw new Error("카드가 아직 준비되지 않았어요");
+    return new File([await exportCardPng(card)], `firstfriend-${winner.id}.png`, { type: "image/png" });
+  }
+
+  // 카드 저장: PNG를 기기에 내려받습니다.
+  async function saveCard(winner: Animal) {
+    setSaving(true);
+    try {
+      const file = await cardPng(winner);
+      const link = document.createElement("a"); link.href = URL.createObjectURL(file); link.download = file.name; link.click();
+      window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      feedback.success("카드를 저장했어요");
+    } catch {
+      feedback.error("카드를 저장하지 못했어요");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // 공유하기: 카드 PNG를 기기 공유 시트로(인스타 스토리·카톡에 이미지로). 파일 공유가 안 되면 링크만 공유, 그것도 안 되면 링크 복사.
   async function share(winner: Animal) {
     const url = detailUrl(winner);
     const title = `퍼스트 프렌드 · ${winner.name}`, text = `이상형 월드컵에서 끝까지 남은 ${winner.name} 친구예요.`;
     setSharing(true);
     try {
-      const card = cardRef.current;
-      const png = card && cardAssets?.id === winner.id ? await exportCardPng(card) : null;
-      const file = png ? new File([png], `firstfriend-${winner.id}.png`, { type: "image/png" }) : null;
-      const mobile = window.matchMedia("(max-width: 767px)").matches;
-      if (mobile && file && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title, text: `${text}\n${url}` }); return; }
-      if (file) {
-        const link = document.createElement("a"); link.href = URL.createObjectURL(file); link.download = file.name; link.click();
-        window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-      } else if (mobile && navigator.share) { await navigator.share({ title, text, url }); return; }
+      const file = await cardPng(winner);
+      if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title, text: `${text}\n${url}` }); return; }
+      if (navigator.share) { await navigator.share({ title, text, url }); return; }
       await navigator.clipboard.writeText(url);
-      feedback.success(file ? "카드를 저장하고 링크를 복사했어요" : "공유 링크를 복사했어요");
+      feedback.success("공유 링크를 복사했어요");
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return; // 공유 시트를 그냥 닫은 경우
       feedback.error("공유를 완료하지 못했어요");
@@ -375,7 +391,8 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
     : isResult && winner ? <section className="ff-care-result" aria-labelledby="care-result-title">
       <h1 id="care-result-title">{(bracket?.size ?? 1) - 1}번의 선택으로 만난 내 첫 친구</h1>
       <WorldCupCard ref={cardRef} headline={member?.name.trim() ? `${member.name.trim().slice(0, 8)}님과 이어진 첫 친구` : "나와 이어진 첫 친구"} breed={cardBreed(winner)} number={winner.name.split(" · ")[1] ?? ""} meta={meta(winner)} journey={`${bracket?.size ?? 16}강 · ${(bracket?.size ?? 1) - 1}번의 선택`} taste={tasteLabel(answers)} shelter={winner.shelter} status={getAnimalPublicStatus(winner)} assets={cardReady ? cardAssets : null} />
-      <p className="ff-care-result-note">공유하기를 누르면 이 카드가 이미지로 저장·공유되고, 자세히 보기에서 보호소에 바로 연락할 수 있어요.</p>
+      <p className="ff-care-result-note">마음에 남은 친구를 저장하고, 천천히 알아보세요.</p>
+      <button type="button" className="ff-worldcup-share" disabled={!cardReady || sharing} onClick={() => void share(winner)}><IconArrowUpBracketDownLine aria-hidden />공유하기</button>
     </section>
     : phase === "match" && bracket && roundIntro !== null ? <section className="ff-care-step ff-worldcup-round" aria-labelledby="care-step-title">
       <h1 id="care-step-title" className="ff-visually-hidden">{roundLabel(roundIntro)} 시작</h1>
@@ -420,7 +437,7 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
     {/* 대결 화면은 카드 아래 선택 버튼이 곧 다음이라 하단 버튼이 없습니다. */}
     {phase !== "match" && <div className={`ff-readiness-actions ${isResult ? "is-result" : "is-single"}`}>
       {phase === "intro" ? <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={next}>시작하기</ActionButton>
-      : isResult && winner ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" loading={sharing} disabled={!cardReady || sharing} onClick={() => void share(winner)}>공유하기</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" asChild><a href={`/friends/${winner.id}`}>자세히 보기</a></ActionButton></>
+      : isResult && winner ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" loading={saving} disabled={!cardReady || saving} onClick={() => void saveCard(winner)}><IconArrowDownLine aria-hidden />카드 저장</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" asChild><a href={`/friends/${winner.id}`}>이 친구 알아보기<IconChevronRightLine aria-hidden /></a></ActionButton></>
       : empty ? <ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={() => { setEmpty(false); setStepIndex(0); }}>조건 다시 고르기</ActionButton>
       : <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!canContinue || loading} loading={loading} onClick={next}>{step === "color" ? "후보 찾기" : step === "round" ? "시작하기" : "다음"}</ActionButton>}
     </div>}

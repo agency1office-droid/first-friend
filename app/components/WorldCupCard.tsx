@@ -25,7 +25,8 @@ export async function loadCardAssets(animal: Animal, detailUrl: string): Promise
     toDataUrl(animal.thumbnail || animal.image),
     toDataUrl("/worldcup-string-heart.webp"),
     toDataUrl("/logo-wordmark.webp"),
-    QRCode.toDataURL(detailUrl, { width: 240, margin: 0, color: { dark: COLOR.ink, light: COLOR.cream } }),
+    // 오류정정 L(7%)이면 짧은 주소가 29×29 모듈(버전 3)에 들어가 한 칸이 커져 폰 화면에서도 잘 읽힙니다.
+    QRCode.toDataURL(detailUrl, { width: 240, margin: 0, errorCorrectionLevel: "L", color: { dark: COLOR.ink, light: COLOR.cream } }),
   ]);
   return { id: animal.id, photo, string, wordmark, qr, date: cardDate() };
 }
@@ -65,14 +66,14 @@ export function WorldCupCard({ ref, headline, breed, number, meta, journey, tast
     {/* 여정 지표 한 줄: 왼쪽 선택, 오른쪽 취향 */}
     <text x={108} y={1108} fontSize={22} fontWeight={500} fill={COLOR.muted}>선택 <tspan fontWeight={700} fill={COLOR.ink}>{journey}</tspan></text>
     <text x={972} y={1108} textAnchor="end" fontSize={22} fontWeight={500} fill={COLOR.muted}>취향 <tspan fontWeight={700} fill={COLOR.ink} fontSize={fitFontSize(taste, 22, 520)}>{taste}</tspan></text>
-    {/* 발: 상세 페이지 QR(132px, 흰 여백 9px) · 보호소 · 공고 상태 */}
-    <rect x={108} y={1130} width={150} height={150} rx={14} fill={COLOR.white} stroke={COLOR.line} strokeWidth={2} />
-    {assets && <image href={assets.qr} x={117} y={1139} width={132} height={132} />}
-    <text x={282} y={1168} fontSize={fitFontSize(shelter, 24, 972 - 282 - pillWidth - 24)} fontWeight={700} fill={COLOR.ink}>{shelter}</text>
-    <rect x={972 - pillWidth} y={1144} width={pillWidth} height={34} rx={17} fill={toneBg} />
-    <text x={972 - pillWidth / 2} y={1168} textAnchor="middle" fontSize={20} fontWeight={700} fill={toneFg}>{status.statusLabel}</text>
-    <text x={282} y={1208} fontSize={22} fontWeight={500} fill={COLOR.muted}>지금 보호소에서 기다리고 있어요</text>
-    <text x={282} y={1240} fontSize={19} fontWeight={500} fill={COLOR.subtle}>QR을 찍으면 이 친구의 상세 페이지로 바로 가요</text>
+    {/* 발: 상세 페이지 QR(146px, 흰 여백 7px. 폰 화면 폭에서도 읽히는 크기) · 보호소 · 공고 상태 */}
+    <rect x={108} y={1122} width={160} height={160} rx={14} fill={COLOR.white} stroke={COLOR.line} strokeWidth={2} />
+    {assets && <image href={assets.qr} x={115} y={1129} width={146} height={146} />}
+    <text x={292} y={1166} fontSize={fitFontSize(shelter, 24, 972 - 292 - pillWidth - 24)} fontWeight={700} fill={COLOR.ink}>{shelter}</text>
+    <rect x={972 - pillWidth} y={1142} width={pillWidth} height={34} rx={17} fill={toneBg} />
+    <text x={972 - pillWidth / 2} y={1166} textAnchor="middle" fontSize={20} fontWeight={700} fill={toneFg}>{status.statusLabel}</text>
+    <text x={292} y={1208} fontSize={22} fontWeight={500} fill={COLOR.muted}>지금 보호소에서 기다리고 있어요</text>
+    <text x={292} y={1242} fontSize={19} fontWeight={500} fill={COLOR.subtle}>QR을 찍으면 이 친구의 상세 페이지로 바로 가요</text>
     {/* 카드 아래 띠: 날짜 · 출처 */}
     <text x={540} y={1326} textAnchor="middle" fontSize={20} fontWeight={500} fill={COLOR.white} opacity={0.72}>{assets?.date ? `${assets.date} · ` : ""}국가동물보호정보시스템 공고 기준 · firstfriend.me</text>
   </svg>;

@@ -9,7 +9,6 @@ import type { Animal } from "../../lib/data";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
 import { choose, currentPair, expandColorQueries, isDone, pickPool, poolQueries, progress, roundLabel, startBracket, winnerOf, type Answers, type Bracket } from "../../lib/worldcup";
-import { getAnimalPublicStatus } from "../../lib/animal-public-status";
 import { AnimalThumbnail } from "./AnimalThumbnail";
 import { exportCardPng, loadCardAssets, WorldCupCard, type CardAssets } from "./WorldCupCard";
 import { navigateAppBack } from "./AppChrome";
@@ -67,14 +66,6 @@ function meta(animal: Animal) {
 }
 function photosOf(animal: Animal) {
   return [...new Set([animal.image, ...(animal.images ?? [])].map(value => value.trim()).filter(Boolean))];
-}
-// 인연 카드의 "취향" 줄: 종 + 고른 크기·털색. 상관없음은 적지 않습니다.
-const SIZE_LABEL: Record<string, string> = { small: "소형", medium: "중형", large: "대형", xlarge: "대형" };
-function tasteLabel(answers: Answers) {
-  const parts = [answers.species === "cat" ? "고양이" : "강아지"];
-  if (answers.size !== "all") parts.push([...new Set(answers.size.split(",").map(value => SIZE_LABEL[value] ?? value))].join("·"));
-  if (answers.color !== "all") parts.push(answers.color.split(",").join("·"));
-  return parts.join(" · ");
 }
 function detailUrl(animal: Animal) {
   return `${window.location.origin}/friends/${animal.id}?via=worldcup`;
@@ -390,8 +381,8 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
     {phase === "intro" ? <section className="ff-readiness-intro-content" aria-labelledby="worldcup-intro-title"><div className="ff-readiness-intro-badge">이상형 월드컵</div><h1 id="worldcup-intro-title">나와 인연이 될<br />친구를 찾아볼까요?</h1>{member?.admin && <ActionButton size="small" variant="neutralWeak" loading={loading} onClick={() => void previewResult()}>관리자 · 결과 화면 미리보기</ActionButton>}</section>
     : isResult && winner ? <section className="ff-care-result" aria-labelledby="care-result-title">
       <h1 id="care-result-title">{(bracket?.size ?? 1) - 1}번의 선택으로 만난 내 첫 친구</h1>
-      <WorldCupCard ref={cardRef} headline={member?.name.trim() ? `${member.name.trim().slice(0, 8)}님과 이어진 첫 친구` : "나와 이어진 첫 친구"} breed={cardBreed(winner)} number={winner.name.split(" · ")[1] ?? ""} meta={meta(winner)} journey={`${bracket?.size ?? 16}강 · ${(bracket?.size ?? 1) - 1}번의 선택`} taste={tasteLabel(answers)} shelter={winner.shelter} status={getAnimalPublicStatus(winner)} assets={cardReady ? cardAssets : null} />
-      <p className="ff-care-result-note">마음에 남은 친구를 저장하고, 천천히 알아보세요.</p>
+      <WorldCupCard ref={cardRef} headline={member?.name.trim() ? `${member.name.trim().slice(0, 8)}님과 이어진 첫 친구` : "나와 이어진 첫 친구"} breed={cardBreed(winner)} number={winner.name.split(" · ")[1] ?? ""} meta={meta(winner)} shelter={winner.shelter} assets={cardReady ? cardAssets : null} />
+      <p className="ff-care-result-note">마음에 남은 이 친구를 가족과 친구에게도 공유해 보세요.</p>
       <button type="button" className="ff-worldcup-share" disabled={!cardReady || sharing} onClick={() => void share(winner)}><IconArrowUpBracketDownLine aria-hidden />공유하기</button>
     </section>
     : phase === "match" && bracket && roundIntro !== null ? <section className="ff-care-step ff-worldcup-round" aria-labelledby="care-step-title">

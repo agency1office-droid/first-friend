@@ -7,6 +7,7 @@ export const metadata: Metadata = { title: "입양 전 준비 확인" };
 
 export default async function AdoptionPreparationQuizPage() {
   const definition = getQuizDefinition("adoption-prep");
-  const memberName = (await getAuthenticatedMember())?.displayName ?? null;
-  return <ReadinessQuiz quizId={definition?.slug ?? "adoption-prep"} memberName={memberName} />;
+  const member = await getAuthenticatedMember();
+  const memberName = member?.displayName ?? null, admin = member?.role === "admin";
+  return <ReadinessQuiz quizId={definition?.slug ?? "adoption-prep"} memberName={memberName} admin={admin} />;
 }

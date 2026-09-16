@@ -18,9 +18,10 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
 export default async function QuizPage({ params }: { params: { slug: string } }) {
   const definition = getQuizDefinition(params.slug);
   if (!definition) notFound();
-  // 로그인한 회원이면 인증서 카드에 이름을 넣습니다. 쿠키가 없으면 DB를 읽지 않습니다.
-  const memberName = (await getAuthenticatedMember())?.displayName ?? null;
-  if (definition.renderer === "care-readiness") return <CareReadinessFlow memberName={memberName} />;
-  if (definition.renderer === "adoption-readiness") return <ReadinessQuiz quizId={definition.slug} memberName={memberName} />;
+  // 로그인한 회원이면 인증서 카드에 이름을 넣고, 관리자에게는 인트로에 결과 화면 미리보기를 보여 줍니다. 쿠키가 없으면 DB를 읽지 않습니다.
+  const member = await getAuthenticatedMember();
+  const memberName = member?.displayName ?? null, admin = member?.role === "admin";
+  if (definition.renderer === "care-readiness") return <CareReadinessFlow memberName={memberName} admin={admin} />;
+  if (definition.renderer === "adoption-readiness") return <ReadinessQuiz quizId={definition.slug} memberName={memberName} admin={admin} />;
   notFound();
 }

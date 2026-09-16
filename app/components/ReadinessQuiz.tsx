@@ -45,7 +45,7 @@ const speciesSafety: Record<Species, Question["options"]> = {
   dog: ["몸에 맞는 하네스·리드줄·인식표를 확인해요", "목줄 없이 자유롭게 걸어요", "짧은 줄이면 충분해요"],
 };
 
-export function ReadinessQuiz({ onClose, quizId = "adoption-prep", memberName = null }: { onClose?: () => void; quizId?: string; memberName?: string | null }) {
+export function ReadinessQuiz({ onClose, quizId = "adoption-prep", memberName = null, admin = false }: { onClose?: () => void; quizId?: string; memberName?: string | null; admin?: boolean }) {
   const quizDefinition = getQuizDefinition(quizId);
   const certRef = useRef<CertificateHandle>(null);
   const [phase, setPhase] = useState<"intro" | "species" | "questions" | "result">("intro");
@@ -229,7 +229,8 @@ export function ReadinessQuiz({ onClose, quizId = "adoption-prep", memberName = 
     setPreviewResult("");
     setShowResult(false);
   }
-  const previewEnabled = process.env.NODE_ENV !== "production";
+  // 결과 화면 미리보기는 관리자에게 항상, 개발 환경에서는 누구에게나 보입니다(이상형 월드컵 인트로와 같은 용도).
+  const previewEnabled = admin || process.env.NODE_ENV !== "production";
   function closeQuiz() {
     if (onClose) {
       onClose();
@@ -267,7 +268,7 @@ export function ReadinessQuiz({ onClose, quizId = "adoption-prep", memberName = 
     <ReadinessAppBar title={quizDefinition?.title ?? "입양 전 준비 확인"} className={phase === "intro" ? "ff-readiness-intro-appbar" : ""} onBack={phase === "intro" ? closeQuiz : previous} />
     {isProgressPage && <div className="ff-readiness-progress" role="progressbar" aria-label="입양 전 준비 진행률" aria-valuemin={1} aria-valuemax={totalPages} aria-valuenow={pageNumber}><div style={{ width: `${progressPercent}%` }} /></div>}
 
-    {phase === "intro" && <section className="ff-readiness-intro-content" aria-labelledby="readiness-intro-title"><div className="ff-readiness-intro-badge">{quizDefinition?.intro.badge ?? "준비 가이드"}</div><h1 id="readiness-intro-title">{quizDefinition?.intro.title ?? "반려동물과\n함께할 준비하기"}</h1><p className="ff-readiness-intro-lead">{quizDefinition?.intro.lead ?? "입양 전 필요한 내용을 확인해 보세요."}</p>{previewEnabled && <label className="ff-readiness-preview-control ff-readiness-preview-control-intro"><span className="ff-visually-hidden">결과 미리보기</span><select value={previewResult} onChange={(event) => preview(event.target.value as PreviewResult)} aria-label="결과 미리보기"><option value="">결과 보기</option><option value="success">성공</option><option value="failure">실패</option></select></label>}</section>}
+    {phase === "intro" && <section className="ff-readiness-intro-content" aria-labelledby="readiness-intro-title"><div className="ff-readiness-intro-badge">{quizDefinition?.intro.badge ?? "준비 가이드"}</div><h1 id="readiness-intro-title">{quizDefinition?.intro.title ?? "반려동물과\n함께할 준비하기"}</h1><p className="ff-readiness-intro-lead">{quizDefinition?.intro.lead ?? "입양 전 필요한 내용을 확인해 보세요."}</p>{previewEnabled && <label className="ff-readiness-preview-control ff-readiness-preview-control-intro"><span className="ff-visually-hidden">결과 미리보기</span><select value={previewResult} onChange={(event) => preview(event.target.value as PreviewResult)} aria-label="결과 미리보기"><option value="">관리자 · 결과 화면 미리보기</option><option value="success">성공</option><option value="failure">실패</option></select></label>}</section>}
 
     {/* ff-readiness-species-page uses the shared ff-readiness-species-grid, ff-readiness-species-description, src="/cat-selection.webp", and src="/dog-selection.webp": <h2 id="readiness-species-title"><span className="ff-readiness-question-label" */}
     {phase === "species" && <SpeciesSelectionStep titleId="readiness-species-title" question="어떤 친구를 만나고 싶나요?" description="선택한 친구에 맞춰 입양 전에 알아둘 내용을 확인해 볼게요." species={species} onSpeciesChange={setSpecies} />}

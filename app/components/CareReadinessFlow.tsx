@@ -78,7 +78,7 @@ const preparationCategoriesFor = (items: PreparationItem[]): PreparationCategory
   },
 ];
 
-export function CareReadinessFlow({ memberName = null }: { memberName?: string | null } = {}) {
+export function CareReadinessFlow({ memberName = null, admin = false }: { memberName?: string | null; admin?: boolean } = {}) {
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [species, setSpecies] = useState<Species | null>(null);
@@ -139,6 +139,15 @@ export function CareReadinessFlow({ memberName = null }: { memberName?: string |
     setStarted(true);
   }
 
+  // 관리자 인트로의 결과 화면 미리보기: 강아지 기준으로 모든 항목을 준비된 상태로 채우고 결과로 건너뜁니다.
+  function preview() {
+    const items = preparationItemsFor("dog");
+    setSpecies("dog"); setTimeIndex(3); setHome("medium"); setPetSize("small"); setExistingCatCount(0); setExistingDogCount(0); setHouseholdCount(2); setAbsence("plan"); setBudget("planned");
+    setPreparations(Object.fromEntries(items.map(item => [item.id, true])));
+    setStarted(true);
+    setStep(steps.length + preparationCategoriesFor(items).length);
+  }
+
   function retry() {
     setStep(0);
     setSpecies(null);
@@ -160,7 +169,7 @@ export function CareReadinessFlow({ memberName = null }: { memberName?: string |
       <div className="ff-readiness-header-actions"><button type="button" className="ff-readiness-home" onClick={() => window.location.assign("/")} aria-label="홈으로 이동"><IconHouseLine aria-hidden /></button></div>
     </header>
     {started && <div className="ff-readiness-progress" role="progressbar" aria-label="생활 점검 진행률" aria-valuemin={1} aria-valuemax={totalSteps} aria-valuenow={isResult ? totalSteps : step + 1}><div style={{ width: `${isResult ? 100 : Math.max(progress, 6.25)}%` }} /></div>}
-    {!started ? <section className="ff-readiness-intro-content" aria-labelledby="care-readiness-intro-title"><div className="ff-readiness-intro-badge">입양 환경 점검</div><h1 id="care-readiness-intro-title">반려동물과<br />함께할 수 있을까요?</h1></section> : isResult ? <section className="ff-care-result" aria-labelledby="care-result-title">
+    {!started ? <section className="ff-readiness-intro-content" aria-labelledby="care-readiness-intro-title"><div className="ff-readiness-intro-badge">입양 환경 점검</div><h1 id="care-readiness-intro-title">반려동물과<br />함께할 수 있을까요?</h1>{admin && <ActionButton size="small" variant="neutralWeak" onClick={preview}>관리자 · 결과 화면 미리보기</ActionButton>}</section> : isResult ? <section className="ff-care-result" aria-labelledby="care-result-title">
       <h1 id="care-result-title">함께할 생활 준비도</h1>
       {/* 준비도는 인증서 카드가 보여 줍니다. 항목별 상세는 아래 아코디언 그대로입니다. */}
       <CertificateResult ref={certRef} badge="입양 환경 점검 확인서" illustration={`/${species ?? "cat"}-selection.webp`} memberName={memberName} rows={[{ label: "준비도", value: `${percent}%` }, { label: "확인한 항목", value: `${readyCount}/${results.length}` }]} share={{ title: "퍼스트프렌드 입양 환경 점검", text: `${results.length}가지 항목 중 ${readyCount}가지를 확인했어요.` }} extraAction={<button type="button" onClick={retry}>다시 확인하기</button>} />

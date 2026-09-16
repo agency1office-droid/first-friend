@@ -106,7 +106,7 @@ test("uses a contextual animal detail topbar", async () => {
   const quizRoute = await readFile(new URL("../app/quiz/[slug]/page.tsx", import.meta.url), "utf8");
   const quizRegistry = await readFile(new URL("../lib/quiz/registry.ts", import.meta.url), "utf8");
   assert.match(adoptionQuizPage, /getQuizDefinition\("adoption-prep"\)/);
-  assert.match(adoptionQuizPage, /<ReadinessQuiz quizId=\{definition\?\.slug \?\? "adoption-prep"\} memberName=\{memberName\} \/>/);
+  assert.match(adoptionQuizPage, /<ReadinessQuiz quizId=\{definition\?\.slug \?\? "adoption-prep"\} memberName=\{memberName\} admin=\{admin\} \/>/);
   assert.match(quizRegistry, /"adoption-prep"/);
   assert.match(quizRegistry, /"care-readiness"/);
   assert.match(quizRegistry, /"pet-knowledge"/);
@@ -118,7 +118,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(careReadinessConfig, /매달 필요한 비용과 갑자기 병원에 갈 비용/);
   assert.match(quizTypes, /"care-readiness"/);
   assert.match(quizRoute, /definition\.renderer === "care-readiness"/);
-  assert.match(quizRoute, /<CareReadinessFlow memberName=\{memberName\} \/>/);
+  assert.match(quizRoute, /<CareReadinessFlow memberName=\{memberName\} admin=\{admin\} \/>/);
+  assert.match(careReadinessFlow, /\{admin && <ActionButton size="small" variant="neutralWeak" onClick=\{preview\}>관리자 · 결과 화면 미리보기/);
   assert.match(careReadinessFlow, /import \{ Slider \} from "seed-design\/ui\/slider"/);
   assert.match(careReadinessFlow, /import \{ QuantityPicker \} from "seed-design\/ui\/quantity-picker"/);
   assert.match(careReadinessFlow, /import \{ Checkbox \} from "seed-design\/ui\/checkbox"/);
@@ -139,7 +140,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.equal((petKnowledgeConfig.match(/options: \[[^\]]+, [^\]]+, [^\]]+\]/g) ?? []).length, 15);
   assert.equal((petKnowledgeConfig.match(/chapter:/g) ?? []).length, 15);
   assert.match(quizRoute, /getQuizDefinition\(params\.slug\)/);
-  assert.match(quizRoute, /<ReadinessQuiz quizId=\{definition\.slug\} memberName=\{memberName\} \/>/);
+  assert.match(quizRoute, /<ReadinessQuiz quizId=\{definition\.slug\} memberName=\{memberName\} admin=\{admin\} \/>/);
   assert.doesNotMatch(adoptionQuizPage, /from "\.\.\/\.\.\/readiness\/page"/);
   assert.match(styles, /\.ff-shell\[data-route-path\^="\/friends\/"\] \.ff-detail-image-back/);
   assert.doesNotMatch(bridge, /FavoriteButton/);
@@ -366,6 +367,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(readinessQuiz, /로그인하면 수료 기록과 결과를 저장할 수 있어요/);
   assert.doesNotMatch(readinessQuiz, /title="수료증을 받았어요"/);
   assert.match(readinessQuiz, /결과 미리보기/);
+  assert.match(readinessQuiz, /const previewEnabled = admin \|\| process\.env\.NODE_ENV !== "production";/);
   assert.match(readinessQuiz, /value="success">성공/);
   assert.match(readinessQuiz, /value="failure">실패/);
   assert.match(readinessStyles, /\.ff-readiness-preview-control/);

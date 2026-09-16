@@ -79,6 +79,10 @@ function tasteLabel(answers: Answers) {
 function detailUrl(animal: Animal) {
   return `${window.location.origin}/friends/${animal.id}?via=worldcup`;
 }
+// 결과 화면 배경(CSS ::before)에 깔 우승 친구 사진. url() 안에 들어가므로 따옴표·역슬래시만 이스케이프합니다.
+function backdropStyle(animal: Animal) {
+  return { "--ff-worldcup-backdrop": `url("${(animal.thumbnail || animal.image).replace(/["\\]/g, encodeURIComponent)}")` } as React.CSSProperties;
+}
 // 카드에 크게 쓰는 이름: 공공 데이터 품종. "기타"·"품종 미상"처럼 이름이 못 되는 값은 종으로 대신합니다.
 function cardBreed(animal: Animal) {
   const breed = animal.name.split(" · ")[0]?.trim() || animal.breed;
@@ -364,7 +368,7 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
   const progressPercent = isResult ? 100 : phase === "match" && bracket ? Math.max(progress(bracket) * 100, 6.25) : stepProgress;
   const viewerPhotos = viewer ? photosOf(viewer.animal) : [];
 
-  return <div className={`ff-readiness ff-care-readiness${phase === "intro" ? " ff-readiness-intro" : ""}`} data-quiz-id="worldcup" data-care-step={careStep}>
+  return <div className={`ff-readiness ff-care-readiness${phase === "intro" ? " ff-readiness-intro" : ""}`} data-quiz-id="worldcup" data-care-step={careStep} style={isResult && winner ? backdropStyle(winner) : undefined}>
     <ReadinessAppBar title="이상형 월드컵" className={phase === "intro" ? "ff-readiness-intro-appbar" : ""} onBack={previous} />
     {phase !== "intro" && <div className="ff-readiness-progress" role="progressbar" aria-label="이상형 월드컵 진행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progressPercent)}><div style={{ width: `${progressPercent}%` }} /></div>}
     {phase === "intro" ? <section className="ff-readiness-intro-content" aria-labelledby="worldcup-intro-title"><div className="ff-readiness-intro-badge">이상형 월드컵</div><h1 id="worldcup-intro-title">나와 인연이 될<br />친구를 찾아볼까요?</h1>{member?.admin && <ActionButton size="small" variant="neutralWeak" loading={loading} onClick={() => void previewResult()}>관리자 · 결과 화면 미리보기</ActionButton>}</section>

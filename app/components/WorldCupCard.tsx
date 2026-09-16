@@ -33,11 +33,21 @@ export async function loadCardAssets(animal: Animal, detailUrl: string): Promise
 export function WorldCupCard({ ref, headline, breed, number, meta, journey, taste, shelter, status, assets }: Props) {
   const [toneFg, toneBg] = TONE[status.tone] ?? TONE.neutral;
   const pillWidth = status.statusLabel.length * 20 + 40;
-  // 세로 배분(1350): 남색 바탕 위 카드 120~1290. 위쪽 띠(~290)는 붉은 실, 머리 → 사진 → 이름 → 지표 두 줄 → QR·보호소, 카드 아래 띠에 날짜·출처.
+  // 세로 배분(1350): 흐린 사진 바탕 위 카드 120~1290. 위쪽 띠(~290)는 붉은 실, 머리 → 사진 → 이름 → 지표 두 줄 → QR·보호소, 카드 아래 띠에 날짜·출처.
+  // 바탕(.wc-backdrop)은 우승 친구 사진을 크게 흐린 뒤 어둡게 덮은 것. 화면에서는 CSS로 숨기고 페이지 배경(같은 사진)이 비치며, 내보낸 PNG에는 그대로 들어갑니다(독립 SVG에는 페이지 CSS가 안 먹음).
   return <svg ref={ref} className="ff-worldcup-card" viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`} role="img" aria-label={`${headline}, ${breed} 인연 카드`} fontFamily={FONT}>
-    <defs><clipPath id="wc-photo"><rect x={350} y={486} width={380} height={380} rx={40} /></clipPath></defs>
-    <rect width={CARD_WIDTH} height={CARD_HEIGHT} fill={COLOR.night} />
-    <rect x={60} y={120} width={960} height={1170} rx={48} fill={COLOR.cream} />
+    <defs>
+      <clipPath id="wc-photo"><rect x={350} y={486} width={380} height={380} rx={40} /></clipPath>
+      <filter id="wc-backdrop-blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="38" /></filter>
+      <filter id="wc-card-shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="16" stdDeviation="20" floodColor="#000000" floodOpacity="0.35" /></filter>
+      <linearGradient id="wc-shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#101424" stopOpacity="0.55" /><stop offset="0.45" stopColor="#101424" stopOpacity="0.28" /><stop offset="1" stopColor="#101424" stopOpacity="0.62" /></linearGradient>
+    </defs>
+    <g className="wc-backdrop">
+      <rect width={CARD_WIDTH} height={CARD_HEIGHT} fill={COLOR.night} />
+      {assets && <image href={assets.photo} x={-120} y={-120} width={CARD_WIDTH + 240} height={CARD_HEIGHT + 240} preserveAspectRatio="xMidYMid slice" filter="url(#wc-backdrop-blur)" />}
+      <rect width={CARD_WIDTH} height={CARD_HEIGHT} fill="url(#wc-shade)" />
+    </g>
+    <rect x={60} y={120} width={960} height={1170} rx={48} fill={COLOR.cream} filter="url(#wc-card-shadow)" />
     {/* 붉은 실(인연)이 카드 위쪽을 가로지르며 걸려 있는 모습 */}
     {assets && <image href={assets.string} x={-160} y={-20} width={1400} height={466} preserveAspectRatio="xMidYMid meet" opacity={0.92} />}
     {/* 머리: 워드마크 · 카드 번호(공고 번호 끝자리) · 카드 종류 · 헤드라인 */}

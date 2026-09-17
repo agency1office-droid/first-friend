@@ -65,8 +65,9 @@ export function WorldCupCard({ ref, headline, breed, number, meta, shelter, asse
     <text x={540} y={1050} textAnchor="middle" fontSize={fitFontSize(breed, 54, 820)} fontWeight={800} fill={COLOR.ink}>{breed}</text>
     <text x={540} y={1084} textAnchor="middle" fontSize={25} fontWeight={500} fill={COLOR.muted}>{meta}</text>
     {/* 발: 상세 페이지 QR(145px, 흰 여백 ~8px. 폰 화면 폭에서도 읽히는 크기) · 보호소 */}
-    <rect x={108} y={1112} width={160} height={160} rx={14} fill={COLOR.white} stroke={COLOR.line} strokeWidth={2} />
-    {assets && <image href={assets.qr} x={116} y={1120} width={QR_SIZE} height={QR_SIZE} />}
+    <rect x={108} y={1114} width={160} height={160} rx={14} fill={COLOR.white} stroke={COLOR.line} strokeWidth={2} />
+    {/* QR 위치 (116, 1122): 5px 모듈이 390·330·300px 폭으로 줄어도 판독되는 서브픽셀 위상(시뮬레이션 10/10). 1~2px만 옮겨도 판독률이 크게 떨어지니 유지. */}
+    {assets && <image href={assets.qr} x={116} y={1122} width={QR_SIZE} height={QR_SIZE} />}
     <text x={292} y={1156} fontSize={fitFontSize(shelter, 24, 972 - 292)} fontWeight={700} fill={COLOR.ink}>{shelter}</text>
     <text x={292} y={1198} fontSize={22} fontWeight={500} fill={COLOR.muted}>지금 보호소에서 기다리고 있어요</text>
     <text x={292} y={1232} fontSize={19} fontWeight={500} fill={COLOR.subtle}>QR을 찍으면 이 친구의 상세 페이지로 바로 가요</text>

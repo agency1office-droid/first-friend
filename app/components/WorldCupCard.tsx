@@ -36,13 +36,17 @@ export function WorldCupCard({ ref, headline, breed, number, meta, shelter, asse
   return <svg ref={ref} className="ff-worldcup-card" viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`} role="img" aria-label={`${headline}, ${breed} 인연 카드`} fontFamily={FONT}>
     <defs>
       <clipPath id="wc-photo"><rect x={256} y={386} width={568} height={568} rx={44} /></clipPath>
-      <filter id="wc-backdrop-blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="38" /></filter>
+      {/* 배경 사진: 얼굴을 알아볼 수 없게 강하게 흐리고 채도를 낮춥니다(화면 CSS와 같은 방향). */}
+      <filter id="wc-backdrop-blur" x="-30%" y="-30%" width="160%" height="160%" colorInterpolationFilters="sRGB"><feGaussianBlur stdDeviation="90" /><feColorMatrix type="saturate" values="0.6" /><feComponentTransfer><feFuncR type="linear" slope="0.82" /><feFuncG type="linear" slope="0.82" /><feFuncB type="linear" slope="0.82" /></feComponentTransfer></filter>
       <filter id="wc-card-shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="16" stdDeviation="20" floodColor="#000000" floodOpacity="0.35" /></filter>
-      <linearGradient id="wc-shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#101424" stopOpacity="0.55" /><stop offset="0.45" stopColor="#101424" stopOpacity="0.28" /><stop offset="1" stopColor="#101424" stopOpacity="0.62" /></linearGradient>
+      {/* 카드 둘레는 웜그레이로 은은히 밝고 가장자리·위아래는 차콜로 어두워지는 넓은 그라데이션 */}
+      <radialGradient id="wc-glow" cx="0.5" cy="0.5" r="0.62"><stop offset="0" stopColor="#ded2c4" stopOpacity="0.32" /><stop offset="0.38" stopColor="#ded2c4" stopOpacity="0.13" /><stop offset="0.62" stopColor="#17181c" stopOpacity="0" /><stop offset="1" stopColor="#17181c" stopOpacity="0.58" /></radialGradient>
+      <linearGradient id="wc-shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#17181c" stopOpacity="0.45" /><stop offset="0.2" stopColor="#17181c" stopOpacity="0.10" /><stop offset="0.72" stopColor="#17181c" stopOpacity="0.10" /><stop offset="1" stopColor="#17181c" stopOpacity="0.62" /></linearGradient>
     </defs>
     <g className="wc-backdrop">
-      <rect width={CARD_WIDTH} height={CARD_HEIGHT} fill={COLOR.night} />
-      {assets && <image href={assets.photo} x={-120} y={-120} width={CARD_WIDTH + 240} height={CARD_HEIGHT + 240} preserveAspectRatio="xMidYMid slice" filter="url(#wc-backdrop-blur)" />}
+      <rect width={CARD_WIDTH} height={CARD_HEIGHT} fill="#1f2126" />
+      {assets && <image href={assets.photo} x={-240} y={-240} width={CARD_WIDTH + 480} height={CARD_HEIGHT + 480} preserveAspectRatio="xMidYMid slice" filter="url(#wc-backdrop-blur)" />}
+      <rect width={CARD_WIDTH} height={CARD_HEIGHT} fill="url(#wc-glow)" />
       <rect width={CARD_WIDTH} height={CARD_HEIGHT} fill="url(#wc-shade)" />
     </g>
     <rect x={60} y={120} width={960} height={1180} rx={48} fill={COLOR.cream} filter="url(#wc-card-shadow)" />

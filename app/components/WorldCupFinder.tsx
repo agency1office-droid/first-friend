@@ -379,9 +379,8 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
     <ReadinessAppBar title="이상형 월드컵" className={phase === "intro" ? "ff-readiness-intro-appbar" : ""} onBack={previous} />
     {phase !== "intro" && <div className="ff-readiness-progress" role="progressbar" aria-label="이상형 월드컵 진행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progressPercent)}><div style={{ width: `${progressPercent}%` }} /></div>}
     {phase === "intro" ? <section className="ff-readiness-intro-content" aria-labelledby="worldcup-intro-title"><div className="ff-readiness-intro-badge">이상형 월드컵</div><h1 id="worldcup-intro-title">나와 인연이 될<br />친구를 찾아볼까요?</h1>{member?.admin && <ActionButton size="small" variant="neutralWeak" loading={loading} onClick={() => void previewResult()}>관리자 · 결과 화면 미리보기</ActionButton>}</section>
-    : isResult && winner ? <section className="ff-care-result" aria-labelledby="care-result-title">
-      <h1 id="care-result-title">{(bracket?.size ?? 1) - 1}번의 선택으로 만난 내 첫 친구</h1>
-      <WorldCupCard ref={cardRef} headline={member?.name.trim() ? `${member.name.trim().slice(0, 8)}님과 이어진 첫 친구` : "나와 이어진 첫 친구"} breed={cardBreed(winner)} number={winner.name.split(" · ")[1] ?? ""} meta={meta(winner)} shelter={winner.shelter} assets={cardReady ? cardAssets : null} />
+    : isResult && winner ? <section className="ff-care-result" aria-label="이상형 월드컵 결과">
+      <WorldCupCard ref={cardRef} headline={member?.name.trim() ? `${member.name.trim().slice(0, 8)}님과 이어진 친구` : "나와 이어진 친구"} breed={cardBreed(winner)} number={winner.name.split(" · ")[1] ?? ""} meta={meta(winner)} shelter={winner.shelter} assets={cardReady ? cardAssets : null} />
       <p className="ff-care-result-note">마음에 남은 이 친구를 가족과 친구에게도 공유해 보세요.</p>
       <button type="button" className="ff-worldcup-share" disabled={!cardReady || sharing} onClick={() => void share(winner)}><IconArrowUpBracketDownLine aria-hidden />공유하기</button>
     </section>

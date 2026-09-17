@@ -1751,8 +1751,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-progress { background: var(--seed-color-palette-static-white-alpha-200); }
 /* 퀴즈 셸 공통 규칙(.ff-quiz-shell ... > section, 34행)이 section에 좌우 -16px 마진·32px 패딩을 주므로, 결과 섹션만 더 높은 특이도로 좌우 패딩을 0으로 두어 카드 SVG가 섹션 폭(=화면 폭)을 꽉 채우게 합니다. 글은 각자 16px 패딩. */
 /* grid-auto-rows: max-content — 섹션 높이가 정해져 있으면 auto 행이 남는 높이로 줄어 카드 SVG(폭×1.25)가 아래 행(안내문)과 겹치므로, 행을 내용 높이로 두고 섹션이 스크롤하게 합니다(짧은 폰·PC). */
-.ff-quiz-shell .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] > .ff-care-result { grid-auto-rows: max-content; gap: 12px; padding: 14px 0 24px; }
-.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result h1 { padding: 0 16px; color: var(--seed-color-palette-static-white); font-size: 17px; line-height: 24px; opacity: .85; }
+.ff-quiz-shell .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] > .ff-care-result { grid-auto-rows: max-content; gap: 12px; padding: 20px 0 24px; }
 .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result-note { padding: 0 16px; color: var(--seed-color-palette-static-white-alpha-700); text-align: center; }
 /* 화면의 카드는 셸 폭 끝까지(양쪽 16px 여백 위로) 키웁니다. SVG 안쪽 여백(60/1080)이 있어 카드 본체는 화면 가장자리에서 약 5% 떨어집니다. */
 .ff-worldcup-card { display: block; width: 100%; max-width: none; height: auto; margin: 0; }

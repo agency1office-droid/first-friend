@@ -38,6 +38,8 @@ export function WorldCupCard({ ref, headline, breed, number, meta, shelter, asse
       <clipPath id="wc-photo"><rect x={239} y={392} width={602} height={602} rx={44} /></clipPath>
       {/* 배경 사진: 얼굴을 알아볼 수 없게 강하게 흐리고 채도를 낮춥니다(화면 CSS와 같은 방향). */}
       <filter id="wc-backdrop-blur" x="-30%" y="-30%" width="160%" height="160%" colorInterpolationFilters="sRGB"><feGaussianBlur stdDeviation="90" /><feColorMatrix type="saturate" values="0.6" /><feComponentTransfer><feFuncR type="linear" slope="0.82" /><feFuncG type="linear" slope="0.82" /><feFuncB type="linear" slope="0.82" /></feComponentTransfer></filter>
+      {/* 실 클립: 카드 오른쪽 테두리(x=1020)에서 잘라 꼬리가 카드 뒤로 들어가 보이게. 왼쪽·위쪽은 넉넉히 열어 왼쪽 벽과 상단 밖 하트는 그대로. */}
+      <clipPath id="wc-string-clip"><rect x={-200} y={-200} width={1220} height={900} /></clipPath>
       <filter id="wc-card-shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="16" stdDeviation="20" floodColor="#000000" floodOpacity="0.35" /></filter>
       {/* 카드 둘레는 웜그레이로 은은히 밝고 가장자리·위아래는 차콜로 어두워지는 넓은 그라데이션 */}
       <radialGradient id="wc-glow" cx="0.5" cy="0.5" r="0.62"><stop offset="0" stopColor="#ded2c4" stopOpacity="0.32" /><stop offset="0.38" stopColor="#ded2c4" stopOpacity="0.13" /><stop offset="0.62" stopColor="#17181c" stopOpacity="0" /><stop offset="1" stopColor="#17181c" stopOpacity="0.58" /></radialGradient>
@@ -50,8 +52,8 @@ export function WorldCupCard({ ref, headline, breed, number, meta, shelter, asse
       <rect width={CARD_WIDTH} height={CARD_HEIGHT} fill="url(#wc-shade)" />
     </g>
     <rect x={60} y={60} width={960} height={1252} rx={48} fill={COLOR.cream} filter="url(#wc-card-shadow)" />
-    {/* 하트 모양 붉은 실(인연): 화면 왼쪽 벽(x=0, 이미지는 -60부터)에 붙어 나와 카드 왼쪽 테두리를 지나 안쪽 상단을 가로지릅니다. -4° 기울여 왼쪽은 카드 안쪽(테두리 아래 ~60px), 하트 꼭대기는 카드 상단 테두리(40) 위로 ~15px 나가고, 꼬리 끝(x≈1048)은 카드 오른쪽 테두리(1020)를 지나 밖에서 끝납니다. */}
-    {assets && <image href={assets.string} x={-60} y={-25} width={1110} height={393} transform="rotate(-4 495 172)" preserveAspectRatio="xMidYMid meet" />}
+    {/* 하트 모양 붉은 실(인연): 화면 왼쪽 벽(x=0, 이미지는 -60부터)에 붙어 나와 카드 왼쪽 테두리를 지나 안쪽 상단을 가로지릅니다. -4° 기울여 왼쪽은 카드 안쪽(테두리 아래 ~60px), 하트 꼭대기는 카드 상단 테두리(40) 위로 ~15px 나가고, 꼬리는 카드 오른쪽 테두리(1020)에서 클립돼 카드 뒤로 들어가 보입니다(회전은 이미지에, 클립은 회전 없는 그룹에 걸어 절단선이 테두리와 나란함). */}
+    {assets && <g clipPath="url(#wc-string-clip)"><image href={assets.string} x={-60} y={-25} width={1110} height={393} transform="rotate(-4 495 172)" preserveAspectRatio="xMidYMid meet" /></g>}
     {/* 머리: 워드마크 · 카드 번호(공고 번호 끝자리, 실 꼬리가 지나는 오른쪽 위를 피해 워드마크 옆) · 카드 종류 · 헤드라인 */}
     {assets && <image href={assets.wordmark} x={108} y={208} width={240} height={36} preserveAspectRatio="xMinYMid meet" />}
     <rect x={350} y={266} width={380} height={46} rx={23} fill={COLOR.brandWeak} />

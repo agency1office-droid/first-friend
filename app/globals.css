@@ -1749,11 +1749,12 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"]::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(ellipse 78% 58% at 50% 42%, rgba(222, 210, 196, .32) 0%, rgba(222, 210, 196, .13) 38%, rgba(23, 24, 28, 0) 60%, rgba(23, 24, 28, .58) 100%), linear-gradient(to bottom, rgba(23, 24, 28, .55) 0%, rgba(23, 24, 28, .10) 24%, rgba(23, 24, 28, .10) 62%, rgba(23, 24, 28, .66) 100%); }
 .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-appbar strong, .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-back, .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-home { color: var(--seed-color-palette-static-white); }
 .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-progress { background: var(--seed-color-palette-static-white-alpha-200); }
-.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result { gap: 12px; padding: 14px 16px 24px; }
-.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result h1 { color: var(--seed-color-palette-static-white); font-size: 17px; line-height: 24px; opacity: .85; }
-.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result-note { color: var(--seed-color-palette-static-white-alpha-700); text-align: center; }
+/* 퀴즈 셸 공통 규칙(.ff-quiz-shell ... > section, 34행)이 section에 좌우 -16px 마진·32px 패딩을 주므로, 결과 섹션만 더 높은 특이도로 좌우 패딩을 0으로 두어 카드 SVG가 섹션 폭(=화면 폭)을 꽉 채우게 합니다. 글은 각자 16px 패딩. */
+.ff-quiz-shell .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] > .ff-care-result { gap: 12px; padding: 14px 0 24px; }
+.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result h1 { padding: 0 16px; color: var(--seed-color-palette-static-white); font-size: 17px; line-height: 24px; opacity: .85; }
+.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result-note { padding: 0 16px; color: var(--seed-color-palette-static-white-alpha-700); text-align: center; }
 /* 화면의 카드는 셸 폭 끝까지(양쪽 16px 여백 위로) 키웁니다. SVG 안쪽 여백(60/1080)이 있어 카드 본체는 화면 가장자리에서 약 5% 떨어집니다. */
-.ff-worldcup-card { display: block; width: calc(100% + 32px); max-width: none; height: auto; margin: 0 -16px; }
+.ff-worldcup-card { display: block; width: 100%; max-width: none; height: auto; margin: 0; }
 /* 화면에서는 SVG 안 배경을 숨겨 페이지의 흐린 사진이 비치게 하고, 내보낸 PNG에는 SVG 안 배경이 들어갑니다(독립 SVG에는 이 CSS가 적용되지 않음). */
 .ff-worldcup-card .wc-backdrop { display: none; }
 /* 결과 화면 하단 버튼은 흐린 사진 위에 바로 놓입니다(바 배경·위쪽 그라데이션 없음). */

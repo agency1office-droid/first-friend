@@ -31,13 +31,16 @@ export async function loadCardAssets(animal: Animal, detailUrl: string): Promise
 }
 
 export function WorldCupCard({ ref, headline, breed, number, meta, shelter, assets }: Props) {
-  // 세로 배분(1350): 흐린 사진 바탕 위 카드 40~1312(QR 아래 여백 40px). 하트 실이 화면 왼쪽 끝에서 나와 카드 안쪽 상단을 가로지르고 하트·꼬리가 카드 안 오른쪽 위에서 끝나며, 그 아래 머리 → 큰 사진(634px) → 이름 → QR·보호소, 카드 아래 띠에 날짜·주소.
+  // 세로 배분(1350): 흐린 사진 바탕 위 카드 40~1312(QR 아래 여백 40px). 하트 실이 화면 왼쪽에서 스며 나와 카드 안쪽 상단을 가로지르고 하트는 카드 안 오른쪽 위, 꼬리는 카드 오른쪽 테두리를 지나 끝나며, 그 아래 머리 → 큰 사진(634px) → 이름 → QR·보호소, 카드 아래 띠에 날짜·주소.
   // 바탕(.wc-backdrop)은 우승 친구 사진을 크게 흐린 뒤 어둡게 덮은 것. 화면에서는 CSS로 숨기고 페이지 배경(같은 사진)이 비치며, 내보낸 PNG에는 그대로 들어갑니다(독립 SVG에는 페이지 CSS가 안 먹음).
   return <svg ref={ref} className="ff-worldcup-card" viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`} role="img" aria-label={`${headline}, ${breed} 인연 카드`} fontFamily={FONT}>
     <defs>
       <clipPath id="wc-photo"><rect x={223} y={358} width={634} height={634} rx={44} /></clipPath>
       {/* 배경 사진: 얼굴을 알아볼 수 없게 강하게 흐리고 채도를 낮춥니다(화면 CSS와 같은 방향). */}
       <filter id="wc-backdrop-blur" x="-30%" y="-30%" width="160%" height="160%" colorInterpolationFilters="sRGB"><feGaussianBlur stdDeviation="90" /><feColorMatrix type="saturate" values="0.6" /><feComponentTransfer><feFuncR type="linear" slope="0.82" /><feFuncG type="linear" slope="0.82" /><feFuncB type="linear" slope="0.82" /></feComponentTransfer></filter>
+      {/* 실 왼쪽 끝(x 0~70): 화면이 카드 셸보다 넓은 PC에서도 끊긴 단면이 보이지 않게 어둠에서 스며 나오도록 투명→불투명 마스크 */}
+      <linearGradient id="wc-string-fade" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="70" y2="0"><stop offset="0" stopColor="#fff" stopOpacity="0" /><stop offset="1" stopColor="#fff" stopOpacity="1" /></linearGradient>
+      <mask id="wc-string-mask" maskUnits="userSpaceOnUse" x={-60} y={0} width={1170} height={400}><rect x={-60} y={0} width={1170} height={400} fill="url(#wc-string-fade)" /></mask>
       <filter id="wc-card-shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="16" stdDeviation="20" floodColor="#000000" floodOpacity="0.35" /></filter>
       {/* 카드 둘레는 웜그레이로 은은히 밝고 가장자리·위아래는 차콜로 어두워지는 넓은 그라데이션 */}
       <radialGradient id="wc-glow" cx="0.5" cy="0.5" r="0.62"><stop offset="0" stopColor="#ded2c4" stopOpacity="0.32" /><stop offset="0.38" stopColor="#ded2c4" stopOpacity="0.13" /><stop offset="0.62" stopColor="#17181c" stopOpacity="0" /><stop offset="1" stopColor="#17181c" stopOpacity="0.58" /></radialGradient>
@@ -50,8 +53,8 @@ export function WorldCupCard({ ref, headline, breed, number, meta, shelter, asse
       <rect width={CARD_WIDTH} height={CARD_HEIGHT} fill="url(#wc-shade)" />
     </g>
     <rect x={60} y={40} width={960} height={1272} rx={48} fill={COLOR.cream} filter="url(#wc-card-shadow)" />
-    {/* 하트 모양 붉은 실(인연): 원본은 좌우 여백 없이 양 끝까지 실이라 x=0에 두면 화면 왼쪽 끝에서 나와 카드 왼쪽 테두리를 지나 카드 안쪽 상단을 가로지르고, 하트와 꼬리 끝(x≈1000)은 카드 안 오른쪽 위에서 끝나 잘리지 않습니다. */}
-    {assets && <image href={assets.string} x={0} y={10} width={1000} height={354} preserveAspectRatio="xMidYMid meet" />}
+    {/* 하트 모양 붉은 실(인연): 왼쪽은 화면 밖(x=-60)에서 시작해 마스크로 스며 나오며 카드 왼쪽 테두리를 지나 카드 안쪽 상단을 가로지르고, 하트는 카드 안 오른쪽 위, 꼬리 끝(x≈1048)은 카드 오른쪽 테두리(1020)를 지나 밖에서 끝납니다. */}
+    {assets && <image href={assets.string} x={-60} y={0} width={1110} height={393} mask="url(#wc-string-mask)" preserveAspectRatio="xMidYMid meet" />}
     {/* 머리: 워드마크 · 카드 번호(공고 번호 끝자리, 실 꼬리가 지나는 오른쪽 위를 피해 워드마크 옆) · 카드 종류 · 헤드라인 */}
     {assets && <image href={assets.wordmark} x={108} y={190} width={240} height={36} preserveAspectRatio="xMinYMid meet" />}
     {number && <text x={368} y={220} fontSize={26} fontWeight={600} fill={COLOR.subtle}>No. {number}</text>}

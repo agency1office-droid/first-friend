@@ -54,7 +54,7 @@ test("UX audit fixes: 404 before streaming, share cards, in-place login, badge r
  const read=path=>readFile(new URL("../"+path,import.meta.url),"utf8");
  const [detail,list,feed,notFound,favorite,notifications,summary,alerts,media,card,mypage,quiz,worldcup]=await Promise.all(["app/stories/[id]/page.tsx","app/stories/page.tsx","app/components/StoryFeed.tsx","app/not-found.tsx","app/components/FavoriteButton.tsx","app/notifications/page.tsx","app/api/notifications/summary/route.ts","lib/saved-search-alerts.ts","app/api/media/route.ts","app/components/AnimalCard.tsx","app/mypage/page.tsx","app/quiz/[slug]/page.tsx","app/find/worldcup/page.tsx"].map(read));
  const metadata=detail.slice(detail.indexOf("generateMetadata"),detail.indexOf("export default"));
- assert.match(metadata,/if\(!story\)notFound\(\)/,"missing stories become a 404 before the streaming shell is sent");
+ assert.match(metadata,/if\(!story\)return \{title:/,"metadata must not call notFound(): vinext renders that as a 200");assert.match(detail,/loading\.tsx를 두지 않는다/);assert.equal((await readFile(new URL("../app/stories/[id]/loading.tsx",import.meta.url),"utf8").catch(()=>null)),null,"the story route streams no loading shell, so notFound() yields a real 404");
  assert.match(metadata,/openGraph:\{title:story\.title/);assert.match(metadata,/story\.images\[0\]/);
  assert.match(detail,/getRelatedStories\(story\)/);assert.match(detail,/ff-board-author-link/);
  assert.match(list,/params\.set\('sort','newest'\)/,"unknown sort values fall back instead of failing");

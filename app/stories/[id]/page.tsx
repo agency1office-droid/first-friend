@@ -13,13 +13,13 @@ import { Callout } from "seed-design/ui/callout";
 import "../board.css";
 export const dynamic="force-dynamic";
 export async function generateMetadata({params}:{params:Promise<{id:string}>}):Promise<Metadata>{
- // 스트리밍이 시작되기 전인 여기서 404를 판정해야 없는 글이 빈 화면(200)이 아니라 404 페이지로 나간다.
- const story=await getStory((await params).id);if(!story)notFound();
+ const story=await getStory((await params).id);if(!story)return {title:'이야기를 찾지 못했어요'};
  const description=story.body.replace(/\s+/g,' ').slice(0,140);
  // 카카오톡·SNS에 공유하면 글 제목과 첫 사진이 카드로 보인다. 사진은 공개 글일 때만 API가 내려 준다.
  return {title:story.title,description,openGraph:{title:story.title,description,type:'article',images:story.images.length?[{url:story.images[0]}]:['/og.png']},twitter:{card:story.images.length?'summary_large_image':'summary',title:story.title,description}};
 }
 export default async function StoryPage({params}:{params:Promise<{id:string}>}){
+ // 이 라우트는 loading.tsx를 두지 않는다. 로딩 셸이 먼저 흘러가면 아래 notFound()가 빈 화면(200)이 되고, 셸 없이 던져야 404 페이지로 나간다.
  const story=await getStory((await params).id);if(!story)notFound();
  let related:Awaited<ReturnType<typeof getRelatedStories>>=[];try{related=await getRelatedStories(story);}catch{related=[];}
  const member=await getAuthenticatedMember();let mine:StoryReaction|null=null;

@@ -8,7 +8,7 @@ type Page={stories:PublicStory[];total:number;page:number;pageSize:number};
 export function StoryFeed({initial,query}:{initial:Page;query:string}){
  const [items,setItems]=useState(initial.stories),[page,setPage]=useState(initial.page),[total,setTotal]=useState(initial.total),[loading,setLoading]=useState(false),[error,setError]=useState("");
  const sentinel=useRef<HTMLDivElement>(null),lock=useRef(false);
- const hasMore=page*initial.pageSize<total;
+ const hasMore=page*initial.pageSize<total,searching=new URLSearchParams(query).get("q")?.trim()||"";
  const loadMore=useCallback(async()=>{
   if(lock.current)return;lock.current=true;setLoading(true);setError("");
   try{
@@ -26,7 +26,7 @@ export function StoryFeed({initial,query}:{initial:Page;query:string}){
   observer.observe(node);return()=>observer.disconnect();
  },[hasMore,error,loadMore]);
  return <div className="ff-board-list">
-  {items.length?items.map(story=><StoryCard story={story} key={story.id}/>):<div className="ff-board-empty"><strong>아직 이야기가 없어요</strong><p>함께한 순간을 첫 이야기로 남겨 주세요.</p><Link href="/stories/new">이야기 쓰기 →</Link></div>}
+  {items.length?items.map(story=><StoryCard story={story} key={story.id}/>):searching?<div className="ff-board-empty"><strong>‘{searching}’이 들어간 제목이 없어요</strong><p>제목에서만 찾아요. 다른 말로 검색하거나 전체 이야기를 둘러보세요.</p><Link href="/stories">전체 이야기 보기 →</Link></div>:<div className="ff-board-empty"><strong>아직 이야기가 없어요</strong><p>함께한 순간을 첫 이야기로 남겨 주세요.</p><Link href="/stories/new">이야기 쓰기 →</Link></div>}
   {loading&&<p className="ff-board-muted ff-board-feed-status" aria-live="polite">이야기를 더 불러오는 중이에요</p>}
   {error&&<div className="ff-feed-error" role="alert"><span>{error}</span><button type="button" onClick={()=>void loadMore()}>다시 불러오기</button></div>}
   {hasMore&&<div className="ff-feed-sentinel" ref={sentinel} aria-hidden="true"/>}

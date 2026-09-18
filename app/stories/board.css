@@ -4,3 +4,5 @@
 .ff-story-reactions{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}.ff-story-reactions img{width:20px;height:20px;flex:none}.ff-story-reactions+.ff-story-actions{margin-top:12px}.ff-board-card-meta{display:flex;align-items:center;gap:6px}.ff-board-reaction-icons{display:inline-flex;align-items:center}.ff-board-reaction-icons img{width:18px;height:18px;border-radius:50%;background:var(--seed-color-bg-layer-default);box-shadow:0 0 0 1.5px var(--seed-color-bg-layer-default)}.ff-board-reaction-icons img+img{margin-left:-5px}
 .ff-story-admin{margin-top:28px;display:grid;gap:8px}.ff-story-admin .ff-story-actions{margin:0}
 .ff-board-feed-status{margin:0;padding:20px 0;text-align:center}
+
+.ff-board-author-link{color:var(--seed-color-fg-brand);font-weight:700;text-decoration:none}

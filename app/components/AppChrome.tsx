@@ -7,6 +7,7 @@ import { BottomNav } from "./BottomNav";
 import { HomeTopbar } from "./HomeTopbar";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalMenuButton } from "./GlobalMenuButton";
+import { LoginPrompt } from "./LoginPrompt";
 
 type RouteChrome={rule:RegExp;title:string;topbarTitle?:string;back?:string;mode?:"detail"|"form"|"main"|"stack"};
 const routes:RouteChrome[]=[
@@ -121,5 +122,6 @@ export function AppChrome({children}:{children:React.ReactNode}){
     {!isAnimalDetail&&(path==="/"?<HomeTopbar/>:resolvedRoute.mode==="main"?<MainTopbar title={resolvedRoute.title}/>:<StackTopbar route={resolvedRoute}/>)}
     <main className="ff-main" id="main-content" tabIndex={-1}>{children}</main>
     {!hideBottom&&<BottomNav/>}
+    <LoginPrompt/>
   </div>
 }

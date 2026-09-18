@@ -1079,7 +1079,7 @@ test("enforces guardian ownership and correct moderation targets", async () => {
 test("connects saved-search alerts, real shelter updates, and visual lost matching", async () => {
   const [notifications, shelter, lostForm, lostApi] = await Promise.all([
     readFile(
-      new URL("../app/api/notifications/route.ts", import.meta.url),
+      new URL("../lib/saved-search-alerts.ts", import.meta.url),
       "utf8",
     ),
     readFile(new URL("../app/shelters/[id]/page.tsx", import.meta.url), "utf8"),

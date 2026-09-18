@@ -27,6 +27,8 @@ export function AnimalAiIntro({ animalId, mode = "adoption" }: { animalId: strin
         setState(next);
         if (!["pending", "processing"].includes(next.status)) return;
       }
+      // 15초 안에 소개가 안 만들어지면 스피너를 내리고 공개 정보 안내로 바꾼다. 소개는 밤 배치가 만들어 다음 방문 때 보인다.
+      if (active) setState(current => ["pending", "processing"].includes(current.status) ? { ...current, status: "unavailable", available: false } : current);
     };
     const load = async () => {
       const response = await fetch(`/api/animal-ai?animalId=${encodeURIComponent(animalId)}&purpose=${mode}`, { cache: "no-store" });

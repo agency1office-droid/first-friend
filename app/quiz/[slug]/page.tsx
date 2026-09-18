@@ -12,7 +12,9 @@ export function generateStaticParams() {
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
   const definition = getQuizDefinition(params.slug);
   if (!definition) return {};
-  return { title: definition.metadata.title, description: definition.metadata.description };
+  const { title, description } = definition.metadata;
+  // 공유 링크가 사이트 공통 카드 대신 퀴즈 이름으로 펼쳐지게 한다.
+  return { title, description, openGraph: { title, description, type: "website", images: ["/og.png"] } };
 }
 
 export default async function QuizPage({ params }: { params: { slug: string } }) {

@@ -29,3 +29,8 @@ export async function getStory(id:string,ownerId?:string){
  query=ownerId?query.eq('member_id',ownerId).neq('status','deleted'):query.eq('status','published').eq('hidden',false);
  const {data,error}=await query.maybeSingle();if(error)throw error;return data?map(data):null;
 }
+// 글을 다 읽은 뒤 이어 볼 같은 분류의 최근 이야기. 현재 글은 뺀다.
+export async function getRelatedStories(story:PublicStory,limit=3){
+ const {data,error}=await getSupabaseServerClient().from('posts').select(fields).eq('status','published').eq('hidden',false).eq('category',story.categoryKey).neq('id',story.postId).order('published_at',{ascending:false}).limit(limit);
+ if(error)throw error;return (data||[]).map(map);
+}

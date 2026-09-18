@@ -49,3 +49,28 @@ test("story screens open the sign-in sheet in place and expose admin moderation 
  assert.match(admin,/"post-visibility"/);assert.match(admin,/"post-delete"/);assert.match(admin,/"idempotency-key"/);assert.match(admin,/note\.trim\(\)\.length<2/);
  for(const source of [create,manage]){assert.match(source,/<LoginSheet returnTo="\/stories\//);assert.doesNotMatch(source,/requireChatGPTUser/);}
 });
+
+test("UX audit fixes: 404 before streaming, share cards, in-place login, badge refresh, resized card images", async()=>{
+ const read=path=>readFile(new URL("../"+path,import.meta.url),"utf8");
+ const [detail,list,feed,notFound,favorite,notifications,summary,alerts,media,card,mypage,quiz,worldcup]=await Promise.all(["app/stories/[id]/page.tsx","app/stories/page.tsx","app/components/StoryFeed.tsx","app/not-found.tsx","app/components/FavoriteButton.tsx","app/notifications/page.tsx","app/api/notifications/summary/route.ts","lib/saved-search-alerts.ts","app/api/media/route.ts","app/components/AnimalCard.tsx","app/mypage/page.tsx","app/quiz/[slug]/page.tsx","app/find/worldcup/page.tsx"].map(read));
+ const metadata=detail.slice(detail.indexOf("generateMetadata"),detail.indexOf("export default"));
+ assert.match(metadata,/if\(!story\)notFound\(\)/,"missing stories become a 404 before the streaming shell is sent");
+ assert.match(metadata,/openGraph:\{title:story\.title/);assert.match(metadata,/story\.images\[0\]/);
+ assert.match(detail,/getRelatedStories\(story\)/);assert.match(detail,/ff-board-author-link/);
+ assert.match(list,/params\.set\('sort','newest'\)/,"unknown sort values fall back instead of failing");
+ assert.match(feed,/이 들어간 제목이 없어요/,"search misses get their own empty state");
+ assert.match(notFound,/export default function NotFound/);assert.match(notFound,/href="\/"/);
+ assert.match(favorite,/ff-login-request/,"the card button asks the shell-level LoginPrompt to open");assert.doesNotMatch(favorite,/location\.href = "\/login/,"guests stay on the page instead of leaving for /login");assert.doesNotMatch(favorite,/LoginBottomSheet/,"cards do not embed a sheet each");
+ assert.doesNotMatch(favorite,/스크랩/,"the feature is called 관심 친구 everywhere");
+ assert.match(notifications,/<LoginSheet returnTo="\/notifications"/);assert.doesNotMatch(notifications,/requireChatGPTUser/);
+ assert.match(summary,/refreshSavedSearchMatches\(client, user\.userId\)/,"the bell badge refreshes saved-search matches");
+ assert.match(alerts,/REFRESH_INTERVAL_MS = 30 \* 60 \* 1000/);assert.match(alerts,/\{ force = false \}/);
+ assert.match(media,/allowedWidths = new Set\(\[320, 480, 960\]\)/);assert.match(media,/\.webp\(\{ quality: 78 \}\)/);
+ assert.match(card,/const cardImage = animal\.thumbnail \|\| \(PUBLIC_IMAGE_HOST\.test\(animal\.image\) \? `\/api\/media\?url=\$\{encodeURIComponent\(animal\.image\)\}&w=480`/);
+ assert.doesNotMatch(card,/animal\.thumbnail \|\| animal\.image/,"cards never fall back to the 2,000px original");
+ assert.match(mypage,/ListLinkItem href="\/mypage\/favorites" prefix=\{<IconHeartLine\/>\} title="관심 친구와 저장 검색"/);
+ assert.match(mypage,/ListLinkItem href="\/stories\/manage"/);assert.match(mypage,/from\("posts"\)[^\n]*\.neq\("status", "deleted"\)/);
+ for(const source of [quiz,worldcup])assert.match(source,/openGraph/,"quiz and worldcup pages carry their own share card");
+ const [prompt,chrome]=await Promise.all(["app/components/LoginPrompt.tsx","app/components/AppChrome.tsx"].map(read));
+ assert.match(prompt,/addEventListener\("ff-login-request"/);assert.match(chrome,/<LoginPrompt\/>/,"the main shell mounts one login sheet for all cards");
+});

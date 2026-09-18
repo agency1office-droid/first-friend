@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   const client = getSupabaseServerClient();
   const { data: search, error } = await client.from("saved_searches").insert({ member_id: user.userId, name, criteria_json: JSON.stringify(data.criteria), alerts_enabled: true }).select("*").single();
   if (error) return unavailable();
-  await client.from("notifications").insert({ member_id: user.userId, type: "search_saved", title: "신규 친구 알림을 켰어요", body: `${name} 조건과 닮은 친구가 등록되면 알려드릴게요.`, href: "/mypage" });
+  await client.from("notifications").insert({ member_id: user.userId, type: "search_saved", title: "신규 친구 알림을 켰어요", body: `${name} 조건과 닮은 친구가 등록되면 알려드릴게요.`, href: "/mypage/searches" });
   return Response.json({ search: searchRow(search) }, { status: 201 });
 }
 export async function PATCH(request: Request) {

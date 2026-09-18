@@ -11,6 +11,9 @@ export const metadata:Metadata={title:'이야기'};
 export default async function StoriesPage({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}){
  const values=await searchParams,params=new URLSearchParams();
  for(const [k,v] of Object.entries(values))if(typeof v==='string')params.set(k,v);
+ // 외부 링크의 오타(sort=reactions 등)는 오류 화면 대신 기본값으로 연다.
+ if(!['newest','cheers'].includes(params.get('sort')||'newest'))params.set('sort','newest');
+ if(params.get('category')&&!Object.hasOwn(storyCategories,params.get('category')!))params.delete('category');
  let result,error='';try{result=await getStoryPage(params);}catch{error='이야기를 불러오지 못했어요. 잠시 후 다시 확인해 주세요.';}
  function href(change:Record<string,string>){const next=new URLSearchParams(params);for(const [k,v] of Object.entries(change)){if(v)next.set(k,v);else next.delete(k);}return '/stories?'+next;}
  return <div className="ff-page ff-board-page">

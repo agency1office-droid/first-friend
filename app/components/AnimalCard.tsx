@@ -14,6 +14,9 @@ import { DialogRoot, DialogContent, DialogFooter } from "seed-design/ui/dialog";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Portal } from "@seed-design/react-portal";
 
+// 공공데이터 사진 호스트만 같은 도메인 프록시로 줄여 받는다.
+const PUBLIC_IMAGE_HOST = new RegExp("^https://([a-z0-9-]+[.])*openapi[.]animal[.]go[.]kr/", "i");
+
 function compactRegion(region: string) {
   const parts = region.trim().split(/\s+/);
   if (parts.length < 2) return region;
@@ -32,12 +35,14 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
   const publicStatus = getAnimalPublicStatus(animal);
   const photoNoticeDays = publicStatus.phase === "notice" ? getNoticeDaysRemaining(publicStatus.notice) : null;
   const animalHref = `/friends/${animal.id}`;
+  // 배치 썸네일이 없는 새 공고는 원본 대신 같은 도메인 프록시에서 480px WebP로 줄여 받는다.
+  const cardImage = animal.thumbnail || (PUBLIC_IMAGE_HOST.test(animal.image) ? `/api/media?url=${encodeURIComponent(animal.image)}&w=480` : animal.image);
   const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}?tab=animals` : "/shelters";
   if (imageUnavailable || !animal.image.trim()) return null;
   if (layout === "photo") return <article className="ff-animal-card ff-animal-card-photo">
     <Link prefetch={false} className="ff-animal-photo-link" href={animalHref} aria-label={`${animal.name}, ${publicStatus.cardLabel}, 상세 보기`}>
       <div className="ff-animal-image-wrap">
-        <AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail onUnavailable={() => setImageUnavailable(true)}/>
+        <AnimalThumbnail key={cardImage} src={cardImage} fallbackSrc={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail onUnavailable={() => setImageUnavailable(true)}/>
         <div className="ff-animal-photo-caption"><div className="ff-animal-photo-name">{animal.name}</div></div>
         {publicStatus.cardLabel && <Badge className={`ff-animal-row-public-status ff-animal-photo-status ff-public-status-${publicStatus.phase}`} tone={publicStatus.tone} variant="weak">{photoNoticeDays === null ? publicStatus.cardLabel : `D-${photoNoticeDays} ${publicStatus.cardLabel}`}</Badge>}
       </div>
@@ -63,7 +68,7 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
   return <article className={`ff-animal-card${layout==="row"?" ff-animal-card-row":""}`}>
     {layout === "row" ? <div className="ff-animal-card-row-main">
       <Link prefetch={false} className="ff-animal-row-image-link" href={animalHref} aria-label={`${animal.name} 상세 보기`}>
-        <div className="ff-animal-image-wrap"><AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail onUnavailable={() => setImageUnavailable(true)}/>{(animal.photoCount || 1) > 1 && <span className="ff-card-photo-count" role="img" aria-label={`사진 ${animal.photoCount}장`}><IconPicture2StackedLine aria-hidden="true"/></span>}</div>
+        <div className="ff-animal-image-wrap"><AnimalThumbnail key={cardImage} src={cardImage} fallbackSrc={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail onUnavailable={() => setImageUnavailable(true)}/>{(animal.photoCount || 1) > 1 && <span className="ff-card-photo-count" role="img" aria-label={`사진 ${animal.photoCount}장`}><IconPicture2StackedLine aria-hidden="true"/></span>}</div>
       </Link>
       <div className="ff-animal-info ff-animal-row-info">
         {showShelter && <Link prefetch={false} className="ff-animal-row-shelter" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>{animal.shelter}</Link>}
@@ -71,7 +76,7 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
       </div>
     </div> : <div className="ff-animal-grid-main">
       <Link prefetch={false} href={animalHref} aria-label={`${animal.name} 상세 보기`}>
-        <div className="ff-animal-image-wrap"><AnimalThumbnail key={animal.thumbnail || animal.image} src={animal.thumbnail || animal.image} fallbackSrc={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail onUnavailable={() => setImageUnavailable(true)}/>{(animal.photoCount || 1) > 1 && <span className="ff-card-photo-count" role="img" aria-label={`사진 ${animal.photoCount}장`}><IconPicture2StackedLine aria-hidden="true"/></span>}</div>
+        <div className="ff-animal-image-wrap"><AnimalThumbnail key={cardImage} src={cardImage} fallbackSrc={animal.image} alt={`${animal.name}, 가족을 기다리는 ${animal.species}`} priority={priority} thumbnail onUnavailable={() => setImageUnavailable(true)}/>{(animal.photoCount || 1) > 1 && <span className="ff-card-photo-count" role="img" aria-label={`사진 ${animal.photoCount}장`}><IconPicture2StackedLine aria-hidden="true"/></span>}</div>
       </Link>
       <div className="ff-animal-info">
         {showShelter && <Link prefetch={false} className="ff-animal-row-shelter" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>{animal.shelter}</Link>}

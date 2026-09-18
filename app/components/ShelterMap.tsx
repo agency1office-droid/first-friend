@@ -19,7 +19,7 @@ export function ShelterMap({ shelters, jsKey }: { shelters: Shelter[]; jsKey: st
   const mapRef = useRef<{ setCenter: (center: object) => void } | null>(null);
   const mapsRef = useRef<Awaited<ReturnType<typeof loadKakaoMaps>> | null>(null);
   const [position, setPosition] = useState<Position | null>(null), [locationError, setLocationError] = useState(""), [mapError, setMapError] = useState(!jsKey);
-  const sorted = useMemo(() => shelters.map(shelter => ({ shelter, km: position ? distance(position, shelter) : null })).sort((a, b) => (a.km ?? 9999) - (b.km ?? 9999)), [shelters, position]);
+  const sorted = useMemo(() => shelters.map(shelter => ({ shelter, km: position ? distance(position, shelter) : null })).sort((a, b) => Number(a.shelter.approximateLocation) - Number(b.shelter.approximateLocation) || (a.km ?? 9999) - (b.km ?? 9999)), [shelters, position]);
 
   useEffect(() => {
     if (!mapNode.current || mapRef.current || !shelters.length || !jsKey) return;
@@ -58,9 +58,9 @@ export function ShelterMap({ shelters, jsKey }: { shelters: Shelter[]; jsKey: st
   return <div className="ff-shelter-map-layout">
     <div>{!mapError && <div ref={mapNode} className="ff-shelter-map" aria-label="카카오맵으로 보는 전국 동물보호소" />}
       {mapError && <Image className="ff-shelter-map" src="/api/maps/shelters" alt="카카오 지도에 표시한 전국 동물보호소" width={640} height={640} unoptimized />}
-      {mapError && <Callout tone="informative" title="지도를 이미지로 보여드리고 있어요" description="카카오맵의 확대·이동은 로컬 도메인 등록 후 사용할 수 있어요. 보호소 채널의 카카오 길찾기는 지금도 사용할 수 있습니다." />}
+      {mapError && <Callout tone="informative" title="지도를 이미지로 보여드리고 있어요" description="지금은 확대·이동이 되지 않아요. 보호소를 누르면 상세 화면에서 길찾기를 이용할 수 있어요." />}
       <p className="ff-meta">지도에는 공개된 보호소 주소만 표시합니다. ‘대략 위치’ 표시는 시·도 중심 좌표이며 방문 경로로 사용하면 안 됩니다.</p>
       <ActionButton onClick={locate}>{position ? "현재 위치로 다시 정렬" : "내 위치에서 가까운 순으로 보기"}</ActionButton>{locationError && <Callout tone="warning" description={locationError}/>}</div>
-    <div className="ff-nearby-shelter-list">{sorted.map(({ shelter, km }) => <a href={`/shelters/${encodeURIComponent(shelter.id)}`} key={shelter.id}><div><strong>{shelter.name}</strong><p>{shelter.address}<br/>{shelter.hours}</p></div><span>{km !== null ? `${km.toFixed(km < 10 ? 1 : 0)}km` : shelter.approximateLocation ? "대략 위치" : "카카오맵"}</span></a>)}</div>
+    <div className="ff-nearby-shelter-list">{sorted.map(({ shelter, km }) => <a href={`/shelters/${encodeURIComponent(shelter.id)}`} key={shelter.id}><div><strong>{shelter.name}</strong><p>{shelter.address}<br/>{shelter.hours}</p></div><span>{shelter.approximateLocation ? "대략 위치" : km !== null ? `${km.toFixed(km < 10 ? 1 : 0)}km` : "카카오맵"}</span></a>)}</div>
   </div>;
 }

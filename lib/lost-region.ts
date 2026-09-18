@@ -19,7 +19,7 @@ export function provinceVariants(root: string) {
 }
 
 function tokens(value: string) {
-  return value.replaceAll(",", " ").split(/\s+/).filter(Boolean);
+  return value.replace(/[,()]/g, " ").split(/\s+/).filter(Boolean);
 }
 
 function lastIndexOf(parts: string[], pattern: RegExp) {
@@ -61,6 +61,13 @@ export function lostDisplayRegion(address = "", region = "") {
   const body = PROVINCE_TOKEN.test(parts[0] || "") ? parts.slice(1) : parts;
   const admin = body.filter(part => DISTRICT_SUFFIX.test(part) || TOWN_SUFFIX.test(part));
   return (admin.length ? admin.slice(-2) : body.slice(-2)).join(" ") || source;
+}
+
+// 지도에는 보호자 안전을 위해 정확한 번지 대신 읍·면·동까지만 넘깁니다.
+export function lostCoarseAddress(address = "", region = "") {
+  // 도로명·번지 토큰은 버리고 시·도, 시·군·구, 읍·면·동 토큰만 남긴다.
+  const admin = tokens(address.trim()).filter(part => PROVINCE_TOKEN.test(part) || DISTRICT_SUFFIX.test(part) || TOWN_SUFFIX.test(part));
+  return admin.length ? admin.join(" ") : region.trim() || address.trim();
 }
 
 // 제보가 의미를 갖는 기간입니다. RPC의 상한과 같은 값을 유지해야 합니다.

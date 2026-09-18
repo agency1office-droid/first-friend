@@ -700,7 +700,9 @@ export async function getStoredLostAnimals(limit = 12): Promise<LostAnimal[]> {
     error = legacy.error;
   }
   if (error) throw error;
-  return uniqueLostAnimals((data || []).map(row => storedLostAnimal(row as Record<string, unknown>)), safeLimit);
+  // happened_on이 비어 DB 필터를 통과한 옛 제보는 happened_at 텍스트로 한 번 더 걸러낸다.
+  const fresh = (data || []).filter(row => row.happened_on || (lostHappenedOn(String(row.happened_at || "")) ?? cutoff) >= cutoff);
+  return uniqueLostAnimals(fresh.map(row => storedLostAnimal(row as Record<string, unknown>)), safeLimit);
 }
 
 export async function getStoredLostAnimalById(id: string) {

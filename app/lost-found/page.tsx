@@ -10,7 +10,8 @@ import { getChatGPTUser } from "../chatgpt-auth";
 import { getSupabaseServerClient } from "../../lib/supabase/server";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "실종·발견" };
+const lostDescription = "잃어버린 반려동물과 길에서 발견한 동물을 우리 동네 기준으로 찾고, 연락처를 공개하지 않고 안전하게 연결해요.";
+export const metadata: Metadata = { title: "실종·발견", description: lostDescription, openGraph: { title: "실종·발견 동물 찾기 | 퍼스트 프렌드", description: lostDescription } };
 
 export default async function LostFound() {
   const [lostAnimals, shelters,user] = await Promise.all([

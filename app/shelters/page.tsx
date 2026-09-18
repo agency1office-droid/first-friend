@@ -16,7 +16,7 @@ export default async function SheltersPage() {
     <ActionButton asChild size="large" className="ff-action-link"><Link href="/shelters/map">내 주변 보호소 지도 보기</Link></ActionButton>
     <Callout tone="warning" description="긴급한 구조·학대 상황은 관할 지자체나 경찰에 먼저 연락해 주세요."/>
     <section className="ff-section">
-      {shelters.length ? <List>{shelters.map((shelter, index) => <div key={shelter.id}><ListLinkItem href={`/shelters/${encodeURIComponent(shelter.id)}`} prefix={<IconHospitalcrossBuildingLine/>} title={shelter.name} detail={`${shelter.organization} · ${shelter.animals}\n${shelter.address.split(" ").slice(0,2).join(" ")}\n평일 ${shelter.hours} · ${shelter.closed}`} suffix={<IconChevronRightLine/>}/>{index < shelters.length - 1 && <ListDivider/>}</div>)}</List> : <div className="ff-empty">보호센터 정보를 불러오지 못했어요. 잠시 후 다시 확인해 주세요.</div>}
+      {shelters.length ? <List>{shelters.map((shelter, index) => <div key={shelter.id}><ListLinkItem href={`/shelters/${encodeURIComponent(shelter.id)}`} prefix={<IconHospitalcrossBuildingLine/>} title={shelter.name} detail={<>{shelter.organization} · {shelter.animals}<br/>{shelter.address.split(" ").slice(0,2).join(" ")}<br/>평일 {shelter.hours} · {shelter.closed}</>} suffix={<IconChevronRightLine/>}/>{index < shelters.length - 1 && <ListDivider/>}</div>)}</List> : <div className="ff-empty">보호센터 정보를 불러오지 못했어요. 잠시 후 다시 확인해 주세요.</div>}
     </section>
   </div>;
 }

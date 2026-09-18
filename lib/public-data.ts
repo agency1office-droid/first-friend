@@ -12,7 +12,7 @@ type LossItem = { happenDt?: string; happenAddr?: string; happenPlace?: string; 
 type ShelterItem = { careRegNo?: string; careNm?: string; orgNm?: string; saveTrgtAnimal?: string; careAddr?: string; careTel?: string; weekOprStime?: string; weekOprEtime?: string; closeDay?: string; lat?: string; lng?: string };
 
 export type LostAnimal = { id: string; legacyId?: string; rfidCd?: string; species: string; breed: string; sex: string; age: string; color: string; happenedAt: string; region: string; address: string; place: string; happenPlace?: string; description: string; image: string; updated?: string };
-export type Shelter = { id: string; name: string; organization: string; animals: string; address: string; phone: string; hours: string; closed: string; lat: number; lng: number; approximateLocation: boolean };
+export type Shelter = { id: string; name: string; organization: string; animals: string; address: string; phone: string; hours: string; closed: string; lat: number; lng: number; approximateLocation: boolean; syncedAt?: string };
 
 function formatLostDate(value = "") {
   const raw = value.replace(/\.0$/, "").trim();
@@ -84,8 +84,11 @@ const regionCenters: Record<string, [number, number]> = {
 function shelterPoint(item: ShelterItem) {
   const lat = Number(item.lat), lng = Number(item.lng);
   if (Number.isFinite(lat) && Number.isFinite(lng) && lat > 30 && lat < 40 && lng > 120 && lng < 135) return { lat, lng, approximateLocation: false };
-  const region = Object.keys(regionCenters).find(name => `${item.orgNm || ""} ${item.careAddr || ""}`.includes(name)) || "서울";
-  const [fallbackLat, fallbackLng] = regionCenters[region];
+  // 공공데이터는 "경상남도"처럼 긴 이름을 쓰므로 줄임말 키에 맞추고, 못 찾으면 서울이 아니라 국토 중심을 대략 위치로 쓴다.
+  const longNames: Record<string, string> = { 경상남도: "경남", 경상북도: "경북", 전라남도: "전남", 전라북도: "전북", 충청남도: "충남", 충청북도: "충북" };
+  const text = Object.entries(longNames).reduce((value, [long, short]) => value.replaceAll(long, short), `${item.orgNm || ""} ${item.careAddr || ""}`);
+  const region = Object.keys(regionCenters).find(name => text.includes(name));
+  const [fallbackLat, fallbackLng] = region ? regionCenters[region] : [36.5, 127.8];
   return { lat: fallbackLat, lng: fallbackLng, approximateLocation: true };
 }
 function species(item: AbandonedItem) { return item.upKindNm || item.kindFullNm?.match(/^\[([^\]]+)/)?.[1] || "기타"; }
@@ -286,7 +289,10 @@ export async function getShelters(limit = 20): Promise<Shelter[]> {
       id: item.careRegNo || `shelter-${index}`, name: item.careNm || "동물보호센터", organization: item.orgNm || "관할 기관", animals: item.saveTrgtAnimal?.replaceAll("+", " · ") || "보호 동물 문의", address: item.careAddr || "주소 정보 없음", phone: item.careTel || "전화번호 정보 없음", hours: item.weekOprStime && item.weekOprEtime ? `${item.weekOprStime} ~ ${item.weekOprEtime}` : "운영시간 문의", closed: item.closeDay && item.closeDay !== "0" ? item.closeDay : "휴무일 문의",
       ...shelterPoint(item),
     }));
-    shelterCache = { at: Date.now(), data }; return data.slice(0, limit);
+    // 같은 보호소가 관할 기관별로 여러 번 등록돼 목록·지도에 3~4번씩 보이므로 이름+주소로 하나만 남긴다.
+    const seen = new Set<string>();
+    const unique = data.filter(shelter => { const key = `${shelter.name}|${shelter.address}`; if (seen.has(key)) return false; seen.add(key); return true; });
+    shelterCache = { at: Date.now(), data: unique }; return unique.slice(0, limit);
   } catch { return []; }
 }
 
@@ -294,10 +300,12 @@ export async function getShelterById(id: string) {
   try {
     const { data, error } = await getSupabaseServerClient()
       .from("public_shelters")
-      .select("id,name,organization,address,phone,hours,closed,lat,lng,approximate_location")
+      .select("id,name,organization,address,phone,hours,closed,lat,lng,approximate_location,synced_at")
       .eq("id", id)
       .maybeSingle();
     if (!error && data) {
+      // 보호 대상은 DB 컬럼이 없어 공공 API 목록(캐시)에서 가져온다.
+      const listed = (await getShelters(1000)).find((shelter) => shelter.id === String(data.id));
       const point = shelterPoint({
         orgNm: String(data.organization || ""),
         careAddr: String(data.address || ""),
@@ -308,13 +316,14 @@ export async function getShelterById(id: string) {
         id: String(data.id),
         name: String(data.name || "동물보호센터"),
         organization: String(data.organization || "관할 기관"),
-        animals: "보호 동물 문의",
+        animals: listed?.animals || "보호 동물 문의",
         address: String(data.address || "주소 정보 없음"),
         phone: String(data.phone || "전화번호 정보 없음"),
         hours: String(data.hours || "운영시간 문의"),
         closed: String(data.closed || "휴무일 문의"),
         ...point,
         approximateLocation: Boolean(data.approximate_location ?? point.approximateLocation),
+        syncedAt: data.synced_at ? String(data.synced_at) : undefined,
       } satisfies Shelter;
     }
   } catch {

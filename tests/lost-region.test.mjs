@@ -86,3 +86,12 @@ test('duplicate public notices never fill the district list with one animal', as
   assert.equal(params.p_limit,6,'중복을 걷어낸 뒤에도 목록이 차도록 넉넉히 받아옵니다');
   assert.deepEqual(animals.map(animal=>animal.id),['a','d'],'같은 등록 사진은 한 건으로 합칩니다');
 });
+
+test('lost map location stays at town level and card regions drop stray parentheses', async t => {
+  const {lostCoarseAddress,lostDisplayRegion}=await loadRegionModule(t);
+  assert.equal(lostCoarseAddress('경기도 양평군 단월면 말치골길 222-3','경기도 양평군'),'경기도 양평군 단월면','번지·도로명은 지도에 넘기지 않습니다');
+  assert.equal(lostCoarseAddress('부산광역시 금정구 중앙대로 2369-15 (노포동)','부산광역시 금정구'),'부산광역시 금정구 노포동');
+  assert.equal(lostCoarseAddress('서울특별시 마포구','서울특별시 마포구'),'서울특별시 마포구');
+  assert.equal(lostCoarseAddress('','경기도 양평군'),'경기도 양평군','주소가 없으면 관할 지역으로 폴백합니다');
+  assert.equal(lostDisplayRegion('서울특별시 마포구 (마포동','서울특별시 마포구'),'마포구 마포동','괄호가 닫히지 않은 공공데이터 주소도 정리합니다');
+});

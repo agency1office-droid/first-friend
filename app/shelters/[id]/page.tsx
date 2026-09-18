@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { getShelterById } from "../../../lib/public-data";
 import { getSupabaseServerClient } from "../../../lib/supabase/server";
 import { getAnimalsByShelterId } from "../../../lib/public-animal-store";
@@ -210,7 +211,9 @@ export default async function Page({
         <p className="ff-description ff-shelter-data-note">
           <span>공공데이터와 보호소 확인 정보를 함께 보여드려요.</span>
           <span>방문 전 운영시간과 상담 가능 여부를 확인해 주세요.</span>
+          {shelter.syncedAt && <span>국가동물보호정보시스템 기준 · {new Date(shelter.syncedAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric" })} 확인</span>}
         </p>
+        <p className="ff-description"><Link href="/shelters/manage">이 보호소 담당자이신가요? 인증하고 소식·봉사·물품을 직접 관리하기 →</Link></p>
       </section>}
     </div>
   );

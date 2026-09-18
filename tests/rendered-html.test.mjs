@@ -1429,3 +1429,26 @@ test("animal detail pages expose per-animal Open Graph tags so shared links unfu
   assert.match(metadata, /twitter: \{ card: "summary_large_image"/);
   assert.match(metadata, /animal\.shelter/);
 });
+
+test("keeps the 2026-09 security audit fixes in place", async () => {
+  const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
+  const [volunteer, lostDetail, lostApi, family, thumbnails, guards, vercel, migration, shelterPage, locations, maps] = await Promise.all([
+    read("../app/api/volunteer/route.ts"), read("../app/api/lost-found/[id]/route.ts"), read("../app/api/lost-found/route.ts"), read("../app/api/family/[token]/route.ts"),
+    read("../lib/animal-thumbnails.ts"), read("../lib/api-guards.ts"), read("../vercel.json"), read("../supabase/migrations/20260918000100_lock_anon_privileges.sql"),
+    read("../app/shelters/[id]/page.tsx"), read("../app/api/locations/route.ts"),
+    Promise.all(["address-coordinates", "address-details", "directions", "nearby-transit", "shelters", "static"].map((name) => read(`../app/api/maps/${name}/route.ts`))),
+  ]);
+  assert.doesNotMatch(volunteer, /shelter_profiles"\)\.insert/, "봉사 지원이 보호소 프로필을 대신 만들지 않음");
+  assert.match(shelterPage, /profile\?\.verified && profile\.name/);
+  assert.match(lostDetail, /PUBLIC_REPORT_FIELDS/);
+  assert.match(lostDetail, /message\.sender_id===state\.user\.userId\|\|message\.sender_id===state\.report\.member_id/);
+  assert.match(lostApi, /ownedUploadKey\(imageKey, user\.userId/);
+  assert.match(family, /select\("id,animal_id,title,status,created_at"\)/);
+  assert.match(thumbnails, /hasAllowedFileSignature\(type, input\)/);
+  assert.match(guards, /timingSafeEqual/);
+  for (const route of [...maps, locations]) assert.match(route, /enforceRateLimit\("maps", requestSubject\(request\)/);
+  assert.match(vercel, /Content-Security-Policy/);
+  assert.match(vercel, /Permissions-Policy/);
+  assert.match(migration, /alter default privileges for role postgres in schema public revoke all on tables from anon, authenticated;/);
+  await assert.rejects(read("../lib/supabase/client.ts"), /ENOENT/, "브라우저용 Supabase 클라이언트는 공개 키가 번들에 실리지 않도록 두지 않음");
+});

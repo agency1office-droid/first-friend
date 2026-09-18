@@ -1,3 +1,5 @@
+import { enforceRateLimit, requestSubject } from "../../../../lib/api-guards";
+
 type KakaoPlace = {
   place_name?: string;
   distance?: string;
@@ -24,6 +26,7 @@ export async function GET(request: Request) {
   const lat = coordinate(params.get("lat"), -90, 90);
   const lng = coordinate(params.get("lng"), -180, 180);
   if (lat === null || lng === null) return json({ station: null, reason: "invalid_coordinates" }, 400);
+  if (!await enforceRateLimit("maps", requestSubject(request), 60, 60)) return json({ station: null, reason: "rate_limited" }, 429);
 
   const upstream = new URL("https://dapi.kakao.com/v2/local/search/category.json");
   upstream.searchParams.set("category_group_code", "SW8");

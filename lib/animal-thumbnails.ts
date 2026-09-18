@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { getSupabaseServerClient } from "./supabase/server";
+import { hasAllowedFileSignature } from "./supabase/storage";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
@@ -27,6 +28,8 @@ export async function createAnimalThumbnail(source: string) {
   // vinext's optional-dependency stub is unknown; use the installed Sharp types.
   const sharp = (await import("sharp")).default as typeof import("../node_modules/sharp/lib/index");
   const input = Buffer.concat(chunks);
+  // 라벨이 잘못된 HEIF 같은 파일이 libvips의 다른 디코더(libheif)에 닿지 않도록 서명을 먼저 확인합니다.
+  if (!["image/jpeg", "image/png", "image/webp"].some(type => hasAllowedFileSignature(type, input))) throw new Error("지원하지 않는 사진 형식이에요.");
   const decoded = sharp(input, { limitInputPixels: 40_000_000 });
   if (!["jpeg", "png", "webp"].includes((await decoded.metadata()).format || "")) throw new Error("지원하지 않는 사진 형식이에요.");
   const buffer = await decoded.rotate()

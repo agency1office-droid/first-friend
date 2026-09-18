@@ -1,4 +1,5 @@
 import { syncPublicAnimals } from "../../../../lib/public-animal-store";
+import { secretMatches } from "../../../../lib/api-guards";
 import { logError } from "../../../../lib/observability";
 
 export const maxDuration = 300;
@@ -6,7 +7,7 @@ export const maxDuration = 300;
 function authorized(request: Request) {
   const expected = process.env.CRON_SECRET?.trim();
   const supplied = request.headers.get("x-sync-token")?.trim() || request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
-  return Boolean(expected && supplied && supplied === expected);
+  return secretMatches(expected, supplied);
 }
 
 export async function GET(request: Request) {

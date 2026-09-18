@@ -1,4 +1,5 @@
 import { getNearbyAnimalsPage, syncPublicAnimals } from "../../../lib/public-animal-store";
+import { secretMatches } from "../../../lib/api-guards";
 import { PUBLIC_ANIMAL_AGE_MAX, PUBLIC_ANIMAL_WEIGHT_MAX } from "../../../lib/animal-filter-ranges";
 
 function coordinate(value: string | null, min: number, max: number) {
@@ -39,9 +40,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const host = new URL(request.url).hostname;
-  const token = process.env.PUBLIC_DATA_SYNC_TOKEN?.trim();
-  const supplied = request.headers.get("x-sync-token")?.trim();
-  if (host !== "localhost" && host !== "127.0.0.1" && (!token || supplied !== token)) {
+  // 개발 환경의 localhost만 토큰 없이 동기화할 수 있습니다. Host 헤더만으로 판단하면 프록시 뒤에서 위조될 수 있어 NODE_ENV도 함께 봅니다.
+  const local = process.env.NODE_ENV !== "production" && (host === "localhost" || host === "127.0.0.1");
+  if (!local && !secretMatches(process.env.PUBLIC_DATA_SYNC_TOKEN?.trim(), request.headers.get("x-sync-token")?.trim())) {
     return Response.json({ error: "동기화 권한이 없습니다." }, { status: 403 });
   }
   try {

@@ -1,3 +1,5 @@
+import { enforceRateLimit, requestSubject } from "../../../../lib/api-guards";
+
 type KakaoAddress = {
   address_name?: string;
 };
@@ -51,6 +53,7 @@ export async function GET(request: Request) {
   const query = params.get("q")?.trim().slice(0, 180) || "";
   const lat = coordinate(params.get("lat"), -90, 90);
   const lng = coordinate(params.get("lng"), -180, 180);
+  if (!await enforceRateLimit("maps", requestSubject(request), 60, 60)) return response({ address: null, reason: "rate_limited" }, 429);
 
   try {
     if (query && query !== "주소 정보 없음") {

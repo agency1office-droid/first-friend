@@ -1,3 +1,5 @@
+import { enforceRateLimit, requestSubject } from "../../../../lib/api-guards";
+
 type KakaoDirectionsResponse = {
   routes?: Array<{
     result_code?: number;
@@ -30,6 +32,8 @@ export async function GET(request: Request) {
   if (originLat === null || originLng === null || destinationLat === null || destinationLng === null) {
     return json({ available: false, reason: "invalid_coordinates" }, 400);
   }
+  // 서버의 카카오 REST 키로 호출하므로 익명 반복 호출이 일일 쿼터를 비우지 않도록 IP별로 제한합니다.
+  if (!await enforceRateLimit("maps", requestSubject(request), 60, 30)) return json({ available: false, reason: "rate_limited" }, 429);
 
   const upstream = new URL("https://apis-navi.kakaomobility.com/v1/directions");
   upstream.searchParams.set("origin", `${originLng},${originLat}`);

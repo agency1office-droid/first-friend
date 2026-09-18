@@ -1,3 +1,5 @@
+import { enforceRateLimit, requestSubject } from "../../../lib/api-guards";
+
 type KakaoAddressDocument = {
   address_name: string;
   x: string;
@@ -34,6 +36,7 @@ export async function GET(request: Request) {
   if (query.length < 2) return Response.json({ locations: [] });
   const key = process.env.KAKAO_REST_API_KEY?.trim();
   if (!key) return Response.json({ error: "지역 검색 키가 설정되지 않았습니다." }, { status: 503 });
+  if (!await enforceRateLimit("maps", requestSubject(request), 60, 60)) return Response.json({ error: "잠시 후 다시 검색해 주세요.", locations: [] }, { status: 429 });
 
   const headers = { Authorization: `KakaoAK ${key}` };
   const addressUrl = new URL("https://dapi.kakao.com/v2/local/search/address.json");

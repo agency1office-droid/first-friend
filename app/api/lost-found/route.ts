@@ -1,6 +1,7 @@
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { getSupabaseServerClient } from "../../../lib/supabase/server";
-import { clean, readJson } from "../_helpers";
+import { clean, ownedUploadKey, readJson } from "../_helpers";
+import { enforceRateLimit } from "../../../lib/api-guards";
 import { getNearbyStoredLostAnimals } from "../../../lib/public-animal-store";
 import { provinceVariants } from "../../../lib/lost-region";
 import { logEvent } from "../../../lib/observability";
@@ -38,6 +39,8 @@ export async function POST(request: Request) {
   if (!data) return Response.json({ error: "요청 형식을 확인해 주세요." }, { status: 400 });
   const kind = clean(data.kind, 10) as "lost" | "found", species = clean(data.species, 30), region = clean(data.region, 80), occurredAt = clean(data.occurredAt, 40), description = clean(data.description), imageKey = clean(data.imageKey, 240), ownershipQuestion = clean(data.ownershipQuestion, 300), alertRegion = clean(data.alertRegion, 80);
   if (!["lost", "found"].includes(kind) || !species || !region || !occurredAt || description.length < 20 || (kind === "lost" && ownershipQuestion.length < 10)) return Response.json({ error: "신고 내용과 소유 확인 질문을 확인해 주세요." }, { status: 400 });
+  if (imageKey && !ownedUploadKey(imageKey, user.userId, ["public-media", "uploads"])) return Response.json({ error: "사진을 확인해 주세요." }, { status: 400 });
+  if (!await enforceRateLimit("lost-report", `member:${user.userId}`, 3600, 10)) return Response.json({ error: "신고는 한 시간에 10건까지 등록할 수 있어요." }, { status: 429 });
   const suppliedTags=Array.isArray(data.visualTags)?data.visualTags.map(value=>clean(value,40)).filter(Boolean).slice(0,12):[];
   const visualTags = Array.from(new Set([...( `${species} ${description}`.toLowerCase().match(/검정|흰색|회색|갈색|치즈|삼색|줄무늬|장모|단모|소형|중형|대형|접힌 귀|큰 눈/g) || []),...suppliedTags]));
   const { data: report, error: reportError } = await supabase.from("lost_reports").insert({ member_id:user.userId, kind, species, region:region.split(" ").slice(0,3).join(" "), occurred_at:occurredAt, description, image_key:imageKey || null, ownership_question:ownershipQuestion, alert_region:alertRegion, visual_tags_json:JSON.stringify(visualTags) }).select("*").single();

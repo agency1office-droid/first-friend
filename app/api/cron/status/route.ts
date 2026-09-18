@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
+import { secretMatches } from "../../../../lib/api-guards";
 import { logError } from "../../../../lib/observability";
 
 export const dynamic = "force-dynamic";
@@ -6,7 +7,7 @@ export const dynamic = "force-dynamic";
 function authorized(request: Request) {
   const expected = process.env.CRON_SECRET?.trim();
   const supplied = request.headers.get("x-sync-token")?.trim() || request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
-  return Boolean(expected && supplied && supplied === expected);
+  return secretMatches(expected, supplied);
 }
 
 /** 외부 모니터링이 동기화 실패를 감지할 수 있는 읽기 전용 상태 엔드포인트입니다. */

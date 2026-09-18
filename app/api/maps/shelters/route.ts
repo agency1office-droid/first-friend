@@ -1,8 +1,10 @@
 import { getShelters } from "../../../../lib/public-data";
+import { enforceRateLimit, requestSubject } from "../../../../lib/api-guards";
 
-export async function GET() {
+export async function GET(request: Request) {
   const key = process.env.KAKAO_REST_API_KEY?.trim();
   if (!key) return new Response(null, { status: 400 });
+  if (!await enforceRateLimit("maps", requestSubject(request), 60, 10)) return new Response(null, { status: 429 });
 
   const shelters = await getShelters(100);
   if (!shelters.length) return new Response(null, { status: 404 });

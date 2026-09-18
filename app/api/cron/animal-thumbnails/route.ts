@@ -1,10 +1,10 @@
 import { processAnimalThumbnails } from "../../../../lib/animal-thumbnails";
+import { secretMatches } from "../../../../lib/api-guards";
 import { logEvent, logError } from "../../../../lib/observability";
 
 export const maxDuration = 300;
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET?.trim();
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) return Response.json({ error: "동기화 권한이 없습니다." }, { status: 403 });
+  if (!secretMatches(process.env.CRON_SECRET?.trim(), request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim())) return Response.json({ error: "동기화 권한이 없습니다." }, { status: 403 });
   try {
     const result = await processAnimalThumbnails();
     logEvent("sync.animal_thumbnails_complete", result);

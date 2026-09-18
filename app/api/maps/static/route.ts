@@ -1,3 +1,5 @@
+import { enforceRateLimit, requestSubject } from "../../../../lib/api-guards";
+
 function coordinate(value: string | null, min: number, max: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= min && parsed <= max ? parsed : null;
@@ -9,6 +11,7 @@ export async function GET(request: Request) {
   const lng = coordinate(params.get("lng"), 120, 135);
   const key = process.env.KAKAO_REST_API_KEY?.trim();
   if (!key || lat === null || lng === null) return new Response(null, { status: 400 });
+  if (!await enforceRateLimit("maps", requestSubject(request), 60, 30)) return new Response(null, { status: 429 });
 
   const upstream = new URL("https://dapi.kakao.com/v2/maps/staticmap");
   upstream.searchParams.set("size", "640x360");

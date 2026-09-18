@@ -1,5 +1,13 @@
+import { timingSafeEqual } from "node:crypto";
 import { getSupabaseServerClient } from "./supabase/server";
 import { logError } from "./observability";
+
+/** 크론·동기화 시크릿 비교. 길이가 달라도 같은 시간이 걸리도록 상수 시간 비교를 씁니다. */
+export function secretMatches(expected: string | undefined | null, supplied: string | undefined | null) {
+  if (!expected || !supplied) return false;
+  const a = Buffer.from(expected), b = Buffer.from(supplied);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 type GuardResult =
   | { kind: "none" }

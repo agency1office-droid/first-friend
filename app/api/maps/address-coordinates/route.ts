@@ -1,3 +1,5 @@
+import { enforceRateLimit, requestSubject } from "../../../../lib/api-guards";
+
 function coordinate(value: unknown, minimum: number, maximum: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= minimum && parsed <= maximum ? parsed : null;
@@ -7,6 +9,7 @@ export async function GET(request: Request) {
   const key = process.env.KAKAO_REST_API_KEY?.trim();
   const query = new URL(request.url).searchParams.get("q")?.trim().slice(0, 180) || "";
   if (!key || !query) return Response.json({ coordinates: null }, { status: 400 });
+  if (!await enforceRateLimit("maps", requestSubject(request), 60, 60)) return Response.json({ coordinates: null }, { status: 429 });
   try {
     const queries = [query, query.split(" ").slice(0, 2).join(" ")].filter((value, index, values) => value && values.indexOf(value) === index);
     let document: { x?: string; y?: string } | undefined;

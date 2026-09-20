@@ -18,3 +18,18 @@ test('detail back returns to the originating history entry, with safe direct-ent
     if(previous)assert.equal(stack.at(-1),previous);
   }
 });
+
+test('worldcup result detail back goes home instead of revisiting the tournament',async()=>{
+  const source=await readFile(new URL('../app/components/AppChrome.tsx',import.meta.url),'utf8');
+  for(const previous of ['/find/worldcup',null]){
+    let back=0,push;
+    const exports={};
+    runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,{
+      exports,URL,document:{referrer:previous?'https://www.firstfriend.me/find/worldcup':''},
+      window:{location:new URL('https://www.firstfriend.me/friends/123?via=worldcup'),history:{length:previous?2:1,back(){back++;}},sessionStorage:{getItem:()=>JSON.stringify(previous?[previous,'/friends/123?via=worldcup']:[]) }},
+      require:id=>id==='react/jsx-runtime'?{jsx:(type,props)=>({type,props})}:id==='next/navigation'?{useRouter:()=>({push:v=>{push=v;}})}:{},
+    });
+    exports.AppBackButton({fallback:'/find',title:'친구 정보'}).props.onClick();
+    assert.equal(back,0);assert.equal(push,'/');
+  }
+});

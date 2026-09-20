@@ -1303,7 +1303,7 @@ test("keeps all 36 product-review pages discoverable and under the shared app-qu
   assert.match(chrome, /window\.history\.back\(\)/);
   assert.match(chrome, /sessionStorage/);
   assert.match(chrome, /className=\{`ff-app-back/);
-  assert.match(chrome, /router\.push\(fallback\)/);
+  assert.match(chrome, /navigateAppBack\(fallback,href=>router\.push\(href\)\)/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /safe-area-inset-bottom/);
   assert.match(css, /@media \(max-width: 360px\)/);

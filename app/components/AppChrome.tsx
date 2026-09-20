@@ -61,6 +61,8 @@ function writeHistory(value:string[]){try{window.sessionStorage.setItem(historyK
 // 앱 안에서 들어온 곳(예: 홈 바로가기)으로 돌아갑니다. 기록이 없으면 fallback 경로로 이동합니다.
 // 앱바 뒤로 버튼과 퀴즈형 화면(이상형 월드컵)이 같은 규칙을 쓰도록 분리했습니다.
 export function navigateAppBack(fallback:string,push:(href:string)=>void=href=>window.location.assign(href)){
+  // 월드컵 결과에서 연 친구 상세는 대결 화면 대신 홈으로 돌아갑니다.
+  if(window.location.pathname.startsWith("/friends/")&&new URL(window.location.href).searchParams.get("via")==="worldcup"){push("/");return}
   const current=`${window.location.pathname}${window.location.search}${window.location.hash}`,stack=readHistory();
   const currentIndex=stack.lastIndexOf(current);
   if(currentIndex>=0)stack.splice(currentIndex,1);else if(stack.length)stack.pop();
@@ -73,7 +75,7 @@ export function navigateAppBack(fallback:string,push:(href:string)=>void=href=>w
 
 export function AppBackButton({fallback,title,className}:{fallback:string;title:string;className?:string}){
   const router=useRouter();
-  const goBack=()=>navigateAppBack(fallback,()=>router.push(fallback));
+  const goBack=()=>navigateAppBack(fallback,href=>router.push(href));
   return <button className={`ff-app-back${className ? ` ${className}` : ""}`} type="button" onClick={goBack} aria-label={`${title}에서 이전 페이지로 돌아가기`}><IconChevronLeftLine aria-hidden/></button>;
 }
 

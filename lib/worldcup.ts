@@ -6,6 +6,11 @@ export type Answers = { species: "dog" | "cat"; scope: "nearby" | "nationwide"; 
 export type GeoPointLike = { lat: number; lng: number } | null | undefined;
 export type Bracket = { size: number; round: Animal[]; index: number; winners: Animal[]; picks: Animal[] };
 
+// 선택한 조건의 실제 후보 수로 가능한 최대 대진을 정합니다. 8마리 미만이면 시작하지 않습니다.
+export function availableRoundSize(count: number) {
+  return count >= 32 ? 32 : count >= 16 ? 16 : count >= 8 ? 8 : 0;
+}
+
 const NOTICE_DATE = /(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\./g;
 
 // 조건을 덜 중요한 것부터 하나씩 넓힙니다: 털색 → 나이대 → 크기 → 전국. 종은 끝까지 유지합니다.

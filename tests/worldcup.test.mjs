@@ -16,6 +16,24 @@ const notice=(start,end)=>`공고 ${start} ~ ${end}`;
 const answers={species:'dog',scope:'nearby',size:'large,xlarge',age:'young',color:'흰색'};
 const seoul={lat:37.57,lng:126.98};
 
+test('eligible candidate counts allow only complete 8, 16, or 32 brackets', async t=>{
+  const {availableRoundSize,pickPool,startBracket,currentPair,choose,isDone}=await loadWorldcup(t);
+  for(const [count,size] of [[0,0],[1,0],[7,0],[8,8],[15,8],[16,16],[31,16],[32,32],[50,32]]){
+    const candidates=Array.from({length:count},(_,i)=>animal(String(i)));
+    const usable=pickPool([[...candidates,...candidates,animal('no-photo',{thumbnail:''})]],100).pool;
+    assert.equal(availableRoundSize(usable.length),size);
+    if(!size) continue;
+    let bracket=startBracket(pickPool([usable],size).pool,()=>0.5);
+    let choices=0;
+    while(!isDone(bracket)){
+      const pair=currentPair(bracket);
+      assert.equal(pair.length,2);
+      bracket=choose(bracket,pair[0]); choices++;
+    }
+    assert.equal(choices,size-1);
+  }
+});
+
 test('pool queries relax color, age, size, then region in that order', async t=>{
   const {poolQueries}=await loadWorldcup(t);
   const queries=poolQueries(answers,seoul).map(q=>new URLSearchParams(q));

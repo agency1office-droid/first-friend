@@ -8,7 +8,7 @@ import { IconArrowDownLine, IconArrowUpBracketDownLine, IconChevronRightLine, Ic
 import type { Animal } from "../../lib/data";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
-import { choose, currentPair, expandColorQueries, isDone, pickPool, poolQueries, progress, roundLabel, startBracket, winnerOf, type Answers, type Bracket } from "../../lib/worldcup";
+import { availableRoundSize, choose, currentPair, expandColorQueries, isDone, pickPool, poolQueries, progress, roundLabel, startBracket, winnerOf, type Answers, type Bracket } from "../../lib/worldcup";
 import { AnimalThumbnail } from "./AnimalThumbnail";
 import { exportCardPng, loadCardAssets, WorldCupCard, type CardAssets } from "./WorldCupCard";
 import { navigateAppBack } from "./AppChrome";
@@ -162,7 +162,6 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
   const answers = toAnswers(draft);
   // 32강 노출과 부족 안내는 실제 후보 규칙(서버 썸네일 있음·중복 제외, 건강은 서버 health=ok로 거름)과 같은 수로 판단합니다.
   const usable = page ? pickPool([page.items], page.items.length).pool.length : 0;
-  const shortBy = Math.max(0, roundSize - usable);
   const canContinue = step === "species" ? draft.species !== null : step === "size" ? draft.size !== null : step === "color" ? draft.color !== null : !empty;
   const stepProgress = Math.max((stepIndex / steps.length) * 100, 6.25);
   const isResult = phase === "result";
@@ -218,7 +217,10 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
         }
       }
       setPage(loaded);
-      setRoundSize(16); setEmpty(false); setStepIndex(value => value + 1);
+      const size = availableRoundSize(pickPool([loaded.items], loaded.items.length).pool.length);
+      setEmpty(size === 0); setStepIndex(steps.length - 1);
+      setRoundSize(size === 32 ? 16 : size);
+      if (size > 0 && size < 32) startMatch(loaded, size);
     } catch (error) {
       feedback.error(error instanceof Error ? error.message : "후보를 불러오지 못했어요.");
     } finally {
@@ -226,30 +228,17 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
     }
   }
 
-  async function startMatch() {
-    if (!page) return;
-    setLoading(true);
-    try {
-      const queries = poolQueries(answers, null);
-      const pages = [page.items];
-      let picked = pickPool(pages, roundSize, Math.random);
-      for (let index = 1; index < queries.length && picked.pool.length < roundSize; index += 1) {
-        pages.push((await fetchPage(queries[index])).items);
-        picked = pickPool(pages, roundSize, Math.random);
-      }
-      if (!picked.pool.length) { setEmpty(true); return; }
-      // 후보는 모두 서버 압축 썸네일(webp)이 있는 친구입니다. 대결이 시작되기 전에 미리 받아 두어 첫 화면부터 바로 보이게 합니다.
-      picked.pool.forEach(animal => { const image = new window.Image(); image.decoding = "async"; image.src = optimizedAnimalImageUrl(animal.thumbnail || animal.image); });
-      // 8강 안내에 쓰는 빨간 실도 미리 받아 두어 첫 안내에서 늦게 뜨지 않게 합니다.
-      const string = new window.Image(); string.src = "/worldcup-string.webp";
-      setPool(picked.pool); setFilled(picked.filled); setHistory([]);
-      setBracket(startBracket(picked.pool, Math.random));
-      setPhase("match");
-    } catch (error) {
-      feedback.error(error instanceof Error ? error.message : "후보를 불러오지 못했어요.");
-    } finally {
-      setLoading(false);
-    }
+  function startMatch(candidates = page, size = roundSize) {
+    if (!candidates) return;
+    const picked = pickPool([candidates.items], size, Math.random);
+    if (picked.pool.length < 8) { setEmpty(true); return; }
+    // 후보는 모두 서버 압축 썸네일(webp)이 있는 친구입니다. 대결이 시작되기 전에 미리 받아 두어 첫 화면부터 바로 보이게 합니다.
+    picked.pool.forEach(animal => { const image = new window.Image(); image.decoding = "async"; image.src = optimizedAnimalImageUrl(animal.thumbnail || animal.image); });
+    // 8강 안내에 쓰는 빨간 실도 미리 받아 두어 첫 안내에서 늦게 뜨지 않게 합니다.
+    const string = new window.Image(); string.src = "/worldcup-string.webp";
+    setPool(picked.pool); setFilled(0); setHistory([]); setRoundIntro(null);
+    setBracket(startBracket(picked.pool, Math.random));
+    setPhase("match");
   }
 
   // 카드 아래 선택 버튼을 누르면 바로 고르고 다음 대결로 넘어갑니다. 되돌리기는 앱바 뒤로가기(previous)로 합니다.
@@ -284,9 +273,10 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
       setRoundIntro(null);
       const last = history.at(-1);
       if (last) { setHistory(value => value.slice(0, -1)); setBracket(last); return; }
-      setPhase("steps"); setStepIndex(steps.length - 1); return;
+      setPhase("steps"); setStepIndex(usable >= 32 ? steps.length - 1 : steps.length - 2); return;
     }
-    if (phase === "result") { setPhase("steps"); setStepIndex(steps.length - 1); setBracket(null); return; }
+    if (phase === "result") { setPhase("steps"); setStepIndex(usable >= 32 ? steps.length - 1 : steps.length - 2); setBracket(null); return; }
+    setEmpty(false);
     if (stepIndex === 0) return exitFlow();
     setStepIndex(value => value - 1);
   }
@@ -419,16 +409,16 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
       {/* 후보를 찾거나 대결을 준비하는 동안은 질문 대신 화면 가운데 로딩을 보여 줍니다. */}
       {loading || !countsReady ? <div className="ff-worldcup-loading" role="status"><LoadingIndicator label={!loading ? "친구 수를 세는 중" : step === "round" ? "대결을 준비하는 중" : "후보를 찾는 중"} /><h1 id="care-step-title">{!loading ? "조건별 친구 수를 세고 있어요" : step === "round" ? "대결을 준비하고 있어요" : "조건에 맞는 친구를 찾고 있어요"}</h1></div>
       : <>{step === "species" && <><h1 id="care-step-title">어떤 친구를 만나고 싶나요?</h1><div className="ff-care-choice-grid"><button type="button" className="ff-care-species-choice" data-selected={draft.species === "cat" || undefined} onClick={() => setDraft(value => ({ ...value, species: "cat", color: value.species === "cat" ? value.color : null }))}><Image src="/cat-selection.webp" alt="" width={104} height={104} unoptimized /><strong>고양이</strong></button><button type="button" className="ff-care-species-choice" data-selected={draft.species === "dog" || undefined} onClick={() => setDraft(value => ({ ...value, species: "dog", color: value.species === "dog" ? value.color : null }))}><Image src="/dog-selection.webp" alt="" width={104} height={104} unoptimized /><strong>강아지</strong></button></div></>}
-      {step === "size" && <><h1 id="care-step-title">어느 정도 크기가<br />좋나요?</h1><p className="ff-care-helper">품종으로 나눈 크기예요. 믹스·품종 미상 친구는 상관없음에서만 만나요.</p><div className="ff-care-size-grid" role="group" aria-label="크기">{SIZE_OPTIONS.map(([value, label]) => <button type="button" className="ff-care-size-choice" aria-pressed={draft.size?.includes(value) ?? false} data-selected={draft.size?.includes(value) || undefined} key={value} onClick={() => setDraft(current => ({ ...current, size: toggleValue(current.size, value) }))}>{label}{countOf(value) !== undefined && <small>{countOf(value)?.toLocaleString("ko-KR")}마리</small>}</button>)}</div></>}
+      {step === "size" && <><h1 id="care-step-title">어느 정도 크기가<br />좋나요?</h1><p className="ff-care-helper">크기는 품종을 기준으로 나눴어요.<br />믹스견이나 품종을 모르는 친구도 보고 싶다면 ‘상관없음’을 선택해 주세요.</p><div className="ff-worldcup-chips" role="group" aria-label="크기">{SIZE_OPTIONS.map(([value, label]) => <Chip.Toggle key={value} inputProps={{ name: "worldcup-size", value }} size="large" checked={draft.size?.includes(value) ?? false} onCheckedChange={() => setDraft(current => ({ ...current, size: toggleValue(current.size, value) }))}><Chip.Label>{label}{countOf(value) !== undefined && <span className="ff-worldcup-chip-count">{countOf(value)?.toLocaleString("ko-KR")}마리</span>}</Chip.Label></Chip.Toggle>)}</div></>}
       {/* 털색은 선택지가 많아 큰 버튼 대신 SEED 칩(토글)으로 줄여 보여 줍니다. name을 고정해야 SSR과 클라이언트의 input name이 같습니다. */}
       {step === "color" && <><h1 id="care-step-title">어떤 털색이<br />마음에 드나요?</h1><p className="ff-care-helper">여러 개 고를 수 있어요.</p><div className="ff-worldcup-chips" role="group" aria-label="털색">{["상관없음", ...(draft.species === "cat" ? CAT_COLORS : DOG_COLORS)].map(label => { const value = label === "상관없음" ? "all" : label; return <Chip.Toggle key={value} inputProps={{ name: "worldcup-color", value }} size="large" checked={draft.color?.includes(value) ?? false} onCheckedChange={() => setDraft(current => ({ ...current, color: toggleValue(current.color, value) }))}><Chip.Label>{label}{countOf(value) !== undefined && <span className="ff-worldcup-chip-count">{countOf(value)?.toLocaleString("ko-KR")}마리</span>}</Chip.Label></Chip.Toggle>; })}</div></>}
-      {step === "round" && page && <><h1 id="care-step-title">몇 강으로<br />시작할까요?</h1><div className="ff-care-size-grid"><button type="button" className="ff-care-size-choice" data-selected={roundSize === 16 || undefined} onClick={() => setRoundSize(16)}>16강</button>{usable >= 32 && <button type="button" className="ff-care-size-choice" data-selected={roundSize === 32 || undefined} onClick={() => setRoundSize(32)}>32강</button>}</div>{empty ? <p className="ff-care-helper">조건을 넓혀도 대결할 친구가 부족해요. 조건을 바꿔 다시 골라 주세요.</p> : shortBy > 0 ? <p className="ff-care-helper">조건에 맞는 친구가 부족해 비슷한 친구 {shortBy}마리를 더해요.</p> : null}</>}</>}
+      {step === "round" && page && (empty ? <><h1 id="care-step-title">월드컵을 진행하기에<br />친구 수가 부족해요</h1><p className="ff-care-helper">월드컵을 시작하려면 최소 8마리가 필요해요.<br />처음으로 돌아가 조건을 다시 골라 주세요.</p></> : <><h1 id="care-step-title">몇 강으로<br />시작할까요?</h1><div className="ff-care-size-grid"><button type="button" className="ff-care-size-choice" data-selected={roundSize === 16 || undefined} onClick={() => setRoundSize(16)}>16강</button><button type="button" className="ff-care-size-choice" data-selected={roundSize === 32 || undefined} onClick={() => setRoundSize(32)}>32강</button></div></>)}</>}
     </section>}
     {/* 대결 화면은 카드 아래 선택 버튼이 곧 다음이라 하단 버튼이 없습니다. */}
     {phase !== "match" && <div className={`ff-readiness-actions ${isResult ? "is-result" : "is-single"}`}>
       {phase === "intro" ? <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={next}>시작하기</ActionButton>
-      : isResult && winner ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" loading={saving} disabled={!cardReady || saving} onClick={() => void saveCard(winner)}><IconArrowDownLine aria-hidden />카드 저장</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" asChild><a href={`/friends/${winner.id}`}>이 친구 알아보기<IconChevronRightLine aria-hidden /></a></ActionButton></>
-      : empty ? <ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={() => { setEmpty(false); setStepIndex(0); }}>조건 다시 고르기</ActionButton>
+      : isResult && winner ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" loading={saving} disabled={!cardReady || saving} onClick={() => void saveCard(winner)}><IconArrowDownLine aria-hidden />카드 저장</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" asChild><a href={`/friends/${winner.id}?via=worldcup`}>이 친구 알아보기<IconChevronRightLine aria-hidden /></a></ActionButton></>
+      : empty ? <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={() => { setEmpty(false); setDraft(EMPTY_DRAFT); setPage(null); setPool([]); setBracket(null); setHistory([]); setRoundIntro(null); setRoundSize(16); setFilled(0); writeSavedRun(null); setStepIndex(0); setPhase("intro"); }}>처음으로 돌아가기</ActionButton>
       : <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!canContinue || loading} loading={loading} onClick={next}>{step === "color" ? "후보 찾기" : step === "round" ? "시작하기" : "다음"}</ActionButton>}
     </div>}
     {/* 원본 사진 뷰어: 상세 페이지 갤러리(AnimalGallery)의 ff-image-dialog 구조를 그대로 씁니다. */}

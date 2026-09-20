@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SnackbarAvoidOverlap } from "seed-design/ui/snackbar";
 import { IconHouseFill,IconHouseLine,IconBookmarkFill,IconBookmarkLine,IconPersonCircleFill,IconPersonCircleLine,IconArticleFill,IconArticleLine,IconHandWaveFill,IconHandWaveLine } from "@karrotmarket/react-monochrome-icon";
+import { readDisplayScope } from "./display-scope";
 
 const items=[
   {href:"/",label:"홈",Icon:IconHouseLine,Active:IconHouseFill},
@@ -14,11 +15,17 @@ const items=[
   {href:"/mypage",label:"나의 페이지",Icon:IconPersonCircleLine,Active:IconPersonCircleFill},
 ];
 
+function askLoginIfGuest(e: React.MouseEvent, returnTo: string) {
+  if (readDisplayScope() !== "guest") return;
+  e.preventDefault();
+  window.dispatchEvent(new CustomEvent("ff-login-request", { detail: { returnTo, description: "관심 친구는 로그인 후 볼 수 있어요" } }));
+}
+
 export function BottomNav(){
   const [prefetchReady,setPrefetchReady]=useState(false);
   // vinext registers navigation after hydration effects; observe links next frame.
   useEffect(()=>{const frame=requestAnimationFrame(()=>setPrefetchReady(true));return()=>cancelAnimationFrame(frame)},[]);
   const path=usePathname();
   const activeHref=items.filter(({href})=>href==="/"?path===href:path===href||path.startsWith(`${href}/`)).sort((a,b)=>b.href.length-a.href.length)[0]?.href;
-  return <SnackbarAvoidOverlap><nav className="ff-bottom-nav" aria-label="주요 메뉴">{items.map(({href,label,Icon,Active})=>{const active=activeHref===href,Symbol=active?Active:Icon;return <Link prefetch={!prefetchReady ? false : href === "/" || href === "/participate" ? true : undefined} className="ff-nav-item" data-active={active} aria-current={active?"page":undefined} aria-label={label} href={href} key={href}><Symbol aria-hidden/><span>{label}</span></Link>})}</nav></SnackbarAvoidOverlap>
+  return <SnackbarAvoidOverlap><nav className="ff-bottom-nav" aria-label="주요 메뉴">{items.map(({href,label,Icon,Active})=>{const active=activeHref===href,Symbol=active?Active:Icon;const onClick=href==="/mypage/favorites"?(e:React.MouseEvent)=>askLoginIfGuest(e,href):undefined;return <Link prefetch={!prefetchReady ? false : href === "/" || href === "/participate" ? true : undefined} className="ff-nav-item" data-active={active} aria-current={active?"page":undefined} aria-label={label} href={href} key={href} onClick={onClick}><Symbol aria-hidden/><span>{label}</span></Link>})}</nav></SnackbarAvoidOverlap>
 }

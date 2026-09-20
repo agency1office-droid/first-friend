@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Animal } from "../../lib/data";
 import type { HomeLocation } from "../../lib/geo";
-import { readAllRegions, readHomeLocation } from "../../lib/geo";
+import { readHomeLocation } from "../../lib/geo";
 import type { AnimalPage } from "../../lib/public-animal-store";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
 import { PUBLIC_ANIMAL_AGE_MAX } from "../../lib/animal-filter-ranges";
@@ -63,7 +63,7 @@ function filtersFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const sort = params.get("sort"), species = params.get("species"), publicStatus = params.get("status"), health = params.get("health"), sex = params.get("sex"), neutered = params.get("neutered"), color = params.get("color"), ageGroup = params.get("age"), sizeGroup = params.get("size");
   return {
-    sort: sort === "recent" || readAllRegions() ? "recent" : "distance",
+    sort: sort === "recent" ? "recent" : "distance",
     species: species === "cat" || species === "dog" ? species : "all",
     publicStatus: publicStatus === "notice" || publicStatus === "checking" ? publicStatus : "all",
     health: health === "all" || health === "care" ? health : defaultFilters.health,
@@ -217,9 +217,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     if (!filtersReady) return;
     const url = new URL(window.location.href);
     for (const key of ["sort", "distance", "species", "status", "health", "breed", "breeds", "age", "size", "sex", "neutered", "ageMin", "ageMax", "weightMin", "weightMax", "color"]) url.searchParams.delete(key);
-    // 전체보기의 최근순은 저장된 설정에서 복원되므로 주소를 바꾸지 않습니다.
-    // 주소가 마운트 뒤에 바뀌면 목록 스냅샷 키가 어긋나 첫 화면이 비어 버립니다.
-    if (filters.sort === "recent" && !readAllRegions()) url.searchParams.set("sort", "recent");
+    if (filters.sort === "recent") url.searchParams.set("sort", "recent");
     if (filters.species !== "all") url.searchParams.set("species", filters.species);
     if (filters.publicStatus !== "all") url.searchParams.set("status", filters.publicStatus);
     if (filters.health !== defaultFilters.health) url.searchParams.set("health", filters.health);
@@ -239,12 +237,12 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     const update = async (event?: Event) => {
       const version = ++locationVersion;
       const detail = (event as CustomEvent<HomeLocation> | undefined)?.detail;
-      const allRegions = readAllRegions();
-      let next = allRegions ? null : detail || readHomeLocation();
+      // 모두 보기(전국)에서도 저장된 동네·IP 좌표를 그대로 씁니다. 목록은 원래 반경 제한이 없어 전국이 나오고, 좌표는 기본 정렬 "가까운 순"의 기준점으로만 쓰입니다.
+      let next = detail || readHomeLocation();
       // 상단 주소 표시보다 피드가 먼저 마운트될 수 있습니다.
       // IP 좌표를 확보하기 전에는 첫 목록 요청을 보내지 않아
       // 거리순 요청이 최신순으로 대체되는 것을 막습니다.
-      if (!next && !detail && !allRegions) {
+      if (!next && !detail) {
         next = await loadDefaultHomeLocation();
         if (next && active && version === locationVersion) {
           try {
@@ -263,19 +261,6 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     void update();
     window.addEventListener("ff-region-change", update);
     return () => { active = false; window.removeEventListener("ff-region-change", update); };
-  }, []);
-
-  // 전체보기는 좌표가 없어 거리순을 계산할 수 없으므로 최근 등록순으로 전환합니다.
-  // 동네를 다시 고르면 거리순으로 되돌리되, 동네끼리 바꾸는 동안에는 고른 정렬을 유지합니다.
-  useEffect(() => {
-    let wasAllRegions = readAllRegions();
-    const syncSort = () => {
-      const allRegions = readAllRegions();
-      if (allRegions !== wasAllRegions) setFilters(current => ({ ...current, sort: allRegions ? "recent" : "distance" }));
-      wasAllRegions = allRegions;
-    };
-    window.addEventListener("ff-region-change", syncSort);
-    return () => window.removeEventListener("ff-region-change", syncSort);
   }, []);
 
   useEffect(() => {

@@ -26,7 +26,8 @@ export type AnimalFeedFilters = {
   ageMax: number;
 };
 
-const defaultFilters: AnimalFeedFilters = { sort: "distance", species: "all", publicStatus: "all", health: "all", breedKeys: [], sex: "all", neutered: "all", color: "all", ageGroup: "all", sizeGroup: "all", ageMin: 0, ageMax: PUBLIC_ANIMAL_AGE_MAX };
+// 건강은 기본이 "양호·미확인"(ok): 첫 화면에서 치료·관리가 필요한 친구는 걸러 보여 줍니다. 주소·초기화·필터 개수는 이 기본값을 기준으로 삼습니다.
+const defaultFilters: AnimalFeedFilters = { sort: "distance", species: "all", publicStatus: "all", health: "ok", breedKeys: [], sex: "all", neutered: "all", color: "all", ageGroup: "all", sizeGroup: "all", ageMin: 0, ageMax: PUBLIC_ANIMAL_AGE_MAX };
 type FeedSnapshot = { url: string; items: Animal[]; total: number; cursor: string | null; syncedAt: string | null; stale: boolean; scrollY: number; endpoint?: string; fetchedAt?: number };
 const preloadedAnimalImages = new Set<string>();
 const scrollSnapshotKey = `${HOME_FEED_SNAPSHOT_KEY}:scroll`;
@@ -65,7 +66,7 @@ function filtersFromUrl() {
     sort: sort === "recent" || readAllRegions() ? "recent" : "distance",
     species: species === "cat" || species === "dog" ? species : "all",
     publicStatus: publicStatus === "notice" || publicStatus === "checking" ? publicStatus : "all",
-    health: health === "ok" || health === "care" ? health : "all",
+    health: health === "all" || health === "care" ? health : defaultFilters.health,
     breedKeys: (params.get("breeds") || "").split(",").filter(value => /^(417000|422400):\d{6}$/.test(value)).slice(0, 10),
     sex: sex?.split(",").filter(value => value === "female" || value === "male" || value === "unknown").join(",") || "all",
     neutered: neutered?.split(",").filter(value => value === "yes" || value === "no").join(",") || "all",
@@ -221,7 +222,7 @@ export function useAnimalFeed(initialPage: AnimalPage) {
     if (filters.sort === "recent" && !readAllRegions()) url.searchParams.set("sort", "recent");
     if (filters.species !== "all") url.searchParams.set("species", filters.species);
     if (filters.publicStatus !== "all") url.searchParams.set("status", filters.publicStatus);
-    if (filters.health !== "all") url.searchParams.set("health", filters.health);
+    if (filters.health !== defaultFilters.health) url.searchParams.set("health", filters.health);
     if (filters.breedKeys.length) url.searchParams.set("breeds", filters.breedKeys.join(","));
     if (filters.sex !== "all") url.searchParams.set("sex", filters.sex);
     if (filters.neutered !== "all") url.searchParams.set("neutered", filters.neutered);
@@ -432,6 +433,6 @@ export function useAnimalFeed(initialPage: AnimalPage) {
 
   const setFilter = useCallback(<K extends keyof AnimalFeedFilters>(key: K, value: AnimalFeedFilters[K]) => setFilters(current => ({ ...current, [key]: value })), []);
   const resetFilters = useCallback(() => setFilters(defaultFilters), []);
-  const activeCount = Number(filters.sort === "recent") + Number(filters.species !== "all") + Number(filters.publicStatus !== "all") + Number(filters.health !== "all") + Number(filters.breedKeys.length > 0) + Number(filters.sex !== "all") + Number(filters.neutered !== "all") + Number(filters.color !== "all") + Number(filters.ageGroup !== "all") + Number(filters.sizeGroup !== "all");
+  const activeCount = Number(filters.sort === "recent") + Number(filters.species !== "all") + Number(filters.publicStatus !== "all") + Number(filters.health !== defaultFilters.health) + Number(filters.breedKeys.length > 0) + Number(filters.sex !== "all") + Number(filters.neutered !== "all") + Number(filters.color !== "all") + Number(filters.ageGroup !== "all") + Number(filters.sizeGroup !== "all");
   return { items, total, cursor, syncedAt, stale, location, region, filters, setFilter, resetFilters, activeCount, loading, error, loadMore, retry, isRestoring };
 }

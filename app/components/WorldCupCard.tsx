@@ -5,10 +5,10 @@ import type { Ref } from "react";
 import type { Animal } from "../../lib/data";
 import { CARD_WIDTH, COLOR, FONT, cardDate, fitFontSize, toDataUrl } from "../../lib/card-export";
 
-// 이상형 월드컵 결과의 "인연 카드". 화면에 보이는 이 SVG를 그대로 PNG(1080×1450)로 내보내 SNS에 올립니다.
+// 이상형 월드컵 결과의 "인연 카드". 화면에 보이는 이 SVG를 그대로 PNG(1080×1410)로 내보내 SNS에 올립니다.
 // 색·글꼴·PNG 변환은 lib/card-export.ts(인증서 카드와 공용)에 있고, 여기서는 사진·붉은 실·워드마크·QR을 data URL로 받아 둡니다.
 export { exportCardPng } from "../../lib/card-export";
-export type CardAssets = { id: string; photo: string; string: string; wordmark: string; label: string; qr: string; date: string };
+export type CardAssets = { id: string; photo: string; string: string; wordmark: string; qr: string; date: string };
 type Props = {
   ref?: Ref<SVGSVGElement>;
   headline: string; breed: string; number: string; meta: string; shelter: string;
@@ -16,26 +16,26 @@ type Props = {
 };
 
 const QR_SIZE = 145;
-const CARD_HEIGHT = 1450;
+const CARD_HEIGHT = 1410;
 
 /** 카드에 들어갈 사진(서버 압축 썸네일)·붉은 실·워드마크·상세 페이지 QR을 data URL로 받습니다. */
 export async function loadCardAssets(animal: Animal, detailUrl: string): Promise<CardAssets> {
-  const [photo, string, wordmark, label, qr] = await Promise.all([
+  const [photo, string, wordmark, qr] = await Promise.all([
     toDataUrl(animal.thumbnail || animal.image),
     toDataUrl("/worldcup-string-heart.webp"),
     toDataUrl("/logo-wordmark.webp"),
-    toDataUrl("/worldcup-brand-label.svg"),
     // 오류정정 L(7%)이면 짧은 주소가 29×29 모듈(버전 3)에 들어갑니다. 카드에 놓는 크기(145px = 29×5px)로 바로 만들어
     // 브라우저가 다시 축소하며 흐려지는 일을 막습니다(축소본은 폰 화면 폭에서 판독이 깨졌음).
     QRCode.toDataURL(detailUrl, { width: QR_SIZE, margin: 0, errorCorrectionLevel: "L", color: { dark: COLOR.ink, light: COLOR.white } }),
   ]);
-  return { id: animal.id, photo, string, wordmark, label, qr, date: cardDate() };
+  return { id: animal.id, photo, string, wordmark, qr, date: cardDate() };
 }
 
 export function WorldCupCard({ ref, headline, breed, number, meta, shelter, assets }: Props) {
+  const originalName = number ? `${number} ${breed}` : breed;
   // 실 전체 → 카드 → 앞면의 실 순서로 그려 오른쪽 꼬리를 카드 뒤로 감춥니다.
   // 바탕(.wc-backdrop)은 우승 친구 사진을 크게 흐린 뒤 어둡게 덮은 것. 화면에서는 CSS로 숨기고 페이지 배경(같은 사진)이 비치며, 내보낸 PNG에는 그대로 들어갑니다(독립 SVG에는 페이지 CSS가 안 먹음).
-  return <svg ref={ref} className="ff-worldcup-card" viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`} role="img" aria-label={`퍼스트프렌드 보호소 동물 이상형 월드컵, ${headline}, ${breed} 인연 카드`} fontFamily={FONT}>
+  return <svg ref={ref} className="ff-worldcup-card" viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`} role="img" aria-label={`퍼스트프렌드, ${headline}, ${originalName} 인연 카드`} fontFamily={FONT}>
     <defs>
       <clipPath id="wc-photo"><rect x={128} y={325} width={824} height={640} rx={40} /></clipPath>
       {/* 배경 사진: 얼굴을 알아볼 수 없게 강하게 흐리고 채도를 낮춥니다(화면 CSS와 같은 방향). */}
@@ -53,7 +53,7 @@ export function WorldCupCard({ ref, headline, breed, number, meta, shelter, asse
       <rect width={CARD_WIDTH} height={CARD_HEIGHT} fill="url(#wc-shade)" />
     </g>
     {assets && <image href={assets.string} x={-100} y={-35} width={1130} height={400} preserveAspectRatio="xMidYMid meet" />}
-    <rect x={80} y={40} width={920} height={1370} rx={48} fill={COLOR.cream} filter="url(#wc-card-shadow)" />
+    <rect x={80} y={40} width={920} height={1330} rx={48} fill={COLOR.cream} filter="url(#wc-card-shadow)" />
     {assets && <g clipPath="url(#wc-string-front)"><image href={assets.string} x={-100} y={-35} width={1130} height={400} preserveAspectRatio="xMidYMid meet" /></g>}
     {/* 실 아래는 브랜드, 결과 제목, 사진 순서로 여백을 나눕니다. */}
     {assets && <image href={assets.wordmark} x={128} y={180} width={173.25} height={33} preserveAspectRatio="xMinYMid meet" />}
@@ -63,16 +63,14 @@ export function WorldCupCard({ ref, headline, breed, number, meta, shelter, asse
     {assets && <image href={assets.photo} x={128} y={325} width={824} height={640} preserveAspectRatio="xMidYMid slice" clipPath="url(#wc-photo)" />}
     <rect x={128} y={325} width={824} height={640} rx={40} fill="none" stroke={COLOR.line} strokeWidth={2} />
     {/* 보호소 동물의 이름 = 공고 번호 끝자리 + 종 (예: 00720 믹스견) */}
-    <text x={540} y={1042} textAnchor="middle" fontSize={fitFontSize(number ? `${number} ${breed}` : breed, 54, 820)} fontWeight={800} fill={COLOR.ink}>{number ? `${number} ${breed}` : breed}</text>
+    <text x={540} y={1042} textAnchor="middle" fontSize={fitFontSize(originalName, 54, 820)} fontWeight={800} fill={COLOR.ink}>{originalName}</text>
     <text x={540} y={1090} textAnchor="middle" fontSize={fitFontSize(meta, 32, 824)} fontWeight={500} fill={COLOR.muted}>{meta}</text>
     <path d="M128 1122H952" stroke={COLOR.line} strokeWidth={2} />
     {/* 발: 상세 페이지 QR(145px, 흰 여백 ~8px. 폰 화면 폭에서도 읽히는 크기) · 보호소 */}
     <rect x={144} y={1142} width={160} height={160} rx={14} fill={COLOR.white} stroke={COLOR.line} strokeWidth={2} />
     {assets && <image href={assets.qr} x={152} y={1150} width={QR_SIZE} height={QR_SIZE} />}
     <text x={328} y={1186} fontSize={fitFontSize(shelter, 30, 950 - 328)} fontWeight={700} fill={COLOR.ink}>{shelter}</text>
-    <text x={328} y={1228} fontSize={28} fontWeight={500} fill={COLOR.muted}><tspan x={328}>현재 보호 상태는 </tspan><tspan x={328} dy={40}>상세 페이지에서 확인해요.</tspan></text>
-    {/* 서비스 이름은 카드 하단 서명으로 묶고 고정 레터링을 PNG에도 동일하게 표시합니다. */}
-    {assets && <image href={assets.label} x={396.6} y={1328} width={286.8} height={26} preserveAspectRatio="xMidYMid meet" />}
-    <text x={540} y={1382} textAnchor="middle" fontSize={22} fontWeight={500} fill={COLOR.muted}>{assets?.date ? `${assets.date} · ` : ""}firstfriend.me</text>
+    <text x={328} y={1228} fontSize={28} fontWeight={500} fill={COLOR.muted}><tspan x={328}>QR로 이 친구의 자세한 정보를 </tspan><tspan x={328} dy={40}>확인해요.</tspan></text>
+    <text x={540} y={1342} textAnchor="middle" fontSize={22} fontWeight={500} fill={COLOR.muted}>{assets?.date ? `${assets.date} · ` : ""}firstfriend.me</text>
   </svg>;
 }

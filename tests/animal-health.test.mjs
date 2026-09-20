@@ -66,6 +66,7 @@ test('memos naming a current illness, injury or ongoing treatment become 치료�
     '생식기 주변 고름 분비물 확인됨',
     '기립불능, 사고의심',
     '야윔 활력저하, 안구 돌출',
+    '경계심 있지만 온순한 편 / 오른쪽 안구 혼탁 / 중성화 추정됨',
     '기력저하, 왼쪽 다리 골절',
     '영양실조, 기립불능',
     '탈수로 수액 처치 중',

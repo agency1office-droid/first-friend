@@ -34,12 +34,14 @@ export async function toDataUrl(url: string) {
   });
 }
 
-/** 화면의 카드 SVG를 그대로 1080×1350 PNG로 만듭니다. 글꼴은 기기 글꼴이라 화면과 같게 나옵니다. */
+/** 카드별 viewBox 비율을 유지해 PNG로 만듭니다. */
 export async function exportCardPng(svg: SVGSVGElement) {
+  const width = svg.viewBox.baseVal.width || CARD_WIDTH;
+  const height = svg.viewBox.baseVal.height || CARD_HEIGHT;
   const clone = svg.cloneNode(true) as SVGSVGElement;
   clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-  clone.setAttribute("width", String(CARD_WIDTH));
-  clone.setAttribute("height", String(CARD_HEIGHT));
+  clone.setAttribute("width", String(width));
+  clone.setAttribute("height", String(height));
   clone.removeAttribute("class");
   const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml;charset=utf-8" }));
   try {
@@ -47,10 +49,10 @@ export async function exportCardPng(svg: SVGSVGElement) {
     image.src = url;
     await image.decode();
     const canvas = document.createElement("canvas");
-    canvas.width = CARD_WIDTH; canvas.height = CARD_HEIGHT;
+    canvas.width = width; canvas.height = height;
     const context = canvas.getContext("2d");
     if (!context) throw new Error("캔버스를 쓸 수 없어요");
-    context.drawImage(image, 0, 0, CARD_WIDTH, CARD_HEIGHT);
+    context.drawImage(image, 0, 0, width, height);
     return await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("PNG로 바꾸지 못했어요")), "image/png"));
   } finally {
     URL.revokeObjectURL(url);

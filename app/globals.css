@@ -1741,7 +1741,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-worldcup-loading h1 { margin: 0; font-size: 17px; line-height: 24px; font-weight: var(--seed-font-weight-bold); color: var(--seed-color-fg-neutral-subtle); }
 
 /* 이상형 월드컵 결과: 화면이 곧 공유되는 인연 카드. 카드 이미지와 같은 남색 바탕에 흰 앱바·문구. 남색은 카드 이미지 자산 색(인트로 일러스트 톤)입니다. */
-.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] { --ff-worldcup-night: #1f2126; position: relative; isolation: isolate; background: var(--ff-worldcup-night); }
+.ff-quiz-shell .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] { --ff-worldcup-night: #1f2126; position: relative; isolation: isolate; overflow: clip; background: var(--ff-worldcup-night); }
 /* 우승 친구 사진(--ff-worldcup-backdrop, WorldCupFinder가 인라인으로 넘김)을 얼굴을 알아볼 수 없을 만큼 흐리고 채도를 낮춰 깝니다.
    블러가 가장자리에서 비치지 않도록 화면보다 160px씩 크게 잡고, 밝기를 조금 내려 종이색 카드가 화면에서 가장 밝게 남게 합니다. 사진이 없으면 차콜만 남습니다. */
 .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"]::before { content: ""; position: absolute; inset: -160px; z-index: -2; pointer-events: none; background: var(--ff-worldcup-backdrop, none) center / cover no-repeat; filter: blur(48px) saturate(.6) brightness(.82) contrast(.92); }
@@ -1750,10 +1750,10 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-appbar strong, .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-back, .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-home { color: var(--seed-color-palette-static-white); }
 .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-progress { background: var(--seed-color-palette-static-white-alpha-200); }
 /* 퀴즈 셸 공통 규칙(.ff-quiz-shell ... > section, 34행)이 section에 좌우 -16px 마진·32px 패딩을 주므로, 결과 섹션만 더 높은 특이도로 좌우 패딩을 0으로 두어 카드 SVG가 섹션 폭(=화면 폭)을 꽉 채우게 합니다. 글은 각자 16px 패딩. */
-/* grid-auto-rows: max-content — 섹션 높이가 정해져 있으면 auto 행이 남는 높이로 줄어 카드 SVG(폭×1.25)가 아래 행(안내문)과 겹치므로, 행을 내용 높이로 두고 섹션이 스크롤하게 합니다(짧은 폰·PC). */
-.ff-quiz-shell .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] > .ff-care-result { grid-auto-rows: max-content; gap: 12px; padding: 20px 0 24px; }
-.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result-note { padding: 0 16px; color: var(--seed-color-palette-static-white-alpha-700); text-align: center; }
-/* 화면의 카드는 셸 폭 끝까지(양쪽 16px 여백 위로) 키웁니다. SVG 안쪽 여백(60/1080)이 있어 카드 본체는 화면 가장자리에서 약 5% 떨어집니다. */
+/* 카드는 내용 높이를 유지하고, 하단 고정 버튼 위의 결과 섹션만 스크롤합니다. */
+.ff-quiz-shell .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] > .ff-care-result { grid-auto-rows: max-content; gap: var(--seed-dimension-x2); padding: 12px 0 24px; }
+.ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-care-result-note { margin: 0; padding: 0 16px; color: var(--seed-color-palette-static-white-alpha-700); font-size: var(--seed-font-size-t3); line-height: var(--seed-line-height-t3); text-align: center; }
+/* SVG 내부 좌우 80/1080 여백을 유지합니다. */
 .ff-worldcup-card { display: block; width: 100%; max-width: none; height: auto; margin: 0; }
 /* 화면에서는 SVG 안 배경을 숨겨 페이지의 흐린 사진이 비치게 하고, 내보낸 PNG에는 SVG 안 배경이 들어갑니다(독립 SVG에는 이 CSS가 적용되지 않음). */
 .ff-worldcup-card .wc-backdrop { display: none; }
@@ -1761,6 +1761,6 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-readiness[data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-actions { background: transparent; }
 .ff-quiz-shell [data-quiz-id="worldcup"][data-care-step="result"] .ff-readiness-actions::before { display: none; }
 /* 카드 아래 공유하기: 아이콘 + 글자만 있는 흰 텍스트 버튼 */
-.ff-worldcup-share { display: inline-flex; align-items: center; gap: 8px; margin: 4px auto 0; padding: 10px 16px; border: 0; border-radius: 12px; background: transparent; color: var(--seed-color-palette-static-white); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
-.ff-worldcup-share svg { width: 20px; height: 20px; }
+.ff-care-result .seed-action-button.ff-worldcup-share { margin: 0 auto; color: var(--seed-color-palette-static-white); }
+.ff-worldcup-share svg { width: var(--seed-dimension-x6); height: var(--seed-dimension-x6); }
 .ff-worldcup-share:disabled { opacity: .5; cursor: default; }

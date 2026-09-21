@@ -26,12 +26,12 @@ export function AdoptionPlanningCard() {
       try {
         const response = await fetch("/api/quiz-completions", { cache: "no-store", credentials: "same-origin", signal });
         if (response.status === 401) {
-          if (active && !signal.aborted) setStatus("미수료");
+          if (active && !signal.aborted) setStatus("도전하기");
           return;
         }
         if (!response.ok) throw new Error("load_failed");
         const body = await response.json();
-        if (active && !signal.aborted) { setCompletions(body.completions); setStatus("미수료"); }
+        if (active && !signal.aborted) { setCompletions(body.completions); setStatus("도전하기"); }
       } catch {
         if (active && !signal.aborted) setStatus("확인 필요");
       }
@@ -67,16 +67,16 @@ export function AdoptionPlanningCard() {
       </div>
       <div className="ff-adoption-planning-list">
         <Link className={`ff-adoption-planning-row ${styles.row}`} href="/quiz/care-readiness" onClick={openQuiz}>
-          <span className="ff-adoption-planning-step">STEP 1</span>
+          <span className="ff-adoption-planning-step">QUIZ</span>
           <span className="ff-adoption-planning-row-copy"><strong>입양 환경 점검</strong></span>
           <CompletionBadge title={completions["care-readiness"]} status={status} />
         </Link>
         <Link className={`ff-adoption-planning-row ${styles.row}`} href="/quiz/adoption-prep" onClick={openQuiz}>
-          <span className="ff-adoption-planning-step">STEP 2</span>
+          <span className="ff-adoption-planning-step">QUIZ</span>
           <span className="ff-adoption-planning-row-copy"><strong>입양 준비 체크</strong></span>
           <CompletionBadge title={completions["adoption-prep"]} status={status} />
         </Link>
-        <button className={`ff-pet-knowledge-trigger ${styles.row}`} type="button" onClick={() => openDetailFlow("/quiz/pet-knowledge")}><span className="ff-adoption-planning-step">STEP 3</span><span className="ff-adoption-planning-row-copy"><strong>상식 퀴즈</strong></span><CompletionBadge title={completions["pet-knowledge"]} status={status} /></button>
+        <button className={`ff-pet-knowledge-trigger ${styles.row}`} type="button" onClick={() => openDetailFlow("/quiz/pet-knowledge")}><span className="ff-adoption-planning-step">QUIZ</span><span className="ff-adoption-planning-row-copy"><strong>상식 퀴즈</strong></span><CompletionBadge title={completions["pet-knowledge"]} status={status} /></button>
       </div>
     </section>
   );

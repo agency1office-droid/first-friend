@@ -140,7 +140,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(locationCard, /setMapFailed\(true\)/);
   const planning = await readFile(new URL("../app/components/AdoptionPlanningCard.tsx", import.meta.url), "utf8");
   assert.match(page, /<AdoptionPlanningCard \/>/);
-  assert.match(planning, /STEP 1/);
+  assert.match(planning, /도전하기/);
   assert.doesNotMatch(planning, /생활 궁합/);
   assert.doesNotMatch(planning, /ProgressCircle/);
   assert.doesNotMatch(planning, /<small>/);
@@ -149,7 +149,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(planning, /completions\["adoption-prep"\]/);
   assert.match(planning, /completions\["pet-knowledge"\]/);
   assert.match(planning, /ff-adoption-planning-step/);
-  assert.deepEqual(planning.match(/STEP \d/g), ["STEP 1", "STEP 2", "STEP 3"]);
+  assert.equal((planning.match(/>QUIZ<\/span>/g) ?? []).length, 3);
+  assert.doesNotMatch(planning, /STEP \d|미수료/);
   assert.doesNotMatch(planning, /IconPawprint(?:Fill|Line)/);
   assert.doesNotMatch(planning, /BottomSheetContent/);
   assert.match(planning, /\/quiz\/adoption-prep/);

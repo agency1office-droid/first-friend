@@ -11,6 +11,7 @@ import { closeToDetail } from "./detailReturn";
 import { SpeciesSelectionStep } from "./SpeciesSelectionStep";
 import { ReadinessAppBar } from "./ReadinessAppBar";
 import type { QuizQuestion } from "../../lib/quiz/types";
+import { saveQuizCompletion } from "../../lib/quiz-completion";
 
 type Species = "cat" | "dog";
 type PreviewResult = "success" | "failure" | "";
@@ -97,6 +98,12 @@ export function ReadinessQuiz({ onClose, quizId = "adoption-prep", memberName = 
     if (correctCount >= passingCount) return { title: "따뜻한 반려인", description: "입양 전 알아둘 내용을 잘 이해했어요. 놓친 부분을 확인하며 준비를 이어가세요." };
     return { title: "배워가는 반려인", description: "입양 준비, 하나씩 알아가면 돼요. 틀린 문제를 살펴보고 다시 도전해 보세요." };
   }, [correctCount, passingCount, questions.length, quizDefinition?.slug]);
+  useEffect(() => {
+    if (showResult && !previewResult) {
+      saveQuizCompletion(knowledge ? "pet-knowledge" : "adoption-prep", correctCount / questions.length, certificatePraise.title);
+    }
+  }, [showResult, previewResult, knowledge, correctCount, questions.length, certificatePraise.title]);
+
   async function saveResult(answerValues = submittedAnswers) {
     try {
       const response = await fetch("/api/readiness", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ species: selectedSpecies, profile, answers: answerValues }) });
@@ -178,6 +185,7 @@ export function ReadinessQuiz({ onClose, quizId = "adoption-prep", memberName = 
     if (quizDefinition?.persistResult !== false && calculateEducation(finalAnswers) >= 80) await saveResult(finalAnswers);
   }
   function restartQuiz() {
+    setPreviewResult("");
     setPhase("questions");
     setStep(0);
     setAnswers({});

@@ -7,6 +7,50 @@ import ts from 'typescript';
 
 const require = createRequire(import.meta.url);
 
+test('quiz completion survives remounts, isolates quizzes and handles unavailable storage', async () => {
+  const source = await readFile(new URL('../lib/quiz-completion.ts', import.meta.url), 'utf8');
+  const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
+  const storage = new Map();
+  const events = new EventTarget();
+  const window = {
+    localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
+    addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events), dispatchEvent: events.dispatchEvent.bind(events),
+  };
+  const load = () => {
+    const exports = {};
+    runInNewContext(outputText, { exports, window, Event });
+    return exports;
+  };
+  const completion = load();
+  let updates = 0;
+  const unsubscribe = completion.subscribeQuizCompletion(() => updates++);
+  assert.equal(completion.readQuizCompletion('pet-knowledge'), '미수료');
+  completion.saveQuizCompletion('pet-knowledge', 1, '최고의 반려인');
+  assert.equal(updates, 1);
+  assert.equal(load().readQuizCompletion('pet-knowledge'), '상위 1% · 최고의 반려인');
+  assert.equal(completion.readQuizCompletion('adoption-prep'), '미수료');
+  completion.saveQuizCompletion('pet-knowledge', 0.8, '세심한 반려인');
+  assert.equal(completion.readQuizCompletion('pet-knowledge'), '상위 10% · 세심한 반려인');
+  completion.saveQuizCompletion('pet-knowledge', 0.4, '배워가는 반려인');
+  assert.equal(completion.readQuizCompletion('pet-knowledge'), '상위 50% · 배워가는 반려인');
+  completion.saveQuizCompletion('care-readiness', 1, '함께할 준비가 잘 되어 있어요');
+  assert.match(completion.readQuizCompletion('care-readiness'), /함께할 준비/);
+  events.dispatchEvent(new Event('storage'));
+  events.dispatchEvent(new Event('pageshow'));
+  assert.equal(updates, 6);
+  unsubscribe();
+  events.dispatchEvent(new Event('storage'));
+  assert.equal(updates, 6);
+  storage.set('ff-quiz-completion-v1:pet-knowledge', '{broken');
+  assert.equal(completion.readQuizCompletion('pet-knowledge'), '미수료');
+  completion.saveQuizCompletion('pet-knowledge', NaN, 'invalid');
+  assert.equal(completion.readQuizCompletion('pet-knowledge'), '미수료');
+  window.localStorage.getItem = () => { throw new Error('blocked'); };
+  window.localStorage.setItem = () => { throw new Error('blocked'); };
+  assert.equal(completion.readQuizCompletion('adoption-prep'), '미수료');
+  assert.doesNotThrow(() => completion.saveQuizCompletion('adoption-prep', 1, '완벽한 반려인'));
+});
+
 test('manual neighborhood selection wins over delayed IP and profile restoration', async () => {
   const source = await readFile(new URL('../app/components/HomeTopbar.tsx', import.meta.url), 'utf8');
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } });

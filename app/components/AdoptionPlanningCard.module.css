@@ -1,0 +1,20 @@
+.row[class] {
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+}
+
+.status {
+  max-width: 240px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .row[class] {
+    grid-template-columns: 54px minmax(0, 1fr);
+  }
+
+  .status {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

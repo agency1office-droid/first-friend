@@ -155,7 +155,10 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(planning, /생활 궁합/);
   assert.doesNotMatch(planning, /ProgressCircle/);
   assert.doesNotMatch(planning, /<small>/);
-  assert.match(planning, /IconArrowUpRightLine/);
+  assert.doesNotMatch(planning, /IconArrowUpRightLine/);
+  assert.match(planning, /CompletionBadge quiz="care-readiness"/);
+  assert.match(planning, /CompletionBadge quiz="adoption-prep"/);
+  assert.match(planning, /CompletionBadge quiz="pet-knowledge"/);
   assert.match(planning, /ff-adoption-planning-step/);
   assert.deepEqual(planning.match(/STEP \d/g), ["STEP 1", "STEP 2", "STEP 3"]);
   assert.doesNotMatch(planning, /IconPawprint(?:Fill|Line)/);

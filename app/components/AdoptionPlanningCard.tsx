@@ -1,9 +1,16 @@
 "use client";
 
-import { type MouseEvent } from "react";
+import { useSyncExternalStore, type MouseEvent } from "react";
 import Link from "next/link";
-import { IconArrowUpRightLine } from "@karrotmarket/react-monochrome-icon";
+import { Badge } from "seed-design/ui/badge";
+import { readQuizCompletion, subscribeQuizCompletion, type CompletionQuiz } from "../../lib/quiz-completion";
+import styles from "./AdoptionPlanningCard.module.css";
 import { openDetailFlow } from "./detailReturn";
+
+function CompletionBadge({ quiz }: { quiz: CompletionQuiz }) {
+  const title = useSyncExternalStore(subscribeQuizCompletion, () => readQuizCompletion(quiz), () => "미수료");
+  return <Badge className={styles.status} variant="weak" tone={title === "미수료" ? "neutral" : "brand"}>{title}</Badge>;
+}
 
 export function AdoptionPlanningCard() {
   function openQuiz(event: MouseEvent<HTMLAnchorElement>) {
@@ -21,17 +28,17 @@ export function AdoptionPlanningCard() {
         </div>
       </div>
       <div className="ff-adoption-planning-list">
-        <Link className="ff-adoption-planning-row" href="/quiz/care-readiness" onClick={openQuiz}>
+        <Link className={`ff-adoption-planning-row ${styles.row}`} href="/quiz/care-readiness" onClick={openQuiz}>
           <span className="ff-adoption-planning-step">STEP 1</span>
           <span className="ff-adoption-planning-row-copy"><strong>입양 환경 점검</strong></span>
-          <IconArrowUpRightLine aria-hidden />
+          <CompletionBadge quiz="care-readiness" />
         </Link>
-        <Link className="ff-adoption-planning-row" href="/quiz/adoption-prep" onClick={openQuiz}>
+        <Link className={`ff-adoption-planning-row ${styles.row}`} href="/quiz/adoption-prep" onClick={openQuiz}>
           <span className="ff-adoption-planning-step">STEP 2</span>
           <span className="ff-adoption-planning-row-copy"><strong>입양 준비 체크</strong></span>
-          <IconArrowUpRightLine aria-hidden />
+          <CompletionBadge quiz="adoption-prep" />
         </Link>
-        <button className="ff-pet-knowledge-trigger" type="button" onClick={() => openDetailFlow("/quiz/pet-knowledge")}><span className="ff-adoption-planning-step">STEP 3</span><span className="ff-adoption-planning-row-copy"><strong>상식 퀴즈</strong></span><IconArrowUpRightLine aria-hidden /></button>
+        <button className={`ff-pet-knowledge-trigger ${styles.row}`} type="button" onClick={() => openDetailFlow("/quiz/pet-knowledge")}><span className="ff-adoption-planning-step">STEP 3</span><span className="ff-adoption-planning-row-copy"><strong>상식 퀴즈</strong></span><CompletionBadge quiz="pet-knowledge" /></button>
       </div>
     </section>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Checkbox } from "seed-design/ui/checkbox";
@@ -10,6 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "se
 import { IconChevronDownSmallLine, IconChevronLeftLine, IconHouseLine } from "@karrotmarket/react-monochrome-icon";
 import { CertificateResult, type CertificateHandle } from "./CertificateCard";
 import { closeToDetail } from "./detailReturn";
+import { saveQuizCompletion } from "../../lib/quiz-completion";
 
 type Species = "cat" | "dog";
 type HomeSize = "small" | "medium" | "large";
@@ -80,6 +81,7 @@ const preparationCategoriesFor = (items: PreparationItem[]): PreparationCategory
 
 export function CareReadinessFlow({ memberName = null, admin = false }: { memberName?: string | null; admin?: boolean } = {}) {
   const [started, setStarted] = useState(false);
+  const [isPreview, setIsPreview] = useState(false);
   const [step, setStep] = useState(0);
   const [species, setSpecies] = useState<Species | null>(null);
   const [timeIndex, setTimeIndex] = useState(2);
@@ -122,6 +124,12 @@ export function CareReadinessFlow({ memberName = null, admin = false }: { member
 
   const readyCount = results.filter(result => result.ready).length;
   const percent = Math.round((readyCount / results.length) * 100);
+  useEffect(() => {
+    if (started && isResult && !isPreview) {
+      const title = percent === 100 ? "함께할 준비가 잘 되어 있어요" : percent >= 80 ? "조금 더 확인해 보면 좋아요" : "아직 확인할 내용이 있어요";
+      saveQuizCompletion("care-readiness", readyCount / results.length, title);
+    }
+  }, [started, isResult, isPreview, percent, readyCount, results.length]);
   const certRef = useRef<CertificateHandle>(null);
 
   function next() {
@@ -141,6 +149,7 @@ export function CareReadinessFlow({ memberName = null, admin = false }: { member
 
   // 관리자 인트로의 결과 화면 미리보기: 강아지 기준으로 모든 항목을 준비된 상태로 채우고 결과로 건너뜁니다.
   function preview() {
+    setIsPreview(true);
     const items = preparationItemsFor("dog");
     setSpecies("dog"); setTimeIndex(3); setHome("medium"); setPetSize("small"); setExistingCatCount(0); setExistingDogCount(0); setHouseholdCount(2); setAbsence("plan"); setBudget("planned");
     setPreparations(Object.fromEntries(items.map(item => [item.id, true])));
@@ -149,6 +158,7 @@ export function CareReadinessFlow({ memberName = null, admin = false }: { member
   }
 
   function retry() {
+    setIsPreview(false);
     setStep(0);
     setSpecies(null);
     setTimeIndex(2);

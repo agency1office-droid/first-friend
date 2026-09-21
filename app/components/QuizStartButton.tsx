@@ -34,7 +34,7 @@ export function QuizStartButton({ signedIn, onStart, worldcup = false }: { signe
         <ContentDialog.Content className={styles.content}>
           <ContentDialog.Header>
             <ContentDialog.Title>로그인하고 기록을 남겨 보세요</ContentDialog.Title>
-            <ContentDialog.Description>기록을 저장할 수 있어요.</ContentDialog.Description>
+            <ContentDialog.Description>결과를 저장할 수 있어요.</ContentDialog.Description>
           </ContentDialog.Header>
           <ContentDialog.Footer className={styles.actions}>
             <ActionButton size="large" variant="brandSolid" onClick={() => { setOpen(false); setLoginOpen(true); }}>로그인</ActionButton>
@@ -44,6 +44,6 @@ export function QuizStartButton({ signedIn, onStart, worldcup = false }: { signe
       </ContentDialog.Positioner>
       </Portal>
     </ContentDialog.Root>
-    <LoginBottomSheet open={loginOpen} onOpenChange={setLoginOpen} returnTo={returnTo} title="로그인" description="기록을 저장할 수 있어요." />
+    <LoginBottomSheet open={loginOpen} onOpenChange={setLoginOpen} returnTo={returnTo} title="로그인" description="결과를 저장할 수 있어요." />
   </>;
 }

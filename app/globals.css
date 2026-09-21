@@ -1688,6 +1688,17 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-care-step h1 { margin: 0; color: var(--seed-color-fg-neutral); font-size: 26px; line-height: 36px; letter-spacing: -.03em; text-wrap: pretty; word-break: keep-all; }
 .ff-care-helper { margin: 0; color: var(--seed-color-fg-neutral-muted); font-size: 15px; line-height: 23px; word-break: keep-all; }
 .ff-care-helper-detail { margin-top: -10px; }
+.ff-care-question-list { display: flex; flex-direction: column; gap: 32px; }
+.ff-care-question-list [role="radiogroup"] { display: flex; flex-direction: column; gap: 16px; }
+.ff-care-essential { display: inline-block; margin-left: 8px; color: var(--seed-color-fg-brand); font-size: var(--seed-font-size-t2); white-space: nowrap; }
+.ff-care-priorities { padding: 20px; border-radius: var(--seed-radius-r4); background: var(--seed-color-bg-neutral-weak); color: var(--seed-color-fg-neutral); font-size: var(--seed-font-size-t4); line-height: 1.6; }
+.ff-care-priorities p { color: var(--seed-color-fg-neutral-muted); }
+.ff-care-priorities ul, .ff-care-scoring ul { padding-left: 20px; }
+.ff-care-answer-list { list-style: none; margin: 0; padding: 12px 0 14px; display: grid; gap: 16px; }
+.ff-care-answer-list li { display: flex; gap: 12px; justify-content: space-between; }
+.ff-care-answer-list strong { flex-shrink: 0; font-size: var(--seed-font-size-t2); }
+.ff-care-scoring { width: 100%; min-width: 0; color: var(--seed-color-fg-neutral-muted); font-size: var(--seed-font-size-t3); line-height: 1.6; }
+.ff-care-scoring summary { cursor: pointer; padding: 12px 0; text-align: center; }
 .ff-care-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .ff-care-species-choice, .ff-care-option, .ff-care-size-choice { border: 1px solid transparent; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-neutral-weak); cursor: pointer; font: inherit; }
 .ff-care-species-choice { display: grid; place-items: center; align-content: center; aspect-ratio: 1; gap: 12px; padding: 16px; border-radius: 20px; }
@@ -1733,12 +1744,11 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-care-result-accordion .seed-accordion__item--variant_inline:not(:last-child)::after { height: 0; background: transparent; border-bottom: 1px solid var(--seed-color-stroke-neutral-subtle); }
 .ff-care-result-accordion .seed-accordion__trigger { min-height: 52px; padding-inline: 0; }
 .ff-care-result-accordion .seed-accordion__trigger:focus-visible { outline-color: var(--seed-color-stroke-brand-solid); }
-.ff-care-result-accordion .seed-accordion__suffixIcon { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
-.ff-care-result-accordion .seed-accordion__suffixIcon > span { white-space: nowrap; font-size: 13px; font-weight: var(--seed-font-weight-bold); }
-.ff-care-result-accordion .seed-accordion__suffixIcon > span.is-ready { color: var(--seed-color-fg-positive); }
-.ff-care-result-accordion .seed-accordion__suffixIcon > span.is-check { color: var(--seed-color-fg-neutral-muted); }
-.ff-care-result-accordion .seed-accordion__content { width: 100%; box-sizing: border-box; padding: 0; color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 20px; }
-.ff-care-result-accordion .seed-accordion__content:is([data-state="open"], [data-open]) { padding: 0 16px 14px; }
+.ff-care-result-item-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ff-care-result-item-score { white-space: nowrap; font-size: 13px; font-weight: var(--seed-font-weight-bold); }
+.ff-care-result-item-score.is-ready { color: var(--seed-color-fg-positive); }
+.ff-care-result-item-score.is-check { color: var(--seed-color-fg-neutral-muted); }
+.ff-care-result-accordion .seed-accordion__content { width: 100%; min-width: 0; box-sizing: border-box; padding: 0 16px; color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 20px; }
 .ff-care-result-accordion .seed-accordion__content p { margin: 0; }
 .ff-care-result-note { margin: 4px 0 0; color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; word-break: keep-all; }
 

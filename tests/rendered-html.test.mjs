@@ -120,22 +120,11 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(quizRoute, /definition\.renderer === "care-readiness"/);
   assert.match(quizRoute, /<CareReadinessFlow memberName=\{memberName\} admin=\{admin\} \/>/);
   assert.match(careReadinessFlow, /\{admin && <ActionButton size="small" variant="neutralWeak" onClick=\{preview\}>관리자 · 결과 화면 미리보기/);
-  assert.match(careReadinessFlow, /import \{ Slider \} from "seed-design\/ui\/slider"/);
-  assert.match(careReadinessFlow, /import \{ QuantityPicker \} from "seed-design\/ui\/quantity-picker"/);
-  assert.match(careReadinessFlow, /import \{ Checkbox \} from "seed-design\/ui\/checkbox"/);
-  assert.match(careReadinessFlow, /<Slider className="ff-care-slider"/);
-  assert.match(careReadinessFlow, /ticks=\{timeOptions\.map/);
-  assert.match(careReadinessFlow, /<QuantityPicker value=\{existingCatCount\}/);
-  assert.match(careReadinessFlow, /<QuantityPicker value=\{existingDogCount\}/);
-  assert.match(careReadinessFlow, /<QuantityPicker value=\{householdCount\}/);
-  assert.match(careReadinessFlow, /준비했거나 준비할 예정인 항목/);
-  assert.match(careReadinessFlow, /<Checkbox checked=\{Boolean\(preparations\[item\.id\]\)\}/);
-  assert.match(careReadinessFlow, /입양 전 준비물/);
-  assert.match(careReadinessFlow, /집과 생활 공간/);
-  assert.match(careReadinessFlow, /집을 오래 비울 때/);
-  assert.match(careReadinessFlow, /경제적인 준비/);
+  assert.match(careReadinessFlow, /RadioGroupItem/);
+  assert.match(careReadinessFlow, /evaluateCare/);
+  assert.match(careReadinessFlow, /result\.essentials/);
   assert.match(careReadinessFlow, /이 결과는 입양 가능 여부를 판단하지 않아요/);
-  assert.match(careReadinessFlow, /<CertificateResult ref=\{certRef\} badge="입양 환경 점검 확인서"/);
+  assert.match(careReadinessFlow, /<CertificateResult[^\n]*badge="입양 환경 점검 확인서"/);
   assert.equal((petKnowledgeConfig.match(/options: \[/g) ?? []).length, 15);
   assert.equal((petKnowledgeConfig.match(/options: \[[^\]]+, [^\]]+, [^\]]+\]/g) ?? []).length, 15);
   assert.equal((petKnowledgeConfig.match(/chapter:/g) ?? []).length, 15);
@@ -1454,4 +1443,41 @@ test("keeps the 2026-09 security audit fixes in place", async () => {
   assert.match(vercel, /Permissions-Policy/);
   assert.match(migration, /alter default privileges for role postgres in schema public revoke all on tables from anon, authenticated;/);
   await assert.rejects(read("../lib/supabase/client.ts"), /ENOENT/, "브라우저용 Supabase 클라이언트는 공개 키가 번들에 실리지 않도록 두지 않음");
+});
+test("care readiness measures plans fairly and keeps essential checks above medal scores", async t => {
+  const { createServer } = await import("vite");
+  const server = await createServer({ configFile: false, envFile: false, server: { middlewareMode: true, hmr: false }, appType: "custom", logLevel: "error" });
+  t.after(() => server.close());
+  const { careSections, evaluateCare, careGrade } = await server.ssrLoadModule("/lib/care-readiness.ts");
+  for (const species of ["cat", "dog"]) {
+    const sections = careSections(species);
+    assert.equal(sections.reduce((sum, s) => sum + s.weight, 0), 100);
+    const ready = Object.fromEntries(sections.flatMap(s => s.questions.map(q => [q.id, "ready"])));
+    assert.equal(evaluateCare(ready, species).score, 100);
+    assert.equal(evaluateCare(ready, species).tone, "gold");
+    const solo = evaluateCare({ ...ready, household: "na", existing: "na" }, species);
+    assert.equal(solo.score, 100);
+    assert.equal(solo.total, Object.keys(ready).length - 2);
+    const planning = Object.fromEntries(Object.keys(ready).map(id => [id, "planning"]));
+    assert.equal(evaluateCare(planning, species).score, 50);
+    assert.equal(evaluateCare({}, species).score, 0);
+    const daily = answers => evaluateCare(answers, species).sections.find(s => s.id === "daily");
+    assert.equal(daily({ ...ready, activity: "planning" }).status, "ready");
+    assert.equal(daily({ ...ready, carer: "planning" }).status, "planning");
+    assert.equal(daily({ ...ready, activity: "unchecked" }).status, "planning");
+    assert.equal(daily({ ...ready, carer: "unchecked", activity: "unchecked" }).status, "unchecked");
+    assert.equal(solo.sections.find(s => s.id === "family").status, "ready");
+    for (const q of sections.flatMap(s => s.questions).filter(q => q.essential)) {
+      const result = evaluateCare({ ...ready, [q.id]: "planning" }, species);
+      assert.ok(result.score >= 90);
+      assert.equal(result.tone, "bronze");
+      assert.equal(result.essentials[0].id, q.id);
+    }
+    assert.ok(evaluateCare({ ...ready, transport: "unchecked" }, species).score > 95);
+    assert.equal(evaluateCare({ ...ready, medical: "na" }, species).tone, "bronze");
+  }
+  for (const [score, tone] of [[69.9, "bronze"], [70, "silver"], [89.9, "silver"], [90, "gold"]]) {
+    assert.equal(careGrade(score, true), tone);
+    assert.equal(careGrade(score, false), "bronze");
+  }
 });

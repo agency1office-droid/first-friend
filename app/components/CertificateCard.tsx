@@ -14,8 +14,8 @@ export type CertificateRow = { label: string; value: string };
 export type CertificateHandle = { share(url: string): Promise<void>; save(): Promise<void> };
 type Quiz = "pet-knowledge" | "adoption-prep" | "care-readiness";
 type Assets = { src: string; illustration: string; wordmark: string; qr: string };
-type CardProps = { ref?: Ref<SVGSVGElement>; quiz: Quiz; badge: string; number: string; date: string; holder: string; rows: CertificateRow[]; assets: Assets | null };
-type ResultProps = { ref?: Ref<CertificateHandle>; quiz: Quiz; badge: string; illustration: string; memberName?: string | null; rows: CertificateRow[]; share: { title: string; text: string }; onShare?: () => Promise<void>; extraAction?: ReactNode };
+type CardProps = { ref?: Ref<SVGSVGElement>; toneOverride?: ReturnType<typeof medalTone>; quiz: Quiz; badge: string; number: string; date: string; holder: string; rows: CertificateRow[]; assets: Assets | null };
+type ResultProps = { ref?: Ref<CertificateHandle>; toneOverride?: ReturnType<typeof medalTone>; quiz: Quiz; badge: string; illustration: string; memberName?: string | null; rows: CertificateRow[]; share: { title: string; text: string }; onShare?: () => Promise<void>; extraAction?: ReactNode };
 
 const HOLDER_FALLBACK = "첫 친구 예비 반려인";
 
@@ -59,7 +59,7 @@ function Medal({ x, y, size = 1, tone, date }: { x: number; y: number; size?: nu
   </g>;
 }
 
-export function CertificateCard({ ref, quiz, badge, number, date, holder, rows, assets }: CardProps) {
+export function CertificateCard({ ref, toneOverride, quiz, badge, number, date, holder, rows, assets }: CardProps) {
   const borderId = `certificate-border-${useId().replace(/:/g, "")}`;
   const checked = badge.includes("확인서");
   const title = badge.replace(/ (수료증|확인서)$/, "");
@@ -67,14 +67,14 @@ export function CertificateCard({ ref, quiz, badge, number, date, holder, rows, 
   const [earned, total] = value.split("/").map(Number);
   const ratio = Math.min(1, Math.max(0, value.includes("%") ? parseFloat(value) / 100 : total > 0 ? earned / total : 0));
   const detail = checked ? rows.map(row => `${row.label} ${row.value}`).join(" · ") : `${total}문제 중 ${earned}문제 정답`;
-  const tone = medalTone(ratio);
+  const tone = toneOverride ?? medalTone(ratio);
   const border = tone === "gold" ? ["#d4ab28", "#fdefb9"] : tone === "silver" ? ["#9099a3", "#e0e5ea"] : ["#a36743", "#f2d0b9"];
   const retry = tone === "bronze" && !checked;
   const medalLabel = tone === "gold" ? "금메달" : tone === "silver" ? "은메달" : "동메달";
   const rank = tone === "gold" ? "상위 1%" : tone === "silver" ? "상위 10%" : "상위 50%";
   const grade = rows.find(row => row.label === "등급")?.value;
   const rankTitle = grade ? `${rank} · ${grade}` : rank;
-  const scoreLabel = checked ? `함께할 생활 준비도 ${value}` : `정답률 ${Math.round(ratio * 100)}% · ${earned}/${total} 정답`;
+  const scoreLabel = checked ? detail : `정답률 ${Math.round(ratio * 100)}% · ${earned}/${total} 정답`;
   const invitation = quiz === "pet-knowledge" ? "나도 상식 퀴즈 풀어보기" : quiz === "adoption-prep" ? "나도 입양 준비 퀴즈 풀어보기" : "나도 입양 환경 점검하기";
   return <svg ref={ref} className="ff-certificate-card" data-medal={tone} viewBox="0 0 748 1260" role="img" aria-label={`${holder} ${retry ? title + " 도전 기록" : badge}, ${medalLabel}, ${detail}, 발급 번호 ${number}, QR로 ${invitation}`} fontFamily={FONT}>
     <defs>
@@ -105,7 +105,7 @@ export function CertificateCard({ ref, quiz, badge, number, date, holder, rows, 
 }
 
 /** 카드 + "이미지 저장". 공유하기 버튼은 부모의 하단 푸터에 있으므로 ref로 share(url)를 넘겨 줍니다. */
-export function CertificateResult({ ref, quiz, badge, illustration, memberName, rows, share: shareText, onShare, extraAction }: ResultProps) {
+export function CertificateResult({ ref, toneOverride, quiz, badge, illustration, memberName, rows, share: shareText, onShare, extraAction }: ResultProps) {
   const foilId = `certificate-foil-${useId().replace(/:/g, "")}`;
   const feedback = useAppFeedback();
   const cardRef = useRef<SVGSVGElement>(null);
@@ -262,7 +262,7 @@ export function CertificateResult({ ref, quiz, badge, illustration, memberName, 
     <QuizCompletionNotice quiz={quiz} />
     <div ref={holoRef} className="ff-certificate-holo" role={tiltHint ? "button" : undefined} tabIndex={tiltHint ? 0 : undefined} aria-label={tiltHint ? "카드 기울기 효과 켜기" : undefined} aria-describedby={tiltHint ? `${foilId}-hint` : undefined} aria-disabled={tiltHint ? tiltPending : undefined} onClick={() => void enableTilt()} onKeyDown={event => { if (tiltHint && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); void enableTilt(); } }} onPointerEnter={moveFoil} onPointerMove={moveFoil} onPointerLeave={resetFoil} onPointerCancel={resetFoil}>
       <motion.div className="ff-certificate-holo-surface" style={{ rotateX, rotateY, "--foil-x": shineX, "--foil-y": shineY } as MotionStyle}>
-        <CertificateCard ref={cardRef} quiz={quiz} badge={badge} number={issued.number} date={issued.date} holder={holder} rows={rows} assets={assets} />
+        <CertificateCard ref={cardRef} toneOverride={toneOverride} quiz={quiz} badge={badge} number={issued.number} date={issued.date} holder={holder} rows={rows} assets={assets} />
         {assets && <svg className="ff-certificate-logo-foil" viewBox="0 0 748 1260" aria-hidden="true">
           <defs>
             <pattern id={`${foilId}-pattern`} width={230} height={110} patternUnits="userSpaceOnUse" patternTransform="rotate(-25)">

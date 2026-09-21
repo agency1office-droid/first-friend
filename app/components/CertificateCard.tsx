@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useId, useImperativeHandle, useRef, useState, type PointerEvent, type ReactNode, type Ref } from "react";
-import { IconArrowDownHorizlineLine, IconArrowUpBracketDownLine } from "@karrotmarket/react-monochrome-icon";
+import { IconArrowDownHorizlineLine, IconArrowUpBracketDownLine, IconMobileLine } from "@karrotmarket/react-monochrome-icon";
 import { COLOR, FONT, cardDate, exportCardPng, fitFontSize, toDataUrl } from "../../lib/card-export";
 import { useAppFeedback } from "./AppFeedback";
 import QRCode from "qrcode";
 import { motion, useSpring, useTransform, type MotionStyle } from "motion/react";
 
 // 상식 퀴즈·입양 준비·입양 환경 점검 결과의 인증서 카드. 인연 카드(WorldCupCard)와 같은 방식으로
-// 화면의 SVG 비율 그대로 PNG로 내보냅니다. 진행 바는 SEED gray-300 배경과 gray-500 채움으로 통일합니다.
+// 화면의 SVG 비율 그대로 PNG로 내보냅니다. 진행 바는 SEED gray-1000으로 통일합니다.
 export type CertificateRow = { label: string; value: string };
 export type CertificateHandle = { share(url: string): Promise<void>; save(): Promise<void> };
 type Quiz = "pet-knowledge" | "adoption-prep" | "care-readiness";
@@ -25,6 +25,14 @@ function certificateNumber(date: string) {
 
 export function medalTone(ratio: number) {
   return ratio >= 1 ? "gold" : ratio >= 0.8 ? "silver" : "bronze";
+}
+
+export function tiltPosition(beta: number, gamma: number, base: [number, number], angle: number) {
+  const vertical = ((beta - base[0] + 540) % 360) - 180;
+  const horizontal = ((gamma - base[1] + 540) % 360) - 180;
+  const radians = angle * Math.PI / 180;
+  const clamp = (value: number) => Math.max(0, Math.min(100, 50 + value * 2));
+  return [clamp(horizontal * Math.cos(radians) + vertical * Math.sin(radians)), clamp(vertical * Math.cos(radians) - horizontal * Math.sin(radians))];
 }
 
 function Medal({ x, y, size = 1, tone, date }: { x: number; y: number; size?: number; tone: ReturnType<typeof medalTone>; date: string }) {
@@ -82,7 +90,7 @@ export function CertificateCard({ ref, quiz, badge, number, date, holder, rows, 
     <text x={374} y={761} textAnchor="middle" fontSize={fitFontSize(checked ? detail : rankTitle, 27, 600)} fontWeight={700} fill={COLOR.muted}>{checked ? detail : rankTitle}</text>
     <text x={34} y={930} fontSize={28} fontWeight={600} fill={COLOR.muted}>{scoreLabel}</text>
     <rect x={34} y={959} width={500} height={13} rx={6.5} fill="#eeeff1" />
-    <rect x={34} y={959} width={500 * ratio} height={13} rx={6.5} fill="#d1d3d8" />
+    <rect x={34} y={959} width={500 * ratio} height={13} rx={6.5} fill={COLOR.ink} />
     {assets && <image href={assets.illustration} x={554} y={850} width={160} height={160} preserveAspectRatio="xMidYMax meet" aria-hidden="true" />}
     <path d="M 34 1034 H 714" stroke={COLOR.line} />
     {assets && <>
@@ -100,6 +108,10 @@ export function CertificateResult({ ref, quiz, badge, illustration, memberName, 
   const foilId = `certificate-foil-${useId().replace(/:/g, "")}`;
   const feedback = useAppFeedback();
   const cardRef = useRef<SVGSVGElement>(null);
+  const holoRef = useRef<HTMLDivElement>(null);
+  const [tiltEnabled, setTiltEnabled] = useState(false);
+  const [tiltPending, setTiltPending] = useState(false);
+  const [tiltHint, setTiltHint] = useState(false);
   const [issued] = useState(() => { const date = cardDate(); return { date, number: certificateNumber(date) }; });
   const [assets, setAssets] = useState<Assets | null>(null);
   const [busy, setBusy] = useState(false);
@@ -110,6 +122,70 @@ export function CertificateResult({ ref, quiz, badge, illustration, memberName, 
   const shineX = useTransform(foilX, value => `${value}%`);
   const shineY = useTransform(foilY, value => `${value}%`);
   const holder = memberName?.trim() ? memberName.trim().slice(0, 12) : HOLDER_FALLBACK;
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const mobile = window.matchMedia("(pointer: coarse)").matches;
+      const sensor = window.DeviceOrientationEvent as (typeof DeviceOrientationEvent & { requestPermission?: () => Promise<string> }) | undefined;
+      if (mobile && window.isSecureContext && sensor) {
+        if (sensor.requestPermission) setTiltHint(true);
+        else setTiltEnabled(true);
+      } else if (process.env.NODE_ENV !== "production") setTiltHint(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  async function enableTilt() {
+    if (tiltEnabled || tiltPending || !tiltHint) return;
+    if (!window.isSecureContext || !window.DeviceOrientationEvent) { feedback.error("이 기기에서는 기울여 보기를 사용할 수 없어요."); return; }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    setTiltPending(true);
+    try {
+      const sensor = window.DeviceOrientationEvent as typeof DeviceOrientationEvent & { requestPermission?: () => Promise<string> };
+      if (sensor.requestPermission && await sensor.requestPermission() !== "granted") { setTiltHint(false); feedback.error("기울여 보려면 동작 센서 접근을 허용해 주세요."); return; }
+      setTiltHint(false);
+      setTiltEnabled(true);
+    } catch { feedback.error("기울기 센서를 켜지 못했어요."); }
+    finally { setTiltPending(false); }
+  }
+
+  useEffect(() => {
+    if (!tiltEnabled) return;
+    let base: [number, number] | null = null;
+    let received = false;
+    const surface = holoRef.current;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    function reset() {
+      base = null;
+      if (surface) delete surface.dataset.tilt;
+      foilX.set(50); foilY.set(50);
+    }
+    function orient(event: DeviceOrientationEvent) {
+      if (document.hidden || reduced.matches || event.beta === null || event.gamma === null || !Number.isFinite(event.beta) || !Number.isFinite(event.gamma)) return;
+      received = true;
+      base ??= [event.beta, event.gamma];
+      const [x, y] = tiltPosition(event.beta, event.gamma, base, window.screen.orientation?.angle ?? 0);
+      foilX.set(x); foilY.set(y);
+      if (surface) surface.dataset.tilt = "true";
+    }
+    function reduceMotion() { if (reduced.matches) { reset(); setTiltEnabled(false); } }
+    const timeout = window.setTimeout(() => {
+      if (!received) setTiltEnabled(false);
+    }, 5000);
+    window.addEventListener("deviceorientation", orient);
+    window.screen.orientation?.addEventListener("change", reset);
+    document.addEventListener("visibilitychange", reset);
+    reduced.addEventListener("change", reduceMotion);
+    return () => {
+      window.clearTimeout(timeout);
+      window.removeEventListener("deviceorientation", orient);
+      window.screen.orientation?.removeEventListener("change", reset);
+      document.removeEventListener("visibilitychange", reset);
+      reduced.removeEventListener("change", reduceMotion);
+      reset();
+    };
+  }, [tiltEnabled, foilX, foilY, feedback]);
 
   useEffect(() => {
     const src = `${quiz}:${illustration}`;
@@ -164,6 +240,7 @@ export function CertificateResult({ ref, quiz, badge, illustration, memberName, 
   useImperativeHandle(ref, () => ({ share, save: saveImage }));
 
   function moveFoil(event: PointerEvent<HTMLDivElement>) {
+    if (tiltEnabled) return;
     if (event.pointerType !== "mouse" || !window.matchMedia("(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)").matches) return;
     const surface = event.currentTarget;
     const rect = surface.getBoundingClientRect();
@@ -174,13 +251,14 @@ export function CertificateResult({ ref, quiz, badge, illustration, memberName, 
     surface.dataset.active = "true";
   }
   function resetFoil(event: PointerEvent<HTMLDivElement>) {
+    if (tiltEnabled) return;
     delete event.currentTarget.dataset.active;
     foilX.set(50);
     foilY.set(50);
   }
 
   return <div className="ff-certificate">
-    <div className="ff-certificate-holo" onPointerEnter={moveFoil} onPointerMove={moveFoil} onPointerLeave={resetFoil} onPointerCancel={resetFoil}>
+    <div ref={holoRef} className="ff-certificate-holo" role={tiltHint ? "button" : undefined} tabIndex={tiltHint ? 0 : undefined} aria-label={tiltHint ? "카드 기울기 효과 켜기" : undefined} aria-describedby={tiltHint ? `${foilId}-hint` : undefined} aria-disabled={tiltHint ? tiltPending : undefined} onClick={() => void enableTilt()} onKeyDown={event => { if (tiltHint && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); void enableTilt(); } }} onPointerEnter={moveFoil} onPointerMove={moveFoil} onPointerLeave={resetFoil} onPointerCancel={resetFoil}>
       <motion.div className="ff-certificate-holo-surface" style={{ rotateX, rotateY, "--foil-x": shineX, "--foil-y": shineY } as MotionStyle}>
         <CertificateCard ref={cardRef} quiz={quiz} badge={badge} number={issued.number} date={issued.date} holder={holder} rows={rows} assets={assets} />
         {assets && <svg className="ff-certificate-logo-foil" viewBox="0 0 748 1260" aria-hidden="true">
@@ -202,6 +280,7 @@ export function CertificateResult({ ref, quiz, badge, illustration, memberName, 
         </svg>}
       </motion.div>
     </div>
+    {tiltHint && <p id={`${foilId}-hint`} className="ff-certificate-tilt-hint"><IconMobileLine aria-hidden /><span>{tiltPending ? "권한을 확인하고 있어요" : "카드를 톡 누르고, 기울이면 반짝반짝 빛나요."}</span></p>}
     <div className="ff-certificate-actions">
       <button type="button" onClick={() => void (onShare ? onShare() : saveImage())} disabled={!assets || busy}>{onShare ? <><IconArrowUpBracketDownLine aria-hidden />공유하기</> : <><IconArrowDownHorizlineLine aria-hidden />이미지 저장</>}</button>
       {extraAction}

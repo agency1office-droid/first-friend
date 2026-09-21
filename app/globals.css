@@ -600,6 +600,29 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-certificate-holo { width: 100%; max-width: 360px; perspective: 1000px; --foil-x: 50%; --foil-y: 50%; }
 .ff-certificate-holo-surface { position: relative; isolation: isolate; border-radius: 15px; pointer-events: none; }
 .ff-certificate-logo-foil { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .025; mix-blend-mode: multiply; transition: opacity 240ms ease-out; }
+.ff-certificate .ff-certificate-tilt-hint { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 0; color: var(--seed-color-fg-neutral-subtle); font-size: 15px; line-height: 24px; text-align: center; word-break: keep-all; }
+.ff-certificate-tilt-hint > svg { width: 16px; height: 16px; flex: none; transform: rotate(-20deg); }
+@keyframes ff-tilt-hint-shimmer {
+  0%, 100% { color: var(--seed-color-fg-neutral-subtle); background-position: 100% 50%; }
+  25%, 70% { color: transparent; }
+  85% { background-position: 0% 50%; }
+}
+@keyframes ff-tilt-icon-shimmer {
+  0%, 100% { color: var(--seed-color-fg-neutral-subtle); }
+  25% { color: var(--seed-color-palette-purple-500); }
+  50% { color: var(--seed-color-palette-blue-500); }
+  70% { color: var(--seed-color-palette-green-500); }
+}
+.ff-certificate-holo[role="button"] { cursor: pointer; border-radius: 15px; }
+.ff-certificate-holo[role="button"]:focus-visible { outline: 2px solid var(--seed-color-stroke-neutral-contrast); outline-offset: 4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .ff-certificate-tilt-hint > span { background: linear-gradient(110deg, var(--seed-color-palette-purple-500), var(--seed-color-palette-blue-500), var(--seed-color-palette-green-500), var(--seed-color-palette-yellow-500), var(--seed-color-palette-carrot-500), var(--seed-color-palette-purple-500)); background-size: 250% 100%; background-clip: text; -webkit-background-clip: text; animation: ff-tilt-hint-shimmer 1.6s ease-in-out .4s 2; }
+  .ff-certificate-tilt-hint > svg { animation: ff-tilt-icon-shimmer 1.6s ease-in-out .4s 2; }
+  .ff-certificate-holo[data-tilt="true"] .ff-certificate-holo-surface { will-change: transform; }
+  .ff-certificate-holo[data-tilt="true"] .ff-certificate-holo-surface::after { opacity: .18; }
+  .ff-certificate-holo[data-tilt="true"] .ff-certificate-holo-surface::before { opacity: .22; }
+  .ff-certificate-holo[data-tilt="true"] .ff-certificate-logo-foil { opacity: .3; }
+}
 .ff-certificate-holo-surface::after { content: ""; position: absolute; inset: 1px; border-radius: inherit; pointer-events: none; opacity: .045; background: linear-gradient(115deg, transparent 15%, var(--seed-color-palette-blue-400) 30%, var(--seed-color-palette-purple-400) 42%, var(--seed-color-palette-yellow-200) 54%, transparent 70%); background-size: 220% 220%; background-position: var(--foil-x) var(--foil-y); mix-blend-mode: multiply; transition: opacity 240ms ease-out; }
 .ff-certificate-holo-surface::before { content: ""; position: absolute; z-index: 1; inset: 1px; border-radius: inherit; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at var(--foil-x) var(--foil-y), #ffffff90, transparent 55%); transition: opacity 240ms ease-out; }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
@@ -609,6 +632,7 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
   .ff-certificate-holo[data-active="true"] .ff-certificate-logo-foil { opacity: .3; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .ff-certificate .ff-certificate-tilt-hint { display: none; }
   .ff-certificate-holo-surface { transform: none !important; }
   .ff-certificate-holo-surface::before, .ff-certificate-holo-surface::after { transition: none; }
   .ff-certificate-logo-foil { transition: none; }

@@ -229,7 +229,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /오답이에요!/);
   assert.match(readinessQuiz, /ff-readiness-feedback-page/);
   assert.match(readinessQuiz, /aria-labelledby=\{hasAnswered \? "readiness-feedback-title"/);
-  assert.match(readinessQuiz, /from "next\/image"/);
+  assert.match(readinessQuiz, /className="ff-readiness-result is-certificate"/);
   assert.match(readinessQuiz, /pendingAnswer/);
   assert.doesNotMatch(readinessQuiz, />힌트</);
   assert.match(readinessQuiz, /다음/);
@@ -251,28 +251,28 @@ test("uses a contextual animal detail topbar", async () => {
   assert.doesNotMatch(readinessQuiz, /ff-readiness-chapter-kicker/);
   assert.match(readinessQuiz, /다음/);
   assert.match(readinessQuiz, /readiness-result\.webp/);
-  assert.match(readinessQuiz, /readiness-result-failed\.webp/);
   assert.match(readinessQuiz, /ff-readiness-result-count/);
   assert.match(readinessQuiz, /문제 정답이에요/);
-  assert.match(readinessQuiz, /className="ff-readiness-result-score"> · \{correctCount\}\/\{questions\.length\}/);
+  assert.match(readinessQuiz, /label: "점수", value: `\$\{correctCount\}\/\$\{questions\.length\}`/);
   assert.match(readinessQuiz, /const passingCount = Math\.ceil\(questions\.length \* 0\.8\);/);
   assert.match(readinessQuiz, /const passed = correctCount >= passingCount;/);
   assert.match(readinessQuiz, /\{passingCount - correctCount\}문제를 더 맞히면 통과할 수 있어요/);
   assert.match(readinessQuiz, /완벽한 반려인/);
   assert.match(readinessQuiz, /quizDefinition\?\.slug === "pet-knowledge"/);
   assert.match(readinessQuiz, /최고의 반려인/);
-  assert.match(readinessQuiz, /함께 살아가는 데 필요한 내용을 잘 확인했어요/);
+  assert.match(readinessQuiz, /반려동물 상식을 잘 알고 있어요/);
   assert.match(readinessQuiz, /배워가는 반려인/);
   assert.match(quizRegistry, /"pet-knowledge"[\s\S]*?shareable: true/);
-  assert.match(readinessQuiz, /ff-readiness-result-praise/);
+  assert.match(readinessQuiz, /<p>\{certificatePraise\.description\}<\/p>/);
   assert.match(readinessQuiz, /if \(phase === "result"\)/);
   assert.match(readinessQuiz, /const shareUrl = new URL\(createReadinessSharePath/);
   assert.doesNotMatch(readinessQuiz, /window\.location\.href = "\/login\?return_to=%2Fquiz%2Fadoption-prep"/);
   assert.doesNotMatch(readinessQuiz, /onClick=\{shareCertificate\} disabled=\{authState === "checking"\}/);
   assert.doesNotMatch(readinessQuiz, /수료증 받기/);
-  // 인증서 카드: 통과 시에만 렌더, 로그인 게이트 없음, 이미지 저장·기기 공유 시트 지원
+  // 통과·재도전 모두 결과 카드 사용, 로그인 게이트 없음, 이미지 저장·기기 공유 시트 지원
   const certificateCard = await readFile(new URL("../app/components/CertificateCard.tsx", import.meta.url), "utf8");
-  assert.match(readinessQuiz, /\{passed \? <>\s*<CertificateResult ref=\{certRef\}/);
+  assert.match(readinessQuiz, /<CertificateResult ref=\{certRef\}/);
+  assert.match(readinessQuiz, /illustration=\{passed \? "\/readiness-result\.webp" : "\/readiness-result-failed\.webp"\}/);
   assert.match(certificateCard, /이미지 저장/);
   assert.match(certificateCard, /navigator\.canShare\(\{ files: \[file\] \}\)/);
   assert.match(certificateCard, /첫 친구 예비 반려인/);
@@ -348,9 +348,9 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /function restartQuiz\(\) \{[\s\S]*setPhase\("questions"\);[\s\S]*setStep\(0\);/);
   assert.doesNotMatch(readinessQuiz, /BottomSheetContent/);
   assert.doesNotMatch(readinessQuiz, /BottomSheetTrigger/);
-  assert.match(readinessQuiz, /공유하기/);
+  assert.match(certificateCard, /공유하기/);
   assert.match(readinessQuiz, /shareCertificate/);
-  assert.match(readinessQuiz, /onClick=\{shareCertificate\}/);
+  assert.match(readinessQuiz, /onShare=\{shareCertificate\}/);
   assert.match(readinessQuiz, /createReadinessSharePath\(correctCount, questions\.length\)/);
   assert.match(readinessShareLib, /createReadinessSharePath/);
   assert.match(readinessShareLib, /parseReadinessShareResult/);
@@ -360,7 +360,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessShare, /robots: \{ index: false, follow: false \}/);
   assert.match(readinessStyles, /\.ff-readiness-share-page \{/);
   assert.match(readinessQuiz, /완벽한 반려인/);
-  assert.match(readinessQuiz, /className="ff-readiness-result-score"> · \{correctCount\}\/\{questions\.length\}/);
+  assert.match(readinessQuiz, /label: "점수", value: `\$\{correctCount\}\/\$\{questions\.length\}`/);
   assert.doesNotMatch(readinessQuiz, /입양 전 준비 확인을 완료한 기록이에요/);
   assert.doesNotMatch(readinessQuiz, /입양 전 준비 확인 수료증 ·/);
   assert.doesNotMatch(readinessQuiz, /수료일/);
@@ -372,8 +372,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(readinessQuiz, /value="failure">실패/);
   assert.match(readinessStyles, /\.ff-readiness-preview-control/);
   assert.match(readinessQuiz, /다시 풀기/);
-  assert.match(readinessQuiz, /variant="neutralWeak" className="ff-grow" onClick=\{closeQuiz\}>닫기/);
-  assert.match(readinessQuiz, /variant="brandSolid" className="ff-grow" onClick=\{shareCertificate\}/);
+  assert.match(readinessQuiz, /onClick=\{\(\) => void certRef.current\?\.save\(\)\}><IconArrowDownLine aria-hidden \/>수료증 저장/);
+  assert.match(readinessQuiz, /variant="brandSolid" className="ff-grow" onClick=\{restartQuiz\}><IconArrowClockwiseCircularLine aria-hidden \/>다시 풀기/);
   assert.match(readinessQuiz, /넘어가기/);
   assert.match(readinessQuiz, /variant="neutralWeak" className="ff-grow" onClick=\{skipFeedback\}>넘어가기<\/ActionButton><ActionButton key="feedback-retry" size="large" variant="brandSolid" className="ff-grow" onClick=\{previous\}>다시 풀기/);
   assert.match(readinessStyles, /\.ff-readiness-actions\.is-feedback \.seed-action-button \{ flex-basis: 0;/);

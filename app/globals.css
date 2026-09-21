@@ -592,9 +592,26 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-readiness-result-praise p { max-width: none; color: var(--seed-color-fg-neutral-muted); font-size: 15px; line-height: 23px; }
 .ff-readiness-result-passing { color: var(--seed-color-fg-brand) !important; font-weight: 600; }
 .ff-readiness-result p { max-width: 320px; margin: 0; color: var(--seed-color-fg-neutral-muted); font-size: 17px; line-height: 26px; }
-.ff-readiness-result.is-certificate { align-content: start; }
+.ff-readiness-result.is-certificate { align-content: start; background: var(--seed-color-bg-layer-default); }
+.ff-readiness-result.is-certificate > h2 { font-size: 18px; line-height: 26px; color: var(--seed-color-fg-neutral-muted); }
+.ff-readiness-result.is-certificate > h2 .ff-readiness-result-count { font-size: inherit; color: inherit; }
 .ff-certificate { display: grid; justify-items: center; gap: 12px; width: 100%; }
-.ff-certificate-card { display: block; width: 100%; max-width: 360px; height: auto; border-radius: 22px; box-shadow: 0 12px 32px rgba(0, 0, 0, .14); }
+.ff-certificate-card { display: block; width: 100%; max-width: 360px; height: auto; border-radius: 15px; border: 0; box-shadow: none; }
+.ff-readiness:has(.ff-certificate) {
+  --ff-medal-glow: var(--seed-color-palette-gray-400);
+  --ff-medal-wash: var(--seed-color-palette-gray-100);
+  background:
+    radial-gradient(ellipse at 0% 0%, var(--ff-medal-glow), transparent 46%),
+    radial-gradient(ellipse at 100% 35%, var(--ff-medal-wash), transparent 45%),
+    radial-gradient(ellipse at 100% 100%, var(--ff-medal-glow), transparent 44%),
+    var(--seed-color-bg-layer-default);
+}
+.ff-readiness:has(.ff-certificate-card[data-medal="gold"]) { --ff-medal-glow: var(--seed-color-palette-yellow-200); --ff-medal-wash: var(--seed-color-palette-yellow-100); }
+.ff-readiness:has(.ff-certificate-card[data-medal="bronze"]) { --ff-medal-glow: var(--seed-color-palette-carrot-200); --ff-medal-wash: var(--seed-color-palette-carrot-100); }
+.ff-readiness:has(.ff-certificate) > .ff-readiness-appbar,
+.ff-readiness:has(.ff-certificate) > .ff-readiness-actions,
+.ff-readiness:has(.ff-certificate) > .ff-readiness-result,
+.ff-readiness:has(.ff-certificate) > .ff-care-result { background: transparent; }
 .ff-certificate-actions { display: flex; gap: 16px; justify-content: center; }
 .ff-certificate-actions button { display: inline-flex; align-items: center; gap: 4px; padding: 8px 4px; border: 0; background: none; color: var(--seed-color-fg-neutral-muted); font-size: 14px; font-weight: 600; cursor: pointer; }
 .ff-certificate-actions button:disabled { opacity: .5; cursor: default; }

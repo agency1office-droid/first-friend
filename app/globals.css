@@ -599,16 +599,19 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .ff-certificate-card { display: block; width: 100%; max-width: 360px; height: auto; border-radius: 15px; border: 0; box-shadow: none; }
 .ff-certificate-holo { width: 100%; max-width: 360px; perspective: 1000px; --foil-x: 50%; --foil-y: 50%; }
 .ff-certificate-holo-surface { position: relative; isolation: isolate; border-radius: 15px; pointer-events: none; }
+.ff-certificate-logo-foil { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .025; mix-blend-mode: multiply; transition: opacity 240ms ease-out; }
 .ff-certificate-holo-surface::after { content: ""; position: absolute; inset: 1px; border-radius: inherit; pointer-events: none; opacity: .045; background: linear-gradient(115deg, transparent 15%, var(--seed-color-palette-blue-400) 30%, var(--seed-color-palette-purple-400) 42%, var(--seed-color-palette-yellow-200) 54%, transparent 70%); background-size: 220% 220%; background-position: var(--foil-x) var(--foil-y); mix-blend-mode: multiply; transition: opacity 240ms ease-out; }
 .ff-certificate-holo-surface::before { content: ""; position: absolute; z-index: 1; inset: 1px; border-radius: inherit; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at var(--foil-x) var(--foil-y), #ffffff90, transparent 55%); transition: opacity 240ms ease-out; }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .ff-certificate-holo[data-active="true"] .ff-certificate-holo-surface { will-change: transform; }
   .ff-certificate-holo[data-active="true"] .ff-certificate-holo-surface::after { opacity: .18; }
   .ff-certificate-holo[data-active="true"] .ff-certificate-holo-surface::before { opacity: .22; }
+  .ff-certificate-holo[data-active="true"] .ff-certificate-logo-foil { opacity: .3; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ff-certificate-holo-surface { transform: none !important; }
   .ff-certificate-holo-surface::before, .ff-certificate-holo-surface::after { transition: none; }
+  .ff-certificate-logo-foil { transition: none; }
 }
 .ff-readiness:has(.ff-certificate) {
   --ff-medal-glow: var(--seed-color-palette-gray-400);

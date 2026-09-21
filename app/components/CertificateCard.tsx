@@ -8,7 +8,7 @@ import QRCode from "qrcode";
 import { motion, useSpring, useTransform, type MotionStyle } from "motion/react";
 
 // 상식 퀴즈·입양 준비·입양 환경 점검 결과의 인증서 카드. 인연 카드(WorldCupCard)와 같은 방식으로
-// 화면의 SVG 비율 그대로 PNG로 내보냅니다. 진행 바는 금·은·동 메달의 색에 맞춥니다.
+// 화면의 SVG 비율 그대로 PNG로 내보냅니다. 진행 바는 SEED gray-300 배경과 gray-500 채움으로 통일합니다.
 export type CertificateRow = { label: string; value: string };
 export type CertificateHandle = { share(url: string): Promise<void>; save(): Promise<void> };
 type Quiz = "pet-knowledge" | "adoption-prep" | "care-readiness";
@@ -62,8 +62,10 @@ export function CertificateCard({ ref, quiz, badge, number, date, holder, rows, 
   const border = tone === "gold" ? ["#d4ab28", "#fdefb9"] : tone === "silver" ? ["#9099a3", "#e0e5ea"] : ["#a36743", "#f2d0b9"];
   const retry = tone === "bronze" && !checked;
   const medalLabel = tone === "gold" ? "금메달" : tone === "silver" ? "은메달" : "동메달";
-  const rankTitle = tone === "gold" ? "상위 1% 칭호" : tone === "silver" ? "상위 10% 칭호" : "상위 50% 칭호";
-  const scoreLabel = checked ? `함께할 생활 준비도 ${value}` : `정답률 ${Math.round(ratio * 100)}% · ${detail}`;
+  const rank = tone === "gold" ? "상위 1%" : tone === "silver" ? "상위 10%" : "상위 50%";
+  const grade = rows.find(row => row.label === "등급")?.value;
+  const rankTitle = grade ? `${rank} · ${grade}` : rank;
+  const scoreLabel = checked ? `함께할 생활 준비도 ${value}` : `정답률 ${Math.round(ratio * 100)}% · ${earned}/${total} 정답`;
   const invitation = quiz === "pet-knowledge" ? "나도 상식 퀴즈 풀어보기" : quiz === "adoption-prep" ? "나도 입양 준비 퀴즈 풀어보기" : "나도 입양 환경 점검하기";
   return <svg ref={ref} className="ff-certificate-card" data-medal={tone} viewBox="0 0 748 1260" role="img" aria-label={`${holder} ${retry ? title + " 도전 기록" : badge}, ${medalLabel}, ${detail}, 발급 번호 ${number}, QR로 ${invitation}`} fontFamily={FONT}>
     <defs>
@@ -78,10 +80,9 @@ export function CertificateCard({ ref, quiz, badge, number, date, holder, rows, 
     <text x={374} y={578} textAnchor="middle" fontSize={64} fontWeight={800} fill="#000">{checked ? "확인서" : retry ? "도전 기록" : "수료증"}</text>
     <text x={374} y={667} textAnchor="middle" fontSize={fitFontSize(`${holder}님의 소중한 첫걸음`, 38, 650)} fill="#000">{holder}님의 소중한 첫걸음</text>
     <text x={374} y={761} textAnchor="middle" fontSize={fitFontSize(checked ? detail : rankTitle, 27, 600)} fontWeight={700} fill={COLOR.muted}>{checked ? detail : rankTitle}</text>
-    {!checked && <text x={374} y={799} textAnchor="middle" fontSize={22} fill={COLOR.muted}>점수 기준 칭호 · 실제 순위 아님</text>}
-    <text x={34} y={930} fontSize={fitFontSize(scoreLabel, 27, 500)} fontWeight={600} fill={COLOR.muted}>{scoreLabel}</text>
-    <rect x={34} y={959} width={500} height={13} rx={6.5} fill="#eef0f3" />
-    <rect x={34} y={959} width={500 * ratio} height={13} rx={6.5} fill={border[0]} />
+    <text x={34} y={930} fontSize={28} fontWeight={600} fill={COLOR.muted}>{scoreLabel}</text>
+    <rect x={34} y={959} width={500} height={13} rx={6.5} fill="#eeeff1" />
+    <rect x={34} y={959} width={500 * ratio} height={13} rx={6.5} fill="#d1d3d8" />
     {assets && <image href={assets.illustration} x={554} y={850} width={160} height={160} preserveAspectRatio="xMidYMax meet" aria-hidden="true" />}
     <path d="M 34 1034 H 714" stroke={COLOR.line} />
     {assets && <>
@@ -96,6 +97,7 @@ export function CertificateCard({ ref, quiz, badge, number, date, holder, rows, 
 
 /** 카드 + "이미지 저장". 공유하기 버튼은 부모의 하단 푸터에 있으므로 ref로 share(url)를 넘겨 줍니다. */
 export function CertificateResult({ ref, quiz, badge, illustration, memberName, rows, share: shareText, onShare, extraAction }: ResultProps) {
+  const foilId = `certificate-foil-${useId().replace(/:/g, "")}`;
   const feedback = useAppFeedback();
   const cardRef = useRef<SVGSVGElement>(null);
   const [issued] = useState(() => { const date = cardDate(); return { date, number: certificateNumber(date) }; });
@@ -181,6 +183,23 @@ export function CertificateResult({ ref, quiz, badge, illustration, memberName, 
     <div className="ff-certificate-holo" onPointerEnter={moveFoil} onPointerMove={moveFoil} onPointerLeave={resetFoil} onPointerCancel={resetFoil}>
       <motion.div className="ff-certificate-holo-surface" style={{ rotateX, rotateY, "--foil-x": shineX, "--foil-y": shineY } as MotionStyle}>
         <CertificateCard ref={cardRef} quiz={quiz} badge={badge} number={issued.number} date={issued.date} holder={holder} rows={rows} assets={assets} />
+        {assets && <svg className="ff-certificate-logo-foil" viewBox="0 0 748 1260" aria-hidden="true">
+          <defs>
+            <pattern id={`${foilId}-pattern`} width={230} height={110} patternUnits="userSpaceOnUse" patternTransform="rotate(-25)">
+              <image href={assets.wordmark} x={25} y={35} width={165} height={33} preserveAspectRatio="xMidYMid meet" />
+            </pattern>
+            <mask id={`${foilId}-mask`} style={{ maskType: "alpha" }}>
+              <rect width={748} height={1260} fill={`url(#${foilId}-pattern)`} />
+            </mask>
+            <motion.radialGradient id={`${foilId}-shine`} cx={shineX} cy={shineY} r="65%">
+              <stop stopColor="var(--seed-color-palette-yellow-200)" />
+              <stop offset=".25" stopColor="var(--seed-color-palette-blue-400)" />
+              <stop offset=".5" stopColor="var(--seed-color-palette-purple-400)" stopOpacity=".6" />
+              <stop offset="1" stopColor="var(--seed-color-palette-blue-400)" stopOpacity="0" />
+            </motion.radialGradient>
+          </defs>
+          <rect x={2} y={2} width={744} height={1256} rx={28} fill={`url(#${foilId}-shine)`} mask={`url(#${foilId}-mask)`} />
+        </svg>}
       </motion.div>
     </div>
     <div className="ff-certificate-actions">

@@ -7,6 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "se
 import { IconArrowDownLine, IconArrowClockwiseCircularLine, IconChevronLeftLine, IconHouseLine } from "@karrotmarket/react-monochrome-icon";
 import { CertificateResult, type CertificateHandle } from "./CertificateCard";
 import { closeToDetail } from "./detailReturn";
+import { QuizStartButton } from "./QuizStartButton";
 import { saveQuizCompletion } from "../../lib/quiz-completion";
 import { careSections, careStatus, careAnswerScore, evaluateCare, type CareAnswer, type CareAnswers } from "../../lib/care-readiness";
 
@@ -83,7 +84,7 @@ export function CareReadinessFlow({ memberName = null, admin = false }: { member
       </>}
     </section>}
     <div className={`ff-readiness-actions ${isResult ? "is-result" : "is-single"}`}>
-      {!started ? <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={() => setStarted(true)}>시작하기</ActionButton> : isResult ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={() => void certRef.current?.save()}><IconArrowDownLine aria-hidden />확인서 저장</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={retry}><IconArrowClockwiseCircularLine aria-hidden />다시 하기</ActionButton></> : <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!canContinue} onClick={() => { if (canContinue) setStep(value => value + 1); }}>{step === totalSteps - 1 ? "결과 보기" : "다음"}</ActionButton>}
+      {!started ? <QuizStartButton signedIn={memberName !== null} onStart={() => setStarted(true)} /> : isResult ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" onClick={() => void certRef.current?.save()}><IconArrowDownLine aria-hidden />확인서 저장</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={retry}><IconArrowClockwiseCircularLine aria-hidden />다시 하기</ActionButton></> : <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!canContinue} onClick={() => { if (canContinue) setStep(value => value + 1); }}>{step === totalSteps - 1 ? "결과 보기" : "다음"}</ActionButton>}
     </div>
   </div>;
 }

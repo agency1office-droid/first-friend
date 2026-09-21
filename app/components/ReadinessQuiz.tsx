@@ -10,6 +10,7 @@ import { CertificateResult, type CertificateHandle } from "./CertificateCard";
 import { closeToDetail } from "./detailReturn";
 import { SpeciesSelectionStep } from "./SpeciesSelectionStep";
 import { ReadinessAppBar } from "./ReadinessAppBar";
+import { QuizStartButton } from "./QuizStartButton";
 import type { QuizQuestion } from "../../lib/quiz/types";
 import { saveQuizCompletion } from "../../lib/quiz-completion";
 
@@ -250,7 +251,7 @@ export function ReadinessQuiz({ onClose, quizId = "adoption-prep", memberName = 
       return <><ActionButton key="result-save" size="large" variant="neutralWeak" className="ff-grow" onClick={() => void certRef.current?.save()}><IconArrowDownLine aria-hidden />수료증 저장</ActionButton><ActionButton key="result-retry" size="large" variant="brandSolid" className="ff-grow" onClick={restartQuiz}><IconArrowClockwiseCircularLine aria-hidden />다시 풀기</ActionButton></>;
     }
     if (phase === "intro") {
-      return <ActionButton key="intro-start" size="large" className="ff-grow" onClick={next}>시작하기</ActionButton>;
+      return <QuizStartButton key="intro-start" signedIn={memberName !== null} onStart={() => void next()} />;
     }
     if (phase === "species") {
       return <ActionButton key={`species-next-${species === null ? "disabled" : "enabled"}`} size="large" variant="brandSolid" className="ff-grow" disabled={species === null} onClick={next}>다음</ActionButton>;

@@ -10,6 +10,7 @@ import type { AnimalPage } from "../../lib/public-animal-store";
 import { optimizedAnimalImageUrl } from "../../lib/image-url";
 import { availableRoundSize, choose, currentPair, expandColorQueries, isDone, pickPool, poolQueries, progress, roundLabel, startBracket, winnerOf, type Answers, type Bracket } from "../../lib/worldcup";
 import { AnimalThumbnail } from "./AnimalThumbnail";
+import { QuizStartButton } from "./QuizStartButton";
 import { exportCardPng, loadCardAssets, WorldCupCard, type CardAssets } from "./WorldCupCard";
 import { navigateAppBack } from "./AppChrome";
 import { useAppFeedback } from "./AppFeedback";
@@ -416,7 +417,7 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
     </section>}
     {/* 대결 화면은 카드 아래 선택 버튼이 곧 다음이라 하단 버튼이 없습니다. */}
     {phase !== "match" && <div className={`ff-readiness-actions ${isResult ? "is-result" : "is-single"}`}>
-      {phase === "intro" ? <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={next}>시작하기</ActionButton>
+      {phase === "intro" ? <QuizStartButton signedIn={Boolean(member)} onStart={() => void next()} worldcup />
       : isResult && winner ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" loading={saving} disabled={!cardReady || saving} onClick={() => void saveCard(winner)}><IconArrowDownLine aria-hidden />카드 저장</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" asChild><a href={`/friends/${winner.id}?via=worldcup`}>이 친구 알아보기<IconChevronRightLine aria-hidden /></a></ActionButton></>
       : empty ? <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={() => { setEmpty(false); setDraft(current => ({ ...EMPTY_DRAFT, species: current.species })); setPage(null); setPool([]); setBracket(null); setHistory([]); setRoundIntro(null); setRoundSize(16); setFilled(0); writeSavedRun(null); setStepIndex(steps.indexOf("size")); setPhase("steps"); }}>처음으로 돌아가기</ActionButton>
       : <ActionButton size="large" variant="brandSolid" className="ff-grow" disabled={!canContinue || loading} loading={loading} onClick={next}>{step === "color" ? "후보 찾기" : step === "round" ? "시작하기" : "다음"}</ActionButton>}

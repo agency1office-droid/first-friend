@@ -7,6 +7,55 @@ import ts from 'typescript';
 
 const require = createRequire(import.meta.url);
 
+test('quiz start asks guests once at entry, preserves the return URL and lets members start directly', async () => {
+  const source = await readFile(new URL('../app/components/QuizStartButton.tsx', import.meta.url), 'utf8');
+  const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } });
+  for (const signedIn of [false, true]) {
+    for (const worldcup of [false, true]) {
+      const states = [], exports = {};
+      let index = 0, started = 0, effect;
+      const returnTo = '/quiz/pet-knowledge?return_to=%2Ffriends%2F123&return_scroll=800#intro';
+      const location = { href: `https://firstfriend.test${returnTo}` };
+      const history = { state: { existing: true }, replaceState: (state, _, url) => { assert.equal(state, history.state); location.href = `https://firstfriend.test${url}`; } };
+      runInNewContext(outputText, { exports, URL, window: { location, history }, require: name => {
+        if (name === 'react') return { useEffect: fn => { effect = fn; }, useState: initial => { const slot = index++; if (!(slot in states)) states[slot] = initial; return [states[slot], value => { states[slot] = value; }]; } };
+        if (name === './LoginSheet') return { LoginBottomSheet: 'sheet' };
+        if (name === '@seed-design/react') return { Portal: 'Portal', ContentDialog: new Proxy({}, { get: (_, key) => String(key) }) };
+        if (name === 'seed-design/ui/action-button') return { ActionButton: 'button' };
+        if (name.endsWith('.css')) return { default: {} };
+        return require(name);
+      } });
+      const render = () => { index = 0; return exports.QuizStartButton({ signedIn, worldcup, onStart: () => started++ }); };
+      render().props.children[0].props.onClick();
+      if (signedIn) {
+        assert.equal(started, 1); assert.equal(states[0], false);
+        location.href = `https://firstfriend.test${returnTo.replace('#intro', '&quiz_start=1#intro')}`;
+        effect(); effect();
+        assert.equal(started, 2, 'login return starts once');
+        assert.equal(location.href, `https://firstfriend.test${returnTo}`);
+        continue;
+      }
+      assert.equal(started, 0);
+      const dialog = render().props.children[1];
+      assert.equal(dialog.props.open, true);
+      const content = dialog.props.children.props.children.props.children[1];
+      const [login, guest] = content.props.children[1].props.children;
+      assert.equal(login.props.children, '로그인');
+      login.props.onClick();
+      const sheet = render().props.children[2];
+      assert.equal(states[0], false, 'dialog closes before login sheet opens');
+      assert.equal(sheet.props.open, true);
+      assert.equal(sheet.props.returnTo, returnTo.replace('#intro', '&quiz_start=1#intro'));
+      sheet.props.onOpenChange(false);
+      assert.equal(started, 0, 'dismissing login returns to the intro');
+      assert.equal(guest.props.children, worldcup ? '그냥 시작하기' : '그냥 풀기');
+      guest.props.onClick();
+      assert.equal(states[0], false);
+      assert.equal(started, 1);
+    }
+  }
+});
+
 test('admin quiz previews explain that results are not saved, even after an earlier save', async () => {
   const source = await readFile(new URL('../app/components/QuizCompletionNotice.tsx', import.meta.url), 'utf8');
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } });

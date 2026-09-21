@@ -3,11 +3,9 @@
 import { type MouseEvent } from "react";
 import Link from "next/link";
 import { IconArrowUpRightLine } from "@karrotmarket/react-monochrome-icon";
-import { PetCostCalculator } from "./PetCostCalculator";
-import type { Animal } from "../../lib/data";
 import { openDetailFlow } from "./detailReturn";
 
-export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "breed" | "age" | "sex" | "traits" | "health">) {
+export function AdoptionPlanningCard() {
   function openQuiz(event: MouseEvent<HTMLAnchorElement>) {
     if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
     event.preventDefault();
@@ -28,13 +26,12 @@ export function AdoptionPlanningCard(props: Pick<Animal, "name" | "species" | "b
           <span className="ff-adoption-planning-row-copy"><strong>입양 환경 점검</strong></span>
           <IconArrowUpRightLine aria-hidden />
         </Link>
-        <PetCostCalculator animal={props} step={2} />
         <Link className="ff-adoption-planning-row" href="/quiz/adoption-prep" onClick={openQuiz}>
-          <span className="ff-adoption-planning-step">STEP 3</span>
+          <span className="ff-adoption-planning-step">STEP 2</span>
           <span className="ff-adoption-planning-row-copy"><strong>입양 준비 체크</strong></span>
           <IconArrowUpRightLine aria-hidden />
         </Link>
-        <button className="ff-pet-knowledge-trigger" type="button" onClick={() => openDetailFlow("/quiz/pet-knowledge")}><span className="ff-adoption-planning-step">STEP 4</span><span className="ff-adoption-planning-row-copy"><strong>상식 퀴즈</strong></span><IconArrowUpRightLine aria-hidden /></button>
+        <button className="ff-pet-knowledge-trigger" type="button" onClick={() => openDetailFlow("/quiz/pet-knowledge")}><span className="ff-adoption-planning-step">STEP 3</span><span className="ff-adoption-planning-row-copy"><strong>상식 퀴즈</strong></span><IconArrowUpRightLine aria-hidden /></button>
       </div>
     </section>
   );

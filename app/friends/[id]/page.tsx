@@ -212,7 +212,7 @@ export default async function AnimalPage({
         </div>
       </section>
       <AnimalAiIntro animalId={animal.id} />
-      <AdoptionPlanningCard species={animal.species} name={animal.name} breed={animal.breed} age={animal.age} sex={animal.sex} traits={animal.traits} health={animal.health} />
+      <AdoptionPlanningCard />
       <article className="ff-detail-container ff-detail-body">
         <h1 className="ff-visually-hidden">{animal.name}</h1>
         <div className="ff-detail-animal-info-group">
@@ -282,8 +282,8 @@ export default async function AnimalPage({
                 title: "입양 전 준비는 어떻게 하나요?",
                 content: (
                   <p>
-                    입양 전 준비 메뉴의 <span className="ff-info-board-action-name">‘입양 준비 체크’</span> STEP 3과 <span className="ff-info-board-action-name">‘상식 퀴즈’</span> STEP
-                    4에서 입양 전 준비와 함께 살며 알아둘 내용을 확인해
+                    입양 전 준비 메뉴의 <span className="ff-info-board-action-name">‘입양 준비 체크’</span> STEP 2와 <span className="ff-info-board-action-name">‘상식 퀴즈’</span> STEP
+                    3에서 입양 전 준비와 함께 살며 알아둘 내용을 확인해
                     보세요. 퀴즈 결과는 판단 기준이 아니라 상담을 준비하는
                     참고 자료예요.
                   </p>

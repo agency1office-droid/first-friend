@@ -150,14 +150,14 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(locationCard, /ff-shelter-map-prompt/);
   assert.match(locationCard, /setMapFailed\(true\)/);
   const planning = await readFile(new URL("../app/components/AdoptionPlanningCard.tsx", import.meta.url), "utf8");
-  assert.match(page, /AdoptionPlanningCard species=\{animal\.species\}/);
+  assert.match(page, /<AdoptionPlanningCard \/>/);
   assert.match(planning, /STEP 1/);
   assert.doesNotMatch(planning, /생활 궁합/);
   assert.doesNotMatch(planning, /ProgressCircle/);
   assert.doesNotMatch(planning, /<small>/);
   assert.match(planning, /IconArrowUpRightLine/);
   assert.match(planning, /ff-adoption-planning-step/);
-  assert.match(planning, /PetCostCalculator animal=\{props\} step=\{2\}/);
+  assert.deepEqual(planning.match(/STEP \d/g), ["STEP 1", "STEP 2", "STEP 3"]);
   assert.doesNotMatch(planning, /IconPawprint(?:Fill|Line)/);
   assert.doesNotMatch(planning, /BottomSheetContent/);
   assert.match(planning, /\/quiz\/adoption-prep/);
@@ -165,7 +165,7 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(planning, /openDetailFlow/);
   assert.match(planning, /입양 환경 점검/);
   assert.doesNotMatch(planning, /ReadinessQuiz quizId="pet-knowledge"/);
-  assert.match(planning, /PetCostCalculator/);
+  assert.doesNotMatch(planning, /PetCostCalculator|돌봄 계산기/);
   const calculator = await readFile(new URL("../app/components/PetCostCalculator.tsx", import.meta.url), "utf8");
   const costPage = await readFile(new URL("../app/pet-cost-calculator/page.tsx", import.meta.url), "utf8");
   const legacyCostPage = await readFile(new URL("../app/quiz/pet-cost/page.tsx", import.meta.url), "utf8");

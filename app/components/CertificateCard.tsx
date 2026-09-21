@@ -66,7 +66,7 @@ export function CertificateCard({ ref, toneOverride, quiz, badge, number, date, 
   const value = rows[0]?.value ?? "";
   const [earned, total] = value.split("/").map(Number);
   const ratio = Math.min(1, Math.max(0, value.includes("%") ? parseFloat(value) / 100 : total > 0 ? earned / total : 0));
-  const detail = checked ? rows.map(row => `${row.label} ${row.value}`).join(" · ") : `${total}문제 중 ${earned}문제 정답`;
+  const detail = checked ? rows.filter(row => row.label !== "등급").map(row => `${row.label} ${row.value}`).join(" · ") : `${total}문제 중 ${earned}문제 정답`;
   const tone = toneOverride ?? medalTone(ratio);
   const border = tone === "gold" ? ["#d4ab28", "#fdefb9"] : tone === "silver" ? ["#9099a3", "#e0e5ea"] : ["#a36743", "#f2d0b9"];
   const retry = tone === "bronze" && !checked;
@@ -74,6 +74,7 @@ export function CertificateCard({ ref, toneOverride, quiz, badge, number, date, 
   const rank = tone === "gold" ? "상위 1%" : tone === "silver" ? "상위 10%" : "상위 50%";
   const grade = rows.find(row => row.label === "등급")?.value;
   const rankTitle = grade ? `${rank} · ${grade}` : rank;
+  const centerTitle = checked && !grade ? detail : rankTitle;
   const scoreLabel = checked ? detail : `정답률 ${Math.round(ratio * 100)}% · ${earned}/${total} 정답`;
   const invitation = quiz === "pet-knowledge" ? "나도 상식 퀴즈 풀어보기" : quiz === "adoption-prep" ? "나도 입양 준비 퀴즈 풀어보기" : "나도 입양 환경 점검하기";
   return <svg ref={ref} className="ff-certificate-card" data-medal={tone} viewBox="0 0 748 1260" role="img" aria-label={`${holder} ${retry ? title + " 도전 기록" : badge}, ${medalLabel}, ${detail}, 발급 번호 ${number}, QR로 ${invitation}`} fontFamily={FONT}>
@@ -88,7 +89,7 @@ export function CertificateCard({ ref, toneOverride, quiz, badge, number, date, 
     <text x={374} y={496} textAnchor="middle" fontSize={64} fontWeight={800} fill="#000">{title}</text>
     <text x={374} y={578} textAnchor="middle" fontSize={64} fontWeight={800} fill="#000">{checked ? "확인서" : retry ? "도전 기록" : "수료증"}</text>
     <text x={374} y={667} textAnchor="middle" fontSize={fitFontSize(`${holder}님의 소중한 첫걸음`, 38, 650)} fill="#000">{holder}님의 소중한 첫걸음</text>
-    <text x={374} y={761} textAnchor="middle" fontSize={fitFontSize(checked ? detail : rankTitle, 27, 600)} fontWeight={700} fill={checked ? COLOR.muted : COLOR.brand}>{checked ? detail : rankTitle}</text>
+    <text x={374} y={761} textAnchor="middle" fontSize={fitFontSize(centerTitle, 27, 600)} fontWeight={700} fill={COLOR.brand}>{centerTitle}</text>
     <text x={34} y={930} fontSize={28} fontWeight={600} fill={COLOR.muted}>{scoreLabel}</text>
     <rect x={34} y={959} width={500} height={13} rx={6.5} fill="#eeeff1" />
     <rect x={34} y={959} width={500 * ratio} height={13} rx={6.5} fill={COLOR.ink} />
@@ -259,7 +260,7 @@ export function CertificateResult({ ref, toneOverride, quiz, badge, illustration
   }
 
   return <div className="ff-certificate">
-    <QuizCompletionNotice quiz={quiz} />
+    <QuizCompletionNotice quiz={quiz} quietSuccess={quiz === "care-readiness"} />
     <div ref={holoRef} className="ff-certificate-holo" role={tiltHint ? "button" : undefined} tabIndex={tiltHint ? 0 : undefined} aria-label={tiltHint ? "카드 기울기 효과 켜기" : undefined} aria-describedby={tiltHint ? `${foilId}-hint` : undefined} aria-disabled={tiltHint ? tiltPending : undefined} onClick={() => void enableTilt()} onKeyDown={event => { if (tiltHint && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); void enableTilt(); } }} onPointerEnter={moveFoil} onPointerMove={moveFoil} onPointerLeave={resetFoil} onPointerCancel={resetFoil}>
       <motion.div className="ff-certificate-holo-surface" style={{ rotateX, rotateY, "--foil-x": shineX, "--foil-y": shineY } as MotionStyle}>
         <CertificateCard ref={cardRef} toneOverride={toneOverride} quiz={quiz} badge={badge} number={issued.number} date={issued.date} holder={holder} rows={rows} assets={assets} />

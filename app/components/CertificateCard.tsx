@@ -5,6 +5,7 @@ import { IconArrowDownHorizlineLine, IconArrowUpBracketDownLine, IconMobileLine 
 import { COLOR, FONT, cardDate, exportCardPng, fitFontSize, toDataUrl } from "../../lib/card-export";
 import { useAppFeedback } from "./AppFeedback";
 import QRCode from "qrcode";
+import { QuizCompletionNotice } from "./QuizCompletionNotice";
 import { motion, useSpring, useTransform, type MotionStyle } from "motion/react";
 
 // 상식 퀴즈·입양 준비·입양 환경 점검 결과의 인증서 카드. 인연 카드(WorldCupCard)와 같은 방식으로
@@ -258,6 +259,7 @@ export function CertificateResult({ ref, quiz, badge, illustration, memberName, 
   }
 
   return <div className="ff-certificate">
+    <QuizCompletionNotice quiz={quiz} />
     <div ref={holoRef} className="ff-certificate-holo" role={tiltHint ? "button" : undefined} tabIndex={tiltHint ? 0 : undefined} aria-label={tiltHint ? "카드 기울기 효과 켜기" : undefined} aria-describedby={tiltHint ? `${foilId}-hint` : undefined} aria-disabled={tiltHint ? tiltPending : undefined} onClick={() => void enableTilt()} onKeyDown={event => { if (tiltHint && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); void enableTilt(); } }} onPointerEnter={moveFoil} onPointerMove={moveFoil} onPointerLeave={resetFoil} onPointerCancel={resetFoil}>
       <motion.div className="ff-certificate-holo-surface" style={{ rotateX, rotateY, "--foil-x": shineX, "--foil-y": shineY } as MotionStyle}>
         <CertificateCard ref={cardRef} quiz={quiz} badge={badge} number={issued.number} date={issued.date} holder={holder} rows={rows} assets={assets} />

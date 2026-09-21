@@ -1,43 +1,40 @@
 export type CompletionQuiz = "care-readiness" | "adoption-prep" | "pet-knowledge";
-
-const prefix = "ff-quiz-completion-v1:";
 export const quizCompletionEvent = "ff-quiz-completion";
+export type SaveState = "idle" | "saving" | "saved" | "login" | "error";
+const saves = new Map<CompletionQuiz, { ratio: number; title: string; state: SaveState }>();
 
-export function completionTitle(ratio: number, title: string) {
-  const rank = ratio >= 1 ? "상위 1%" : ratio >= 0.8 ? "상위 10%" : "상위 50%";
-  return `${rank} · ${title}`;
+export function readSaveState(quiz: CompletionQuiz): SaveState {
+  return saves.get(quiz)?.state ?? "idle";
 }
 
-export function saveQuizCompletion(quiz: CompletionQuiz, ratio: number, title: string) {
+export async function saveQuizCompletion(quiz: CompletionQuiz, ratio: number, title: string) {
   if (!Number.isFinite(ratio) || ratio < 0 || ratio > 1 || !title || title.length > 80) return;
+  const current = { ratio, title, state: "saving" as SaveState };
+  saves.set(quiz, current);
+  const notify = () => window.dispatchEvent(new Event(quizCompletionEvent));
+  notify();
   try {
-    window.localStorage.setItem(prefix + quiz, JSON.stringify({ ratio, title }));
-    window.dispatchEvent(new Event(quizCompletionEvent));
-  } catch {
-    // 저장을 차단한 브라우저에서도 퀴즈 결과 화면은 사용할 수 있어요.
-  }
-}
-
-export function readQuizCompletion(quiz: CompletionQuiz) {
-  try {
-    const result = JSON.parse(window.localStorage.getItem(prefix + quiz) ?? "null");
-    if (result && Number.isFinite(result.ratio) && result.ratio >= 0 && result.ratio <= 1
-      && typeof result.title === "string" && result.title.length > 0 && result.title.length <= 80) {
-      return completionTitle(result.ratio, result.title);
+    const response = await fetch("/api/quiz-completions", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ quiz, ratio, title }), credentials: "same-origin", cache: "no-store", keepalive: true,
+    });
+    current.state = response.ok ? "saved" : response.status === 401 ? "login" : "error";
+    if (response.ok) {
+      // 다른 탭에는再조회 신호만 보내며 결과나 회원정보는 저장하지 않습니다.
+      try { window.localStorage.setItem("ff-quiz-completion-updated", String(Date.now())); } catch { /* focus 시 재조회 */ }
     }
   } catch {
-    // 오래되거나 손상된 기록은 미수료로 표시해요.
+    current.state = "error";
   }
-  return "미수료";
+  if (saves.get(quiz) === current) notify();
+}
+
+export function retryQuizCompletion(quiz: CompletionQuiz) {
+  const result = saves.get(quiz);
+  if (result) void saveQuizCompletion(quiz, result.ratio, result.title);
 }
 
 export function subscribeQuizCompletion(update: () => void) {
-  window.addEventListener("storage", update);
-  window.addEventListener("pageshow", update);
   window.addEventListener(quizCompletionEvent, update);
-  return () => {
-    window.removeEventListener("storage", update);
-    window.removeEventListener("pageshow", update);
-    window.removeEventListener(quizCompletionEvent, update);
-  };
+  return () => window.removeEventListener(quizCompletionEvent, update);
 }

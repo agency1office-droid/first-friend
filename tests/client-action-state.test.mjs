@@ -7,48 +7,93 @@ import ts from 'typescript';
 
 const require = createRequire(import.meta.url);
 
-test('quiz completion survives remounts, isolates quizzes and handles unavailable storage', async () => {
+test('quiz completion saves to the server and exposes authentication and save failures', async () => {
   const source = await readFile(new URL('../lib/quiz-completion.ts', import.meta.url), 'utf8');
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
-  const storage = new Map();
-  const events = new EventTarget();
-  const window = {
-    localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
-    addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events), dispatchEvent: events.dispatchEvent.bind(events),
-  };
-  const load = () => {
+  const events = new EventTarget(), stored = new Map(), calls = [];
+  let response = async () => Response.json({ title: '상위 1% · 최고의 반려인' });
+  const exports = {};
+  runInNewContext(outputText, {
+    exports, Event,
+    fetch: async (url, options) => { calls.push({ url, options }); return response(); },
+    window: { localStorage: { setItem: (k, v) => stored.set(k, v) }, dispatchEvent: events.dispatchEvent.bind(events), addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events) },
+  });
+  let updates = 0;
+  const unsubscribe = exports.subscribeQuizCompletion(() => updates++);
+  await exports.saveQuizCompletion('pet-knowledge', 1, '최고의 반려인');
+  assert.equal(exports.readSaveState('pet-knowledge'), 'saved');
+  assert.equal(calls[0].url, '/api/quiz-completions');
+  assert.equal(calls[0].options.credentials, 'same-origin');
+  assert.equal(JSON.parse(calls[0].options.body).quiz, 'pet-knowledge');
+  assert.deepEqual([...stored.keys()], ['ff-quiz-completion-updated'], 'only a refresh signal, never result data, is stored locally');
+  assert.equal(updates, 2);
+  response = async () => new Response('', { status: 401 });
+  await exports.saveQuizCompletion('adoption-prep', 1, '완벽한 반려인');
+  assert.equal(exports.readSaveState('adoption-prep'), 'login');
+  response = async () => { throw new Error('offline'); };
+  await exports.saveQuizCompletion('pet-knowledge', 1, '최고의 반려인');
+  assert.equal(exports.readSaveState('pet-knowledge'), 'error');
+  response = async () => new Response('', { status: 503 });
+  await exports.saveQuizCompletion('pet-knowledge', 1, '최고의 반려인');
+  assert.equal(exports.readSaveState('pet-knowledge'), 'error');
+  response = async () => Response.json({});
+  await exports.saveQuizCompletion('pet-knowledge', 1, '최고의 반려인');
+  assert.equal(exports.readSaveState('pet-knowledge'), 'saved');
+  unsubscribe();
+});
+
+test('member quiz API shares results across devices but never across members', async () => {
+  const source = await readFile(new URL('../app/api/quiz-completions/route.ts', import.meta.url), 'utf8');
+  const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
+  const rows = new Map();
+  let member = 'alice', fail = false;
+  const db = { from(table) {
+    assert.equal(table, 'member_quiz_completions');
+    return {
+      select() { return this; },
+      eq(field, value) {
+        assert.equal(field, 'member_id');
+        return Promise.resolve({ data: [...rows.values()].filter(row => row.member_id === value), error: fail ? {} : null });
+      },
+      async upsert(row, options) {
+        assert.equal(options.onConflict, 'member_id,quiz');
+        if (!fail) rows.set(row.member_id + ':' + row.quiz, row);
+        return { error: fail ? {} : null };
+      },
+    };
+  } };
+  const device = () => {
     const exports = {};
-    runInNewContext(outputText, { exports, window, Event });
+    runInNewContext(outputText, { exports, Response, URL, require: name => name.includes('chatgpt-auth') ? { getChatGPTUser: async () => member ? { userId: member } : null } : { getSupabaseServerClient: () => db } });
     return exports;
   };
-  const completion = load();
-  let updates = 0;
-  const unsubscribe = completion.subscribeQuizCompletion(() => updates++);
-  assert.equal(completion.readQuizCompletion('pet-knowledge'), '미수료');
-  completion.saveQuizCompletion('pet-knowledge', 1, '최고의 반려인');
-  assert.equal(updates, 1);
-  assert.equal(load().readQuizCompletion('pet-knowledge'), '상위 1% · 최고의 반려인');
-  assert.equal(completion.readQuizCompletion('adoption-prep'), '미수료');
-  completion.saveQuizCompletion('pet-knowledge', 0.8, '세심한 반려인');
-  assert.equal(completion.readQuizCompletion('pet-knowledge'), '상위 10% · 세심한 반려인');
-  completion.saveQuizCompletion('pet-knowledge', 0.4, '배워가는 반려인');
-  assert.equal(completion.readQuizCompletion('pet-knowledge'), '상위 50% · 배워가는 반려인');
-  completion.saveQuizCompletion('care-readiness', 1, '함께할 준비가 잘 되어 있어요');
-  assert.match(completion.readQuizCompletion('care-readiness'), /함께할 준비/);
-  events.dispatchEvent(new Event('storage'));
-  events.dispatchEvent(new Event('pageshow'));
-  assert.equal(updates, 6);
-  unsubscribe();
-  events.dispatchEvent(new Event('storage'));
-  assert.equal(updates, 6);
-  storage.set('ff-quiz-completion-v1:pet-knowledge', '{broken');
-  assert.equal(completion.readQuizCompletion('pet-knowledge'), '미수료');
-  completion.saveQuizCompletion('pet-knowledge', NaN, 'invalid');
-  assert.equal(completion.readQuizCompletion('pet-knowledge'), '미수료');
-  window.localStorage.getItem = () => { throw new Error('blocked'); };
-  window.localStorage.setItem = () => { throw new Error('blocked'); };
-  assert.equal(completion.readQuizCompletion('adoption-prep'), '미수료');
-  assert.doesNotThrow(() => completion.saveQuizCompletion('adoption-prep', 1, '완벽한 반려인'));
+  const phone = device(), laptop = device();
+  const request = (body, origin = 'https://firstfriend.test') => new Request('https://firstfriend.test/api/quiz-completions', { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const result = { quiz: 'pet-knowledge', ratio: 1, title: 'arbitrary client title', member_id: 'bob' };
+  assert.equal((await phone.POST(request(result))).status, 200);
+  const loaded = await laptop.GET();
+  assert.equal(loaded.headers.get('cache-control'), 'private, no-store');
+  assert.equal((await loaded.json()).completions['pet-knowledge'], '상위 1% · 최고의 반려인');
+  member = 'bob';
+  assert.deepEqual((await (await laptop.GET()).json()).completions, {});
+  member = 'alice';
+  await phone.POST(request({ quiz: 'adoption-prep', ratio: 14 / 17 }));
+  await phone.POST(request({ quiz: 'care-readiness', ratio: 1, title: '함께할 준비가 잘 되어 있어요' }));
+  const all = (await (await laptop.GET()).json()).completions;
+  assert.equal(all['adoption-prep'], '상위 10% · 따뜻한 반려인');
+  assert.equal(all['care-readiness'], '함께할 준비가 잘 되어 있어요');
+  await phone.POST(request({ ...result, ratio: 12 / 15 }));
+  assert.equal(rows.size, 3, 'retakes update the member/quiz row');
+  assert.equal((await (await laptop.GET()).json()).completions['pet-knowledge'], '상위 10% · 세심한 반려인');
+  for (const body of [null, {}, { ...result, ratio: 2 }, { ...result, ratio: 0.99 }, { ...result, quiz: 'unknown' }]) assert.equal((await phone.POST(request(body))).status, 400);
+  assert.equal((await phone.POST(request(result, 'https://other.test'))).status, 403);
+  assert.equal((await phone.POST(new Request('https://firstfriend.test/api/quiz-completions', { method: 'POST', body: '{' }))).status, 400);
+  fail = true;
+  assert.equal((await phone.GET()).status, 503);
+  assert.equal((await phone.POST(request(result))).status, 503);
+  member = null;
+  assert.equal((await phone.GET()).status, 401);
+  assert.equal((await phone.POST(request(result))).status, 401);
 });
 
 test('manual neighborhood selection wins over delayed IP and profile restoration', async () => {

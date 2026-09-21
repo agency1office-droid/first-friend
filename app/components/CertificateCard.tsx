@@ -87,7 +87,7 @@ export function CertificateCard({ ref, quiz, badge, number, date, holder, rows, 
     <text x={374} y={496} textAnchor="middle" fontSize={64} fontWeight={800} fill="#000">{title}</text>
     <text x={374} y={578} textAnchor="middle" fontSize={64} fontWeight={800} fill="#000">{checked ? "확인서" : retry ? "도전 기록" : "수료증"}</text>
     <text x={374} y={667} textAnchor="middle" fontSize={fitFontSize(`${holder}님의 소중한 첫걸음`, 38, 650)} fill="#000">{holder}님의 소중한 첫걸음</text>
-    <text x={374} y={761} textAnchor="middle" fontSize={fitFontSize(checked ? detail : rankTitle, 27, 600)} fontWeight={700} fill={COLOR.muted}>{checked ? detail : rankTitle}</text>
+    <text x={374} y={761} textAnchor="middle" fontSize={fitFontSize(checked ? detail : rankTitle, 27, 600)} fontWeight={700} fill={checked ? COLOR.muted : COLOR.brand}>{checked ? detail : rankTitle}</text>
     <text x={34} y={930} fontSize={28} fontWeight={600} fill={COLOR.muted}>{scoreLabel}</text>
     <rect x={34} y={959} width={500} height={13} rx={6.5} fill="#eeeff1" />
     <rect x={34} y={959} width={500 * ratio} height={13} rx={6.5} fill={COLOR.ink} />

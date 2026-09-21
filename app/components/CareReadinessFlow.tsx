@@ -60,13 +60,14 @@ export function CareReadinessFlow({ memberName = null, admin = false }: { member
       {admin && <ActionButton size="small" variant="neutralWeak" onClick={preview}>관리자 · 결과 화면 미리보기</ActionButton>}
     </section> : isResult ? <section className="ff-care-result" aria-labelledby="care-result-title">
       <h1 id="care-result-title" className="ff-care-result-complete">🎉 함께할 준비를 모두 알아봤어요!</h1>
-      {result.essentials.length > 0 && <div className="ff-care-priorities" role="note"><strong>먼저 확인할 필수 항목 {result.essentials.length}가지</strong><p>점수와 관계없이 아래 항목을 확인하면 준비를 이어갈 수 있어요.</p><ul>{result.essentials.map(q => <li key={q.id}>{q.action}</li>)}</ul></div>}
       <CertificateResult ref={certRef} preview={isPreview} toneOverride={tone} onShare={() => certRef.current?.share(new URL("/quiz/care-readiness", window.location.origin).toString()) ?? Promise.resolve()} badge="입양 환경 점검 확인서" quiz="care-readiness" illustration={tone !== "bronze" ? "/readiness-result.webp" : "/readiness-result-failed.webp"} memberName={memberName} rows={[{ label: "함께할 준비", value: `${score}%` }, { label: "항목", value: `${result.readyCount}/${result.total}` }, { label: "등급", value: title }]} share={{ title: "퍼스트프렌드 입양 환경 점검", text: message }} />
-      {result.essentials.length === 0 && result.pending.length > 0 && <div className="ff-care-priorities"><strong>다음으로 챙기면 좋은 {Math.min(3, result.pending.length)}가지</strong><ul>{result.pending.slice(0, 3).map(q => <li key={q.id}>{q.action}</li>)}</ul></div>}
       <Accordion className="ff-care-result-accordion" multiple>
         {result.sections.map(s => <AccordionItem value={s.id} key={s.id}>
           <AccordionTrigger title={<span className="ff-care-result-item-title"><span>{s.label}</span><span className={`ff-care-result-item-score ${s.status === "ready" ? "is-ready" : "is-check"}`}>{careStatus[s.status]}</span></span>} />
-          <AccordionContent><ul className="ff-care-answer-list">{s.questions.map(q => <li key={q.id}><span>{q.action}</span><strong>{careAnswerScore[answers[q.id] ?? "unchecked"]}</strong></li>)}</ul></AccordionContent>
+          <AccordionContent>
+            <ul className="ff-care-answer-list">{s.questions.map(q => <li key={q.id}><span>{q.action}</span><strong>{careAnswerScore[answers[q.id] ?? "unchecked"]}</strong></li>)}</ul>
+            {s.questions.some(q => answers[q.id] !== "ready" && answers[q.id] !== "na") && <div className="ff-care-next-steps"><strong>다음으로 준비할 일</strong><ul>{result.pending.filter(q => s.questions.some(item => item.id === q.id)).map(q => <li key={q.id}>{q.action}</li>)}</ul></div>}
+          </AccordionContent>
         </AccordionItem>)}
       </Accordion>
       <details className="ff-care-scoring"><summary>준비 진행도는 어떻게 계산하나요?</summary><p>세부 항목은 준비 완료 100점, 준비 중 50점, 미확인 0점이에요. 영역 점수가 70점 이상이고 해당 영역의 필수 항목을 모두 완료하면 준비됐어요로 표시해요.</p><p>전체 준비도에는 영역별 배점을 적용해요. 해당 없는 질문은 제외하고 같은 영역 안에서 배점을 나눠요.</p><ul>{sections.map(s => <li key={s.id}>{s.label} · {s.weight}점</li>)}</ul><p>금메달은 90점 이상, 은메달은 70점 이상 90점 미만이에요. 70점 미만은 동메달이에요. 필수 항목이 준비 중이거나 확인이 필요하면 점수는 유지하고 동메달로 표시해요. 항목 수는 해당 질문 중 준비를 마친 수예요.</p></details>
@@ -75,10 +76,9 @@ export function CareReadinessFlow({ memberName = null, admin = false }: { member
       <p className="ff-care-step-count">{step + 1}/{totalSteps}</p>
       {step === 0 ? <><h1 id="care-step-title">어떤 친구와 함께하고 싶나요?</h1><div className="ff-care-choice-grid">{(["cat", "dog"] as const).map(value => <button type="button" className="ff-care-species-choice" aria-pressed={species === value} data-selected={species === value || undefined} key={value} onClick={() => setSpecies(value)}><Image src={`/${value}-selection.webp`} alt="" width={104} height={104} unoptimized /><strong>{value === "cat" ? "고양이" : "강아지"}</strong></button>)}</div><p className="ff-care-helper">친구에게 맞는 돌봄과 생활 준비를 살펴볼게요.</p></> : section && <><h1 id="care-step-title">{section.label}</h1><p className="ff-care-helper">마친 준비와 앞으로 할 일을 나눠 답해 주세요.</p>
         <div className="ff-care-question-list">{section.questions.map(q => <RadioGroup key={q.id} label={q.label} value={answers[q.id] ?? ""} onValueChange={value => setAnswers(current => ({ ...current, [q.id]: value as CareAnswer }))}>
-          <RadioGroupItem value="ready" label="준비됐어요" />
-          <RadioGroupItem value="planning" label="준비 중이에요" />
-          <RadioGroupItem value="unchecked" label="아직 확인하지 못했어요" />
-          {q.na && <RadioGroupItem value="na" label={q.na} />}
+          {(["ready", "planning", "unchecked"] as const).map((value, index) => <RadioGroupItem key={value} className="ff-care-answer-card" value={value} label={q.options[index]} />)}
+          {q.blocked && <RadioGroupItem className="ff-care-answer-card" value="blocked" label={q.blocked.label} />}
+          {q.na && <RadioGroupItem className="ff-care-answer-card" value="na" label={q.na} />}
         </RadioGroup>)}</div>
       </>}
     </section>}

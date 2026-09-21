@@ -122,7 +122,8 @@ test("uses a contextual animal detail topbar", async () => {
   assert.match(careReadinessFlow, /\{admin && <ActionButton size="small" variant="neutralWeak" onClick=\{preview\}>관리자 · 결과 화면 미리보기/);
   assert.match(careReadinessFlow, /RadioGroupItem/);
   assert.match(careReadinessFlow, /evaluateCare/);
-  assert.match(careReadinessFlow, /result\.essentials/);
+  assert.doesNotMatch(careReadinessFlow, /먼저 확인할 필수 항목/);
+  assert.match(careReadinessFlow, /다음으로 준비할 일/);
   assert.match(careReadinessFlow, /이 결과는 입양 가능 여부를 판단하지 않아요/);
   assert.match(careReadinessFlow, /<CertificateResult[^\n]*badge="입양 환경 점검 확인서"/);
   assert.equal((petKnowledgeConfig.match(/options: \[/g) ?? []).length, 15);
@@ -1452,6 +1453,11 @@ test("care readiness measures plans fairly and keeps essential checks above meda
   const { careSections, evaluateCare, careGrade } = await server.ssrLoadModule("/lib/care-readiness.ts");
   for (const species of ["cat", "dog"]) {
     const sections = careSections(species);
+    for (const question of sections.flatMap(s => s.questions)) {
+      assert.equal(question.options.length, 3);
+      assert.equal(new Set(question.options).size, 3);
+      assert.ok(question.options.every(label => label.length > 0));
+    }
     assert.equal(sections.reduce((sum, s) => sum + s.weight, 0), 100);
     const ready = Object.fromEntries(sections.flatMap(s => s.questions.map(q => [q.id, "ready"])));
     assert.equal(evaluateCare(ready, species).score, 100);
@@ -1476,6 +1482,10 @@ test("care readiness measures plans fairly and keeps essential checks above meda
     }
     assert.ok(evaluateCare({ ...ready, transport: "unchecked" }, species).score > 95);
     assert.equal(evaluateCare({ ...ready, medical: "na" }, species).tone, "bronze");
+    const blocked = evaluateCare({ ...ready, permission: "blocked" }, species);
+    assert.equal(blocked.score, evaluateCare({ ...ready, permission: "unchecked" }, species).score);
+    assert.equal(blocked.tone, "bronze");
+    assert.match(blocked.essentials.find(q => q.id === "permission").action, /주거 조건 마련/);
   }
   for (const [score, tone] of [[69.9, "bronze"], [70, "silver"], [89.9, "silver"], [90, "gold"]]) {
     assert.equal(careGrade(score, true), tone);

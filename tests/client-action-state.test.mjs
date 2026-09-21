@@ -7,6 +7,85 @@ import ts from 'typescript';
 
 const require = createRequire(import.meta.url);
 
+test('quiz badges refresh quietly, throttle focus and discard previous-account responses', async () => {
+  const source = await readFile(new URL('../app/components/AdoptionPlanningCard.tsx', import.meta.url), 'utf8');
+  const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } });
+  const events = new EventTarget(), document = new EventTarget(), states = [], pending = [];
+  document.visibilityState = 'visible';
+  let effect, stateIndex = 0, scope = 'alice', now = 100_000;
+  const exports = {};
+  runInNewContext(outputText, {
+    exports, AbortController, document, Date: { now: () => now }, window: events,
+    fetch: (_url, options) => new Promise(resolve => pending.push({ resolve, signal: options.signal })),
+    require: name => {
+      if (name === 'react') return {
+        useEffect: callback => { effect = callback; },
+        useState: initial => { const index = stateIndex++; states[index] = initial; return [initial, value => { states[index] = typeof value === 'function' ? value(states[index]) : value; }]; },
+      };
+      if (name === './display-scope') return { readDisplayScope: () => scope };
+      if (name.includes('quiz-completion')) return { quizCompletionUpdatedEvent: 'ff-quiz-completion-updated' };
+      if (name === './detailReturn') return { openDetailFlow() {} };
+      if (name.endsWith('.css')) return { default: {} };
+      if (name === 'seed-design/ui/badge') return { Badge: 'span' };
+      if (name === 'next/link') return { default: 'a' };
+      return require(name);
+    },
+  });
+  exports.AdoptionPlanningCard();
+  const cleanup = effect();
+  const settle = async (index, completions, status = 200) => {
+    pending[index].resolve(Response.json({ completions }, { status }));
+    await new Promise(resolve => setImmediate(resolve));
+  };
+  const gold = { 'pet-knowledge': '상위 1% · 최고의 반려인' };
+  await settle(0, gold);
+  assert.equal(states[0]['pet-knowledge'], gold['pet-knowledge']);
+  const first = states[0];
+  events.dispatchEvent(new Event('focus'));
+  events.dispatchEvent(new Event('pageshow'));
+  document.dispatchEvent(new Event('visibilitychange'));
+  const unrelated = new Event('storage'); unrelated.key = 'unrelated'; events.dispatchEvent(unrelated);
+  assert.equal(pending.length, 1, 'rapid focus and unrelated storage events do not fetch');
+  now += 31_000;
+  events.dispatchEvent(new Event('focus'));
+  events.dispatchEvent(new Event('pageshow'));
+  assert.equal(pending.length, 2, 'in-flight requests are deduplicated');
+  assert.equal(states[0], first, 'existing badges remain visible while loading');
+  assert.equal(states[1], '도전하기');
+  await settle(1, gold);
+  assert.equal(states[0], first, 'unchanged server data preserves the state reference');
+  now += 31_000;
+  events.dispatchEvent(new Event('focus'));
+  await settle(2, {}, 503);
+  assert.equal(states[0], first, 'background failure does not erase valid badges');
+  events.dispatchEvent(new Event('ff-quiz-completion-updated'));
+  await settle(3, { 'pet-knowledge': '상위 10% · 세심한 반려인' });
+  assert.match(states[0]['pet-knowledge'], /세심한/);
+  const completed = new Event('storage'); completed.key = 'ff-quiz-completion-updated'; events.dispatchEvent(completed);
+  assert.equal(pending.length, 5, 'completion in another tab bypasses the throttle');
+  scope = 'bob';
+  events.dispatchEvent(new Event('focus'));
+  assert.equal(pending[4].signal.aborted, true);
+  assert.equal(Object.keys(states[0]).length, 0, 'account change immediately clears previous badges');
+  await settle(4, gold);
+  assert.equal(Object.keys(states[0]).length, 0, 'late previous-account response cannot restore badges');
+  await settle(5, {});
+  scope = 'alice';
+  events.dispatchEvent(new Event('focus'));
+  await settle(6, {}, 503);
+  assert.equal(states[1], '확인 필요', 'first-load errors remain visible');
+  events.dispatchEvent(new Event('ff-quiz-completion-updated'));
+  await settle(7, gold);
+  now += 31_000;
+  events.dispatchEvent(new Event('focus'));
+  await settle(8, {}, 401);
+  assert.equal(Object.keys(states[0]).length, 0, 'expired authorization clears stored display');
+  assert.equal(states[1], '도전하기');
+  cleanup();
+  events.dispatchEvent(new Event('ff-quiz-completion-updated'));
+  assert.equal(pending.length, 9);
+});
+
 test('quiz completion saves to the server and exposes authentication and save failures', async () => {
   const source = await readFile(new URL('../lib/quiz-completion.ts', import.meta.url), 'utf8');
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });

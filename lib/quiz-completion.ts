@@ -1,5 +1,6 @@
 export type CompletionQuiz = "care-readiness" | "adoption-prep" | "pet-knowledge";
 export const quizCompletionEvent = "ff-quiz-completion";
+export const quizCompletionUpdatedEvent = "ff-quiz-completion-updated";
 export type SaveState = "idle" | "saving" | "saved" | "login" | "error";
 const saves = new Map<CompletionQuiz, { ratio: number; title: string; state: SaveState }>();
 
@@ -20,8 +21,9 @@ export async function saveQuizCompletion(quiz: CompletionQuiz, ratio: number, ti
     });
     current.state = response.ok ? "saved" : response.status === 401 ? "login" : "error";
     if (response.ok) {
-      // 다른 탭에는再조회 신호만 보내며 결과나 회원정보는 저장하지 않습니다.
-      try { window.localStorage.setItem("ff-quiz-completion-updated", String(Date.now())); } catch { /* focus 시 재조회 */ }
+      window.dispatchEvent(new Event(quizCompletionUpdatedEvent));
+      // 다른 탭에는 재조회 신호만 보내며 결과나 회원정보는 저장하지 않습니다.
+      try { window.localStorage.setItem(quizCompletionUpdatedEvent, String(Date.now())); } catch { /* focus 시 재조회 */ }
     }
   } catch {
     current.state = "error";

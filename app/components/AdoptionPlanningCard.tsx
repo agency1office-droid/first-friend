@@ -3,7 +3,8 @@
 import { useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { Badge } from "seed-design/ui/badge";
-import { quizCompletionEvent, type CompletionQuiz } from "../../lib/quiz-completion";
+import { quizCompletionUpdatedEvent, type CompletionQuiz } from "../../lib/quiz-completion";
+import { readDisplayScope } from "./display-scope";
 import styles from "./AdoptionPlanningCard.module.css";
 import { openDetailFlow } from "./detailReturn";
 
@@ -16,39 +17,67 @@ export function AdoptionPlanningCard() {
   const [status, setStatus] = useState("확인 중");
   useEffect(() => {
     let active = true;
-    let controller: AbortController;
-    async function refresh() {
+    let controller: AbortController | undefined;
+    let scope = readDisplayScope();
+    let loaded = false;
+    let checkedAt = 0;
+    async function refresh(force = false) {
+      const nextScope = readDisplayScope();
+      if (scope !== nextScope) {
+        scope = nextScope;
+        loaded = false;
+        checkedAt = 0;
+        controller?.abort();
+        controller = undefined;
+        setCompletions({});
+        setStatus("확인 중");
+      }
+      if (!force && (controller || (loaded && Date.now() - checkedAt < 30_000))) return;
       controller?.abort();
-      controller = new AbortController();
-      const signal = controller.signal;
-      setCompletions({});
-      setStatus("확인 중");
+      const request = new AbortController();
+      controller = request;
+      const { signal } = request;
+      const requestScope = scope;
       try {
         const response = await fetch("/api/quiz-completions", { cache: "no-store", credentials: "same-origin", signal });
-        if (response.status === 401) {
-          if (active && !signal.aborted) setStatus("도전하기");
-          return;
-        }
-        if (!response.ok) throw new Error("load_failed");
-        const body = await response.json();
-        if (active && !signal.aborted) { setCompletions(body.completions); setStatus("도전하기"); }
+        if (!response.ok && response.status !== 401) throw new Error("load_failed");
+        const body = response.status === 401 ? { completions: {} } : await response.json();
+        if (!active || signal.aborted) return;
+        if (requestScope !== readDisplayScope()) { void refresh(true); return; }
+        loaded = true;
+        checkedAt = Date.now();
+        setCompletions(previous => {
+          const next = body.completions as Partial<Record<CompletionQuiz, string>>;
+          return Object.keys(previous).length === Object.keys(next).length && Object.entries(next).every(([key, value]) => previous[key as CompletionQuiz] === value) ? previous : next;
+        });
+        setStatus("도전하기");
       } catch {
-        if (active && !signal.aborted) setStatus("확인 필요");
+        if (active && !signal.aborted) {
+          if (requestScope !== readDisplayScope()) { void refresh(true); return; }
+          if (!loaded) setStatus("확인 필요");
+        }
+      } finally {
+        if (controller === request) controller = undefined;
       }
     }
     void refresh();
     const update = () => { void refresh(); };
+    const completed = () => { void refresh(true); };
+    const storage = (event: StorageEvent) => { if (event.key === quizCompletionUpdatedEvent) completed(); };
+    const visible = () => { if (document.visibilityState === "visible") update(); };
     window.addEventListener("focus", update);
     window.addEventListener("pageshow", update);
-    window.addEventListener("storage", update);
-    window.addEventListener(quizCompletionEvent, update);
+    window.addEventListener("storage", storage);
+    window.addEventListener(quizCompletionUpdatedEvent, completed);
+    document.addEventListener("visibilitychange", visible);
     return () => {
       active = false;
       controller?.abort();
       window.removeEventListener("focus", update);
       window.removeEventListener("pageshow", update);
-      window.removeEventListener("storage", update);
-      window.removeEventListener(quizCompletionEvent, update);
+      window.removeEventListener("storage", storage);
+      window.removeEventListener(quizCompletionUpdatedEvent, completed);
+      document.removeEventListener("visibilitychange", visible);
     };
   }, []);
   function openQuiz(event: MouseEvent<HTMLAnchorElement>) {

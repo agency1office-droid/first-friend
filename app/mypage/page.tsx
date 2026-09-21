@@ -7,6 +7,7 @@ import { Callout } from "seed-design/ui/callout";
 import { List, ListLinkItem, ListDivider } from "seed-design/ui/list";
 import { Avatar } from "seed-design/ui/avatar";
 import { Badge } from "seed-design/ui/badge";
+import { SavedResultCards } from '../components/SavedResultCards';
 import { IconArticleLine, IconCheckmarkShieldFill, IconChevronRightLine, IconGearLine, IconHeartLine, IconHousePlusLine, IconMagnifyingglassLine, IconPawprintLine, IconPersonShieldLine } from "@karrotmarket/react-monochrome-icon";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +40,7 @@ export default async function MyPage() {
     <header className="ff-page-header"><div className="ff-kicker">나의 페이지</div><h1 className="ff-title">{user ? `${user.displayName}님, 안녕하세요` : "퍼스트 프렌드에 오신 걸 환영해요"}</h1></header>
     {!user ? <section className="ff-result"><h2 className="ff-section-title">안전한 만남을 위해 로그인이 필요해요</h2><p className="ff-description" style={{ margin: "8px 0 18px" }}>동물과 이야기는 누구나 볼 수 있고, 찜·신청·글쓰기·실종 제보·직접 등록은 로그인 후 이용할 수 있어요.</p><ActionButton asChild size="large" className="ff-action-link"><Link prefetch={false} href={chatGPTSignInPath("/mypage")}>로그인·회원가입</Link></ActionButton></section> : <>
       <div className="ff-profile-row"><Avatar size="48" fallback={user.displayName.slice(0, 1)}/><div className="ff-grow"><strong>{user.displayName}</strong><div className="ff-meta">퍼스트프렌드 회원 · {user.email}</div></div><ActionButton asChild size="small" variant="neutralWeak"><a href={chatGPTSignOutPath("/")}>로그아웃</a></ActionButton></div>
+      <SavedResultCards />
       {!dashboard && <Callout tone="warning" title="활동 정보를 불러오지 못했어요" description="잠시 후 새로고침해 주세요."/>}
       {dashboard && <><div className="ff-dashboard-grid"><div><strong>{dashboard.favorites}</strong><span>관심 친구</span></div><div><strong>{dashboard.applicationCount}</strong><span>입양 신청</span></div><div><strong>{dashboard.posts}</strong><span>나의 이야기</span></div><div><strong>{dashboard.reports}</strong><span>실종·발견</span></div></div>
         <section className="ff-section"><div className="ff-section-head"><h2 className="ff-section-title">입양 준비</h2><Link prefetch={false} className="ff-more" href="/readiness">다시 확인</Link></div>{dashboard.readiness ? <div className="ff-readiness-summary"><div><span>생활 준비도</span><strong>{String(dashboard.readiness.readiness_score || 0)}</strong></div><div><span>필수 시험</span><strong>{String(dashboard.readiness.education_score || 0)}</strong></div><Badge tone={dashboard.readiness.passed ? "positive" : "warning"} variant="weak">{dashboard.readiness.passed ? "교육 완료" : "재학습 필요"}</Badge></div> : <Callout tone="warning" title="아직 준비 시험을 완료하지 않았어요" description="입양 신청 전에 생활 환경·비용·필수 교육을 확인해 주세요." linkProps={{ href: "/readiness", children: "시험 시작" }}/>}</section>

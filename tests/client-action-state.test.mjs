@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
+import './pending-results.test.mjs';
 
 const require = createRequire(import.meta.url);
 
@@ -76,7 +77,7 @@ test('admin quiz previews explain that results are not saved, even after an earl
   }
   state = 'saved';
   assert.equal(exports.QuizCompletionNotice({ quiz: 'care-readiness', quietSuccess: true }), null);
-  assert.match(exports.QuizCompletionNotice({ quiz: 'pet-knowledge' }).props.children[0].props.children, /회원정보에 저장했어요/);
+  assert.match(exports.QuizCompletionNotice({ quiz: 'pet-knowledge' }).props.children[0].props.children, /최고 결과 카드를 저장했어요/);
 });
 
 test('quiz badges refresh quietly, throttle focus and discard previous-account responses', async () => {
@@ -165,7 +166,7 @@ test('quiz completion saves to the server and exposes authentication and save fa
   let response = async () => Response.json({ title: '상위 1% · 최고의 반려인' });
   const exports = {};
   runInNewContext(outputText, {
-    exports, Event,
+    exports, Event, require: () => ({ rememberPending: () => true, forgetPending: () => {} }),
     fetch: async (url, options) => { calls.push({ url, options }); return response(); },
     window: { localStorage: { setItem: (k, v) => stored.set(k, v) }, dispatchEvent: events.dispatchEvent.bind(events), addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events) },
   });
@@ -194,11 +195,24 @@ test('quiz completion saves to the server and exposes authentication and save fa
 });
 
 test('member quiz API shares results across devices but never across members', async () => {
+  const care = {}, model = {};
+  for (const [path, exports] of [['../lib/care-readiness.ts', care], ['../lib/result-card.ts', model]]) {
+    const source = await readFile(new URL(path, import.meta.url), 'utf8');
+    const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
+    runInNewContext(outputText, { exports, require: () => care });
+  }
   const source = await readFile(new URL('../app/api/quiz-completions/route.ts', import.meta.url), 'utf8');
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
   const rows = new Map();
   let member = 'alice', fail = false;
-  const db = { from(table) {
+  const db = { async rpc(name, args) {
+    assert.equal(name, 'save_best_quiz_card');
+    const key = args.p_member_id + ':' + args.p_quiz;
+    const old = rows.get(key);
+    const updated = !old || args.p_medal > old.medal || (args.p_medal === old.medal && args.p_ratio > old.ratio);
+    if (!fail && updated) rows.set(key, { member_id: args.p_member_id, quiz: args.p_quiz, ratio: args.p_ratio, title: args.p_title, medal: args.p_medal, completed_at: args.p_completed_at, card: args.p_card });
+    return { data: updated, error: fail ? {} : null };
+  }, from(table) {
     assert.equal(table, 'member_quiz_completions');
     return {
       select() { return this; },
@@ -215,7 +229,7 @@ test('member quiz API shares results across devices but never across members', a
   } };
   const device = () => {
     const exports = {};
-    runInNewContext(outputText, { exports, Response, URL, require: name => name.includes('chatgpt-auth') ? { getChatGPTUser: async () => member ? { userId: member } : null } : { getSupabaseServerClient: () => db } });
+    runInNewContext(outputText, { exports, Response, URL, require: name => name.includes('chatgpt-auth') ? { getChatGPTUser: async () => member ? { userId: member, displayName: member } : null } : name.includes('result-card') ? model : { getSupabaseServerClient: () => db } });
     return exports;
   };
   const phone = device(), laptop = device();
@@ -229,13 +243,17 @@ test('member quiz API shares results across devices but never across members', a
   assert.deepEqual((await (await laptop.GET()).json()).completions, {});
   member = 'alice';
   await phone.POST(request({ quiz: 'adoption-prep', ratio: 14 / 17 }));
-  await phone.POST(request({ quiz: 'care-readiness', ratio: 1, title: '함께할 준비가 잘 되어 있어요' }));
+  const answers = Object.fromEntries(care.careSections('dog').flatMap(s => s.questions.map(q => [q.id, 'ready'])));
+  await phone.POST(request({ quiz: 'care-readiness', answers }));
   const all = (await (await laptop.GET()).json()).completions;
   assert.equal(all['adoption-prep'], '상위 10% · 따뜻한 반려인');
-  assert.equal(all['care-readiness'], '함께할 준비가 잘 되어 있어요');
+  assert.equal(all['care-readiness'], '함께할 준비가 차곡차곡 갖춰졌어요');
   await phone.POST(request({ ...result, ratio: 12 / 15 }));
   assert.equal(rows.size, 3, 'retakes update the member/quiz row');
-  assert.equal((await (await laptop.GET()).json()).completions['pet-knowledge'], '상위 10% · 세심한 반려인');
+  assert.equal((await (await laptop.GET()).json()).completions['pet-knowledge'], '상위 1% · 최고의 반려인');
+  const originalDate = rows.get('alice:pet-knowledge').completed_at;
+  assert.equal((await (await phone.POST(request(result))).json()).updated, false);
+  assert.equal(rows.get('alice:pet-knowledge').completed_at, originalDate);
   for (const body of [null, {}, { ...result, ratio: 2 }, { ...result, ratio: 0.99 }, { ...result, quiz: 'unknown' }]) assert.equal((await phone.POST(request(body))).status, 400);
   assert.equal((await phone.POST(request(result, 'https://other.test'))).status, 403);
   assert.equal((await phone.POST(new Request('https://firstfriend.test/api/quiz-completions', { method: 'POST', body: '{' }))).status, 400);

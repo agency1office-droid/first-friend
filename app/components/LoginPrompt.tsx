@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { LoginBottomSheet } from "./LoginSheet";
+import { PendingResultsSync } from './PendingResultsSync';
 
 type Request = { returnTo: string; description?: string };
 
@@ -12,6 +13,5 @@ export function LoginPrompt() {
     window.addEventListener("ff-login-request", open);
     return () => window.removeEventListener("ff-login-request", open);
   }, []);
-  if (!request) return null;
-  return <LoginBottomSheet open onOpenChange={(open) => { if (!open) setRequest(null); }} returnTo={request.returnTo} title="퍼스트프렌드 로그인" description={request.description || "이 기능은 로그인 후 쓸 수 있어요"}/>;
+  return <><PendingResultsSync />{request && <LoginBottomSheet open onOpenChange={(open) => { if (!open) setRequest(null); }} returnTo={request.returnTo} title="퍼스트프렌드 로그인" description={request.description || "이 기능은 로그인 후 쓸 수 있어요"}/>}</>;
 }

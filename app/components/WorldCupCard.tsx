@@ -19,7 +19,7 @@ const QR_SIZE = 145;
 const CARD_HEIGHT = 1410;
 
 /** 카드에 들어갈 사진(서버 압축 썸네일)·붉은 실·워드마크·상세 페이지 QR을 data URL로 받습니다. */
-export async function loadCardAssets(animal: Animal, detailUrl: string): Promise<CardAssets> {
+export async function loadCardAssets(animal: Pick<Animal, 'id' | 'thumbnail' | 'image'>, detailUrl: string): Promise<CardAssets> {
   const [photo, string, wordmark, qr] = await Promise.all([
     toDataUrl(animal.thumbnail || animal.image),
     toDataUrl("/worldcup-string-heart.webp"),

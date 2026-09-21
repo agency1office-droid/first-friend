@@ -27,8 +27,8 @@ export function CareReadinessFlow({ memberName = null, admin = false }: { member
   const title = tone === "gold" ? "준비된 예비 반려인" : tone === "silver" ? "차근차근 준비하는 예비 반려인" : "첫걸음을 시작한 예비 반려인";
   const certRef = useRef<CertificateHandle>(null);
   useEffect(() => {
-    if (started && isResult && !isPreview) saveQuizCompletion("care-readiness", score / 100, message);
-  }, [started, isResult, isPreview, score, message]);
+    if (started && isResult && !isPreview) saveQuizCompletion("care-readiness", score / 100, message, { answers, species: species ?? 'dog' });
+  }, [started, isResult, isPreview, score, message, answers, species]);
 
   function previous() {
     if (!started || step === 0) return closeToDetail();
@@ -57,7 +57,6 @@ export function CareReadinessFlow({ memberName = null, admin = false }: { member
     {started && <div className="ff-readiness-progress" role="progressbar" aria-label="생활 점검 진행률" aria-valuemin={1} aria-valuemax={totalSteps} aria-valuenow={isResult ? totalSteps : step + 1}><div style={{ width: `${(Math.min(step + 1, totalSteps) / totalSteps) * 100}%` }} /></div>}
     {!started ? <section className="ff-readiness-intro-content" aria-labelledby="care-readiness-intro-title">
       <div className="ff-readiness-intro-badge">입양 환경 점검</div><h1 id="care-readiness-intro-title">반려동물과<br />함께할 준비를 살펴봐요</h1>
-      <p className="ff-care-helper">7개 영역에서 준비된 부분과 앞으로 챙길 일을 확인해요.</p>
       {admin && <ActionButton size="small" variant="neutralWeak" onClick={preview}>관리자 · 결과 화면 미리보기</ActionButton>}
     </section> : isResult ? <section className="ff-care-result" aria-labelledby="care-result-title">
       <h1 id="care-result-title" className="ff-care-result-complete">🎉 함께할 준비를 모두 알아봤어요!</h1>

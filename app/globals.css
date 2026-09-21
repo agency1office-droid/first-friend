@@ -661,6 +661,12 @@ html:has(.ff-image-dialog[open]) { overflow: hidden; }
 .seed-action-button--variant_brandSolid:not(:disabled) { color: var(--seed-color-palette-static-white); }
 .ff-readiness-actions .seed-action-button:disabled { opacity: 1; color: var(--seed-color-fg-neutral-muted); background: var(--seed-color-bg-neutral-weak); cursor: not-allowed; }
 .ff-readiness-actions .seed-action-button svg { width: 18px; height: 18px; }
+.ff-readiness-actions:has(.ff-result-save-retry) { flex-wrap: wrap; }
+.ff-result-save-retry { flex: 0 0 100%; text-align: center; font-size: var(--seed-font-size-t3); }
+.ff-saved-results h3 { margin: 24px 0 8px; font-size: var(--seed-font-size-t5); }
+.ff-saved-result-sheet { max-height: 90dvh; min-height: 0; }
+.ff-saved-result-detail { min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 24px; }
+.ff-saved-result-detail .ff-worldcup-card { width: 100%; height: auto; flex: none; }
 .ff-readiness-actions.is-intro .seed-action-button { flex-basis: 100%; }
 .ff-readiness-actions.is-single .seed-action-button { flex-basis: 100%; }
 .ff-readiness-actions.is-feedback .seed-action-button { flex-basis: 0; }

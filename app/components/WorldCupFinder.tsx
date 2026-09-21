@@ -11,6 +11,7 @@ import { optimizedAnimalImageUrl } from "../../lib/image-url";
 import { availableRoundSize, choose, currentPair, expandColorQueries, isDone, pickPool, poolQueries, progress, roundLabel, startBracket, winnerOf, type Answers, type Bracket } from "../../lib/worldcup";
 import { AnimalThumbnail } from "./AnimalThumbnail";
 import { QuizStartButton } from "./QuizStartButton";
+import { saveWorldcupResult } from '../../lib/pending-results';
 import { exportCardPng, loadCardAssets, WorldCupCard, type CardAssets } from "./WorldCupCard";
 import { navigateAppBack } from "./AppChrome";
 import { useAppFeedback } from "./AppFeedback";
@@ -91,7 +92,7 @@ async function fetchPage(query: string) {
 // 탭을 닫으면 사라집니다. (vinext는 history.state의 추가 키를 이동 후에도 보존합니다.)
 const RESULT_KEY = "ff-worldcup-result-v1";
 const RESULT_MARK = "ffWorldcupResult";
-type SavedRun = { id: string; draft: Draft; page: AnimalPage | null; roundSize: number; pool: Animal[]; filled: number; bracket: Bracket };
+type SavedRun = { id: string; completedAt?: string; draft: Draft; page: AnimalPage | null; roundSize: number; pool: Animal[]; filled: number; bracket: Bracket };
 function readSavedRun(): SavedRun | null {
   try {
     const saved = JSON.parse(window.sessionStorage.getItem(RESULT_KEY) || "null") as SavedRun | null;
@@ -140,6 +141,13 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
   const [cardAssets, setCardAssets] = useState<CardAssets | null>(null);
   const [sharing, setSharing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [recordState, setRecordState] = useState('');
+  async function saveRun(run: SavedRun) {
+    const animal = winnerOf(run.bracket);
+    if (!animal || !run.completedAt) return;
+    setRecordState('saving');
+    setRecordState(await saveWorldcupResult(run.id, animal.id, run.completedAt));
+  }
 
   useEffect(() => {
     const scroller = document.querySelector<HTMLElement>(".ff-quiz-shell .ff-readiness > section");
@@ -154,6 +162,7 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
     const timer = window.setTimeout(() => {
       setDraft(normalizeDraft(saved.draft)); setPage(saved.page); setRoundSize(saved.roundSize); setPool(saved.pool); setFilled(saved.filled); setBracket(saved.bracket); setHistory([]);
       setPhase("result");
+      void saveRun(saved);
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
@@ -247,7 +256,10 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
     if (!bracket) return;
     const following = choose(bracket, animal);
     setHistory(value => [...value, bracket]); setBracket(following);
-    if (isDone(following)) { setPhase("result"); writeSavedRun({ id: `${Date.now().toString(36)}-${following.picks.length}`, draft, page, roundSize, pool, filled, bracket: following }); return; }
+    if (isDone(following)) {
+      const run = { id: crypto.randomUUID(), completedAt: new Date().toISOString(), draft, page, roundSize, pool, filled, bracket: following };
+      setPhase("result"); writeSavedRun(run); void saveRun(run); return;
+    }
     // 라운드가 줄어드는 순간(8강·4강·결승 시작)에만 강 수를 보여 줍니다.
     if (following.round.length < bracket.round.length && following.round.length <= 8) setRoundIntro(following.round.length);
   }
@@ -417,6 +429,7 @@ export function WorldCupFinder({ member = null }: { member?: { name: string; adm
     </section>}
     {/* 대결 화면은 카드 아래 선택 버튼이 곧 다음이라 하단 버튼이 없습니다. */}
     {phase !== "match" && <div className={`ff-readiness-actions ${isResult ? "is-result" : "is-single"}`}>
+      {isResult && recordState === 'error' && <p className="ff-result-save-retry" role="status">결과를 저장하지 못했어요. <button type="button" onClick={() => { const run = readSavedRun(); if (run) void saveRun(run); }}>다시 저장하기</button></p>}
       {phase === "intro" ? <QuizStartButton signedIn={Boolean(member)} onStart={() => void next()} worldcup />
       : isResult && winner ? <><ActionButton size="large" variant="neutralWeak" className="ff-grow" loading={saving} disabled={!cardReady || saving} onClick={() => void saveCard(winner)}><IconArrowDownLine aria-hidden />카드 저장</ActionButton><ActionButton size="large" variant="brandSolid" className="ff-grow" asChild><a href={`/friends/${winner.id}?via=worldcup`}>이 친구 알아보기<IconChevronRightLine aria-hidden /></a></ActionButton></>
       : empty ? <ActionButton size="large" variant="brandSolid" className="ff-grow" onClick={() => { setEmpty(false); setDraft(current => ({ ...EMPTY_DRAFT, species: current.species })); setPage(null); setPool([]); setBracket(null); setHistory([]); setRoundIntro(null); setRoundSize(16); setFilled(0); writeSavedRun(null); setStepIndex(steps.indexOf("size")); setPhase("steps"); }}>처음으로 돌아가기</ActionButton>

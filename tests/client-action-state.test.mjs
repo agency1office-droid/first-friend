@@ -7,6 +7,29 @@ import ts from 'typescript';
 
 const require = createRequire(import.meta.url);
 
+test('admin quiz previews explain that results are not saved, even after an earlier save', async () => {
+  const source = await readFile(new URL('../app/components/QuizCompletionNotice.tsx', import.meta.url), 'utf8');
+  const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } });
+  let state = 'idle';
+  const exports = {};
+  runInNewContext(outputText, { exports, require: name => {
+    if (name === 'react') return { useSyncExternalStore: () => state };
+    if (name.includes('quiz-completion')) return {};
+    if (name === 'seed-design/ui/action-button') return { ActionButton: () => null };
+    return require(name);
+  } });
+  for (const quiz of ['care-readiness', 'adoption-prep', 'pet-knowledge']) {
+    for (state of ['idle', 'saving', 'saved', 'login', 'error']) {
+      const notice = exports.QuizCompletionNotice({ quiz, preview: true, quietSuccess: true });
+      assert.equal(notice.props.role, 'status');
+      assert.equal(notice.props.children.props.children, '미리보기 결과는 저장되지 않아요. 퀴즈를 완료하면 회원정보에 기록돼요.');
+    }
+  }
+  state = 'saved';
+  assert.equal(exports.QuizCompletionNotice({ quiz: 'care-readiness', quietSuccess: true }), null);
+  assert.match(exports.QuizCompletionNotice({ quiz: 'pet-knowledge' }).props.children[0].props.children, /회원정보에 저장했어요/);
+});
+
 test('quiz badges refresh quietly, throttle focus and discard previous-account responses', async () => {
   const source = await readFile(new URL('../app/components/AdoptionPlanningCard.tsx', import.meta.url), 'utf8');
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } });

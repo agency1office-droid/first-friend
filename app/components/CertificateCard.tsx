@@ -15,7 +15,7 @@ export type CertificateHandle = { share(url: string): Promise<void>; save(): Pro
 type Quiz = "pet-knowledge" | "adoption-prep" | "care-readiness";
 type Assets = { src: string; illustration: string; wordmark: string; qr: string };
 type CardProps = { ref?: Ref<SVGSVGElement>; toneOverride?: ReturnType<typeof medalTone>; quiz: Quiz; badge: string; number: string; date: string; holder: string; rows: CertificateRow[]; assets: Assets | null };
-type ResultProps = { ref?: Ref<CertificateHandle>; toneOverride?: ReturnType<typeof medalTone>; quiz: Quiz; badge: string; illustration: string; memberName?: string | null; rows: CertificateRow[]; share: { title: string; text: string }; onShare?: () => Promise<void>; extraAction?: ReactNode };
+type ResultProps = { preview?: boolean; ref?: Ref<CertificateHandle>; toneOverride?: ReturnType<typeof medalTone>; quiz: Quiz; badge: string; illustration: string; memberName?: string | null; rows: CertificateRow[]; share: { title: string; text: string }; onShare?: () => Promise<void>; extraAction?: ReactNode };
 
 const HOLDER_FALLBACK = "첫 친구 예비 반려인";
 
@@ -106,7 +106,7 @@ export function CertificateCard({ ref, toneOverride, quiz, badge, number, date, 
 }
 
 /** 카드 + "이미지 저장". 공유하기 버튼은 부모의 하단 푸터에 있으므로 ref로 share(url)를 넘겨 줍니다. */
-export function CertificateResult({ ref, toneOverride, quiz, badge, illustration, memberName, rows, share: shareText, onShare, extraAction }: ResultProps) {
+export function CertificateResult({ preview = false, ref, toneOverride, quiz, badge, illustration, memberName, rows, share: shareText, onShare, extraAction }: ResultProps) {
   const foilId = `certificate-foil-${useId().replace(/:/g, "")}`;
   const feedback = useAppFeedback();
   const cardRef = useRef<SVGSVGElement>(null);
@@ -260,7 +260,7 @@ export function CertificateResult({ ref, toneOverride, quiz, badge, illustration
   }
 
   return <div className="ff-certificate">
-    <QuizCompletionNotice quiz={quiz} quietSuccess={quiz === "care-readiness"} />
+    <QuizCompletionNotice preview={preview} quiz={quiz} quietSuccess={quiz === "care-readiness"} />
     <div ref={holoRef} className="ff-certificate-holo" role={tiltHint ? "button" : undefined} tabIndex={tiltHint ? 0 : undefined} aria-label={tiltHint ? "카드 기울기 효과 켜기" : undefined} aria-describedby={tiltHint ? `${foilId}-hint` : undefined} aria-disabled={tiltHint ? tiltPending : undefined} onClick={() => void enableTilt()} onKeyDown={event => { if (tiltHint && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); void enableTilt(); } }} onPointerEnter={moveFoil} onPointerMove={moveFoil} onPointerLeave={resetFoil} onPointerCancel={resetFoil}>
       <motion.div className="ff-certificate-holo-surface" style={{ rotateX, rotateY, "--foil-x": shineX, "--foil-y": shineY } as MotionStyle}>
         <CertificateCard ref={cardRef} toneOverride={toneOverride} quiz={quiz} badge={badge} number={issued.number} date={issued.date} holder={holder} rows={rows} assets={assets} />

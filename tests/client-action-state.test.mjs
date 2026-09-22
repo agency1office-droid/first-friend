@@ -21,6 +21,7 @@ test('quiz start asks guests once at entry, preserves the return URL and lets me
       runInNewContext(outputText, { exports, URL, window: { location, history }, require: name => {
         if (name === 'react') return { useEffect: fn => { effect = fn; }, useState: initial => { const slot = index++; if (!(slot in states)) states[slot] = initial; return [states[slot], value => { states[slot] = value; }]; } };
         if (name === './AuthForm') return { AuthForm: 'auth' };
+        if (name === '@seed-design/react') return { Divider: 'hr' };
         if (name === 'seed-design/ui/bottom-sheet') return new Proxy({}, { get: (_, key) => String(key) });
         if (name === 'seed-design/ui/action-button') return { ActionButton: 'button' };
         if (name.endsWith('.css')) return { default: {} };
@@ -44,7 +45,7 @@ test('quiz start asks guests once at entry, preserves the return URL and lets me
       assert.equal(content.props.description, '결과를 저장할 수 있어요.');
       const auth = content.props.children[0].props.children;
       assert.equal(auth.props.returnTo, returnTo.replace('#intro', '&quiz_start=1#intro'));
-      const guest = content.props.children[1].props.children;
+      const guest = content.props.children[1].props.children[1];
       sheet.props.onOpenChange(false);
       assert.equal(started, 0, 'dismissing login returns to the intro');
       assert.equal(guest.props.children, worldcup ? '로그인 없이 시작하기' : '로그인 없이 풀기');

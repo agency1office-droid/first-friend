@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Divider } from "@seed-design/react";
 import { ActionButton } from "seed-design/ui/action-button";
 import { BottomSheetBody, BottomSheetContent, BottomSheetFooter, BottomSheetRoot } from "seed-design/ui/bottom-sheet";
 import { AuthForm } from "./AuthForm";
@@ -28,7 +29,8 @@ export function QuizStartButton({ signedIn, onStart, worldcup = false }: { signe
     <BottomSheetRoot open={open} onOpenChange={setOpen}>
       <BottomSheetContent title="로그인하고 기록을 남겨 보세요" description="결과를 저장할 수 있어요.">
         <BottomSheetBody className="ff-login-sheet-body"><AuthForm returnTo={returnTo} /></BottomSheetBody>
-        <BottomSheetFooter>
+        <BottomSheetFooter style={{ paddingTop: 0 }}>
+          <Divider style={{ margin: "0 0 var(--seed-dimension-x4)" }} />
           <ActionButton size="large" variant="neutralWeak" onClick={() => { setOpen(false); onStart(); }}>{worldcup ? "로그인 없이 시작하기" : "로그인 없이 풀기"}</ActionButton>
         </BottomSheetFooter>
       </BottomSheetContent>

@@ -121,7 +121,7 @@ export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteC
         if (response.status === 401) {
           favoriteIds = null; checked = false; confirmedChanges.clear(); persistCache();
           // 페이지를 떠나지 않고 앱 셸의 로그인 시트(LoginPrompt)를 연다. 카드마다 시트를 두지 않으려고 이벤트로 알린다.
-          window.dispatchEvent(new CustomEvent("ff-login-request", { detail: { returnTo: location.pathname + location.search, description: "관심 친구는 로그인 후 담을 수 있어요" } }));
+          window.dispatchEvent(new CustomEvent("ff-login-request", { detail: { returnTo: location.pathname + location.search, description: "관심 친구는 로그인 후 추가할 수 있어요" } }));
         } else feedback.error("관심 친구를 저장하지 못해 이전 상태로 돌렸어요. 다시 시도해 주세요.");
         return;
       }
@@ -131,7 +131,7 @@ export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteC
         persistCache();
       }
       onFavoriteChange?.(next);
-      feedback.success(next ? "관심 친구에 담았어요" : "관심 친구에서 뺐어요", next ? { actionLabel: "목록보기", onAction: () => { router.push("/mypage/favorites"); } } : undefined);
+      feedback.success(next ? "관심 친구에 추가했어요" : "관심 친구에서 뺐어요", next ? { actionLabel: "목록보기", onAction: () => { router.push("/mypage/favorites"); } } : undefined);
     } catch {
       readCache();
       if (scope !== cacheScope) return;
@@ -143,7 +143,7 @@ export function FavoriteButton({ animalId, animalName, initialSaved, onFavoriteC
       lock.current = false; setBusy(false);
     }
   }
-  return <button type="button" className={className ? "ff-card-scrap " + className : "ff-card-scrap"} aria-pressed={saved} aria-busy={busy} aria-disabled={busy} aria-label={animalName + " " + (saved ? "관심 친구에서 빼기" : "관심 친구에 담기")} onClick={() => {
+  return <button type="button" className={className ? "ff-card-scrap " + className : "ff-card-scrap"} aria-pressed={saved} aria-busy={busy} aria-disabled={busy} aria-label={animalName + " " + (saved ? "관심 친구에서 빼기" : "관심 친구에 추가하기")} onClick={() => {
     if (lock.current || pendingChanges.has(animalId)) return;
     if (saved && onRemoveRequest) return onRemoveRequest(toggle);
     return toggle();

@@ -20,8 +20,8 @@ test('quiz start asks guests once at entry, preserves the return URL and lets me
       const history = { state: { existing: true }, replaceState: (state, _, url) => { assert.equal(state, history.state); location.href = `https://firstfriend.test${url}`; } };
       runInNewContext(outputText, { exports, URL, window: { location, history }, require: name => {
         if (name === 'react') return { useEffect: fn => { effect = fn; }, useState: initial => { const slot = index++; if (!(slot in states)) states[slot] = initial; return [states[slot], value => { states[slot] = value; }]; } };
-        if (name === './LoginSheet') return { LoginBottomSheet: 'sheet' };
-        if (name === '@seed-design/react') return { Portal: 'Portal', ContentDialog: new Proxy({}, { get: (_, key) => String(key) }) };
+        if (name === './AuthForm') return { AuthForm: 'auth' };
+        if (name === 'seed-design/ui/bottom-sheet') return new Proxy({}, { get: (_, key) => String(key) });
         if (name === 'seed-design/ui/action-button') return { ActionButton: 'button' };
         if (name.endsWith('.css')) return { default: {} };
         return require(name);
@@ -37,19 +37,17 @@ test('quiz start asks guests once at entry, preserves the return URL and lets me
         continue;
       }
       assert.equal(started, 0);
-      const dialog = render().props.children[1];
-      assert.equal(dialog.props.open, true);
-      const content = dialog.props.children.props.children.props.children[1];
-      const [login, guest] = content.props.children[1].props.children;
-      assert.equal(login.props.children, '로그인');
-      login.props.onClick();
-      const sheet = render().props.children[2];
-      assert.equal(states[0], false, 'dialog closes before login sheet opens');
+      const sheet = render().props.children[1];
       assert.equal(sheet.props.open, true);
-      assert.equal(sheet.props.returnTo, returnTo.replace('#intro', '&quiz_start=1#intro'));
+      const content = sheet.props.children;
+      assert.equal(content.props.title, '로그인하고 기록을 남겨 보세요');
+      assert.equal(content.props.description, '결과를 저장할 수 있어요.');
+      const auth = content.props.children[0].props.children;
+      assert.equal(auth.props.returnTo, returnTo.replace('#intro', '&quiz_start=1#intro'));
+      const guest = content.props.children[1].props.children;
       sheet.props.onOpenChange(false);
       assert.equal(started, 0, 'dismissing login returns to the intro');
-      assert.equal(guest.props.children, worldcup ? '그냥 시작하기' : '그냥 풀기');
+      assert.equal(guest.props.children, worldcup ? '로그인 없이 시작하기' : '로그인 없이 풀기');
       guest.props.onClick();
       assert.equal(states[0], false);
       assert.equal(started, 1);

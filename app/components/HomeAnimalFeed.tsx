@@ -49,7 +49,9 @@ export function HomeAnimalFeed({ initialPage }: { initialPage: AnimalPage }) {
   const [lostAnimals, setLostAnimals] = useState<LostAnimal[]>([]);
   const { cursor, loadMore } = feed;
   const lostRegion = feed.location?.label || feed.region;
-  useEffect(() => { let active = true; const controller = new AbortController(); const query = lostRegionQuery(lostRegion); const search = query ? `?province=${encodeURIComponent(query.provinces[0])}&prefix=${encodeURIComponent(query.prefix)}${query.dong ? `&dong=${encodeURIComponent(query.dong)}` : ""}` : ""; fetch(`/api/lost-found${search}`, { signal: controller.signal }).then(response => response.ok ? response.json() as Promise<{ animals?: LostAnimal[] }> : Promise.reject(new Error("lost animals unavailable"))).then(body => { if (active) setLostAnimals(body.animals || []); }).catch(() => { if (active && !controller.signal.aborted) setLostAnimals([]); }); return () => { active = false; controller.abort(); }; }, [lostRegion]);
+  const loadLostAnimals = feed.items.length >= 20;
+  // The first lost-animal insert is after card 35; let the first page load first.
+  useEffect(() => { if (!loadLostAnimals) return; let active = true; const controller = new AbortController(); const query = lostRegionQuery(lostRegion); const search = query ? `?province=${encodeURIComponent(query.provinces[0])}&prefix=${encodeURIComponent(query.prefix)}${query.dong ? `&dong=${encodeURIComponent(query.dong)}` : ""}` : ""; fetch(`/api/lost-found${search}`, { signal: controller.signal }).then(response => response.ok ? response.json() as Promise<{ animals?: LostAnimal[] }> : Promise.reject(new Error("lost animals unavailable"))).then(body => { if (active) setLostAnimals(body.animals || []); }).catch(() => { if (active && !controller.signal.aborted) setLostAnimals([]); }); return () => { active = false; controller.abort(); }; }, [lostRegion, loadLostAnimals]);
   useEffect(() => {
     const node = sentinel.current;
     if (!node || !cursor) return;

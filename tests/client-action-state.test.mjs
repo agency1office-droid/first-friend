@@ -329,7 +329,7 @@ test('animal gallery keeps arrow navigation scoped to the gallery', async () => 
     require: id => {
       if (id === 'react') return {
         useState: value => { const index = stateIndex++; return [value, next => { if (index === 0) selected = typeof next === 'function' ? next(selected) : next; }]; },
-        useRef: value => ({ current: value }), useMemo: fn => fn(), useEffect: fn => fn(),
+        useRef: value => ({ current: value }), useMemo: fn => fn(), useEffect: fn => fn(), useId: () => 'gallery-test',
       };
       if (id === '@karrotmarket/react-monochrome-icon') return { IconXmarkLine: () => null };
       if (id === 'seed-design/ui/action-button') return { ActionButton: () => null };

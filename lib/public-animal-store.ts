@@ -2,6 +2,7 @@ import type { publicAnimals, publicShelters, publicSyncState } from "../db/schem
 import type { Animal } from "./data";
 import type { LostAnimal } from "./public-data";
 import { cache } from "react";
+import { readLostSyncCheckpoint, type LostSyncCheckpoint } from "./lost-sync-checkpoint";
 import { distanceMeters } from "./geo";
 import { matchesAnimalPublicStatus } from "./animal-public-status";
 import { classifyHealth, type HealthState } from "./animal-health";
@@ -573,19 +574,14 @@ async function syncPublicLostAnimalsUnlocked() {
   const start = new Date(now); start.setUTCFullYear(start.getUTCFullYear() - 1);
   const startDate = `${start.getUTCFullYear()}${String(start.getUTCMonth() + 1).padStart(2, "0")}${String(start.getUTCDate()).padStart(2, "0")}`;
   const deadline = Date.now() + 200_000;
-  type Checkpoint = { syncId: string; startDate: string; endDate: string; nextPage: number; count: number; total: number; updatedAt: string; error?: string };
   const { data: state } = await supabase.from("public_sync_state").select("status,message,last_started_at").eq("id", "public-lost-animals").maybeSingle();
-  let checkpoint: Checkpoint | null = null;
-  try {
-    const parsed = JSON.parse(String(state?.message || "")) as Checkpoint;
-    if (state?.status !== "complete" && parsed.syncId && /^\d{8}$/.test(parsed.startDate) && /^\d{8}$/.test(parsed.endDate) && Number.isInteger(parsed.nextPage) && parsed.nextPage > 0 && parsed.nextPage <= MAX_LOST_PAGES && Date.now() - new Date(parsed.updatedAt).getTime() < 7 * 24 * 60 * 60 * 1000) checkpoint = parsed;
-  } catch { checkpoint = null; }
+  const checkpoint = readLostSyncCheckpoint(state?.status, String(state?.message || ""));
   const syncId = checkpoint?.syncId || crypto.randomUUID();
   let page = checkpoint?.nextPage || 1, count = checkpoint?.count || 0, total = checkpoint?.total || 0, pages = Math.max(0, page - 1);
   const seenIds = new Set<string>();
   const rangeStart = checkpoint?.startDate || startDate, rangeEnd = checkpoint?.endDate || endDate;
   const dateParams = { bgnde: rangeStart, endde: rangeEnd };
-  const checkpointMessage = (error?: string) => JSON.stringify({ syncId, startDate: rangeStart, endDate: rangeEnd, nextPage: page, count, total, updatedAt: new Date().toISOString(), ...(error ? { error } : {}) } satisfies Checkpoint);
+  const checkpointMessage = (error?: string) => JSON.stringify({ syncId, startDate: rangeStart, endDate: rangeEnd, nextPage: page, count, total, startedAt: checkpoint?.startedAt || syncedAt, failures: (checkpoint?.failures || 0) + (error ? 1 : 0), updatedAt: new Date().toISOString(), ...(error ? { error } : {}) } satisfies LostSyncCheckpoint);
   const writeState = async (status: string, message: string) => {
     const { error } = await supabase.from("public_sync_state").upsert({ id: "public-lost-animals", status, last_started_at: syncedAt, item_count: count, page_count: pages, message }, { onConflict: "id" });
     if (error) throw error;

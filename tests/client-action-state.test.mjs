@@ -318,7 +318,7 @@ test('manual neighborhood selection wins over delayed IP and profile restoration
   }
 });
 
-test('animal gallery handles a bubbling arrow key only once', async () => {
+test('animal gallery keeps arrow navigation scoped to the gallery', async () => {
   const source = await readFile(new URL('../app/components/AnimalGallery.tsx', import.meta.url), 'utf8');
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } });
   let selected = 0, stateIndex = 0, pageKeyDown;
@@ -332,6 +332,7 @@ test('animal gallery handles a bubbling arrow key only once', async () => {
         useRef: value => ({ current: value }), useMemo: fn => fn(), useEffect: fn => fn(),
       };
       if (id === '@karrotmarket/react-monochrome-icon') return { IconXmarkLine: () => null };
+      if (id === 'seed-design/ui/action-button') return { ActionButton: () => null };
       if (id === '../../lib/image-url') return { optimizedAnimalImageUrl: value => value };
       return require(id);
     },
@@ -344,15 +345,9 @@ test('animal gallery handles a bubbling arrow key only once', async () => {
     selected = 0;
     const event = arrow('ArrowRight');
     element.props.onKeyDown(event);
-    pageKeyDown(event);
-    assert.equal(selected, 1, 'element handler and global handler cannot both advance the photo');
+    assert.equal(selected, 1, 'the focused gallery advances one photo');
   }
-  pageKeyDown(arrow('ArrowRight'));
-  assert.equal(selected, 2, 'page keyboard navigation still works outside the gallery');
-  const inputEvent = arrow('ArrowLeft');
-  inputEvent.target.closest = () => ({});
-  pageKeyDown(inputEvent);
-  assert.equal(selected, 2, 'typing in a form does not change photos');
+  assert.equal(pageKeyDown, undefined, 'radio groups and form controls retain their arrow keys');
 });
 
 // Exercise the actual click handlers with controlled network timing, without a live account.

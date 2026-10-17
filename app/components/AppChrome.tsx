@@ -8,6 +8,7 @@ import { HomeTopbar } from "./HomeTopbar";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalMenuButton } from "./GlobalMenuButton";
 import { LoginPrompt } from "./LoginPrompt";
+import { ServiceFooter } from "./ServiceFooter";
 
 type RouteChrome={rule:RegExp;title:string;topbarTitle?:string;back?:string;mode?:"detail"|"form"|"main"|"stack"};
 const routes:RouteChrome[]=[
@@ -123,6 +124,7 @@ export function AppChrome({children}:{children:React.ReactNode}){
     <a className="ff-skip-link" href="#main-content">본문으로 바로가기</a>
     {!isAnimalDetail&&(path==="/"?<HomeTopbar/>:resolvedRoute.mode==="main"?<MainTopbar title={resolvedRoute.title}/>:<StackTopbar route={resolvedRoute}/>)}
     <main className="ff-main" id="main-content" tabIndex={-1}>{children}</main>
+    <ServiceFooter/>
     {!hideBottom&&<BottomNav/>}
     <LoginPrompt/>
   </div>

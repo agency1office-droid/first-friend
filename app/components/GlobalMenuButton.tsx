@@ -9,6 +9,7 @@ const menu = [
   ["보호소 찾기", "/shelters"], ["입양 준비하기", "/prepare"], ["입양 절차 안내", "/guide"],
   ["실종·발견", "/lost-found"], ["질문답변", "/questions"], ["후원·봉사", "/support"],
   ["퍼스트 프렌드", "/about"],
+  ["문의하기", "/contact"], ["개인정보 처리방침", "/privacy"], ["이용약관", "/terms"],
 ];
 
 export function GlobalMenuButton() {

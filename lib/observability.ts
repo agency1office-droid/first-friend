@@ -1,3 +1,5 @@
+import { reportServerError } from "./server-errors";
+
 type ObservabilityContext = Record<string, string | number | boolean | undefined>;
 
 const SENSITIVE_KEYS = /token|secret|password|authorization|cookie|email|phone|message/i;
@@ -22,13 +24,14 @@ export function logEvent(event: string, context: ObservabilityContext = {}) {
   }));
 }
 
-export function logError(event: string, error: unknown, context: ObservabilityContext = {}) {
-  const errorMessage = error instanceof Error ? error.message : String(error);
+export async function logError(event: string, error: unknown, context: ObservabilityContext = {}) {
+  const errorType = error instanceof Error ? error.name : "Error";
   console.error(JSON.stringify({
     type: "first-friend.error",
     event,
     at: new Date().toISOString(),
-    error: errorMessage,
+    error: /^[A-Za-z]*Error$/.test(errorType) ? errorType : "Error",
     ...sanitize(context),
   }));
+  await reportServerError(event);
 }

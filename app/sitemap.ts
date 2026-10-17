@@ -1,10 +1,12 @@
 import type { MetadataRoute } from "next";
 import { getAnimals } from "../lib/public-data";
 import { getStories } from "../lib/stories";
+import { sitemapAnimals } from "../lib/sitemap-animals";
 
 const base = "https://www.firstfriend.me";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [animals, stories] = await Promise.all([getAnimals(100), getStories()]);
+  const [publicAnimals, recentAnimals, stories] = await Promise.all([sitemapAnimals(), getAnimals(100), getStories()]);
+  const animals = [...new Map([...publicAnimals.map(a => ({ id: a.id, updated: a.updated_at })), ...recentAnimals.map(a => ({ id: a.id, updated: a.updated }))].map(a => [a.id, a])).values()];
   const staticRoutes = [
     "",
     "/find",
@@ -29,6 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/about",
     "/terms",
     "/privacy",
+    "/contact",
   ];
   return [
     ...staticRoutes.map((url) => ({

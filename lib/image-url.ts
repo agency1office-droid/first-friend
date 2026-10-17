@@ -15,7 +15,10 @@ export function optimizedAnimalThumbnailUrl(value: string) {
 
 export function optimizedAnimalDetailPreviewUrl(value: string) {
   const normalized = value.trim().replace(/^http:\/\//i, "https://");
-  // The detail gallery uses the source image directly. Image conversion is
-  // reserved for list thumbnails and must not sit in the detail-page path.
+  // Cache a bounded preview; the viewer still uses the original image.
+  try {
+    const url = new URL(normalized);
+    if (url.protocol === "https:" && url.hostname === "openapi.animal.go.kr" && !url.port && !url.username && !url.password) return `/api/media?url=${encodeURIComponent(normalized)}&w=960`;
+  } catch { /* Existing local/storage images keep their source. */ }
   return normalized;
 }

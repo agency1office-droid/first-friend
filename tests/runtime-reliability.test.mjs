@@ -2,6 +2,49 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createServer } from "vite";
 
+test("lost sync retries expire from the original run and stop after repeated failures", async t => {
+  const server = await createServer({ configFile: false, envFile: false, server: { middlewareMode: true, hmr: false }, appType: "custom", logLevel: "error" });
+  t.after(() => server.close());
+  const { readLostSyncCheckpoint: read } = await server.ssrLoadModule("/lib/lost-sync-checkpoint.ts");
+  const now = Date.parse("2026-10-17T00:00:00Z");
+  const checkpoint = { syncId: "fixture", startDate: "20251016", endDate: "20261016", nextPage: 22, count: 1418, total: 2834, startedAt: "2026-10-16T00:00:00Z", updatedAt: "2026-10-17T00:00:00Z", failures: 0 };
+  assert.equal(read("running", JSON.stringify(checkpoint), now).nextPage, 22);
+  assert.equal(read("failed", JSON.stringify({ ...checkpoint, startedAt: "2026-09-06T00:00:00Z" }), now), null);
+  assert.equal(read("failed", JSON.stringify({ ...checkpoint, failures: 3 }), now), null);
+  assert.equal(read("complete", JSON.stringify(checkpoint), now), null);
+  assert.equal(read("failed", JSON.stringify({ ...checkpoint, startedAt: undefined }), now), null);
+  assert.equal(read("failed", "invalid", now), null);
+});
+
+test("media rejects SVG and oversized streams even without Content-Length", async t => {
+  const server = await createServer({ configFile: false, envFile: false, server: { middlewareMode: true, hmr: false }, appType: "custom", logLevel: "error" });
+  t.after(() => server.close());
+  const { readBoundedImage } = await server.ssrLoadModule("/lib/bounded-image.ts");
+  await assert.rejects(readBoundedImage(new Response('<svg xmlns="http://www.w3.org/2000/svg"/>')), /signature/);
+  await assert.rejects(readBoundedImage(new Response(new Uint8Array(20)), 10), /size/);
+  const result = await readBoundedImage(new Response(new Uint8Array([255, 216, 255, 0])));
+  assert.equal(result.type, "image/jpeg");
+});
+
+test("sitemap enumerates more than 1,000 visible animals with stable keyset pages", async t => {
+  const server = await createServer({ configFile: false, envFile: false, server: { middlewareMode: true, hmr: false }, appType: "custom", logLevel: "error" });
+  t.after(() => server.close());
+  const previous = { url: process.env.NEXT_PUBLIC_SUPABASE_URL, key: process.env.SUPABASE_SECRET_KEY };
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://sitemap.example.test"; process.env.SUPABASE_SECRET_KEY = "test-only";
+  t.after(() => { for (const [key, value] of [["NEXT_PUBLIC_SUPABASE_URL", previous.url], ["SUPABASE_SECRET_KEY", previous.key]]) { if (value === undefined) delete process.env[key]; else process.env[key] = value; } });
+  let calls = 0;
+  t.mock.method(globalThis, "fetch", async input => {
+    const url = new URL(typeof input === "string" || input instanceof URL ? input : input.url);
+    assert.equal(url.hostname, "sitemap.example.test"); assert.equal(url.searchParams.get("active"), "eq.true");
+    calls++;
+    if (calls === 1) return Response.json(Array.from({ length: 1000 }, (_, i) => ({ id: String(i).padStart(5, "0"), updated_at: "2026-10-17" })));
+    assert.equal(url.searchParams.get("id"), "gt.00999");
+    return Response.json([{ id: "01000", updated_at: "2026-10-17" }]);
+  });
+  const { sitemapAnimals } = await server.ssrLoadModule("/lib/sitemap-animals.ts");
+  assert.equal((await sitemapAnimals()).length, 1001); assert.equal(calls, 2);
+});
+
 test("Sentry sends only diagnostic locations and removes personal/error payloads", async t => {
   const server = await createServer({ configFile: false, envFile: false, server: { middlewareMode: true, hmr: false }, appType: "custom", logLevel: "error" });
   t.after(() => server.close());
@@ -161,7 +204,7 @@ test("sync checkpoints and auth infrastructure failures preserve existing data",
   let mode = "empty", deactivations = 0, savedState, clock = Date.now();
   const yesterday = new Date(clock - 86400000);
   const date = value => value.toISOString().slice(0, 10).replaceAll("-", "");
-  const oldRange = { syncId: "prior-run", startDate: date(new Date(clock - 366 * 86400000)), endDate: date(yesterday), nextPage: 2, count: 100, total: 300, updatedAt: yesterday.toISOString() };
+  const oldRange = { syncId: "prior-run", startDate: date(new Date(clock - 366 * 86400000)), endDate: date(yesterday), nextPage: 2, count: 100, total: 300, startedAt: yesterday.toISOString(), updatedAt: yesterday.toISOString(), failures: 0 };
   const envelope = (items, totalCount) => Response.json({ response: { header: { resultCode: "00" }, body: { items: { item: items }, ...(totalCount === undefined ? {} : { totalCount }) } } });
   t.mock.method(globalThis, "fetch", async (input, options = {}) => {
     const url = new URL(typeof input === "string" || input instanceof URL ? input : input.url);

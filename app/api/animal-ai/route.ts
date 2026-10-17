@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const id = animalId(request);
   if (!id) return Response.json({ error: "동물 정보를 확인하지 못했어요." }, { status: 400 });
   try { return Response.json(await getAnimalAiState(id, purpose(request)), { headers: { "cache-control": "no-store" } }); }
-  catch (error) { logError("animal_ai.state_read_failed", error, { requestId: requestId(request), animalId: id }); return Response.json({ status: "missing", summary: null, available: false }, { headers: { "cache-control": "no-store" } }); }
+  catch (error) { await logError("animal_ai.state_read_failed", error, { requestId: requestId(request), animalId: id }); return Response.json({ status: "missing", summary: null, available: false }, { headers: { "cache-control": "no-store" } }); }
 }
 
 export async function POST(request: Request) {
@@ -39,10 +39,10 @@ export async function POST(request: Request) {
       after(async () => {
         try { await processAnimalAiJob(id, queued.analysisKey || undefined, requestedPurpose); }
         // Legacy adoption flow remains equivalent to processAnimalAiJob(id, queued.analysisKey || undefined).
-        catch (error) { logError("animal_ai.requested_job_failed", error, { requestId: requestId(request), animalId: id }); }
+        catch (error) { await logError("animal_ai.requested_job_failed", error, { requestId: requestId(request), animalId: id }); }
       });
     }
     if (guard.kind === "started") await completeIdempotentRequest(guard, queued.state, 200);
     return Response.json(queued.state, { headers: { "cache-control": "no-store" } });
-  } catch (error) { if (guard.kind === "started") await releaseIdempotentRequest(guard); logError("animal_ai.enqueue_failed", error, { requestId: requestId(request), animalId: id }); if (fallbackAnimal) return Response.json({ status: "completed", summary: createPublicDataFallback(fallbackAnimal, requestedPurpose), available: true, source: "public-data" }, { headers: { "cache-control": "no-store" } }); return Response.json({ status: "failed", summary: null, available: false }, { headers: { "cache-control": "no-store" } }); }
+  } catch (error) { if (guard.kind === "started") await releaseIdempotentRequest(guard); await logError("animal_ai.enqueue_failed", error, { requestId: requestId(request), animalId: id }); if (fallbackAnimal) return Response.json({ status: "completed", summary: createPublicDataFallback(fallbackAnimal, requestedPurpose), available: true, source: "public-data" }, { headers: { "cache-control": "no-store" } }); return Response.json({ status: "failed", summary: null, available: false }, { headers: { "cache-control": "no-store" } }); }
 }

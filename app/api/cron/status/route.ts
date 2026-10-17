@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     .in("id", ["public-animals", "public-lost-animals"])
     .order("id");
   if (error) {
-    logError("sync.status_read_failed", error);
+    await logError("sync.status_read_failed", error);
     return Response.json({ ok: false, error: "동기화 상태를 조회하지 못했어요." }, { status: 503, headers: { "cache-control": "no-store" } });
   }
   return Response.json({ ok: true, jobs: data || [], checkedAt: new Date().toISOString() }, { headers: { "cache-control": "no-store" } });

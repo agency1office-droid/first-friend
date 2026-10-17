@@ -38,7 +38,7 @@ export async function enforceRateLimit(scope: string, subject: string, windowSec
     if (error) throw error;
     return Boolean(data);
   } catch (error) {
-    logError("api.rate_limit_unavailable", error, { scope });
+    await logError("api.rate_limit_unavailable", error, { scope });
     return false;
   }
 }

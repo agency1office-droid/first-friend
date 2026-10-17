@@ -2,23 +2,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ActionButton } from "seed-design/ui/action-button";
 import { IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import { optimizedAnimalDetailPreviewUrl, optimizedAnimalImageUrl } from "../../lib/image-url";
 
 function ProgressiveAnimalImage({ src, fullSrc, alt, priority }: { src: string; fullSrc: string; alt: string; priority: boolean }) {
   const thumbnailSrc = optimizedAnimalDetailPreviewUrl(src);
-  const [fullReady, setFullReady] = useState(thumbnailSrc === fullSrc);
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
 
-  useEffect(() => {
-    if (thumbnailSrc === fullSrc) return;
-    const preload = new Image();
-    preload.decoding = "async";
-    preload.onload = () => setFullReady(true);
-    preload.src = fullSrc;
-  }, [fullSrc, thumbnailSrc]);
-
-  const displayedSrc = thumbnailFailed ? fullSrc : fullReady ? fullSrc : thumbnailSrc;
+  const displayedSrc = thumbnailFailed ? fullSrc : thumbnailSrc;
   return <img
     className="ff-detail-image"
     src={displayedSrc}
@@ -39,12 +31,12 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
   const [selected, setSelected] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const pointerAxis = useRef<"pending" | "horizontal" | "vertical">("pending");
   const suppressClick = useRef(false);
   const active = available[selected] || image;
-  const nextImage = available[1] ? optimizedAnimalImageUrl(available[1]) : "";
 
   function imageSource(src: string) {
     return optimizedAnimalImageUrl(src);
@@ -109,34 +101,22 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
   }
 
   useEffect(() => {
-    function handlePageKeyDown(event: KeyboardEvent) {
-      if (event.defaultPrevented) return;
-      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-      const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select")) return;
-      event.preventDefault();
-      const direction = event.key === "ArrowLeft" ? -1 : 1;
-      setSelected((current) => Math.max(0, Math.min(current + direction, available.length - 1)));
-    }
-    window.addEventListener("keydown", handlePageKeyDown);
-    return () => window.removeEventListener("keydown", handlePageKeyDown);
-  }, [available.length]);
+    if (viewerOpen) dialogRef.current?.showModal();
+  }, [viewerOpen]);
 
   function handleClick() {
     if (suppressClick.current) {
       suppressClick.current = false;
       return;
     }
-    dialogRef.current?.showModal();
-    requestAnimationFrame(() => dialogRef.current?.focus());
+    setViewerOpen(true);
   }
 
   return <div className="ff-gallery">
-    {nextImage && <link rel="preload" as="image" href={nextImage} />}
     <button type="button" className="ff-gallery-main" onClick={handleClick} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} aria-keyshortcuts="ArrowLeft ArrowRight" aria-label={`${name} 사진 ${selected + 1}번째, 좌우로 움직여 다른 사진 보기`}>
       <span className="ff-gallery-viewport" aria-live="polite">
         <span className="ff-gallery-track" style={{ transform: `translate3d(calc(${selected * -100}% + ${dragOffset}px), 0, 0)`, transition: dragging ? "none" : "transform 220ms ease-out" }}>
-          {available.map((src, index) => <span className="ff-gallery-slide" key={src}><ProgressiveAnimalImage src={src} fullSrc={imageSource(src)} alt={`${name}의 공공데이터 등록 사진 ${index + 1}`} priority={index < 2}/></span>)}
+          {available.map((src, index) => <span className="ff-gallery-slide" key={src}>{Math.abs(index - selected) <= 1 && <ProgressiveAnimalImage src={src} fullSrc={imageSource(src)} alt={`${name}의 공공데이터 등록 사진 ${index + 1}`} priority={index === selected}/>}</span>)}
         </span>
       </span>
       <span className="ff-gallery-bottom-gradient" aria-hidden="true" />
@@ -145,12 +125,13 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
         <span className="ff-gallery-count" aria-label={`${selected + 1}/${available.length}`}><span>{selected + 1}</span><span aria-hidden="true">/</span><span>{available.length}</span></span>
       </span>
     </button>
-    <dialog ref={dialogRef} className="ff-image-dialog" tabIndex={-1} onKeyDown={handleKeyDown}>
-      <div className="ff-image-dialog-inner">
+    {available.length > 1 && <div className="ff-gallery-controls" aria-label="사진 이동"><ActionButton size="small" variant="neutralWeak" disabled={selected === 0} onClick={() => movePhoto(-1)}>이전 사진</ActionButton><span aria-live="polite">{selected + 1} / {available.length}</span><ActionButton size="small" variant="neutralWeak" disabled={selected === available.length - 1} onClick={() => movePhoto(1)}>다음 사진</ActionButton></div>}
+    <dialog ref={dialogRef} className="ff-image-dialog" tabIndex={-1} aria-label={`${name} 원본 사진`} onClose={() => setViewerOpen(false)} onKeyDown={handleKeyDown}>
+      {viewerOpen && <div className="ff-image-dialog-inner">
         <div className="ff-image-dialog-actions"><button type="button" onClick={() => dialogRef.current?.close()} aria-label="원본 사진 닫기"><IconXmarkLine/></button></div>
         <img src={imageSource(active)} alt={name + "의 원본 등록 사진 " + (selected + 1)}/>
         {available.length > 1 && <div className="ff-image-dialog-nav">{available.map((src, index) => <button type="button" key={src} data-active={index === selected} onClick={() => setSelected(index)} aria-label={`${available.length}장 중 ${index + 1}번째 원본 사진 보기`}><img src={imageSource(src)} alt=""/><span>{index + 1}/{available.length}</span></button>)}</div>}
-      </div>
+      </div>}
     </dialog>
   </div>;
 }

@@ -85,7 +85,7 @@ export async function GET(request: Request) {
     }
     return Response.json({ rows, total: count || 0, page, pageSize, role: auth.member.role }, { headers: { "cache-control": "no-store" } });
   } catch (error) {
-    logError("operations.list_failed", error);
+    await logError("operations.list_failed", error);
     return Response.json({ error: "목록을 불러오지 못했어요. 잠시 후 다시 확인해 주세요." }, { status: 503 });
   }
 }
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
   } catch (error) {
     // Keep an uncertain request claimed: retrying partial side effects could duplicate them.
     if (error && typeof error === "object" && "code" in error && error.code === "PGRST116") return Response.json({ error: "다른 작업에서 상태가 바뀌었어요. 목록을 새로 불러와 확인해 주세요." }, { status: 409 });
-    logError("operations.action_failed", error);
+    await logError("operations.action_failed", error);
     return Response.json({ error: "처리 결과를 확인하지 못했어요. 목록과 처리 기록을 확인한 뒤 다시 진행해 주세요." }, { status: 503 });
   }
 }

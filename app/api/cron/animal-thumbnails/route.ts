@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     logEvent("sync.animal_thumbnails_complete", result);
     return Response.json({ ok: true, ...result }, { headers: { "cache-control": "no-store" } });
   } catch (error) {
-    logError("sync.animal_thumbnails_failed", error);
+    await logError("sync.animal_thumbnails_failed", error);
     return Response.json({ ok: false, error: "사진 작업을 완료하지 못했어요. 다음 실행에서 다시 확인해요." }, { status: 503 });
   }
 }

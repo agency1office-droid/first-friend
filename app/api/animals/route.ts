@@ -1,5 +1,5 @@
 import { getNearbyAnimalsPage, syncPublicAnimals } from "../../../lib/public-animal-store";
-import { secretMatches } from "../../../lib/api-guards";
+import { secretMatches, enforceRateLimit, requestSubject } from "../../../lib/api-guards";
 import { PUBLIC_ANIMAL_AGE_MAX, PUBLIC_ANIMAL_WEIGHT_MAX } from "../../../lib/animal-filter-ranges";
 
 function coordinate(value: string | null, min: number, max: number) {
@@ -8,6 +8,7 @@ function coordinate(value: string | null, min: number, max: number) {
 }
 
 export async function GET(request: Request) {
+  if (!await enforceRateLimit("animal-search", requestSubject(request), 60, 120)) return Response.json({ error: "검색이 많아요. 잠시 후 다시 확인해 주세요." }, { status: 429, headers: { "retry-after": "60" } });
   try {
     const params = new URL(request.url).searchParams;
     const page = await getNearbyAnimalsPage({

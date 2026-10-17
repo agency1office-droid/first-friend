@@ -41,8 +41,10 @@
     "react": "19.2.8",
     "react-colorful": "^5.8.0",
     "react-dom": "19.2.8",
-    "sharp": "^0.35.4",
-    "simple-icons": "16.30.0"
+    "sharp": "0.35.5",
+    "simple-icons": "16.30.0",
+    "@sentry/node": "11.8.0",
+    "@vercel/analytics": "1.6.1"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
@@ -70,5 +72,8 @@
     "vite": "8.0.16",
     "wrangler": "4.92.0"
   },
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "fast-uri": "3.1.8"
+  }
 }

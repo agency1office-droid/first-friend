@@ -639,7 +639,7 @@ test("keeps public sync jobs resumable and image conversion outside feed request
   const store = await readFile(new URL("../lib/public-animal-store.ts", import.meta.url), "utf8");
   const lostSync = store.slice(store.indexOf("async function syncPublicLostAnimalsUnlocked"), store.indexOf("function storedLostAnimal"));
   assert.match(lostSync, /nextPage/);
-  assert.match(lostSync, /JSON\.parse\(String\(state\?\.message/);
+  assert.match(lostSync, /readLostSyncCheckpoint\(state\?\.status/);
   assert.match(lostSync, /const seenIds = new Set<string>\(\)/);
   assert.match(lostSync, /!seenIds\.has\(row\.id\)/);
   assert.doesNotMatch(store, /syncAnimalImages/);

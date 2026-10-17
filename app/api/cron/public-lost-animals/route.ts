@@ -1,3 +1,4 @@
+import { logError } from "../../../../lib/observability";
 import { syncPublicLostAnimals } from "../../../../lib/public-animal-store";
 import { secretMatches } from "../../../../lib/api-guards";
 
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "실종 동물을 동기화하지 못했어요.";
-    console.error("[public-lost-animals-sync]", message);
+    await logError("sync.public_lost_animals_failed", error);
     return Response.json({ ok: false, job: "public-lost-animals", retryable: true, error: message, failedAt: new Date().toISOString() }, {
       status: 503,
       headers: { "cache-control": "no-store", "x-sync-job": "public-lost-animals", "x-sync-status": "failed" },

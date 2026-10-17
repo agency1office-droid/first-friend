@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "동기화하지 못했어요.";
-    logError("sync.public_animals_failed", error);
+    await logError("sync.public_animals_failed", error);
     return Response.json({ ok: false, job: "public-animals", retryable: true, error: message, failedAt: new Date().toISOString() }, {
       status: 503,
       headers: { "cache-control": "no-store", "x-sync-job": "public-animals", "x-sync-status": "failed" },

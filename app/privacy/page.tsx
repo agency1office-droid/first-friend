@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { serviceContactEmail } from "../../lib/service-contact";
-export const metadata: Metadata = { title: "개인정보 처리방침" };
+export const metadata: Metadata = { title: "개인정보 처리방침", alternates: { canonical: "https://www.firstfriend.me/privacy" } };
 export const dynamic = "force-dynamic";
 export default function Page() {
   const email = serviceContactEmail();

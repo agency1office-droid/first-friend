@@ -2,6 +2,33 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createServer } from "vite";
 
+test("animal AI idempotency distinguishes purpose and releases missing-animal requests", async t => {
+  const state = { payloads: [], released: 0, found: true };
+  globalThis.__animalAiGuardTest = state;
+  const server = await createServer({ configFile: false, envFile: false, server: { middlewareMode: true, hmr: false }, appType: "custom", logLevel: "error", plugins: [{
+    name: "animal-ai-guard-test", enforce: "pre",
+    resolveId(source) { if (["next/server", "../../../lib/animal-ai", "../../../lib/public-data", "../../../lib/api-guards", "../../../lib/observability"].includes(source)) return "\0ai-test:" + source; },
+    load(id) {
+      if (!id.startsWith("\0ai-test:")) return;
+      if (id.endsWith("next/server")) return "export const after = () => {};";
+      if (id.endsWith("lib/animal-ai")) return "export const getAnimalAiState=()=>({}); export const createPublicDataFallback=()=>({}); export const processAnimalAiJob=()=>{}; export const enqueueAnimalAiSummary=async (_animal,purpose)=>({state:{status:'completed',purpose}});";
+      if (id.endsWith("lib/public-data")) return "export const getAnimalById=async()=>globalThis.__animalAiGuardTest.found ? {id:'fixture'} : undefined;";
+      if (id.endsWith("lib/observability")) return "export const logError=async()=>{}; export const requestId=()=>'';";
+      return "export const requestSubject=()=>''; export const enforceRateLimit=async()=>true; export const beginIdempotentRequest=async(_scope,_subject,_request,payload)=>{globalThis.__animalAiGuardTest.payloads.push(payload);return {kind:'started'}}; export const completeIdempotentRequest=async()=>{}; export const releaseIdempotentRequest=async()=>{globalThis.__animalAiGuardTest.released++};";
+    },
+  }] });
+  t.after(async () => { await server.close(); delete globalThis.__animalAiGuardTest; });
+  const { POST } = await server.ssrLoadModule("/app/api/animal-ai/route.ts");
+  const request = purpose => new Request("https://firstfriend.test/api/animal-ai", { method: "POST", headers: { "content-type": "application/json", "idempotency-key": "same-key" }, body: JSON.stringify({ animalId: "fixture", purpose }) });
+  assert.equal((await POST(request("adoption"))).status, 200);
+  assert.equal((await POST(request("lost"))).status, 200);
+  assert.notEqual(state.payloads[0], state.payloads[1]);
+  assert.deepEqual(JSON.parse(state.payloads[1]), { animalId: "fixture", purpose: "lost" });
+  state.found = false;
+  assert.equal((await POST(request("lost"))).status, 404);
+  assert.equal(state.released, 1);
+});
+
 test("lost sync retries expire from the original run and stop after repeated failures", async t => {
   const server = await createServer({ configFile: false, envFile: false, server: { middlewareMode: true, hmr: false }, appType: "custom", logLevel: "error" });
   t.after(() => server.close());

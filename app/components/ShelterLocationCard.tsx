@@ -116,9 +116,9 @@ export function ShelterLocationCard({
     <p className="ff-shelter-distance-summary" aria-live="polite">
       {meters !== null
         ? `우리 동네에서 약 ${formatDistance(meters)}${driveDurationSeconds !== null ? ` · 차로 약 ${formatDrivingDuration(driveDurationSeconds)}` : ""}`
-        : <a className="ff-shelter-map-prompt" href={mapHref} target="_blank" rel="noreferrer" aria-label={`${name} 위치를 카카오맵에서 확인하기`}>지도에서 보호소 위치를 확인해 보세요<IconChevronRightLine aria-hidden /></a>}
+        : <a className="ff-shelter-map-prompt" href={mapHref} target="_blank" rel="noreferrer">지도에서 보호소 위치를 확인해 보세요<IconChevronRightLine aria-hidden /></a>}
     </p>
-    {!mapFailed && <div ref={mapRef} className="ff-kakao-map" aria-label={`${name} 카카오 지도`} />}
+    {!mapFailed && <div ref={mapRef} className="ff-kakao-map" role="region" aria-label={`${name} 카카오 지도`} />}
     {mapFailed && <Image className="ff-kakao-map" src={staticMapHref} alt={`${name} 위치를 표시한 카카오 지도`} width={640} height={360} unoptimized />}
     {approximate && <p className="ff-meta">공공데이터에 정확한 좌표가 없어 관할 지역 중심을 표시합니다. 방문 전 보호소에 위치를 확인하세요.</p>}
     <div className="ff-map-actions">

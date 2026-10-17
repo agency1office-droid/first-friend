@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AuthForm } from "../components/AuthForm";
 import { safeReturnTo } from "../../lib/app-auth";
-export const metadata: Metadata = { title: "로그인·회원가입" };
+export const metadata: Metadata = { title: "로그인·회원가입", robots: { index: false, follow: true }, alternates: { canonical: "https://www.firstfriend.me/login" } };
 export default async function Page({ searchParams }: { searchParams: Promise<{ return_to?: string; oauth?: string; provider?: string }> }) {
   const query = await searchParams;
   return <div className="ff-login-page">

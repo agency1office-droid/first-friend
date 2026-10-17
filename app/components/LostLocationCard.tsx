@@ -44,7 +44,7 @@ export function LostLocationCard({ address, region, jsKey }: { address: string; 
   return <section className="ff-shelter-location ff-lost-location" aria-labelledby="lost-detail-place-title">
     <a className="ff-shelter-map-prompt" href={mapHref} target="_blank" rel="noreferrer"><span id="lost-detail-place-title">실종 지역 · {query}</span><IconChevronRightLine aria-hidden /></a>
     <p className="ff-description">보호자 안전을 위해 정확한 위치 대신 읍·면·동까지만 표시해요.</p>
-    {coordinates && (!mapFailed ? <div ref={mapRef} className="ff-kakao-map" aria-label="실종 당시 위치 카카오 지도" /> : <Image className="ff-kakao-map" src={staticMapHref} alt="실종 당시 위치를 표시한 카카오 지도" width={640} height={360} unoptimized />)}
+    {coordinates && (!mapFailed ? <div ref={mapRef} className="ff-kakao-map" role="region" aria-label="실종 당시 위치 카카오 지도" /> : <Image className="ff-kakao-map" src={staticMapHref} alt="실종 당시 위치를 표시한 카카오 지도" width={640} height={360} unoptimized />)}
     {coordinates && <div className="ff-map-actions"><ActionButton asChild variant="neutralWeak"><a href={mapHref} target="_blank" rel="noreferrer">카카오맵에서 보기</a></ActionButton><ActionButton asChild variant="neutralWeak"><a href={`https://map.kakao.com/link/to/${encodeURIComponent("실종 당시 친구의 위치")},${coordinates.lat},${coordinates.lng}`} target="_blank" rel="noreferrer">길찾기</a></ActionButton></div>}
   </section>;
 }

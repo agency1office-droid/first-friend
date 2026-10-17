@@ -4,7 +4,7 @@ import { NearbyAnimalFeed } from "../components/NearbyAnimalFeed";
 import { IconCameraLine, IconChevronRightLine, IconPencilLine, IconSlider2HorizontalLine, IconTrophyLine } from "@karrotmarket/react-monochrome-icon";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "보호 중인 친구" };
+export const metadata: Metadata = { title: "보호 중인 친구", alternates: { canonical: "https://www.firstfriend.me/find" } };
 const initialPage: AnimalPage = { items: [], total: 0, nextCursor: null, syncedAt: null, stale: false };
 
 export default function FindPage() {

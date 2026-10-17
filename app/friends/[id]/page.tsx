@@ -142,6 +142,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const ogImage = /^https:\/\/([a-z0-9-]+\.)*openapi\.animal\.go\.kr\//i.test(animal.image) ? `/api/media?url=${encodeURIComponent(animal.image)}` : animal.image;
   return {
     title: animal.name,
+    alternates: { canonical: `https://www.firstfriend.me/friends/${encodeURIComponent(animal.id)}` },
     description,
     openGraph: { title: animal.name, description, type: "website", images: [{ url: ogImage }] },
     twitter: { card: "summary_large_image", title: animal.name, description, images: [ogImage] },
@@ -195,7 +196,7 @@ export default async function AnimalPage({
       />
       <section className="ff-detail-container ff-detail-shelter" id="shelter-info" aria-label="보호소 정보">
         <div className="ff-detail-shelter-icon" aria-hidden><IconHospitalcrossBuildingLine /></div>
-        {shelterHref ? <a className="ff-detail-shelter-copy ff-detail-shelter-link" href={shelterHref} aria-label={`${animal.shelter} 보호소 페이지 보기`}>
+        {shelterHref ? <a className="ff-detail-shelter-copy ff-detail-shelter-link" href={shelterHref}>
           <strong>{animal.shelter}</strong>
           <p className="ff-detail-shelter-address"><span>{shelterAddressLabel}</span></p>
           <ShelterTravelMeta distance={animal.distanceMeters} lat={animal.shelterLat} lng={animal.shelterLng} />

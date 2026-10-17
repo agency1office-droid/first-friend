@@ -29,11 +29,14 @@ export async function POST(request: Request) {
   if (!/^[A-Za-z0-9_.: -]{1,160}$/.test(id)) return Response.json({ error: "동물 정보를 확인하지 못했어요." }, { status: 400 });
   const subject = requestSubject(request);
   if (!await enforceRateLimit("animal-ai-enqueue", subject, 300, 5)) return Response.json({ error: "AI 소개 요청이 너무 많아요. 잠시 후 다시 시도해 주세요." }, { status: 429, headers: { "retry-after": "300" } });
-  const guard = await beginIdempotentRequest("animal-ai-enqueue", subject, request, id);
+  const guard = await beginIdempotentRequest("animal-ai-enqueue", subject, request, JSON.stringify({ animalId: id, purpose: requestedPurpose }));
   if (guard.kind === "replay" || guard.kind === "conflict") return guard.response;
   try {
     fallbackAnimal = await getAnimalById(id);
-    if (!fallbackAnimal) return Response.json({ error: "현재 확인할 수 없는 동물이에요." }, { status: 404 });
+    if (!fallbackAnimal) {
+      if (guard.kind === "started") await releaseIdempotentRequest(guard);
+      return Response.json({ error: "현재 확인할 수 없는 동물이에요." }, { status: 404 });
+    }
     const queued = await enqueueAnimalAiSummary(fallbackAnimal, requestedPurpose);
     if (queued.state.status === "pending") {
       after(async () => {

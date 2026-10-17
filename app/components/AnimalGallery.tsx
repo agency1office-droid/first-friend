@@ -113,7 +113,7 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
   }
 
   return <div className="ff-gallery">
-    <button type="button" className="ff-gallery-main" onClick={handleClick} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} aria-keyshortcuts="ArrowLeft ArrowRight" aria-label={`${name} 사진 ${selected + 1}번째, 좌우로 움직여 다른 사진 보기`}>
+    <button type="button" className="ff-gallery-main" onClick={handleClick} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} aria-keyshortcuts="ArrowLeft ArrowRight" aria-label={`${name}, ${selected + 1}/${available.length}, 사진 크게 보기, 좌우로 움직여 다른 사진 보기`}>
       <span className="ff-gallery-viewport" aria-live="polite">
         <span className="ff-gallery-track" style={{ transform: `translate3d(calc(${selected * -100}% + ${dragOffset}px), 0, 0)`, transition: dragging ? "none" : "transform 220ms ease-out" }}>
           {available.map((src, index) => <span className="ff-gallery-slide" key={src}>{Math.abs(index - selected) <= 1 && <ProgressiveAnimalImage src={src} fullSrc={imageSource(src)} alt={`${name}의 공공데이터 등록 사진 ${index + 1}`} priority={index === selected}/>}</span>)}

@@ -1,9 +1,11 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import type { AnimalPage } from "../lib/public-animal-store";
 import { HomeAnimalFeed } from "./components/HomeAnimalFeed";
 import { HomeSearchFab } from "./components/HomeSearchFab";
 
 export const dynamic="force-static";
+export const metadata: Metadata = { alternates: { canonical: "https://www.firstfriend.me/" } };
 
 const initialPage: AnimalPage = { items: [], total: 0, nextCursor: null, syncedAt: null, stale: false };
 

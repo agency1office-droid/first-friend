@@ -593,9 +593,17 @@ async function syncPublicLostAnimalsUnlocked() {
         await writeState("running", checkpointMessage());
         return { count, pages, syncedAt, complete: false, nextPage: page };
       }
-      const result = await fetchPageWithRetry<LossItem>(LOSS_ENDPOINT, page, 100, dateParams);
+      let result = await fetchPageWithRetry<LossItem>(LOSS_ENDPOINT, page, 100, dateParams);
+      // Confirm an empty response before ending an incomplete upstream snapshot.
+      if (!result.items.length && (result.total > 0 || total > 0)) result = await fetchPageWithRetry<LossItem>(LOSS_ENDPOINT, page, 100, dateParams);
       const current = result.items.filter(Boolean);
-      total = result.total;
+      total = Math.max(total, result.total);
+      if (!current.length && total > 0) {
+        if (count === 0) throw new Error("수집된 실종 동물이 0건이므로 기존 정보를 유지합니다.");
+        const warning = `공공 API가 전체 ${total}건을 안내했지만 ${page}페이지가 비어 있어 일부만 갱신했습니다. 기존 동물 정보는 유지합니다.`;
+        await writeState("partial", warning);
+        return { count, pages, syncedAt, complete: false, partial: true, reportedTotal: total, warning };
+      }
       const uniqueRows = new Map<string, ReturnType<typeof mapLostAnimal>>();
       current.forEach((item, index) => {
         const row = mapLostAnimal(item, (page - 1) * 100 + index, syncedAt);
@@ -628,10 +636,6 @@ async function syncPublicLostAnimalsUnlocked() {
       pages = page;
       page += 1;
       const done = !current.length || (total === 0 && current.length < 100) || (total > 0 && (page - 1) * 100 >= total);
-      if (!current.length && total > 0 && (page - 1) * 100 < total) {
-        page -= 1;
-        throw new Error(`실종 동물 응답이 중간에 비었습니다. ${count}/${total}`);
-      }
       await writeState("running", checkpointMessage());
       if (done) break;
     }

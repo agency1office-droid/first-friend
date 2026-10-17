@@ -5,7 +5,7 @@ export function readLostSyncCheckpoint(status: string | undefined, message: stri
   try {
     const value = JSON.parse(message) as LostSyncCheckpoint;
     const age = now - Date.parse(value.startedAt);
-    if (status === "complete" || !value.syncId || !/^\d{8}$/.test(value.startDate) || !/^\d{8}$/.test(value.endDate)
+    if (status === "complete" || status === "partial" || !value.syncId || !/^\d{8}$/.test(value.startDate) || !/^\d{8}$/.test(value.endDate)
       || !Number.isFinite(age) || age < 0 || age >= 7 * 86400000
       || !Number.isInteger(value.nextPage) || value.nextPage < 1 || value.nextPage > 200
       || !Number.isInteger(value.failures) || value.failures < 0 || value.failures >= 3

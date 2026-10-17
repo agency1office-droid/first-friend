@@ -12,6 +12,7 @@ test("lost sync retries expire from the original run and stop after repeated fai
   assert.equal(read("failed", JSON.stringify({ ...checkpoint, startedAt: "2026-09-06T00:00:00Z" }), now), null);
   assert.equal(read("failed", JSON.stringify({ ...checkpoint, failures: 3 }), now), null);
   assert.equal(read("complete", JSON.stringify(checkpoint), now), null);
+  assert.equal(read("partial", JSON.stringify(checkpoint), now), null);
   assert.equal(read("failed", JSON.stringify({ ...checkpoint, startedAt: undefined }), now), null);
   assert.equal(read("failed", "invalid", now), null);
 });
@@ -210,6 +211,8 @@ test("sync checkpoints and auth infrastructure failures preserve existing data",
     const url = new URL(typeof input === "string" || input instanceof URL ? input : input.url);
     if (url.hostname === "apis.data.go.kr") {
       if (url.pathname.includes("lossInfo")) {
+        if (mode === "lost-empty" || mode === "lost-first-empty") return envelope([], 300);
+        if (mode === "lost-total-reset") return envelope([], 0);
         assert.equal(url.searchParams.get("pageNo"), "2");
         assert.equal(url.searchParams.get("endde"), oldRange.endDate);
         clock += 210000;
@@ -223,7 +226,7 @@ test("sync checkpoints and auth infrastructure failures preserve existing data",
     if (table === "auth_sessions") return mode === "auth-error" ? Response.json({ message: "offline" }, { status: 503 }) : Response.json([]);
     if (table === "members") return Response.json({ message: "offline" }, { status: 503 });
     if (table === "public_sync_state") {
-      if (method === "GET") return Response.json({ status: "running", message: JSON.stringify(oldRange) });
+      if (method === "GET") return Response.json(mode === "lost-first-empty" ? { status: "partial", message: "Prior partial run" } : { status: "running", message: JSON.stringify(oldRange) });
       savedState = JSON.parse(options.body);
       return new Response(null, { status: 204 });
     }
@@ -250,6 +253,22 @@ test("sync checkpoints and auth infrastructure failures preserve existing data",
     assert.equal(checkpoint.endDate, oldRange.endDate);
     assert.equal(checkpoint.syncId, oldRange.syncId);
     assert.equal(checkpoint.nextPage, 3);
+    assert.equal(deactivations, 0);
+  });
+  await t.test("inconsistent upstream totals preserve data and partial runs do not resume", async () => {
+    mode = "lost-empty";
+    const partial = await store.syncPublicLostAnimals();
+    assert.equal(partial.partial, true);
+    assert.equal(partial.complete, false);
+    assert.equal(savedState.status, "partial");
+    assert.equal(deactivations, 0);
+    mode = "lost-total-reset";
+    assert.equal((await store.syncPublicLostAnimals()).partial, true);
+    assert.equal(deactivations, 0);
+    mode = "lost-first-empty";
+    await assert.rejects(store.syncPublicLostAnimals(), /0건/);
+    assert.equal(savedState.status, "failed");
+    assert.equal(JSON.parse(savedState.message).nextPage, 1);
     assert.equal(deactivations, 0);
   });
   await t.test("missing sessions remain signed out but DB failures propagate", async () => {

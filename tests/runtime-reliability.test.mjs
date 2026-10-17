@@ -14,6 +14,7 @@ test("Sentry sends only diagnostic locations and removes personal/error payloads
     exception: { values: [{ type: "TypeError", value: "private@example.test token=secret", stacktrace: { frames: [
       { filename: "https://www.firstfriend.me/assets/index-abc.js?token=secret", lineno: 12, colno: 4, vars: { secret: "value" } },
       { filename: "https://www.firstfriend.me/api/private/member-id", lineno: 2 },
+      { filename: "https://firstfriend.me/_next/static/chunks/index-abc.js?token=secret", lineno: 25 },
     ] } }] },
   });
   assert.doesNotMatch(JSON.stringify(cleaned), /secret|private|member-id/);
@@ -21,6 +22,7 @@ test("Sentry sends only diagnostic locations and removes personal/error payloads
   assert.equal(cleaned.exception.values[0].stacktrace.frames[0].filename, "https://www.firstfriend.me/assets/index-abc.js");
   assert.equal(cleaned.exception.values[0].stacktrace.frames[0].lineno, 12);
   assert.equal(cleaned.exception.values[0].stacktrace.frames[1].filename, undefined);
+  assert.equal(cleaned.exception.values[0].stacktrace.frames[2].filename, "https://firstfriend.me/_next/static/chunks/index-abc.js");
 });
 
 test("saved animal batches preserve order and visibility with bounded database requests", async t => {

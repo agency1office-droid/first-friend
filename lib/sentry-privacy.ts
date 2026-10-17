@@ -20,7 +20,7 @@ export function sanitizeSentryEvent(event: ErrorEvent): ErrorEvent {
             try {
               const url = new URL(frame.filename ?? "");
               if (["www.firstfriend.me", "firstfriend.me", "first-friend.vercel.app"].includes(url.hostname)
-                && /^\/assets\/[\w.-]+\.js$/.test(url.pathname)) filename = url.origin + url.pathname;
+                && /^\/(?:assets|_next\/static\/chunks)\/[\w.-]+\.js$/.test(url.pathname)) filename = url.origin + url.pathname;
             } catch { /* Non-public source paths are deliberately omitted. */ }
             return { filename, lineno: frame.lineno, colno: frame.colno, in_app: frame.in_app };
           }),

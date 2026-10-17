@@ -2,6 +2,27 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createServer } from "vite";
 
+test("Sentry sends only diagnostic locations and removes personal/error payloads", async t => {
+  const server = await createServer({ configFile: false, envFile: false, server: { middlewareMode: true, hmr: false }, appType: "custom", logLevel: "error" });
+  t.after(() => server.close());
+  const { sanitizeSentryEvent } = await server.ssrLoadModule("/lib/sentry-privacy.ts");
+  const cleaned = sanitizeSentryEvent({
+    event_id: "a".repeat(32), environment: "production", user: { email: "private@example.test" },
+    request: { url: "https://www.firstfriend.me/?token=secret", cookies: "session=secret" },
+    breadcrumbs: [{ message: "private input" }], extra: { photo: "private photo" },
+    message: "private message", contexts: { arbitrary: { secret: "value" } },
+    exception: { values: [{ type: "TypeError", value: "private@example.test token=secret", stacktrace: { frames: [
+      { filename: "https://www.firstfriend.me/assets/index-abc.js?token=secret", lineno: 12, colno: 4, vars: { secret: "value" } },
+      { filename: "https://www.firstfriend.me/api/private/member-id", lineno: 2 },
+    ] } }] },
+  });
+  assert.doesNotMatch(JSON.stringify(cleaned), /secret|private|member-id/);
+  assert.equal(cleaned.exception.values[0].type, "TypeError");
+  assert.equal(cleaned.exception.values[0].stacktrace.frames[0].filename, "https://www.firstfriend.me/assets/index-abc.js");
+  assert.equal(cleaned.exception.values[0].stacktrace.frames[0].lineno, 12);
+  assert.equal(cleaned.exception.values[0].stacktrace.frames[1].filename, undefined);
+});
+
 test("saved animal batches preserve order and visibility with bounded database requests", async t => {
   const server = await createServer({ configFile: false, envFile: false, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true, hmr: false }, appType: "custom", logLevel: "error" });
   t.after(() => server.close());

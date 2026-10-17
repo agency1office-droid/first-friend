@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { preload } from "react-dom";
+import { optimizedAnimalDetailPreviewUrl } from "../../../lib/image-url";
 import { getAnimalById } from "../../../lib/public-data";
 import type { Animal } from "../../../lib/data";
 import { getAnimalPublicStatus, getNoticeDaysRemaining } from "../../../lib/animal-public-status";
@@ -164,6 +166,7 @@ export default async function AnimalPage({
       linkProps={{ href: "/", children: "홈으로 돌아가기" }}
     />
   </div>;
+  preload(optimizedAnimalDetailPreviewUrl(animal.image), { as: "image", fetchPriority: "high", referrerPolicy: "no-referrer" });
   const publicStatus = getAnimalPublicStatus(animal);
   const noticeDaysRemaining = getNoticeDaysRemaining(publicStatus.notice);
   const colors = detailColors(animal.colors);

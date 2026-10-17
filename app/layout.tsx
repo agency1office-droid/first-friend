@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { preload } from "react-dom";
 import "./globals.css";
 import { AppChrome } from "./components/AppChrome";
 import { AppFeedbackProvider } from "./components/AppFeedback";
@@ -16,5 +17,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Fetch the existing stylesheet earlier; globals.css still owns its application.
+  preload("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css", { as: "style" });
   return <html lang="ko" data-seed data-seed-color-mode="light-only"><head><meta name="color-scheme" content="light" /><meta name="naver-site-verification" content="1a37f03970ad7c604ca0073b7df81d9fbe22e8fa" /><link rel="icon" href="/favicon.svg" type="image/svg+xml" /><link rel="icon" href="/favicon.ico" sizes="any" /><link rel="apple-touch-icon" href="/apple-touch-icon.png" /><link rel="manifest" href="/manifest.webmanifest" /></head><body><AppFeedbackProvider><AppChrome>{children}</AppChrome></AppFeedbackProvider><ServiceAnalytics/></body></html>;
 }

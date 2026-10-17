@@ -4,7 +4,7 @@ import { useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { Badge } from "seed-design/ui/badge";
 import { quizCompletionUpdatedEvent, type CompletionQuiz } from "../../lib/quiz-completion";
-import { readDisplayScope } from "./display-scope";
+import { ensureDisplayScope, readDisplayScope } from "./display-scope";
 import styles from "./AdoptionPlanningCard.module.css";
 import { openDetailFlow } from "./detailReturn";
 
@@ -23,6 +23,16 @@ export function AdoptionPlanningCard() {
     let checkedAt = 0;
     async function refresh(force = false) {
       const nextScope = readDisplayScope();
+      // Share the existing session-display request before requesting member records.
+      if (!nextScope) {
+        try {
+          await ensureDisplayScope();
+          if (active) void refresh(force);
+        } catch {
+          if (active && !loaded) setStatus("확인 필요");
+        }
+        return;
+      }
       if (scope !== nextScope) {
         scope = nextScope;
         loaded = false;
@@ -33,6 +43,12 @@ export function AdoptionPlanningCard() {
         setStatus("확인 중");
       }
       if (!force && (controller || (loaded && Date.now() - checkedAt < 30_000))) return;
+      if (scope === "guest") {
+        loaded = true;
+        checkedAt = Date.now();
+        setStatus("도전하기");
+        return;
+      }
       controller?.abort();
       const request = new AbortController();
       controller = request;

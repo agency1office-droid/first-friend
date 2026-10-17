@@ -66,7 +66,8 @@ test("UX audit fixes: 404 before streaming, share cards, in-place login, badge r
  assert.match(summary,/refreshSavedSearchMatches\(client, user\.userId\)/,"the bell badge refreshes saved-search matches");
  assert.match(alerts,/REFRESH_INTERVAL_MS = 30 \* 60 \* 1000/);assert.match(alerts,/\{ force = false \}/);
  assert.match(media,/allowedWidths = new Set\(\[320, 480, 960\]\)/);assert.match(media,/\.webp\(\{ quality: 78 \}\)/);
- assert.match(card,/const cardImage = animal\.thumbnail \|\| \(PUBLIC_IMAGE_HOST\.test\(animal\.image\) \? `\/api\/media\?url=\$\{encodeURIComponent\(animal\.image\)\}&w=480`/);
+ // URL behavior (storage thumbnail, 480px proxy, local image) is exercised in frontend-performance.test.mjs.
+ assert.match(card,/const cardImage = animalCardImageUrl\(animal\)/);
  assert.doesNotMatch(card,/animal\.thumbnail \|\| animal\.image/,"cards never fall back to the 2,000px original");
  assert.match(mypage,/ListLinkItem href="\/mypage\/favorites" prefix=\{<IconHeartLine\/>\} title="관심 친구와 저장 검색"/);
  assert.match(mypage,/ListLinkItem href="\/stories\/manage"/);assert.match(mypage,/from\("posts"\)[^\n]*\.neq\("status", "deleted"\)/);

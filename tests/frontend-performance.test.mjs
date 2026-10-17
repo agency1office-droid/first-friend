@@ -8,6 +8,31 @@ import { createRequire } from 'node:module';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 
+test('list prefetch uses the rendered thumbnail URL and gallery keeps adjacent photos at low priority', async t => {
+  const server = await createServer({configFile:false,envFile:false,ssr:{noExternal:[/^@seed-design\//]},server:{middlewareMode:true,hmr:false},appType:'custom',logLevel:'error'});
+  t.after(() => server.close());
+  const {animalCardImageUrl, optimizedAnimalImageUrl} = await server.ssrLoadModule('/lib/image-url.ts');
+  const {AnimalThumbnail} = await server.ssrLoadModule('/app/components/AnimalThumbnail.tsx');
+  const cases = [
+    {image:'https://openapi.animal.go.kr/a.jpg', expected:'/api/media?url=https%3A%2F%2Fopenapi.animal.go.kr%2Fa.jpg&w=480'},
+    {image:'https://openapi.animal.go.kr/a.jpg', thumbnail:'https://storage.example/thumb.webp', expected:'https://storage.example/thumb.webp'},
+    {image:'/local.jpg', expected:'/local.jpg'},
+  ];
+  for (const animal of cases) {
+    const src = animalCardImageUrl(animal);
+    assert.equal(src, animal.expected);
+    const html = renderToStaticMarkup(createElement(AnimalThumbnail, {src, fallbackSrc:animal.image, alt:'test'}));
+    assert.ok(html.includes(`src="${optimizedAnimalImageUrl(src).replaceAll('&','&amp;')}"`));
+  }
+  const {AnimalGallery} = await server.ssrLoadModule('/app/components/AnimalGallery.tsx');
+  const html = renderToStaticMarkup(createElement(AnimalGallery, {image:'/first.jpg', images:['/first.jpg','/second.jpg'], name:'test'}));
+  const photos = [...html.matchAll(/<img\b[^>]*>/g)].map(match => match[0]);
+  assert.equal(photos.length, 2, 'adjacent photo remains available before swiping');
+  assert.match(photos[0], /fetchPriority="high"/);
+  assert.match(photos[1], /fetchPriority="low"/);
+  assert.match(html, /aria-keyshortcuts="ArrowLeft ArrowRight"/);
+});
+
 test('quiz badge requests wait for scope, skip guests and resume after account changes', async () => {
   const source = await readFile(new URL('../app/components/AdoptionPlanningCard.tsx', import.meta.url), 'utf8');
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } });

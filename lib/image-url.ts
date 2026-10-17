@@ -1,3 +1,9 @@
+// Keep speculative list requests identical to the URL rendered by AnimalCard.
+export function animalCardImageUrl(animal: { image: string; thumbnail?: string }) {
+  return animal.thumbnail || (/^https:\/\/([a-z0-9-]+\.)*openapi\.animal\.go\.kr\//i.test(animal.image)
+    ? `/api/media?url=${encodeURIComponent(animal.image)}&w=480` : animal.image);
+}
+
 export function optimizedAnimalImageUrl(value: string) {
   const normalized = value.trim().replace(/^http:\/\//i, "https://");
   // Full/detail images should come directly from the public API. Routing them

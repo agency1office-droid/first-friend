@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { preload } from "react-dom";
 import type { Animal } from "../../lib/data";
 import type { HomeLocation } from "../../lib/geo";
 import { readHomeLocation } from "../../lib/geo";
 import type { AnimalPage } from "../../lib/public-animal-store";
-import { optimizedAnimalImageUrl } from "../../lib/image-url";
+import { animalCardImageUrl, optimizedAnimalImageUrl } from "../../lib/image-url";
 import { PUBLIC_ANIMAL_AGE_MAX } from "../../lib/animal-filter-ranges";
 import { HOME_FEED_SNAPSHOT_KEY } from "./homeFeedSnapshot";
 import { loadDefaultHomeLocation } from "./defaultHomeLocation";
@@ -48,12 +49,12 @@ function preloadAnimalImages(items: Animal[]) {
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
   if (connection?.saveData || connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g") return;
   const limit = connection?.effectiveType === "3g" ? 2 : 4;
-  const sources = [...new Set(items.map(item => optimizedAnimalImageUrl(item.thumbnail || item.image)).filter(Boolean))]
+  const sources = [...new Set(items.map(item => optimizedAnimalImageUrl(animalCardImageUrl(item))).filter(Boolean))]
     .filter(src => !preloadedAnimalImages.has(src))
     .slice(0, limit);
   if (!sources.length) return;
   sources.forEach(src => preloadedAnimalImages.add(src));
-  const start = () => sources.forEach(src => { const image = new window.Image(); image.decoding = "async"; image.src = src; });
+  const start = () => sources.forEach(src => { const image = new window.Image(); image.decoding = "async"; image.fetchPriority = "low"; image.referrerPolicy = "no-referrer"; image.src = src; });
   const idle = (window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number }).requestIdleCallback;
   if (idle) idle(start, { timeout: 1200 });
   else window.setTimeout(start, 200);
@@ -285,6 +286,9 @@ export function useAnimalFeed(initialPage: AnimalPage) {
         const body = await response.json();
         if (!response.ok) throw new Error(body.error || "친구 목록을 불러오지 못했어요.");
         if (current !== requestId.current) return;
+        // Start the visible first photo before React commits the new list.
+        const first = body.items?.[0];
+        if (first?.image?.trim()) preload(optimizedAnimalImageUrl(animalCardImageUrl(first)), { as: "image", fetchPriority: "high", referrerPolicy: "no-referrer" });
         fetchedAt.current = Date.now(); fetchedEndpoint.current = endpoint();
         setItems(body.items || []); setTotal(body.total || 0); setCursor(body.nextCursor || null);
         setSyncedAt(body.syncedAt || null); setStale(Boolean(body.stale));

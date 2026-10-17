@@ -10,12 +10,10 @@ import { formatDistance } from "../../lib/geo";
 import { getAnimalPublicStatus, getNoticeDaysRemaining } from "../../lib/animal-public-status";
 import { Badge } from "seed-design/ui/badge";
 import { AnimalThumbnail } from "./AnimalThumbnail";
+import { animalCardImageUrl } from "../../lib/image-url";
 import { DialogRoot, DialogContent, DialogFooter } from "seed-design/ui/dialog";
 import { ActionButton } from "seed-design/ui/action-button";
 import { Portal } from "@seed-design/react-portal";
-
-// 공공데이터 사진 호스트만 같은 도메인 프록시로 줄여 받는다.
-const PUBLIC_IMAGE_HOST = new RegExp("^https://([a-z0-9-]+[.])*openapi[.]animal[.]go[.]kr/", "i");
 
 function compactRegion(region: string) {
   const parts = region.trim().split(/\s+/);
@@ -36,7 +34,7 @@ export function AnimalCard({ animal,layout="grid",initialSaved,onFavoriteChange,
   const photoNoticeDays = publicStatus.phase === "notice" ? getNoticeDaysRemaining(publicStatus.notice) : null;
   const animalHref = `/friends/${animal.id}`;
   // 배치 썸네일이 없는 새 공고는 원본 대신 같은 도메인 프록시에서 480px WebP로 줄여 받는다.
-  const cardImage = animal.thumbnail || (PUBLIC_IMAGE_HOST.test(animal.image) ? `/api/media?url=${encodeURIComponent(animal.image)}&w=480` : animal.image);
+  const cardImage = animalCardImageUrl(animal);
   const shelterHref = animal.shelterId ? `/shelters/${encodeURIComponent(animal.shelterId)}?tab=animals` : "/shelters";
   if (imageUnavailable || !animal.image.trim()) return null;
   if (layout === "photo") return <article className="ff-animal-card ff-animal-card-photo">

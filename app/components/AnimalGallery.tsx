@@ -17,7 +17,7 @@ function ProgressiveAnimalImage({ src, fullSrc, alt, priority }: { src: string; 
       if (!thumbnailFailed && displayedSrc === thumbnailSrc) setThumbnailFailed(true);
     }}
     alt={alt}
-    fetchPriority={priority ? "high" : "auto"}
+    fetchPriority={priority ? "high" : "low"}
     loading={priority ? "eager" : "lazy"}
     decoding="async"
     referrerPolicy="no-referrer"

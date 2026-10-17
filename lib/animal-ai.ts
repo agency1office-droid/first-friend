@@ -4,7 +4,7 @@ import { getAnimalById } from "./public-data";
 import { getSupabaseServerClient } from "./supabase/server";
 
 const MODEL_VERSION = process.env.GEMINI_MODEL?.trim() || "gemini-3.1-flash-lite";
-const PROMPT_VERSION = "animal-charm-v8-first-friend-omit-missing-fields";
+const PROMPT_VERSION = "animal-charm-v9-minimal-public-input";
 const MAX_RETRIES = 3;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const SAFE_IMAGE_HOST_SUFFIX = ".go.kr";
@@ -67,6 +67,12 @@ function sourceInput(animal: Animal, purpose: AnalysisPurpose) {
 
 export function createAnimalAnalysisKey(animal: Animal, purpose: AnalysisPurpose = "adoption") {
   return createHash("sha256").update(JSON.stringify({ promptVersion: PROMPT_VERSION, ...sourceInput(animal, purpose) })).digest("hex");
+}
+
+// Public memos and locations can contain a person's contact details. Never send them to AI.
+export function animalAiPublicInput(animal: Animal, purpose: AnalysisPurpose = "adoption") {
+  const { species, breed, age, sex, colors, happenedAt } = sourceInput(animal, purpose);
+  return { species, breed, age, sex, colors, ...(purpose === "lost" ? { happenedAt } : {}) };
 }
 
 function toState(row: SummaryRow | null): AnimalAiState {
@@ -216,7 +222,7 @@ function parseSummary(value: string) {
 
 async function generateSummary(animal: Animal, purpose: AnalysisPurpose) {
   const image = await readImage(animal.image);
-  const input = sourceInput(animal, purpose);
+  const input = animalAiPublicInput(animal, purpose);
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL_VERSION)}:generateContent`, {
     method: "POST",
     signal: AbortSignal.timeout(20000),
@@ -224,7 +230,7 @@ async function generateSummary(animal: Animal, purpose: AnalysisPurpose) {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: "당신은 퍼스트프렌드의 반려동물 소개 문구를 작성하는 UX 라이팅 AI입니다. 당근의 친근함과 토스의 간결함을 참고하되, 두 브랜드의 문구를 그대로 따라 하지 말고 퍼스트프렌드만의 따뜻하고 담백한 친구 소개 말투를 사용하세요. 사용자를 존중하는 친근한 존댓말을 쓰고, 짧고 자연스러운 문장으로 작성하세요. 어려운 전문용어와 보고서 표현을 피하세요. 문장 끝은 '고양이예요', '강아지예요', '~처럼 보여요', '~한 모습이에요'처럼 자연스러운 '-요' 표현을 우선하고 '입니다', '합니다' 문체는 사용하지 마세요. 먼저 사진에서 확인되는 털 색·무늬·눈매·표정·자세를 구체적으로 말한 다음, 그 특징이 왜 귀엽고 예쁘고 매력적인지 감상하는 문장을 반드시 한 문장 넣으세요. 본문에는 '귀여운 포인트예요', '예쁜 무늬가 돋보여요', '매력이 느껴져요' 중 사진에 맞는 표현을 최소 한 번 사용하세요. 예를 들어 하얀 앞발이 양말을 신은 듯 보여 귀여운 포인트라고 말하거나, 색과 무늬가 어우러져 예쁘다고 말할 수 있어요. 단, 사진에 실제로 보이는 특징에 근거하고 모든 동물을 똑같이 칭찬하거나 과장하지 마세요. 매력에 대한 감상은 외형에만 한정하고 성격·건강·감정으로 확장하지 마세요. 과도하게 귀엽거나 감정적인 표현, 동정심을 유도하는 표현, 과장된 감탄사를 사용하지 마세요. 본문 2~3문장은 모두 사진 속 외형·무늬·표정·자세와 그에 대한 근거 있는 감상으로 쓰고, 보호소 상태나 입양 안내는 본문에 넣지 마세요. 공개 데이터는 종·품종·나이처럼 확인된 정보를 보완할 때만 사용하세요. 건강·성격·입양 가능 여부·미래 행동을 추측하거나 사실처럼 단정하지 말고, '불쌍한 아이', '주인을 애타게 기다려요', '순하고 착해요', '건강해 보여요', '반드시 입양해야 해요' 같은 표현은 사용하지 마세요. 출력에는 제목이나 안내 문구를 넣지 말고, UI에 표시할 본문만 한국어 2~3문장으로 JSON {\"summary\":\"...\"} 형식으로 반환하세요." }] },
       contents: [{ role: "user", parts: [
-        { text: purpose === "lost" ? `다음 공개 정보를 참고해 실종 동물을 찾는 데 도움이 되도록 정보를 중요도 순으로 정리해 주세요. 첫 문장은 실종 일시와 공개된 지역, 다음은 종·품종·나이·성별·털색, 마지막은 등록된 특징 순서로 작성하세요. 정확한 주소를 추정하거나 만들어내지 말고, 사진과 API에 있는 정보만 사용하세요. 이름이나 등록번호를 반복하지 마세요. 연락처나 개인 정보는 언급하지 마세요. 자연스러운 한국어 3~4문장으로 작성하세요. ${JSON.stringify({ ...input, imageUrl: undefined })}` : `다음 공개 정보를 참고해 사진에서 보이는 외형과 보호소 메모를 중심으로 소개해 주세요. 전화번호, 주소, 개인 정보는 언급하지 마세요. ${JSON.stringify({ ...input, imageUrl: undefined })}` },
+        { text: purpose === "lost" ? `다음 공개 정보를 참고해 실종 일시와 종·품종·나이·성별·털색, 사진에서 보이는 외형을 정리해 주세요. 위치나 연락처를 추정하지 말고, 사진 속 글자·사람·개인 정보는 설명하지 마세요. 자연스러운 한국어 3~4문장으로 작성하세요. ${JSON.stringify(input)}` : `다음 공개 정보를 참고해 사진에서 보이는 동물의 외형을 소개해 주세요. 사진 속 글자·사람·전화번호·주소·개인 정보는 설명하지 마세요. ${JSON.stringify(input)}` },
         { inlineData: { mimeType: image.slice(5, image.indexOf(";")), data: image.slice(image.indexOf(",") + 1) } },
       ] }],
       generationConfig: { temperature: 0.4, maxOutputTokens: 220, responseMimeType: "application/json" },

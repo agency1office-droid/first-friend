@@ -319,7 +319,7 @@ test("profile reuses the authenticated member without exposing private fields", 
 });
 
 test("AI descriptions only report completion after a confirmed DB write", async t => {
-  const animal = { id: "test-animal", image: "https://openapi.animal.go.kr/test.jpg", updated: "2026-09-08", species: "강아지", breed: "품종 미상", age: "1살", sex: "미상", colors: ["하양"], traits: [], summary: "" };
+  const animal = { id: "test-animal", image: "https://openapi.animal.go.kr/test.jpg", updated: "2026-09-08", species: "강아지", breed: "품종 미상", age: "1살", sex: "미상", colors: ["하양"], traits: ["test@example.test"], summary: "보호자 010-1234-5678", place: "상세 주소 101호", happenedAt: "2026-10-17" };
   const server = await createServer({ configFile: false, envFile: false, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true, hmr: false }, appType: "custom", logLevel: "error", plugins: [{
     name: "animal-fixture", enforce: "pre",
     resolveId(id) { if (id === "./public-data") return "\0animal-fixture"; },
@@ -331,10 +331,23 @@ test("AI descriptions only report completion after a confirmed DB write", async 
     t.after(() => { if (previous === undefined) delete process.env[key]; else process.env[key] = previous; });
   }
   const ai = await server.ssrLoadModule("/lib/animal-ai.ts");
-  let failSave = true, saveAttempts = 0;
+  const withPrivateMemo = { ...animal, summary: "보호자 010-1234-5678", place: "상세 주소 101호", traits: ["test@example.test"], happenedAt: "2026-10-17" };
+  for (const purpose of ["adoption", "lost"]) {
+    const input = ai.animalAiPublicInput(withPrivateMemo, purpose);
+    assert.deepEqual(Object.keys(input).sort(), (purpose === "lost" ? ["species", "breed", "age", "sex", "colors", "happenedAt"] : ["species", "breed", "age", "sex", "colors"]).sort());
+    assert.doesNotMatch(JSON.stringify(input), /010-1234|101호|example\.test|test-animal/);
+    assert.equal(input.species, animal.species);
+  }
+  let failSave = true, saveAttempts = 0, imageAvailable = false, aiRequests = 0;
   t.mock.method(globalThis, "fetch", async (input, options = {}) => {
     const url = new URL(typeof input === "string" || input instanceof URL ? input : input.url);
-    if (url.hostname === "openapi.animal.go.kr") return new Response(null, { status: 404 });
+    if (url.hostname === "openapi.animal.go.kr") return imageAvailable ? new Response(new Uint8Array([255, 216, 255, 0]), { headers: { "content-type": "image/jpeg" } }) : new Response(null, { status: 404 });
+    if (url.hostname === "generativelanguage.googleapis.com") {
+      aiRequests++;
+      assert.doesNotMatch(options.body, /010-1234|101호|example\.test|test-animal|shelterMemo|imageUrl/);
+      assert.match(options.body, /inlineData/);
+      return Response.json({ candidates: [{ content: { parts: [{ text: "하얀 털과 작은 귀가 눈에 띄어요. 둥근 눈매가 귀여운 포인트예요." }] } }] });
+    }
     assert.equal(url.hostname, "reliability.example.test");
     if ((options.method || "GET") === "GET") return Response.json({ animal_id: animal.id, analysis_key: ai.createAnimalAnalysisKey(animal), status: "pending", retry_count: 0 });
     const row = JSON.parse(options.body);
@@ -348,4 +361,7 @@ test("AI descriptions only report completion after a confirmed DB write", async 
   const result = await ai.processAnimalAiJob(animal.id);
   assert.equal(result.status, "completed");
   assert.equal(result.source, "public-data");
+  imageAvailable = true;
+  assert.equal((await ai.processAnimalAiJob(animal.id)).source, "ai");
+  assert.equal(aiRequests, 1, "the real Gemini request must exclude private memo fields");
 });

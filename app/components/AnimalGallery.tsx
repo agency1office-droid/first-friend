@@ -2,7 +2,6 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ActionButton } from "seed-design/ui/action-button";
 import { IconXmarkLine } from "@karrotmarket/react-monochrome-icon";
 import { optimizedAnimalDetailPreviewUrl, optimizedAnimalImageUrl } from "../../lib/image-url";
 
@@ -127,7 +126,6 @@ export function AnimalGallery({ name, image, images = [] }: { name:string; image
       </span>
     </button>
     <span id={`${galleryId}-help`} className="ff-visually-hidden">사진 크게 보기, 좌우로 움직여 다른 사진 보기</span>
-    {available.length > 1 && <div className="ff-gallery-controls" aria-label="사진 이동"><ActionButton size="small" variant="neutralWeak" disabled={selected === 0} onClick={() => movePhoto(-1)}>이전 사진</ActionButton><span aria-live="polite">{selected + 1} / {available.length}</span><ActionButton size="small" variant="neutralWeak" disabled={selected === available.length - 1} onClick={() => movePhoto(1)}>다음 사진</ActionButton></div>}
     <dialog ref={dialogRef} className="ff-image-dialog" tabIndex={-1} aria-label={`${name} 원본 사진`} onClose={() => setViewerOpen(false)} onKeyDown={handleKeyDown}>
       {viewerOpen && <div className="ff-image-dialog-inner">
         <div className="ff-image-dialog-actions"><button type="button" onClick={() => dialogRef.current?.close()} aria-label="원본 사진 닫기"><IconXmarkLine/></button></div>

@@ -422,7 +422,6 @@ img { display: block; max-width: 100%; }
 .ff-service-footer a, .ff-home-intro a { color: var(--seed-color-fg-neutral); text-underline-offset: 3px; }
 .ff-home-intro { padding: 24px 0; color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 1.6; }
 .ff-home-intro h2 { color: var(--seed-color-fg-neutral); font-size: 18px; }
-.ff-gallery-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 16px; color: var(--seed-color-fg-neutral); background: var(--seed-color-bg-layer-default); }
 .ff-gallery-main { position: relative; width: 100%; display: block; padding: 0; border: 0; background: transparent; cursor: grab; touch-action: pan-y; user-select: none; }
 .ff-gallery-main:active { cursor: grabbing; }
 .ff-gallery-main:focus-visible, .ff-image-dialog:focus-visible, .ff-image-dialog button:focus-visible { outline: 3px solid var(--seed-color-stroke-focus); outline-offset: -3px; }

@@ -1,9 +1,10 @@
 @import "@seed-design/css/base.css";
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css");
 
 * { box-sizing: border-box; }
 html {
-  /* SEED typography tokens with local fonts: no blocking download or late font swap. */
-  --ff-font-family-sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard Variable", Pretendard, "Segoe UI", Roboto, "Malgun Gothic", "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  /* Keep Apple system fonts; use the SEED documentation font on other platforms. */
+  --ff-font-family-sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard Variable", Pretendard, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   font-family: var(--ff-font-family-sans);
   background: var(--seed-color-bg-layer-basement);
   overflow-y: scroll;
@@ -417,11 +418,6 @@ img { display: block; max-width: 100%; }
 
 .ff-detail-image { width: 100%; height: 390px; object-fit: cover; object-position: center; }
 .ff-gallery { background: #111; }
-.ff-service-footer { padding: 24px 20px calc(100px + env(safe-area-inset-bottom)); border-top: 1px solid var(--seed-color-stroke-neutral-muted); color: var(--seed-color-fg-neutral-muted); background: var(--seed-color-bg-layer-default); font-size: 12px; line-height: 1.6; }
-.ff-service-footer nav, .ff-home-intro nav { display: flex; flex-wrap: wrap; gap: 16px; }
-.ff-service-footer a, .ff-home-intro a { color: var(--seed-color-fg-neutral); text-underline-offset: 3px; }
-.ff-home-intro { padding: 24px 0; color: var(--seed-color-fg-neutral-muted); font-size: 14px; line-height: 1.6; }
-.ff-home-intro h2 { color: var(--seed-color-fg-neutral); font-size: 18px; }
 .ff-gallery-main { position: relative; width: 100%; display: block; padding: 0; border: 0; background: transparent; cursor: grab; touch-action: pan-y; user-select: none; }
 .ff-gallery-main:active { cursor: grabbing; }
 .ff-gallery-main:focus-visible, .ff-image-dialog:focus-visible, .ff-image-dialog button:focus-visible { outline: 3px solid var(--seed-color-stroke-focus); outline-offset: -3px; }
@@ -1564,7 +1560,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-home-menu { display: grid; }
 .ff-home-menu a { min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--seed-color-stroke-neutral-muted); font-size: 16px; font-weight: 700; }
 .ff-home-menu a svg { width: 20px; height: 20px; color: var(--seed-color-fg-neutral-muted); }
-.ff-home-feed { min-width: 0; min-height: 100svh; }
+.ff-home-feed { min-width: 0; }
 .ff-home-feed-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 2px 0 10px; }
 .ff-home-feed-head > a { min-height: 0; display: inline-flex; align-items: center; flex: none; color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; font-weight: 700; }
 .ff-home-feed [data-part="root"] { margin-bottom: 8px; }
@@ -1641,7 +1637,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .ff-animal-card-row .ff-meta { margin-top: 4px; font-size: 13px; line-height: 19px; }
 .ff-animal-card-row .ff-tags { margin-top: 10px; }
   .ff-animal-card-row .ff-animal-row-info { min-height: 126px; display: flex; flex-direction: column; gap: 2px; overflow: visible; padding-top: 0; }
-  .ff-animal-row-shelter { display: block; min-height: 28px; padding-block: 5px; overflow: hidden; color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+  .ff-animal-row-shelter { overflow: hidden; color: var(--seed-color-fg-neutral-muted); font-size: 12px; line-height: 18px; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
   .ff-animal-row-shelter:hover { color: var(--seed-color-fg-brand); text-decoration: underline; text-underline-offset: 2px; }
   .ff-animal-row-animal-link { min-width: 0; display: grid; gap: 4px; color: inherit; text-decoration: none; }
   .ff-animal-row-location { min-width: 0; display: flex; align-items: center; gap: 6px; color: var(--seed-color-fg-neutral-muted); font-size: 13px; line-height: 19px; white-space: nowrap; }

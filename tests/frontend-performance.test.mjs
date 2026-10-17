@@ -8,6 +8,51 @@ import { createRequire } from 'node:module';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 
+test('deferred monitoring retains early errors, initializes once and hands over global handlers', async () => {
+  const source = await readFile(new URL('../lib/client-error-monitor.ts', import.meta.url), 'utf8');
+  const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } });
+  const tick = () => new Promise(resolve => setImmediate(resolve));
+  function fixture({ hostname = 'www.firstfriend.me', dsn = 'test', readyState = 'loading', fail = false } = {}) {
+    const window = new EventTarget(), exports = {}, captured = [];
+    window.location = { hostname };
+    let imports = 0, initialized = 0;
+    const sdk = { initialize() { initialized++; }, captureException(error, hint) { assert.equal(initialized, 1); captured.push({ error, hint }); } };
+    runInNewContext(outputText, { exports, window, document: { readyState }, process: { env: { NEXT_PUBLIC_SENTRY_DSN: dsn } },
+      require(name) { assert.equal(name, './client-sentry'); imports++; if (fail) throw new Error('offline'); return sdk; },
+    });
+    return { window, exports, captured, counts: () => ({ imports, initialized }), recover: () => { fail = false; } };
+  }
+  const normal = fixture();
+  normal.exports.startClientErrorMonitoring(); normal.exports.startClientErrorMonitoring();
+  await tick(); assert.equal(normal.counts().imports, 0, 'SDK must not compete with initial resources');
+  normal.window.dispatchEvent(new Event('load')); await tick();
+  assert.deepEqual(normal.counts(), { imports: 1, initialized: 1 });
+  const early = fixture(), error = new TypeError('original error'), rejection = new Error('original rejection');
+  early.exports.startClientErrorMonitoring();
+  const errorEvent = new Event('error'); errorEvent.error = error;
+  const rejectionEvent = new Event('unhandledrejection'); rejectionEvent.reason = rejection;
+  early.window.dispatchEvent(errorEvent); early.window.dispatchEvent(rejectionEvent);
+  await tick();
+  assert.deepEqual(early.counts(), { imports: 1, initialized: 1 });
+  assert.equal(early.captured[0].error, error); assert.equal(early.captured[1].error, rejection);
+  assert.equal(early.captured[0].hint.mechanism.handled, false);
+  early.window.dispatchEvent(errorEvent); early.window.dispatchEvent(new Event('load')); await tick();
+  assert.equal(early.captured.length, 2, 'temporary listeners stop reporting after SDK handover');
+  early.exports.reportClientError(error); await tick();
+  assert.equal(early.captured.length, 3, 'React error boundary still reports after initialization');
+  const failed = fixture({ fail: true }); failed.exports.startClientErrorMonitoring();
+  failed.window.dispatchEvent(new Event('load')); await tick(); failed.recover();
+  failed.exports.reportClientError(error); await tick();
+  assert.deepEqual(failed.counts(), { imports: 2, initialized: 1 });
+  assert.equal(failed.captured[0].error, error);
+  const loaded = fixture({ readyState: 'complete' }); loaded.exports.startClientErrorMonitoring(); await tick();
+  assert.equal(loaded.counts().initialized, 1);
+  for (const options of [{ hostname: 'localhost' }, { dsn: '' }]) {
+    const disabled = fixture(options); disabled.exports.startClientErrorMonitoring(); disabled.exports.reportClientError(error);
+    disabled.window.dispatchEvent(new Event('load')); await tick(); assert.equal(disabled.counts().imports, 0);
+  }
+});
+
 test('list prefetch uses the rendered thumbnail URL and gallery keeps adjacent photos at low priority', async t => {
   const server = await createServer({configFile:false,envFile:false,ssr:{noExternal:[/^@seed-design\//]},server:{middlewareMode:true,hmr:false},appType:'custom',logLevel:'error'});
   t.after(() => server.close());
